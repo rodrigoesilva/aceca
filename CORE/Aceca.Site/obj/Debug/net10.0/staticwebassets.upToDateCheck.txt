@@ -40,7 +40,6 @@ wwwroot\img\logo\logo02.png
 wwwroot\json\ecommerce-product-list.json
 wwwroot\json\locales\en.json
 wwwroot\js\app-ecommerce-product-list.js
-wwwroot\js\app-marcas-list.js
 wwwroot\js\config.js
 wwwroot\js\forms-selects.js
 wwwroot\js\main.js
@@ -303,6 +302,7 @@ wwwroot\vendor\libs\toastr\toastr.css
 wwwroot\vendor\libs\toastr\toastr.js
 wwwroot\vendor\libs\typeahead-js\typeahead.css
 wwwroot\vendor\libs\typeahead-js\typeahead.js
+wwwroot\js\app-marcas-list.js
 C:\aceca\CORE\Aceca.Site\wwwroot\css\demo.css
 C:\aceca\CORE\Aceca.Site\wwwroot\css\marcas.css
 C:\aceca\CORE\Aceca.Site\wwwroot\css\site.css
@@ -315,7 +315,6 @@ C:\aceca\CORE\Aceca.Site\wwwroot\img\favicon\favicon.ico
 C:\aceca\CORE\Aceca.Site\wwwroot\json\ecommerce-product-list.json
 C:\aceca\CORE\Aceca.Site\wwwroot\json\locales\en.json
 C:\aceca\CORE\Aceca.Site\wwwroot\js\app-ecommerce-product-list.js
-C:\aceca\CORE\Aceca.Site\wwwroot\js\app-marcas-list.js
 C:\aceca\CORE\Aceca.Site\wwwroot\js\config.js
 C:\aceca\CORE\Aceca.Site\wwwroot\js\forms-selects.js
 C:\aceca\CORE\Aceca.Site\wwwroot\js\main.js
@@ -508,3 +507,4 @@ C:\aceca\CORE\Aceca.Site\wwwroot\vendor\libs\toastr\toastr.css
 C:\aceca\CORE\Aceca.Site\wwwroot\vendor\libs\toastr\toastr.js
 C:\aceca\CORE\Aceca.Site\wwwroot\vendor\libs\typeahead-js\typeahead.css
 C:\aceca\CORE\Aceca.Site\wwwroot\vendor\libs\typeahead-js\typeahead.js
+C:\aceca\CORE\Aceca.Site\wwwroot\js\app-marcas-list.js

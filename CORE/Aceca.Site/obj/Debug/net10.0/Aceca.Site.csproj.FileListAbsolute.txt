@@ -678,4 +678,4 @@ C:\aceca\CORE\Aceca.Site\obj\Debug\net10.0\refint\Aceca.Site.dll
 C:\aceca\CORE\Aceca.Site\obj\Debug\net10.0\Aceca.Site.pdb
 C:\aceca\CORE\Aceca.Site\obj\Debug\net10.0\Aceca.Site.genruntimeconfig.cache
 C:\aceca\CORE\Aceca.Site\obj\Debug\net10.0\ref\Aceca.Site.dll
-C:\aceca\CORE\Aceca.Site\obj\Debug\net10.0\compressed\pxk9j4l5sy-{0}-7jq49r8g0e-7jq49r8g0e.gz
+C:\aceca\CORE\Aceca.Site\obj\Debug\net10.0\compressed\pxk9j4l5sy-{0}-j47m3ou0fi-j47m3ou0fi.gz

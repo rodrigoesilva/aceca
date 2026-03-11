@@ -1063,31 +1063,107 @@ function fn_GridListFilter(lstData) {
             data: lstData,
 
             columns: [
-                { data: 'id', visible: false },
-                { data: 'id', visible: false },
-                { data: 'nomeFase', title: 'Name' },
-                { data: 'codigoAceca', title: 'codigoAceca' },
+                // COLUNA - Responsive
                 {
-                    data: 'imagem', title: 'imagem',
+                    visible: false,
+                    data: 'id',
+                    className: 'control',
+                    searchable: false,
+                    orderable: false,
+                    responsivePriority: 2,
+                    targets: 0,
+                    render: function (data, type, full, meta) {
+                        return '';
+                    }
+                },
+                // COLUNA - ID checkbox
+                {
+                    visible: false,
+                    data: 'id',
+                    targets: 1,
+                    orderable: false,
+                    checkboxes: {
+                        selectAllRender: '<input type="checkbox" class="form-check-input">'
+                    },
+                    render: function () {
+                        return '<input type="checkbox" class="dt-checkboxes form-check-input" >';
+                    },
+                    searchable: false
+                },
+                { data: 'nomeFase', className: "text-center" },
+                { data: 'codigoAceca', className: "text-center" },
+                {
+                    data: 'imagem', className: "text-center",
                     render: function (data, type, row, meta) {
-                        // 'data' is the value from the 'imageUrl' field for the current row
-                        // The function returns the full HTML string for the cell
-                        return '<img src="' + data + '" height="50px" width="50px"/>';
+                        return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
                 },
                 {
-                    data: 'imagemDetalhe', title: 'imagemDetalhe',
+                    data: 'imagemDetalhe', className: "text-center", 
                     render: function (data, type, row, meta) {
-                        // 'data' is the value from the 'imageUrl' field for the current row
-                        // The function returns the full HTML string for the cell
-                        return '<img src="' + data + '" height="50px" width="50px"/>';
+                        return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
                 },
-                { data: 'nomeMarca', title: 'nomeMarca' },
-                { data: 'fabricaNome', title: 'fabricaNome' },
-                { data: 'descricao', title: 'descricao' },
-                { data: 'incluidoPor', title: 'incluidoPor' },
-                { data: 'id', visible: false },
+                { data: 'nomeMarca', className: "text-center" },
+                { data: 'fabricaNome', className: "text-start", },
+                { data: 'descricao', className: "text-start", },
+                {
+                    data: 'incluidoPor', className: "text-center",
+                    render: function (data, type, full, meta) {
+                        let id = full.id;
+
+                        //data = full[9];
+
+                        if (data !== undefined && data !== null) {
+                            if (id !== 0 && type === 'display') {
+
+                                let bQuebraLinha = data.includes("/");
+                                //console.log("incluidoPor bQuebraLinha :::: ",bQuebraLinha );
+
+                                const firstSlashIndex = data.indexOf("/");
+                                //console.log("incluidoPor :::: ", firstSlashIndex); // Output: 5
+
+                                return data.replaceAll("/", "<br><br>");
+                            } else {
+                                return '';
+                            }
+                        } else {
+                            return '';
+                        }
+                    }
+                },
+                // COLUNA - Botoes Acoes
+                {
+                    data: 'id',
+                    targets: -1,
+                    searchable: false,
+                    orderable: false,
+                    render: function (data, type, full, meta) {
+
+                        let btns = '';
+
+                        //console.log("Acao data ::: ", data);
+                        //console.log("Acao lstData ::: ", lstData);
+                        //console.log("Acao full ::: ", full);
+                        //console.log("Acao meta ::: ", meta);
+                        if (type === 'display') {
+                            let itemId = data;
+                            let itemObjJson = encodeURIComponent(JSON.stringify(full));
+
+                            btns =
+                                '<div class="d-inline-block" data-id="' + full.id + '">' +
+                                '<a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line ri-22px"></i></a>' +
+                                '<ul class="dropdown-menu dropdown-menu-end m-0">' +
+                                '<li><a href="javascript:fnItem_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="dropdown-item edit-record" data-id="' + full.id + '">Editar</a></li>' +
+                                '<div class="dropdown-divider"></div>' +
+                                '<li><a href="javascript:fnItem_PopInfoPi(' + itemObjJson + ',' + "'View'" + ');" class="dropdown-item edit-record">Visualizar</a></li>' +
+                                '</ul>' +
+                                '</div>'
+                        }
+
+                        return (btns);
+                    }
+                },
             ],
 
             /*
@@ -1933,6 +2009,9 @@ function fn_GridComplete(grid) {
     if (countRows > 0) {
         $.busyLoadFull("hide");
 
+        fn_Zoom();
+
+
         Swal.fire({
             icon: 'success',
             title: 'Carregado!',
@@ -2444,7 +2523,7 @@ function fn_Zoom() {
     //console.log("fnZoom captionText ::: ", captionText);
 
     $(".cmyImg").click(function () {
-        //console.log("fnZoom cmyImg ::: ", $(this));
+        console.log("fnZoom cmyImg ::: ", $(this));
         //console.log("fnZoom cmyImg  modal ::: ", modal);
         //console.log("fnZoom cmyImg  modalImg ::: ", modalImg);
 
@@ -2456,7 +2535,7 @@ function fn_Zoom() {
 
     // When the user clicks on <span> (x), close the modal
     $("#myModal").click(function () {
-        //console.log("fnZoom myModal::: ", img);
+        console.log("fnZoom myModal::: ", img);
 
         img01.className += " out";
         setTimeout(function () {
