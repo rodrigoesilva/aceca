@@ -1,0 +1,22 @@
+[
+  {
+    "ContainingType": "Aceca.Site.Controllers.ProductsController",
+    "Method": "CreateProductAsync",
+    "RelativePath": "api/Products/CreateMaterial",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Aceca.Site.Controllers.ProductsController",
+    "Method": "GetProductsAsync",
+    "RelativePath": "api/Products/GetMaterials",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  }
+]

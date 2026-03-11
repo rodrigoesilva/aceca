@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="wwwroot\img\backgrounds\**" />
+    <Compile Remove="wwwroot\img\branding\**" />
+    <Compile Remove="wwwroot\img\customizer\**" />
+    <Compile Remove="wwwroot\img\elements\**" />
+    <Compile Remove="wwwroot\img\front-pages\**" />
+    <Compile Remove="wwwroot\img\icons\**" />
+    <Compile Remove="wwwroot\img\illustrations\**" />
+    <Compile Remove="wwwroot\img\layouts\**" />
+    <Compile Remove="wwwroot\img\pages\**" />
+    <Compile Remove="wwwroot\img\products\**" />
+    <Content Remove="wwwroot\img\backgrounds\**" />
+    <Content Remove="wwwroot\img\branding\**" />
+    <Content Remove="wwwroot\img\customizer\**" />
+    <Content Remove="wwwroot\img\elements\**" />
+    <Content Remove="wwwroot\img\front-pages\**" />
+    <Content Remove="wwwroot\img\icons\**" />
+    <Content Remove="wwwroot\img\illustrations\**" />
+    <Content Remove="wwwroot\img\layouts\**" />
+    <Content Remove="wwwroot\img\pages\**" />
+    <Content Remove="wwwroot\img\products\**" />
+    <EmbeddedResource Remove="wwwroot\img\backgrounds\**" />
+    <EmbeddedResource Remove="wwwroot\img\branding\**" />
+    <EmbeddedResource Remove="wwwroot\img\customizer\**" />
+    <EmbeddedResource Remove="wwwroot\img\elements\**" />
+    <EmbeddedResource Remove="wwwroot\img\front-pages\**" />
+    <EmbeddedResource Remove="wwwroot\img\icons\**" />
+    <EmbeddedResource Remove="wwwroot\img\illustrations\**" />
+    <EmbeddedResource Remove="wwwroot\img\layouts\**" />
+    <EmbeddedResource Remove="wwwroot\img\pages\**" />
+    <EmbeddedResource Remove="wwwroot\img\products\**" />
+    <None Remove="wwwroot\img\backgrounds\**" />
+    <None Remove="wwwroot\img\branding\**" />
+    <None Remove="wwwroot\img\customizer\**" />
+    <None Remove="wwwroot\img\elements\**" />
+    <None Remove="wwwroot\img\front-pages\**" />
+    <None Remove="wwwroot\img\icons\**" />
+    <None Remove="wwwroot\img\illustrations\**" />
+    <None Remove="wwwroot\img\layouts\**" />
+    <None Remove="wwwroot\img\pages\**" />
+    <None Remove="wwwroot\img\products\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Program - Copy.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.13">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+  </ItemGroup>
+
+</Project>
