@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<publishData>
+  <publishProfile
+    profileName="site58158-WebDeploy"
+    publishMethod="MSDeploy"
+    publishUrl="site58158.siteasp.net"
+    msdeploySite="site58158"
+    userName="site58158"
+    userPWD="VS@aceca123"
+    destinationAppUrl="http://aceca.tryasp.net/"
+    />
+</publishData>

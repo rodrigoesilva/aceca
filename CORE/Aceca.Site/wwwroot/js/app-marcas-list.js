@@ -1336,16 +1336,8 @@ function fn_GridListFilter(lstData) {
             */
 
             order: varCol_Ordenacao,
-            dom:
-                '<"card-header d-flex border-top rounded-0 flex-wrap py-0 pb-5 pb-md-0"' +
-                '<"me-5 ms-n2"f>' +
-                '<"d-flex justify-content-start justify-content-md-end align-items-baseline"<"dt-action-buttons d-flex align-items-start align-items-md-center justify-content-sm-center gap-4"lB>>' +
-                '>t' +
-                '<"row mx-1"' +
-                '<"col-sm-12 col-md-6"i>' +
-                '<"col-sm-12 col-md-6"p>' +
-                '>',
-            //displayLength: varItems_QtdPorPage,
+            dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
+            displayLength: varItems_QtdPorPage,
             lengthMenu: varItems_DivPage,
             language: {
                 url: varLang_UrlTranslate,
@@ -1357,7 +1349,7 @@ function fn_GridListFilter(lstData) {
             buttons: [
                 {
                     extend: 'collection',
-                    className: 'btn btn-outline-secondary dropdown-toggle me-4 waves-effect waves-light',
+                    className: 'btn btn-primary dropdown-toggle me-4 waves-effect waves-light',
                     text: '<i class="ri-download-line ri-16px me-2"></i><span class="d-none d-sm-inline-block">Exportar </span>',
                     buttons: [
                         // BOTAO CABECALHO - EXPORTAR - IMPRIMIR
@@ -1451,8 +1443,7 @@ function fn_GridListFilter(lstData) {
 
                 $.busyLoadFull("hide");
 
-                //fn_GridComplete(this);
-                $(".card-datatable").show();
+                fn_GridComplete(this);
             }
         });
     }

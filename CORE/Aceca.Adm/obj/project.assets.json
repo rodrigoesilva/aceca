@@ -2354,11 +2354,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\ACECA\\Aceca.Adm\\Aceca.Adm.csproj",
+      "projectUniqueName": "C:\\aceca\\CORE\\Aceca.Adm\\Aceca.Adm.csproj",
       "projectName": "Aceca.Site",
-      "projectPath": "C:\\ACECA\\Aceca.Adm\\Aceca.Adm.csproj",
+      "projectPath": "C:\\aceca\\CORE\\Aceca.Adm\\Aceca.Adm.csproj",
       "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-      "outputPath": "C:\\ACECA\\Aceca.Adm\\obj\\",
+      "outputPath": "C:\\aceca\\CORE\\Aceca.Adm\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

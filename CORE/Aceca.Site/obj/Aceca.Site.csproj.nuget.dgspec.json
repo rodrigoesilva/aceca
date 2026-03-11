@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\ACECA\\Aceca.Site\\Aceca.Site.csproj": {}
+    "C:\\aceca\\CORE\\Aceca.Site\\Aceca.Site.csproj": {}
   },
   "projects": {
-    "C:\\ACECA\\Aceca.Site\\Aceca.Site.csproj": {
+    "C:\\aceca\\CORE\\Aceca.Site\\Aceca.Site.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\ACECA\\Aceca.Site\\Aceca.Site.csproj",
+        "projectUniqueName": "C:\\aceca\\CORE\\Aceca.Site\\Aceca.Site.csproj",
         "projectName": "Aceca.Site",
-        "projectPath": "C:\\ACECA\\Aceca.Site\\Aceca.Site.csproj",
+        "projectPath": "C:\\aceca\\CORE\\Aceca.Site\\Aceca.Site.csproj",
         "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "C:\\ACECA\\Aceca.Site\\obj\\",
+        "outputPath": "C:\\aceca\\CORE\\Aceca.Site\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

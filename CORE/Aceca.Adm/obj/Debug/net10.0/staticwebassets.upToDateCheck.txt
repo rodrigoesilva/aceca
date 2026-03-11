@@ -15,19 +15,19 @@ wwwroot\js\marcas.js
 wwwroot\login - Copy.html
 wwwroot\login.html
 wwwroot\marcas.html
-C:\ACECA\Aceca.Adm\wwwroot\css\dash.css
-C:\ACECA\Aceca.Adm\wwwroot\css\marcas.css
-C:\ACECA\Aceca.Adm\wwwroot\css\style.css
-C:\ACECA\Aceca.Adm\wwwroot\css\zoom.css
-C:\ACECA\Aceca.Adm\wwwroot\dashboard.html
-C:\ACECA\Aceca.Adm\wwwroot\img\favicon\favicon.ico
-C:\ACECA\Aceca.Adm\wwwroot\index - Copy.html
-C:\ACECA\Aceca.Adm\wwwroot\index.html
-C:\ACECA\Aceca.Adm\wwwroot\js\app-agencia.js
-C:\ACECA\Aceca.Adm\wwwroot\js\dash.js
-C:\ACECA\Aceca.Adm\wwwroot\js\login.js
-C:\ACECA\Aceca.Adm\wwwroot\js\main.js
-C:\ACECA\Aceca.Adm\wwwroot\js\marcas.js
-C:\ACECA\Aceca.Adm\wwwroot\login - Copy.html
-C:\ACECA\Aceca.Adm\wwwroot\login.html
-C:\ACECA\Aceca.Adm\wwwroot\marcas.html
+C:\aceca\CORE\Aceca.Adm\wwwroot\css\dash.css
+C:\aceca\CORE\Aceca.Adm\wwwroot\css\marcas.css
+C:\aceca\CORE\Aceca.Adm\wwwroot\css\style.css
+C:\aceca\CORE\Aceca.Adm\wwwroot\css\zoom.css
+C:\aceca\CORE\Aceca.Adm\wwwroot\dashboard.html
+C:\aceca\CORE\Aceca.Adm\wwwroot\img\favicon\favicon.ico
+C:\aceca\CORE\Aceca.Adm\wwwroot\index - Copy.html
+C:\aceca\CORE\Aceca.Adm\wwwroot\index.html
+C:\aceca\CORE\Aceca.Adm\wwwroot\js\app-agencia.js
+C:\aceca\CORE\Aceca.Adm\wwwroot\js\dash.js
+C:\aceca\CORE\Aceca.Adm\wwwroot\js\login.js
+C:\aceca\CORE\Aceca.Adm\wwwroot\js\main.js
+C:\aceca\CORE\Aceca.Adm\wwwroot\js\marcas.js
+C:\aceca\CORE\Aceca.Adm\wwwroot\login - Copy.html
+C:\aceca\CORE\Aceca.Adm\wwwroot\login.html
+C:\aceca\CORE\Aceca.Adm\wwwroot\marcas.html
