@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-br">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Contato | ACECA</title>
+        <style>
+            body{font-family:Arial,Helvetica,sans-serif;max-width:720px;margin:40px auto;padding:0 16px}
+            label{display:block;margin:12px 0 6px;font-weight:600}
+            input,select,textarea{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px}
+            textarea{min-height:140px;resize:vertical}
+            .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+            .btn{margin-top:14px;background:#0b5; border:0; color:#fff; padding:12px 16px; border-radius:10px; cursor:pointer; font-weight:700}
+            .hint{font-size:12px;color:#666;margin-top:6px}
+
+            /* Modal */
+            .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px}
+            .modal{background:#fff;border-radius:14px;max-width:520px;width:100%;padding:18px 18px 14px}
+            .modal h3{margin:0 0 10px}
+            .modal p{margin:0 0 14px;line-height:1.4}
+            .modal .actions{display:flex;justify-content:flex-end;gap:10px}
+            .modal .ok{background:#111;color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer}
+        </style>
+    </head>
+    <body>
+
+        <h1>Fale com a ACECA</h1>
+
+        <form id="contactForm" action="formscript.php" method="post" enctype="multipart/form-data">
+            <label for="nome">Nome *</label>
+            <input id="nome" name="nome" required />
+
+            <div class="row">
+                <div>
+                    <label for="email">E-mail *</label>
+                    <input id="email" name="email" type="email" required />
+                </div>
+                <div>
+                    <label for="telefone">Telefone</label>
+                    <input id="telefone" name="telefone" />
+                </div>
+            </div>
+
+            <label for="ajuda">Como podemos te ajudar? *</label>
+            <select id="ajuda" name="ajuda" required>
+                <option value="" selected disabled>Selecione...</option>
+                <option>Orçamento</option>
+                <option>Dúvidas sobre serviços</option>
+                <option>Suporte técnico</option>
+                <option>Parcerias</option>
+                <option>Outro</option>
+            </select>
+
+            <label for="mensagem">Mensagem *</label>
+            <textarea id="mensagem" name="mensagem" required></textarea>
+
+            <label for="imagens">Anexar até 3 imagens (JPG/PNG/WebP)</label>
+            <input id="imagens" name="imagens[]" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+            <div class="hint">Máx. 3 arquivos.</div>
+
+            <button class="btn" type="submit">Enviar</button>
+        </form>
+
+        <!-- Modal -->
+        <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal">
+                <h3 id="modalTitle">Mensagem enviada</h3>
+                <p id="modalText"></p>
+                <div class="actions">
+                    <button class="ok" id="modalOk" type="button">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const form = document.getElementById('contactForm');
+            const backdrop = document.getElementById('modalBackdrop');
+            const modalText = document.getElementById('modalText');
+            const modalOk = document.getElementById('modalOk');
+            let redirectTimer = null;
+
+            function openModal(message) {
+                modalText.textContent = message;
+                backdrop.style.display = 'flex';
+                redirectTimer = setTimeout(() => { 
+                    window.location.href = 'https://aceca.com.br'; 
+                }, 5000);
+            }
+
+            function closeModalAndRedirect() {
+                if (redirectTimer)
+                    clearTimeout(redirectTimer);
+
+                window.location.href = 'https://aceca.com.br';
+            }
+
+            modalOk.addEventListener('click', closeModalAndRedirect);
+
+            // Fomulario Envio
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const formData = new FormData(form);
+
+                const files = document.getElementById('imagens').files;
+                if (files && files.length > 3) {
+                    alert('Você pode anexar no máximo 3 imagens.');
+                    return;
+                }
+
+                // Funcao Envio
+                fetchData(form.action, formData);
+            });
+
+            // Funcao de Envio
+            async function fetchData(url, formData) {
+                try {
+                    const jsonData = Object.fromEntries(formData.entries());
+
+                    fetch(form.action, {
+                        method: form.method,
+                        headers: {
+                            'Content-Type': 'application/json' // Inform the server we are sending JSON
+                        },
+                        body: JSON.stringify(jsonData)
+                    })
+                    .then(data => data.json()) // Parse the JSON response from the PHP script
+                    .then(response => {
+                         console.log('Response response:: ' , response);
+
+                        if (!response.ok) {
+                            alert('Não foi possível enviar agora. Tente novamente.');
+                        
+                            throw new Error(`Response status: ${response.status}`);
+                            return;
+                        }else{
+                            console.log('Response message:: ' , response.message);
+							 alert(response.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+                } catch (error) {
+                    const data = JSON.parse(error);
+                     console.error('catch Fetch data:', data);
+                      console.error('Failed to parse:', error, 'with input:', url);
+                }
+            }
+
+        </script>
+    </body>
+</html>

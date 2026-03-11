@@ -1,0 +1,21 @@
+
+Crie um site responsivo full-stack para uma plataforma de colecionadores e loja de cigarros chamada ACECA.
+
+Utilize como logotipo a imagem anexa enviada.
+
+Inclua a imagem criada anteriormente como background de marca-dagua .
+
+Inclua uma página inicial contando um pouso da historia da ACECA e convidando os interessado a participar da Associação.
+
+Deve haver um link para uma Agenda de Eventos com fotos e datas de eventos ja passado e futuros, um link para pagina de Sócios, contendo informações de nomes e tipos de coleções de cada um, Depoimentos e uma barra de navegação com botão de login para uma página de acesso de login para sócios com os campos de e-mail e senha.
+
+A Nav bar deve ter uma cor de destaque HEX #47007b. com os textos de mnu escritos na cor branca e o botao de Logon em destaque Branco com a escrita na cor #7b0fcc, deve conter o Logotipo da imagem anexa a esquerda e o nome ACECA em um tamanho de destaque seguido dos dizeres - Associação dos Colecionadores de Embalagens de Cigarros e Afins
+
+Crie tambem uma sessão exibidno fotos dos membros da diretoria, essas fotos devem esta destacadas dentro de circulos exibidno a função de cada membro da direção, sendo eles  Presidente, Vice-Presidente , Diretor Financeiro, Diretor Extraordinário, Gestão de Tecnologia da Informação, Comunicação.
+
+Tambem inclua uma sessão de contato, com o titulo Como podemos te ajudar? contendo os campso de Nome, e-mail, telefone , e um dropdownw de oções com o nome Como podemos te ajudar?,  contendo as opções ( solicitação, reclamação, Informação, Cadsatro , Correção de cadastro) e mensagem e a opossibilidade de incluir um anexo ( podendo ser ate 3 imagens ).
+
+Use uma interface moderna com fundo claro e cores HEX #a32bff, #7b0fcc, #47007b.
+
+Use mysql como backend do banco de dados. 
+

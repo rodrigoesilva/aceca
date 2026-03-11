@@ -1,0 +1,21 @@
+body {
+font-family: Arial;
+margin: 0;
+padding: 0;
+background: #111;
+color: #fff;
+}
+header {
+display: flex;
+justify-content: space-between;
+padding: 15px;
+background: #1e1e1e;
+}
+button {
+padding: 8px 12px;
+cursor: pointer;
+}
+.light {
+background: #fff;
+color: #000;
+}

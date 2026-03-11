@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACECA — Associação de Colecionadores</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #a32bff;
+  --mid: #7b0fcc;
+  --dark: #47007b;
+  --light: #f8f4ff;
+  --lighter: #ffffff;
+  --text: #1a0030;
+  --muted: #6b5b7b;
+  --border: #e8d5ff;
+  --gradient: linear-gradient(135deg, #47007b 0%, #7b0fcc 50%, #a32bff 100%);
+  --gradient-soft: linear-gradient(135deg, #f8f4ff 0%, #ede0ff 100%);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--lighter);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--light); }
+::-webkit-scrollbar-thumb { background: var(--mid); border-radius: 3px; }
+
+/* ─── NAVBAR ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 5%; height: 70px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  transition: box-shadow 0.3s;
+}
+nav.scrolled { box-shadow: 0 4px 30px rgba(163,43,255,0.12); }
+
+.nav-logo {
+  display: flex; align-items: center; gap: 12px;
+  text-decoration: none;
+}
+.nav-logo img { height: 38px; }
+.nav-logo span {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 900;
+  background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: 0.04em;
+}
+
+.nav-links { display: flex; align-items: center; gap: 32px; list-style: none; }
+.nav-links a {
+  text-decoration: none; color: var(--text);
+  font-size: 0.875rem; font-weight: 500; letter-spacing: 0.02em;
+  position: relative; padding-bottom: 2px;
+  transition: color 0.2s;
+}
+.nav-links a::after {
+  content: ''; position: absolute; bottom: 0; left: 0;
+  width: 0; height: 2px; background: var(--primary);
+  transition: width 0.3s;
+}
+.nav-links a:hover { color: var(--primary); }
+.nav-links a:hover::after { width: 100%; }
+
+.btn-login {
+  padding: 9px 24px; border-radius: 50px;
+  background: var(--gradient); color: white !important;
+  font-weight: 600 !important; font-size: 0.85rem !important;
+  border: none; cursor: pointer; text-decoration: none;
+  box-shadow: 0 4px 16px rgba(163,43,255,0.35);
+  transition: transform 0.2s, box-shadow 0.2s !important;
+}
+.btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(163,43,255,0.45) !important; }
+.btn-login::after { display: none !important; }
+
+.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+.hamburger span { width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.3s; }
+
+/* ─── HERO ─── */
+#home {
+  min-height: 100vh;
+  background: var(--lighter);
+  display: flex; align-items: center;
+  padding: 100px 5% 60px;
+  position: relative; overflow: hidden;
+}
+#home::before {
+  content: '';
+  position: absolute; top: -20%; right: -10%;
+  width: 700px; height: 700px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(163,43,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+#home::after {
+  content: '';
+  position: absolute; bottom: -10%; left: -5%;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(71,0,123,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+}
+
+.hero-text { animation: fadeUp 0.8s ease both; }
+.hero-label {
+  display: inline-block; padding: 5px 16px; border-radius: 50px;
+  background: rgba(163,43,255,0.08); border: 1px solid rgba(163,43,255,0.2);
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
+  color: var(--mid); text-transform: uppercase; margin-bottom: 20px;
+}
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.8rem, 5vw, 4.5rem); font-weight: 900;
+  line-height: 1.08; margin-bottom: 24px;
+  color: var(--text);
+}
+.hero-title em { font-style: normal; color: var(--primary); }
+.hero-subtitle {
+  font-size: 1.1rem; color: var(--muted); line-height: 1.7;
+  max-width: 480px; margin-bottom: 40px;
+}
+.hero-cta { display: flex; gap: 16px; flex-wrap: wrap; }
+.btn-primary {
+  padding: 14px 32px; border-radius: 50px;
+  background: var(--gradient); color: white;
+  font-weight: 600; font-size: 0.95rem; text-decoration: none;
+  box-shadow: 0 6px 24px rgba(163,43,255,0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: inline-block;
+}
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(163,43,255,0.5); }
+.btn-outline {
+  padding: 14px 32px; border-radius: 50px;
+  border: 2px solid var(--primary); color: var(--primary);
+  font-weight: 600; font-size: 0.95rem; text-decoration: none;
+  transition: all 0.2s; display: inline-block;
+}
+.btn-outline:hover { background: var(--primary); color: white; }
+
+.hero-visual { animation: fadeUp 0.8s 0.2s ease both; display: flex; justify-content: center; }
+.hero-logo-wrap {
+  width: 380px; height: 380px;
+  background: var(--gradient-soft);
+  border-radius: 40% 60% 55% 45% / 45% 45% 55% 55%;
+  display: flex; align-items: center; justify-content: center;
+  animation: morph 8s ease-in-out infinite, float 4s ease-in-out infinite;
+  box-shadow: 0 20px 60px rgba(163,43,255,0.2);
+}
+.hero-logo-wrap img { width: 200px; }
+
+@keyframes morph {
+  0%,100% { border-radius: 40% 60% 55% 45% / 45% 45% 55% 55%; }
+  33% { border-radius: 55% 45% 40% 60% / 60% 55% 45% 40%; }
+  66% { border-radius: 50% 50% 60% 40% / 40% 60% 50% 50%; }
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── STATS BAR ─── */
+.stats-bar {
+  background: var(--gradient);
+  padding: 32px 5%;
+}
+.stats-inner {
+  max-width: 1000px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 20px; text-align: center;
+}
+.stat-item { color: white; }
+.stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem; font-weight: 900; display: block;
+}
+.stat-label { font-size: 0.8rem; opacity: 0.8; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* ─── SECTION WRAPPER ─── */
+section { padding: 100px 5%; }
+.section-tag {
+  display: inline-block; padding: 4px 14px; border-radius: 50px;
+  background: rgba(163,43,255,0.08); border: 1px solid rgba(163,43,255,0.2);
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em;
+  color: var(--mid); text-transform: uppercase; margin-bottom: 16px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 900;
+  line-height: 1.15; color: var(--text);
+}
+.section-title em { font-style: normal; color: var(--primary); }
+.section-sub { font-size: 1rem; color: var(--muted); line-height: 1.7; margin-top: 14px; max-width: 560px; }
+
+/* ─── STORY ─── */
+#story { background: var(--light); }
+.story-grid {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
+}
+.story-timeline { display: flex; flex-direction: column; gap: 32px; }
+.timeline-item { display: flex; gap: 20px; }
+.tl-dot {
+  width: 40px; height: 40px; min-width: 40px;
+  border-radius: 50%; background: var(--gradient);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 0.8rem;
+  box-shadow: 0 4px 16px rgba(163,43,255,0.35);
+}
+.tl-content h4 { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+.tl-content p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+.story-text {}
+.story-quote {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-style: italic;
+  color: var(--mid); border-left: 4px solid var(--primary);
+  padding-left: 24px; margin: 32px 0;
+  line-height: 1.5;
+}
+
+/* ─── JOIN / CTA ─── */
+.join-banner {
+  background: var(--gradient);
+  border-radius: 24px; padding: 60px;
+  text-align: center; margin: 0 auto;
+  max-width: 900px;
+  box-shadow: 0 20px 60px rgba(71,0,123,0.3);
+  position: relative; overflow: hidden;
+}
+.join-banner::before {
+  content: ''; position: absolute;
+  top: -50%; left: -20%; width: 400px; height: 400px;
+  background: rgba(255,255,255,0.06); border-radius: 50%;
+  pointer-events: none;
+}
+.join-banner h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem; color: white; margin-bottom: 16px;
+}
+.join-banner p { color: rgba(255,255,255,0.8); font-size: 1.05rem; max-width: 500px; margin: 0 auto 32px; }
+.btn-white {
+  background: white; color: var(--dark);
+  padding: 14px 36px; border-radius: 50px;
+  font-weight: 700; text-decoration: none; font-size: 1rem;
+  display: inline-block;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-white:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.2); }
+
+/* ─── EVENTS ─── */
+#events { background: white; }
+.events-wrap { max-width: 1200px; margin: 0 auto; }
+.events-header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; margin-bottom: 50px; }
+.events-tabs { display: flex; gap: 8px; margin-bottom: 40px; }
+.tab-btn {
+  padding: 9px 22px; border-radius: 50px; border: 2px solid var(--border);
+  background: white; color: var(--muted); font-weight: 600; font-size: 0.85rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.tab-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+.tab-btn:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+.events-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.event-card {
+  border-radius: 20px; overflow: hidden;
+  border: 1px solid var(--border); transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+.event-card:hover { transform: translateY(-6px); box-shadow: 0 16px 48px rgba(163,43,255,0.15); }
+.event-img {
+  height: 200px; background: var(--gradient-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem; position: relative; overflow: hidden;
+}
+.event-img.past { filter: grayscale(30%); }
+.event-img img { width: 100%; height: 100%; object-fit: cover; }
+.event-badge {
+  position: absolute; top: 12px; right: 12px;
+  padding: 4px 12px; border-radius: 50px; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.badge-upcoming { background: var(--primary); color: white; }
+.badge-past { background: rgba(0,0,0,0.55); color: white; }
+.event-info { padding: 20px; }
+.event-date { font-size: 0.78rem; color: var(--primary); font-weight: 700; letter-spacing: 0.06em; margin-bottom: 6px; }
+.event-info h3 { font-weight: 700; font-size: 1rem; margin-bottom: 8px; }
+.event-info p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+
+/* ─── MEMBERS ─── */
+#members { background: var(--light); }
+.members-wrap { max-width: 1200px; margin: 0 auto; }
+.members-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+.member-card {
+  background: white; border-radius: 20px;
+  padding: 28px; border: 1px solid var(--border);
+  transition: transform 0.3s, box-shadow 0.3s; cursor: pointer;
+}
+.member-card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(163,43,255,0.12); }
+.member-avatar {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--gradient); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 900;
+  margin-bottom: 16px;
+}
+.member-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+.member-since { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; }
+.member-collections { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  padding: 4px 10px; border-radius: 50px; font-size: 0.72rem; font-weight: 600;
+  background: rgba(163,43,255,0.08); color: var(--mid); border: 1px solid rgba(163,43,255,0.15);
+}
+
+/* ─── BOARD ─── */
+#board { background: white; }
+.board-wrap { max-width: 900px; margin: 0 auto; text-align: center; }
+.board-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 56px; }
+.board-member { display: flex; flex-direction: column; align-items: center; }
+.board-avatar-wrap { position: relative; margin-bottom: 16px; }
+.board-avatar {
+  width: 110px; height: 110px; border-radius: 50%;
+  background: var(--gradient-soft);
+  border: 4px solid var(--primary);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900;
+  color: var(--primary);
+  box-shadow: 0 8px 32px rgba(163,43,255,0.2);
+  overflow: hidden;
+}
+.board-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.board-role-badge {
+  position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+  background: var(--gradient); color: white;
+  padding: 4px 14px; border-radius: 50px; font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(163,43,255,0.3);
+}
+.board-name { font-weight: 700; font-size: 0.95rem; margin-top: 8px; }
+.board-desc { font-size: 0.8rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+/* ─── TESTIMONIALS ─── */
+#testimonials { background: var(--light); }
+.testimonials-wrap { max-width: 1100px; margin: 0 auto; }
+.testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+.testimonial-card {
+  background: white; border-radius: 20px;
+  padding: 32px; border: 1px solid var(--border);
+  position: relative;
+}
+.testimonial-card::before {
+  content: '"';
+  font-family: 'Playfair Display', serif;
+  font-size: 5rem; color: rgba(163,43,255,0.12);
+  position: absolute; top: -10px; left: 20px;
+  line-height: 1; font-weight: 900;
+}
+.stars { color: var(--primary); font-size: 0.9rem; margin-bottom: 14px; }
+.testimonial-text { font-size: 0.92rem; color: var(--text); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
+.testimonial-author { display: flex; align-items: center; gap: 12px; }
+.author-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--gradient);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 700; font-size: 0.9rem;
+}
+.author-name { font-weight: 700; font-size: 0.9rem; }
+.author-role { font-size: 0.75rem; color: var(--muted); }
+
+/* ─── LOGIN MODAL ─── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9999;
+  background: rgba(71,0,123,0.6); backdrop-filter: blur(8px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white; border-radius: 28px; padding: 48px 40px;
+  width: 100%; max-width: 440px;
+  box-shadow: 0 32px 80px rgba(71,0,123,0.3);
+  animation: modalIn 0.3s ease;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-logo { text-align: center; margin-bottom: 28px; }
+.modal-logo img { height: 48px; }
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; font-weight: 900; text-align: center;
+  margin-bottom: 6px;
+}
+.modal-sub { text-align: center; color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text); margin-bottom: 7px; letter-spacing: 0.04em; }
+.form-group input {
+  width: 100%; padding: 13px 18px; border-radius: 12px;
+  border: 2px solid var(--border); font-size: 0.95rem;
+  font-family: inherit; transition: border-color 0.2s;
+  outline: none; background: var(--light);
+}
+.form-group input:focus { border-color: var(--primary); background: white; }
+.forgot { text-align: right; margin-top: -12px; margin-bottom: 24px; }
+.forgot a { font-size: 0.8rem; color: var(--primary); text-decoration: none; font-weight: 600; }
+.btn-form {
+  width: 100%; padding: 14px; border-radius: 12px;
+  background: var(--gradient); color: white;
+  border: none; font-size: 1rem; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  box-shadow: 0 6px 24px rgba(163,43,255,0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-form:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(163,43,255,0.45); }
+.modal-footer { text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--muted); }
+.modal-footer a { color: var(--primary); font-weight: 600; text-decoration: none; }
+.modal-close {
+  position: absolute; top: 18px; right: 22px;
+  background: none; border: none; font-size: 1.4rem;
+  cursor: pointer; color: var(--muted); line-height: 1;
+}
+
+/* ─── FOOTER ─── */
+footer {
+  background: var(--text); color: rgba(255,255,255,0.7);
+  padding: 60px 5% 32px;
+}
+.footer-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px;
+}
+.footer-brand img { height: 36px; margin-bottom: 16px; filter: brightness(0) invert(1); }
+.footer-brand p { font-size: 0.85rem; line-height: 1.7; max-width: 260px; }
+.footer-col h4 { color: white; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px; }
+.footer-col ul { list-style: none; }
+.footer-col ul li { margin-bottom: 10px; }
+.footer-col ul li a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+.footer-col ul li a:hover { color: var(--primary); }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 24px; text-align: center; font-size: 0.8rem;
+}
+.footer-bottom span { color: var(--primary); }
+
+/* ─── SECTION DIVIDERS ─── */
+.divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 30px; right: 30px; z-index: 9999;
+  background: var(--dark); color: white; padding: 14px 24px;
+  border-radius: 12px; font-size: 0.9rem; font-weight: 500;
+  box-shadow: 0 8px 32px rgba(71,0,123,0.4);
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.4s; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1024px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+  .hero-subtitle { max-width: 100%; }
+  .hero-cta { justify-content: center; }
+  .hero-visual { display: none; }
+  .story-grid { grid-template-columns: 1fr; }
+  .events-grid { grid-template-columns: repeat(2, 1fr); }
+  .members-grid { grid-template-columns: repeat(2, 1fr); }
+  .board-grid { grid-template-columns: repeat(2, 1fr); }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr 1fr; }
+  .stats-inner { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .nav-links { display: none; position: fixed; top: 70px; left: 0; right: 0;
+    background: white; flex-direction: column; padding: 24px; gap: 16px;
+    border-bottom: 1px solid var(--border); box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+  .nav-links.open { display: flex; }
+  .hamburger { display: flex; }
+  .events-grid { grid-template-columns: 1fr; }
+  .members-grid { grid-template-columns: 1fr; }
+  .board-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  section { padding: 64px 5%; }
+  .join-banner { padding: 40px 24px; }
+  .modal { padding: 36px 24px; }
+  .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ NAVBAR ═══ -->
+<nav id="navbar">
+  <a href="#home" class="nav-logo">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDgwIDEwODAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzQ3MDA3YiIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjN2IwZmNjIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYTMyYmZmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBvbHlnb24gcG9pbnRzPSI1NDAsMjAwIDkwMCw4MDAgMTgwLDgwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2cpIiBzdHJva2Utd2lkdGg9Ijc1Ii8+PHBvbHlnb24gcG9pbnRzPSI1NDAsMzkwIDc1NSw3NzAgMzI1LDc3MCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==" alt="ACECA">
+    <span>ACECA</span>
+  </a>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#story">Nossa História</a></li>
+    <li><a href="#events">Eventos</a></li>
+    <li><a href="#members">Membros</a></li>
+    <li><a href="#board">Diretoria</a></li>
+    <li><a href="#testimonials">Depoimentos</a></li>
+    <li><a href="#" class="btn-login" onclick="openModal(event)">Entrar</a></li>
+  </ul>
+  <div class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section id="home">
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="hero-label">Fundada em 2009 · Sorocaba, SP</div>
+      <h1 class="hero-title">Onde <em>paixão</em> e coleção se encontram</h1>
+      <p class="hero-subtitle">A ACECA é a maior associação de colecionadores e tabacaria de Sorocaba. Reunimos entusiastas de coleções raras, cigarros premium e cultura do colecionismo.</p>
+      <div class="hero-cta">
+        <a href="#story" class="btn-primary">Conheça nossa história</a>
+        <a href="#" class="btn-outline" onclick="openModal(event)">Área do membro</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-logo-wrap">
+        <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDgwIDEwODAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzQ3MDA3YiIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjN2IwZmNjIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYTMyYmZmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBvbHlnb24gcG9pbnRzPSI1NDAsMjAwIDkwMCw4MDAgMTgwLDgwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2cpIiBzdHJva2Utd2lkdGg9Ijc1Ii8+PHBvbHlnb24gcG9pbnRzPSI1NDAsMzkwIDc1NSw3NzAgMzI1LDc3MCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==" alt="ACECA Logo">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STATS ═══ -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <span class="stat-num" data-target="248">0</span>
+      <span class="stat-label">Membros Ativos</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num" data-target="16">0</span>
+      <span class="stat-label">Anos de História</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num" data-target="84">0</span>
+      <span class="stat-label">Eventos Realizados</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num" data-target="12000">0</span>
+      <span class="stat-label">Itens Catalogados</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STORY ═══ -->
+<section id="story">
+  <div class="story-grid">
+    <div class="story-text">
+      <div class="section-tag">Nossa História</div>
+      <h2 class="section-title">Uma paixão que<br><em>une gerações</em></h2>
+      <blockquote class="story-quote">"Colecionamos mais do que objetos — guardamos memórias, culturas e histórias que o tempo não apaga."</blockquote>
+      <p style="color:var(--muted);line-height:1.8;font-size:0.95rem">Nascida em 2009 em Sorocaba, a ACECA surgiu da iniciativa de um grupo de entusiastas que compartilhavam a paixão por coleções raras e a cultura do tabaco. O que começou como encontros informais em fundos de garagem se tornou uma das associações mais respeitadas do interior de São Paulo.</p>
+      <p style="color:var(--muted);line-height:1.8;font-size:0.95rem;margin-top:16px">Hoje, reunimos colecionadores de maços, isqueiros, cinzeiros, arte postal, numismática e muito mais, criando um espaço plural onde cada coleção conta uma história única.</p>
+      <a href="#" class="btn-primary" style="margin-top:32px;display:inline-block" onclick="openModal(event)">Quero ser membro</a>
+    </div>
+    <div class="story-timeline">
+      <div class="timeline-item">
+        <div class="tl-dot">09</div>
+        <div class="tl-content">
+          <h4>Fundação da ACECA</h4>
+          <p>Primeiro encontro oficial com 12 colecionadores fundadores na sede provisória em Sorocaba.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot">12</div>
+        <div class="tl-content">
+          <h4>Sede Própria</h4>
+          <p>Inauguração do espaço cultural e loja de tabacaria no centro da cidade, com acervo aberto ao público.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot">16</div>
+        <div class="tl-content">
+          <h4>1º Expo-Coleção SP</h4>
+          <p>Primeiro evento estadual sediado pela ACECA, reunindo mais de 500 visitantes e 40 expositores.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot">21</div>
+        <div class="tl-content">
+          <h4>Digitalização do Acervo</h4>
+          <p>Lançamento do catálogo digital com mais de 12.000 itens catalogados e disponíveis para consulta.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot">25</div>
+        <div class="tl-content">
+          <h4>Hoje: 248 Membros</h4>
+          <p>Crescimento contínuo com novos membros e parcerias nacionais e internacionais.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div style="padding: 0 5%;">
+  <div class="join-banner">
+    <h2>Faça parte da ACECA</h2>
+    <p>Junte-se à nossa comunidade de colecionadores e tenha acesso exclusivo a eventos, trocas, catálogo e muito mais.</p>
+    <a href="#" class="btn-white" onclick="openModal(event)">Solicitar Associação</a>
+  </div>
+</div>
+
+<!-- ═══ EVENTS ═══ -->
+<section id="events">
+  <div class="events-wrap">
+    <div class="events-header">
+      <div>
+        <div class="section-tag">Calendário</div>
+        <h2 class="section-title">Eventos & <em>Encontros</em></h2>
+      </div>
+    </div>
+    <div class="events-tabs">
+      <button class="tab-btn active" onclick="filterEvents('all', this)">Todos</button>
+      <button class="tab-btn" onclick="filterEvents('upcoming', this)">Próximos</button>
+      <button class="tab-btn" onclick="filterEvents('past', this)">Passados</button>
+    </div>
+    <div class="events-grid" id="eventsGrid">
+
+      <div class="event-card" data-type="upcoming">
+        <div class="event-img" style="background:linear-gradient(135deg,#ede0ff,#c9a0ff)">
+          <span>🏆</span>
+          <span class="event-badge badge-upcoming">Próximo</span>
+        </div>
+        <div class="event-info">
+          <div class="event-date">15 MAR 2026 · 14h–19h</div>
+          <h3>5ª Expo-Coleção ACECA</h3>
+          <p>Grande feira de trocas e exposição de acervos. Presença de colecionadores de todo o estado.</p>
+        </div>
+      </div>
+
+      <div class="event-card" data-type="upcoming">
+        <div class="event-img" style="background:linear-gradient(135deg,#e8d5ff,#b380ff)">
+          <span>🎴</span>
+          <span class="event-badge badge-upcoming">Próximo</span>
+        </div>
+        <div class="event-info">
+          <div class="event-date">02 ABR 2026 · 19h</div>
+          <h3>Noite de Degustação Premium</h3>
+          <p>Sessão exclusiva para membros com apresentação de charutos e cachimbos raros.</p>
+        </div>
+      </div>
+
+      <div class="event-card" data-type="past">
+        <div class="event-img past" style="background:linear-gradient(135deg,#d0b0f0,#9060c0)">
+          <span>📸</span>
+          <span class="event-badge badge-past">Realizado</span>
+        </div>
+        <div class="event-info">
+          <div class="event-date">18 NOV 2025</div>
+          <h3>Encontro de Outono 2025</h3>
+          <p>Mais de 180 participantes. Recorde de itens expostos: 620 peças em uma tarde.</p>
+        </div>
+      </div>
+
+      <div class="event-card" data-type="past">
+        <div class="event-img past" style="background:linear-gradient(135deg,#c0a0e0,#8040b0)">
+          <span>🎖️</span>
+          <span class="event-badge badge-past">Realizado</span>
+        </div>
+        <div class="event-info">
+          <div class="event-date">10 AGO 2025</div>
+          <h3>Leilão do Acervo Histórico</h3>
+          <p>Edição especial com peças dos anos 1930-1960. Lote mais valioso arrecadou R$ 8.400.</p>
+        </div>
+      </div>
+
+      <div class="event-card" data-type="past">
+        <div class="event-img past" style="background:linear-gradient(135deg,#b090d0,#6030a0)">
+          <span>📚</span>
+          <span class="event-badge badge-past">Realizado</span>
+        </div>
+        <div class="event-info">
+          <div class="event-date">22 MAI 2025</div>
+          <h3>Palestra: História do Tabaco BR</h3>
+          <p>Conferência com historiadores sobre a cultura do tabaco no Brasil do século XX.</p>
+        </div>
+      </div>
+
+      <div class="event-card" data-type="upcoming">
+        <div class="event-img" style="background:linear-gradient(135deg,#f0e4ff,#d4a0ff)">
+          <span>🤝</span>
+          <span class="event-badge badge-upcoming">Próximo</span>
+        </div>
+        <div class="event-info">
+          <div class="event-date">20 JUN 2026 · 10h</div>
+          <h3>Workshop de Conservação</h3>
+          <p>Aprenda técnicas profissionais para conservar e restaurar peças raras do seu acervo.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MEMBERS ═══ -->
+<section id="members">
+  <div class="members-wrap">
+    <div class="section-tag">Associados</div>
+    <h2 class="section-title">Nossos <em>Membros</em></h2>
+    <p class="section-sub">Conheça alguns dos colecionadores que fazem parte da nossa comunidade e seus acervos únicos.</p>
+    <div class="members-grid">
+
+      <div class="member-card">
+        <div class="member-avatar">CR</div>
+        <div class="member-name">Carlos Roberto Mendes</div>
+        <div class="member-since">Membro desde 2011</div>
+        <div class="member-collections">
+          <span class="tag">Maços Vintage</span>
+          <span class="tag">Isqueiros</span>
+          <span class="tag">Cinzeiros</span>
+        </div>
+      </div>
+
+      <div class="member-card">
+        <div class="member-avatar">AS</div>
+        <div class="member-name">Ana Sofia Ribeiro</div>
+        <div class="member-since">Membro desde 2014</div>
+        <div class="member-collections">
+          <span class="tag">Arte Postal</span>
+          <span class="tag">Selos</span>
+          <span class="tag">Envelopes Históricos</span>
+        </div>
+      </div>
+
+      <div class="member-card">
+        <div class="member-avatar">JP</div>
+        <div class="member-name">João Paulo Ferrari</div>
+        <div class="member-since">Membro desde 2009</div>
+        <div class="member-collections">
+          <span class="tag">Numismática</span>
+          <span class="tag">Cédulas Raras</span>
+          <span class="tag">Medalhas</span>
+        </div>
+      </div>
+
+      <div class="member-card">
+        <div class="member-avatar">ML</div>
+        <div class="member-name">Márcia Lima Pinto</div>
+        <div class="member-since">Membro desde 2017</div>
+        <div class="member-collections">
+          <span class="tag">Cachimbos</span>
+          <span class="tag">Tabaqueiras</span>
+          <span class="tag">Acessórios Premium</span>
+        </div>
+      </div>
+
+      <div class="member-card">
+        <div class="member-avatar">RT</div>
+        <div class="member-name">Roberto Tavares</div>
+        <div class="member-since">Membro desde 2012</div>
+        <div class="member-collections">
+          <span class="tag">Miniaturas</span>
+          <span class="tag">Brinquedos Antigos</span>
+          <span class="tag">Propaganda Vintage</span>
+        </div>
+      </div>
+
+      <div class="member-card">
+        <div class="member-avatar">FS</div>
+        <div class="member-name">Fernanda Souza</div>
+        <div class="member-since">Membro desde 2020</div>
+        <div class="member-collections">
+          <span class="tag">Fotografia Histórica</span>
+          <span class="tag">Postais</span>
+          <span class="tag">Revistas Antigas</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BOARD ═══ -->
+<section id="board">
+  <div class="board-wrap">
+    <div class="section-tag">Diretoria</div>
+    <h2 class="section-title">Quem nos <em>lidera</em></h2>
+    <p class="section-sub" style="margin:0 auto">Conheça os membros da diretoria que dedicam seu tempo a fazer a ACECA crescer.</p>
+    <div class="board-grid">
+
+      <div class="board-member">
+        <div class="board-avatar-wrap">
+          <div class="board-avatar">MV</div>
+          <span class="board-role-badge">Presidente</span>
+        </div>
+        <div class="board-name">Marcos Vieira</div>
+        <div class="board-desc">Fundador e líder da associação desde 2009</div>
+      </div>
+
+      <div class="board-member">
+        <div class="board-avatar-wrap">
+          <div class="board-avatar">LC</div>
+          <span class="board-role-badge">Financeiro</span>
+        </div>
+        <div class="board-name">Lúcia Carvalho</div>
+        <div class="board-desc">Gestão financeira e planejamento orçamentário</div>
+      </div>
+
+      <div class="board-member">
+        <div class="board-avatar-wrap">
+          <div class="board-avatar">PT</div>
+          <span class="board-role-badge">T.I.</span>
+        </div>
+        <div class="board-name">Pedro Teixeira</div>
+        <div class="board-desc">Infraestrutura digital e sistemas da associação</div>
+      </div>
+
+      <div class="board-member">
+        <div class="board-avatar-wrap">
+          <div class="board-avatar">SC</div>
+          <span class="board-role-badge">Suporte</span>
+        </div>
+        <div class="board-name">Sandra Costa</div>
+        <div class="board-desc">Atendimento e suporte aos membros</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TESTIMONIALS ═══ -->
+<section id="testimonials">
+  <div class="testimonials-wrap">
+    <div class="section-tag">Depoimentos</div>
+    <h2 class="section-title">O que nossos <em>membros dizem</em></h2>
+    <div class="testimonials-grid">
+
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">A ACECA mudou minha forma de ver o colecionismo. Encontrei pessoas que compartilham a mesma paixão e expandi meu acervo de forma inimaginável.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">CR</div>
+          <div>
+            <div class="author-name">Carlos Roberto</div>
+            <div class="author-role">Membro desde 2011 · Colecionador de Maços</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">Os eventos são incríveis! Cada encontro é uma oportunidade de aprender, trocar e fazer amigos que entendem a importância de preservar a história.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">AS</div>
+          <div>
+            <div class="author-name">Ana Sofia</div>
+            <div class="author-role">Membro desde 2014 · Filatelia & Arte Postal</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">Fui fundador e nunca imaginei que chegaríamos tão longe. A ACECA é hoje uma referência nacional que todo colecionador de SP precisa conhecer.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">JP</div>
+          <div>
+            <div class="author-name">João Paulo Ferrari</div>
+            <div class="author-role">Membro Fundador · Numismática</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDgwIDEwODAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2ZmZiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2NjYSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwb2x5Z29uIHBvaW50cz0iNTQwLDIwMCA5MDAsODAwIDE4MCw4MDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNnKSIgc3Ryb2tlLXdpZHRoPSI3NSIvPjxwb2x5Z29uIHBvaW50cz0iNTQwLDM5MCA3NTUsNzcwIDMyNSw3NzAiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=" alt="ACECA">
+      <p>Associação de Colecionadores e Tabacaria de Sorocaba. Preservando histórias desde 2009.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navegação</h4>
+      <ul>
+        <li><a href="#home">Início</a></li>
+        <li><a href="#story">Nossa História</a></li>
+        <li><a href="#events">Eventos</a></li>
+        <li><a href="#members">Membros</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Comunidade</h4>
+      <ul>
+        <li><a href="#board">Diretoria</a></li>
+        <li><a href="#testimonials">Depoimentos</a></li>
+        <li><a href="#" onclick="openModal(event)">Área do Membro</a></li>
+        <li><a href="#" onclick="openModal(event)">Associar-se</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contato</h4>
+      <ul>
+        <li><a href="#">contato@aceca.com.br</a></li>
+        <li><a href="#">(15) 3333-0000</a></li>
+        <li><a href="#">R. das Coleções, 42 - Sorocaba/SP</a></li>
+        <li><a href="#">Seg–Sex 10h–18h</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2025 <span>ACECA</span> — Associação de Colecionadores e Tabacaria. Todos os direitos reservados.</p>
+  </div>
+</footer>
+
+<!-- ═══ LOGIN MODAL ═══ -->
+<div class="modal-overlay" id="loginModal" onclick="closeModalOutside(event)">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-logo">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDgwIDEwODAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzQ3MDA3YiIvPjxzdG9wIG9mZnNldD0iNTAlIiBzdG9wLWNvbG9yPSIjN2IwZmNjIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYTMyYmZmIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHBvbHlnb24gcG9pbnRzPSI1NDAsMjAwIDkwMCw4MDAgMTgwLDgwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2cpIiBzdHJva2Utd2lkdGg9Ijc1Ii8+PHBvbHlnb24gcG9pbnRzPSI1NDAsMzkwIDc1NSw3NzAgMzI1LDc3MCIgZmlsbD0idXJsKCNnKSIvPjwvc3ZnPg==" alt="ACECA" style="height:44px">
+    </div>
+    <h2 class="modal-title">Área do Membro</h2>
+    <p class="modal-sub">Entre com suas credenciais para acessar a plataforma.</p>
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" placeholder="seu@email.com.br">
+    </div>
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="loginPass" placeholder="••••••••">
+    </div>
+    <div class="forgot"><a href="#">Esqueceu sua senha?</a></div>
+    <button class="btn-form" onclick="handleLogin()">Entrar na plataforma</button>
+    <div class="modal-footer">
+      Não é membro? <a href="#">Solicite sua associação</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══ BACKEND NOTE (MySQL schema) ═══ -->
+<!--
+==========================================================
+  ACECA — MySQL Database Schema
+==========================================================
+
+CREATE DATABASE aceca CHARACTER SET utf8mb4;
+USE aceca;
+
+CREATE TABLE members (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  name        VARCHAR(120) NOT NULL,
+  email       VARCHAR(180) UNIQUE NOT NULL,
+  password    VARCHAR(255) NOT NULL,          -- bcrypt hashed
+  member_since DATE NOT NULL,
+  role        ENUM('member','board','admin') DEFAULT 'member',
+  bio         TEXT,
+  photo_url   VARCHAR(512),
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE collections (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  member_id   INT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  name        VARCHAR(100) NOT NULL,
+  category    VARCHAR(80),
+  description TEXT,
+  item_count  INT DEFAULT 0
+);
+
+CREATE TABLE board_positions (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  member_id   INT NOT NULL REFERENCES members(id),
+  position    ENUM('president','finance','it','support') NOT NULL,
+  term_start  DATE,
+  term_end    DATE,
+  active      BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE events (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  title       VARCHAR(180) NOT NULL,
+  description TEXT,
+  event_date  DATE NOT NULL,
+  time_start  TIME,
+  time_end    TIME,
+  location    VARCHAR(255),
+  type        ENUM('upcoming','past') DEFAULT 'upcoming',
+  cover_image VARCHAR(512),
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE event_photos (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  event_id    INT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  photo_url   VARCHAR(512) NOT NULL,
+  caption     VARCHAR(255),
+  uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE testimonials (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  member_id   INT REFERENCES members(id),
+  content     TEXT NOT NULL,
+  rating      TINYINT DEFAULT 5,
+  approved    BOOLEAN DEFAULT FALSE,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sample API endpoints (Node.js/Express + mysql2):
+-- POST   /api/auth/login      → verify email+bcrypt → return JWT
+-- GET    /api/members         → public list
+-- GET    /api/events          → filter by ?type=upcoming|past
+-- GET    /api/board           → board members + positions
+-- GET    /api/testimonials    → approved only
+-- POST   /api/auth/register   → new member registration (admin approval)
+==========================================================
+-->
+
+<script>
+// ─── NAV SCROLL ───
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+});
+
+// ─── HAMBURGER ───
+function toggleMenu() {
+  document.getElementById('navLinks').classList.toggle('open');
+}
+
+// ─── MODAL ───
+function openModal(e) {
+  if (e) e.preventDefault();
+  document.getElementById('loginModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('loginModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('loginModal')) closeModal();
+}
+
+// ─── LOGIN HANDLER ───
+function handleLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const pass  = document.getElementById('loginPass').value;
+  if (!email || !pass) {
+    showToast('⚠️ Preencha e-mail e senha.');
+    return;
+  }
+  // In production: POST /api/auth/login with {email, password}
+  showToast('✓ Credenciais enviadas! (conectar ao backend MySQL)');
+  setTimeout(closeModal, 1400);
+}
+
+// ─── TOAST ───
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── EVENT FILTER ───
+function filterEvents(type, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.event-card').forEach(card => {
+    card.style.display = (type === 'all' || card.dataset.type === type) ? '' : 'none';
+  });
+}
+
+// ─── COUNTER ANIMATION ───
+function animateCounters() {
+  document.querySelectorAll('[data-target]').forEach(el => {
+    const target = +el.dataset.target;
+    const duration = 1800;
+    const step = target / (duration / 16);
+    let current = 0;
+    const interval = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = target >= 1000
+        ? Math.floor(current).toLocaleString('pt-BR')
+        : Math.floor(current);
+      if (current >= target) clearInterval(interval);
+    }, 16);
+  });
+}
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { animateCounters(); observer.disconnect(); }
+  });
+}, { threshold: 0.3 });
+observer.observe(document.querySelector('.stats-bar'));
+
+// ─── CLOSE NAV ON LINK ───
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', () => {
+    document.getElementById('navLinks').classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>

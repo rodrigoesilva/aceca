@@ -1,0 +1,11 @@
+
+CREATE DATABASE aceca;
+USE aceca;
+
+CREATE TABLE Usuarios (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Nome VARCHAR(150),
+    Email VARCHAR(150),
+    SenhaHash TEXT,
+    DataCadastro DATETIME DEFAULT CURRENT_TIMESTAMP
+);
