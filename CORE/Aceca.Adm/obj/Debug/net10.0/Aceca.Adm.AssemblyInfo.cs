@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Aceca.Site")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d789883cabf0e51b2be634123585b1be8512bfa9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+12c65c32bb98f19f5238ec560f1263a80cd6a69e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Aceca.Site")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Aceca.Site")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

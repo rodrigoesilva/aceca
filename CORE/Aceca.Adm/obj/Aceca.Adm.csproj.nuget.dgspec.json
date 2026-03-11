@@ -1,15 +1,15 @@
 {
   "format": 1,
   "restore": {
-    "C:\\aceca\\CORE\\Aceca.Adm\\Aceca.Adm.csproj": {}
+    "C:\\ACECA\\CORE\\Aceca.Adm\\Aceca.Adm.csproj": {}
   },
   "projects": {
-    "C:\\aceca\\CORE\\Aceca.Adm\\Aceca.Adm.csproj": {
+    "C:\\ACECA\\CORE\\Aceca.Adm\\Aceca.Adm.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\aceca\\CORE\\Aceca.Adm\\Aceca.Adm.csproj",
+        "projectUniqueName": "C:\\ACECA\\CORE\\Aceca.Adm\\Aceca.Adm.csproj",
         "projectName": "Aceca.Site",
-        "projectPath": "C:\\aceca\\CORE\\Aceca.Adm\\Aceca.Adm.csproj",
+        "projectPath": "C:\\ACECA\\CORE\\Aceca.Adm\\Aceca.Adm.csproj",
         "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
         "outputPath": "C:\\aceca\\CORE\\Aceca.Adm\\obj\\",
         "projectStyle": "PackageReference",
