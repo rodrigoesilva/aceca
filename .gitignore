@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/CORE/.vs/ACECA/FileContentIndex
+/CORE/Aceca.Adm/bin/Debug/net10.0/Aceca.Site.dll
+/CORE/Aceca.Adm/bin/Debug/net10.0/Aceca.Site.exe
+/CORE/Aceca.Adm/bin/Debug/net10.0/Aceca.Site.pdb
+/CORE/Aceca.Adm/bin/Debug/net10.0/Aceca.Site.staticwebassets.runtime.json
