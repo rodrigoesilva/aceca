@@ -436,3 +436,17 @@ FodyWeavers.xsd
 /CORE/Aceca.Site/obj/Debug/net10.0/Aceca.Site.genruntimeconfig.cache
 /CORE/Aceca.Site/obj/Debug/net10.0/ApiEndpoints.json
 /CORE/Aceca.Site/obj/project.nuget.cache
+/CORE/Aceca.Adm/obj/Debug/net10.0/Aceca.Adm.AssemblyInfo.cs
+/CORE/Aceca.Adm/obj/Debug/net10.0/Aceca.Adm.AssemblyInfoInputs.cache
+/CORE/Aceca.Adm/obj/Release/net10.0/Aceca.Adm.AssemblyInfo.cs
+/CORE/Aceca.Adm/obj/Release/net10.0/Aceca.Adm.AssemblyInfoInputs.cache
+/CORE/Aceca.Adm/obj/Release/net10.0/Aceca.Adm.assets.cache
+/CORE/Aceca.Adm/obj/Release/net10.0/Aceca.Adm.GeneratedMSBuildEditorConfig.editorconfig
+/CORE/Aceca.Adm/obj/Release/net10.0/rpswa.dswa.cache.json
+/CORE/Aceca.Site/bin/Release/net10.0/Aceca.Site.deps.json
+/CORE/Aceca.Site/bin/Release/net10.0/Aceca.Site.dll
+/CORE/Aceca.Site/bin/Release/net10.0/Aceca.Site.exe
+/CORE/Aceca.Site/bin/Release/net10.0/Aceca.Site.pdb
+/CORE/Aceca.Site/bin/Release/net10.0/Aceca.Site.staticwebassets.endpoints.json
+/CORE/Aceca.Site/bin/Release/net10.0/Aceca.Site.staticwebassets.runtime.json
+/CORE/Aceca.Site/bin/Release/net10.0/appsettings.json
