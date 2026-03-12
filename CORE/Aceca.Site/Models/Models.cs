@@ -4,6 +4,94 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Aceca.Site.Models
 {
+    #region admin
+
+    [Table("admin_usuario")]
+    public class AdminUsuario
+    {
+        [Key] public int? Id { get; set; }
+        [MaxLength(80)] public string? Nome { get; set; } = string.Empty;
+        public string? Usuario { get; set; }
+        public string? Senha { get; set; }
+        [Column("senha_aberta")] public string? SenhaAberta { get; set; }
+    }
+
+    [Table("configuracoes")]
+    public class Configuracao
+    {
+        [Key] public int? Id { get; set; }
+        [MaxLength(6)] public string? CorHeader { get; set; } = string.Empty;
+        [MaxLength(6)] public string? CorFundo { get; set; } = string.Empty;
+        [MaxLength(255)] public string? TipoFundo { get; set; } = string.Empty;
+        [MaxLength(6)] public string? CorRodape { get; set; } = string.Empty;
+        [MaxLength(255)] public string? TipoRodape { get; set; } = string.Empty;
+        [MaxLength(6)] public string? CorCopyright { get; set; } = string.Empty;
+        public int? Paginacao { get; set; }
+        [MaxLength(6)] public string? CorBase1 { get; set; } = string.Empty;
+        [MaxLength(6)] public string? CorBase2 { get; set; } = string.Empty;
+        [MaxLength(6)] public string? CorBase3 { get; set; } = string.Empty;
+        [MaxLength(6)] public string? CorBase4 { get; set; } = string.Empty;
+        [MaxLength(6)] public string? CorBase5 { get; set; } = string.Empty;
+        [MaxLength(255)] public string? NomeDoSite { get; set; } = string.Empty;
+        [MaxLength(255)] public string? DataRodape { get; set; } = string.Empty;
+        [MaxLength(255)] public string? SiteEmail { get; set; } = string.Empty;
+        [MaxLength(255)] public string? SiteEmailSenha { get; set; } = string.Empty;
+        [MaxLength(255)] public string? PublicKey { get; set; } = string.Empty;
+        [MaxLength(255)] public string? PrivatecKey { get; set; } = string.Empty;
+        [MaxLength(255)] public string? YoutubeApiKey { get; set; } = string.Empty;
+    }
+
+    #endregion
+
+    #region agenda
+
+    [Table("agenda")]
+    public class Agenda
+    {
+        [Key] public int? Id { get; set; }
+        [MaxLength(255)] public string? Titulo { get; set; } = string.Empty;
+        [MaxLength(255)] public string? SubTitulo { get; set; } = string.Empty;
+        public string? Data { get; set; }
+        public string? BreveDesc { get; set; }
+        public string? Descricao { get; set; }
+        [MaxLength(255)] public string? Video { get; set; } = string.Empty;
+        [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
+        [MaxLength(255)] public string? Slug { get; set; } = string.Empty;
+    }
+
+    [Table("agenda_img")]
+    public class AgendaImg
+    {
+        [Key] public int? Id { get; set; }
+        public int? agendaId { get; set; }
+        [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
+    }
+
+    #endregion
+
+    #region fabrica
+
+    [Table("fabricas")]
+    public class Fabrica
+    {
+        [Key] public int? Id { get; set; }
+        [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
+        public string? Descricao { get; set; }
+        [Column("ano_inicio")] public DateTime? AnoInicio { get; set; } = DateTime.UtcNow;
+        [Column("ano_fim")] public DateTime? AnoFim { get; set; } = DateTime.UtcNow;
+    }
+
+    [Table("fabricas_fase")]
+    public class FabricaFase
+    {
+        [Key] public int? Id { get; set; }
+        public int? fabrica { get; set; }
+        [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
+    }
+
+    #endregion 
+
+    #region Marca
 
     [Table("marcas")]
     public class Marca
@@ -56,81 +144,6 @@ namespace Aceca.Site.Models
         public MarcaRaridade? MarcaRaridade { get; set; }
         public MarcaSubTipo? MarcaSubTipo { get; set; }
         public MarcaTipo? MarcaTipo { get; set; }
-    }
-
-    [Table("admin_usuario")]
-    public class AdminUsuario
-    {
-        [Key] public int? Id { get; set; }
-        [MaxLength(80)] public string? Nome { get; set; } = string.Empty;
-        public string? Usuario { get; set; }
-        public string? Senha { get; set; }
-        [Column("senha_aberta")] public string? SenhaAberta { get; set; }
-    }
-
-    [Table("agenda")]
-    public class Agenda
-    {
-        [Key] public int? Id { get; set; }
-        [MaxLength(255)] public string? Titulo { get; set; } = string.Empty;
-        [MaxLength(255)] public string? SubTitulo { get; set; } = string.Empty;
-        public string? Data { get; set; }
-        public string? BreveDesc { get; set; }
-        public string? Descricao { get; set; }
-        [MaxLength(255)] public string? Video { get; set; } = string.Empty;
-        [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
-        [MaxLength(255)] public string? Slug { get; set; } = string.Empty;
-    }
-
-    [Table("agenda_img")]
-    public class AgendaImg
-    {
-        [Key] public int? Id { get; set; }
-        public int? agendaId { get; set; }
-        [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
-    }
-
-    [Table("configuracoes")]
-    public class Configuracao
-    {
-        [Key] public int? Id { get; set; }
-        [MaxLength(6)] public string? CorHeader { get; set; } = string.Empty;
-        [MaxLength(6)] public string? CorFundo { get; set; } = string.Empty;
-        [MaxLength(255)] public string? TipoFundo { get; set; } = string.Empty;
-        [MaxLength(6)] public string? CorRodape { get; set; } = string.Empty;
-        [MaxLength(255)] public string? TipoRodape { get; set; } = string.Empty;
-        [MaxLength(6)] public string? CorCopyright { get; set; } = string.Empty;
-        public int? Paginacao { get; set; }
-        [MaxLength(6)] public string? CorBase1 { get; set; } = string.Empty;
-        [MaxLength(6)] public string? CorBase2 { get; set; } = string.Empty;
-        [MaxLength(6)] public string? CorBase3 { get; set; } = string.Empty;
-        [MaxLength(6)] public string? CorBase4 { get; set; } = string.Empty;
-        [MaxLength(6)] public string? CorBase5 { get; set; } = string.Empty;
-        [MaxLength(255)] public string? NomeDoSite { get; set; } = string.Empty;
-        [MaxLength(255)] public string? DataRodape { get; set; } = string.Empty;
-        [MaxLength(255)] public string? SiteEmail { get; set; } = string.Empty;
-        [MaxLength(255)] public string? SiteEmailSenha { get; set; } = string.Empty;
-        [MaxLength(255)] public string? PublicKey { get; set; } = string.Empty;
-        [MaxLength(255)] public string? PrivatecKey { get; set; } = string.Empty;
-        [MaxLength(255)] public string? YoutubeApiKey { get; set; } = string.Empty;
-    }
-
-    [Table("fabricas")]
-    public class Fabrica
-    {
-        [Key] public int? Id { get; set; }
-        [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
-        public string? Descricao { get; set; }
-        [Column("ano_inicio")] public DateTime? AnoInicio { get; set; } = DateTime.UtcNow;
-        [Column("ano_fim")] public DateTime? AnoFim { get; set; } = DateTime.UtcNow;
-    }
-
-    [Table("fabricas_fase")]
-    public class FabricaFase
-    {
-        [Key] public int? Id { get; set; }
-        public int? fabrica { get; set; }
-        [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
     }
 
     [Table("marcas_filtro_dimensao")]
@@ -212,6 +225,9 @@ namespace Aceca.Site.Models
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
     }
 
+    #endregion
+
+    #region Pais
     [Table("paises")]
     public class Pais
     {
@@ -243,6 +259,10 @@ namespace Aceca.Site.Models
         [Column("brevedesc")] public string? BreveDescricao { get; set; }
         [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
     }
+
+    #endregion
+
+    #region Socio
 
     [Table("socios")]
     public class Socio
@@ -319,12 +339,20 @@ namespace Aceca.Site.Models
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
     }
 
+    #endregion
+
+    #region tipos
+
     [Table("tipo_pagamento")]
     public class TipoPagamento
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
     }
+
+    #endregion
+
+    #region Usuario
 
     [Table("usuarios")]
     public class Usuario
@@ -341,6 +369,10 @@ namespace Aceca.Site.Models
 
         [NotMapped]
         public string? Token { get; set; }
+        [NotMapped]
+        public DateTime? DataCriacao { get; set; } = DateTime.Now;
+        [NotMapped]
+        public DateTime? DataAtualizacao { get; init; } = DateTime.Now;
     }
 
     [Table("usuarios_log")]
@@ -360,6 +392,8 @@ namespace Aceca.Site.Models
         [MaxLength(50)] public string? Longitude { get; set; }
         [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
     }
+
+    #endregion
 }
 
 //###############################

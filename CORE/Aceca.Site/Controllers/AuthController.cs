@@ -33,13 +33,10 @@ namespace Aceca.Site.Controllers
         {
             return View("~/Views/Pages/MiscNotAuthorized.cshtml");
         }
-        
-        [HttpGet]
-        //public IActionResult Login() => View();
-        public IActionResult Login()
+        public IActionResult Access()
         {
-            return RedirectToAction("Index", "Auth");
-            //return View();
+            //return RedirectToAction("Index", "Usuario");
+            return RedirectToAction("Index", "Marcas");
         }
 
         [HttpPost]

@@ -3,11 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.3.11512.155
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aceca.Adm", "Aceca.Adm\Aceca.Adm.csproj", "{6E2B2D90-4102-0278-2AF3-DFAA0547AA2D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aceca.Site", "Aceca.Site\Aceca.Site.csproj", "{C862BAC0-2316-4816-806B-341CA4713ECD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CookieAuthDemo", "..\..\ACECA_\CookieAuthDemo\CookieAuthDemo.csproj", "{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aceca.Adm", "Aceca.Adm\Aceca.Adm.csproj", "{3767F823-78B4-F175-4F0D-868D2382B53A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,18 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6E2B2D90-4102-0278-2AF3-DFAA0547AA2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6E2B2D90-4102-0278-2AF3-DFAA0547AA2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6E2B2D90-4102-0278-2AF3-DFAA0547AA2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6E2B2D90-4102-0278-2AF3-DFAA0547AA2D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C862BAC0-2316-4816-806B-341CA4713ECD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C862BAC0-2316-4816-806B-341CA4713ECD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C862BAC0-2316-4816-806B-341CA4713ECD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C862BAC0-2316-4816-806B-341CA4713ECD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3767F823-78B4-F175-4F0D-868D2382B53A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3767F823-78B4-F175-4F0D-868D2382B53A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3767F823-78B4-F175-4F0D-868D2382B53A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3767F823-78B4-F175-4F0D-868D2382B53A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -104,7 +104,7 @@ app.UseEndpoints(endpoints =>
     name: "default",
     // pattern: "{controller=Home}/{action=Index}/{Id?}");
     //pattern: "{controller=Dashboards}/{action=Index}/{Id?}");
-    pattern: "{controller=Auth}/{action=Login}/{Id?}");
+    pattern: "{controller=Auth}/{action=Index}/{Id?}");
 });
 
 app.Run();

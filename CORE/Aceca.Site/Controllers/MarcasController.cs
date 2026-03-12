@@ -3,28 +3,14 @@ using Aceca.Site.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using System.Data;
-using System.Text;
-using System.Xml.Linq;
-using static System.Net.Mime.MediaTypeNames;
 
 
 namespace Aceca.Site.Controllers
 {
     public class MarcasController : Controller
     {
-        public MarcasController(ILogger<MarcasController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
-        {
-            _logger = logger;
-            _db = db;
-            _appEnvironment = env;
-            _appConfiguration = cfg;
-
-            imgBaseUrl = _appConfiguration["Url:Img"]!;
-        }
-
         #region variaveis
 
         private readonly ILogger<MarcasController> _logger;
@@ -32,12 +18,25 @@ namespace Aceca.Site.Controllers
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
 
-        private readonly string imgBaseUrl = string.Empty;
+        private readonly string _imgBaseUrl = string.Empty;
+        private readonly string _appBaseUrl = string.Empty;
         //
 
         #endregion
 
-        [AllowAnonymous]
+        public MarcasController(ILogger<MarcasController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
+        {
+            _logger = logger;
+            _db = db;
+            _appEnvironment = env;
+            _appConfiguration = cfg;
+
+            _imgBaseUrl = _appConfiguration["Url:Img"]!;
+            _appBaseUrl = _appConfiguration["App:Url"]!;
+        }
+
+
+        //[AllowAnonymous]
         public ActionResult Index()
         {
             // return Redirect("https://www.google.com");
@@ -215,7 +214,6 @@ namespace Aceca.Site.Controllers
                     message = mensagemErro
                 });
             }
-
         }
 
         [HttpGet("{id}")]
@@ -329,7 +327,7 @@ namespace Aceca.Site.Controllers
                     param_PesquisarDescricao = jObj["param_PesquisarDescricao"].ToObject<bool>(),
                 };
 
-                string strUrlPath = imgBaseUrl;
+                string strUrlPath = _imgBaseUrl;
 
                 IQueryable<Marca> query = _db.Marcas;
 
