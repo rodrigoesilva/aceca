@@ -13,6 +13,22 @@ let var_Nome = 'Marcas',
     varTbl_Obj = $('.datatables-basic'),
     varTbl_Data;
 
+let var_Filtrado = false,
+    var_ImgAlt = "ACECA",
+    urlImgModal = "../img/logo/logo.png",
+    urlImgModalIcon = "../img/logo/logo01.png",
+    urlImgModaltext = "../img/logo/logo02.png";
+
+var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
+
+const swalWithBootstrapButtons = Swal.mixin({
+    customClass: {
+        confirmButton: "btn btn-label-secondary waves-effect",
+        cancelButton: "btn btn-label-primary waves-effect"
+    },
+    buttonsStyling: false
+});
+
 let borderColor, bodyBg, headingColor;
 
 if (isDarkStyle) {
@@ -32,59 +48,350 @@ $.busyLoadSetup({
 
 //#endregion
 
-//#region DeclareDatatable (jquery)
-$(function () {
-
-    // Variable declaration for table
-    var productAdd = '/Ecommerce/ProductAdd',
-        statusObj = {
-            1: { title: 'Scheduled', class: 'bg-label-warning' },
-            2: { title: 'Publish', class: 'bg-label-success' },
-            3: { title: 'Inactive', class: 'bg-label-danger' }
-        },
-        categoryObj = {
-            0: { title: 'Household' },
-            1: { title: 'Office' },
-            2: { title: 'Electronics' },
-            3: { title: 'Shoes' },
-            4: { title: 'Accessories' },
-            5: { title: 'Game' }
-        },
-        stockObj = {
-            0: { title: 'Out_of_Stock' },
-            1: { title: 'In_Stock' }
-        },
-        stockFilterValObj = {
-            0: { title: 'Out of Stock' },
-            1: { title: 'In Stock' }
-        };
-});
-
-//#endregion
-
 //#region CARREGAMENTO INICIAL
 
 document.addEventListener('DOMContentLoaded', function () {
     (function () {
-        console.log(`LIST ${var_Controller}- Todos os recursos terminaram o carregamento!`);
+        console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
+
+        fn_Auth();
+
+        fn_Limpar();
+
+        // Carrega Dados Grid
+        //fn_GridListAll();
+
+        // Filtros
+        fn_LoadFiltros();
+        fn_ChangeFiltros();
+
+        $('.btn-filter').on('click', function () {
+            fn_Filtrar();
+        });
+
+        $('.btn-filter-clear').on('click', function () {
+            fn_Limpar();
+        });
 
         // Update the clock immediately on load, and then every second
         fn_UpdateClock();
         setInterval(fn_UpdateClock, 1000); // Updates every 1000 milliseconds
 
-        fn_Auth();
-
-        // Filtros
-        fn_LoadFiltros();
-
-        // Carrega Dados Grid
-        fn_GridList();
+        //console.log("DOMContentLoaded var_Filtrado ::: ", var_Filtrado);
     })();
 });
 
 //#endregion
 
+//#region Botoes
+function fn_Filtrar() {
+    // Btn Filtro
+    //console.log("fn_Filtrar ::: ");
+    //console.log("fn_Filtrar var_Filtrado ::: ", var_Filtrado);
+
+    let objFiltro = {
+        param_MarcaFaseId: $('#cmb_MarcaFase').find('option:selected').val(),
+        param_MarcaFabricaId: $('#cmb_MarcaFabrica').find('option:selected').val(),
+        param_MarcaFabricaNome: $('#cmb_MarcaFabrica').find('option:selected').text(),
+        param_MarcaTipoId: $('#cmb_MarcaTipo').find('option:selected').val(),
+        param_MarcaSubTipoId: $('#cmb_MarcaSubTipo').find('option:selected').val(),
+        param_IncluidoPor: $('#txt_IncluidoPor').val(),
+        param_CodigoAceca: $('#txt_CodigoAceca').val(),
+        param_NomeMarca: $('#txt_NomeMarca').val(),
+        param_PesquisarDescricao: $('#chk_PesquisarDescricao')[0].checked,
+    };
+    /*
+    console.log("fn_Filtrar objFiltro : ", objFiltro);
+    console.log("fn_Filtrar param_MarcaFaseId ::: ", objFiltro.param_MarcaFaseId);
+    console.log("fn_Filtrar param_MarcaFabricaId ::: ", objFiltro.param_MarcaFabricaId);
+    console.log("fn_Filtrar param_MarcaTipoId ::: ", objFiltro.param_MarcaTipoId);
+    console.log("fn_Filtrar param_MarcaSubTipoId ::: ", objFiltro.param_MarcaSubTipoId);
+    console.log("fn_Filtrar param_IncluidoPor ::: ", objFiltro.param_IncluidoPor.length);
+    console.log("fn_Filtrar param_CodigoAceca ::: ", objFiltro.param_CodigoAceca.length);
+    console.log("fn_Filtrar param_NomeMarca ::: ", objFiltro.param_NomeMarca.length);
+    */
+
+    if (objFiltro.param_MarcaFaseId < 0
+        && objFiltro.param_MarcaFabricaId <= 0
+        && objFiltro.param_MarcaTipoId <= 0
+        && objFiltro.param_MarcaSubTipoId <= 0
+        && objFiltro.param_IncluidoPor.length <= 0
+        && objFiltro.param_CodigoAceca.length <= 0
+        && objFiltro.param_NomeMarca.length <= 0
+    ) {
+
+        //console.log("fn_Filtrar objFiltro NULO ::: ", objFiltro);
+
+        Swal.fire({
+            title: 'Dados Inv&aacute;lidos!!',
+            icon: 'error',
+            html: `<b>Os filtros n&atilde;o foram informados corretamente!!!</b>`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-label-danger waves-effect'
+            }
+        }).then((result) => {
+            fn_Limpar();
+        });
+    } else {
+        if (objFiltro.param_MarcaFaseId < 0) {
+            Swal.fire({
+                title: "OPS !!!",
+                html: `Nenhuma opção de fase foi informada!`,
+                imageUrl: `${urlImgModal}`,
+                imageWidth: 300,
+                imageAlt: `${var_ImgAlt}`,
+            })
+        } else {
+            if (objFiltro.param_MarcaFaseId == 0) {
+                swalWithBootstrapButtons.fire({
+                    title: "Tem certeza?",
+                    html: `Essa opção aumentará o tempo  <br><br> de carregamento dos dados!`,
+                    imageUrl: `${urlImgModal}`,
+                    imageWidth: 300,
+                    imageAlt: `${var_ImgAlt}`,
+                    showCancelButton: true,
+                    confirmButtonText: "Sim, vou aguardar!",
+                    cancelButtonText: "Não, vou escolher uma fase!",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (var_Filtrado) {
+                            Swal.fire({
+                                title: "Carregando!",
+                                text: "Aguarde o carregamento das informações.",
+                                icon: "success"
+                            }).then((result) => {
+                                fn_FiltrarDados(objFiltro);
+                            });
+                        } else {
+                            fn_ModalConfirmarFiltros();
+                        }
+                    } else if (
+                        result.dismiss === Swal.DismissReason.cancel
+                    ) {
+                        $('#cmb_MarcaFase').prop('selectedIndex', 0).change();
+                    }
+                });
+            } else {
+                fn_FiltrarDados(objFiltro);
+            }
+        }
+    }
+}
+
+function fn_Limpar() {
+    //console.log("fn_Limpar ::: ");
+
+    $.busyLoadFull("show");
+
+    $('#cmb_MarcaFase').prop('selectedIndex', 0).change();
+    $('#cmb_MarcaFabrica').prop('selectedIndex', 0).change();
+    $('#cmb_MarcaTipo').prop('selectedIndex', 0).change();
+    $('#cmb_MarcaSubTipo').prop('selectedIndex', 0).change();
+    $('#txt_IncluidoPor').val('');
+    $('#txt_CodigoAceca').val('');
+    $('#txt_NomeMarca').val('');
+    $('#chk_PesquisarDescricao')[0].checked = false;
+    var_Filtrado = false;
+
+    $.busyLoadFull("hide");
+}
+
+function fn_FiltrarDados(objFiltro) {
+    //console.log("bfn_FiltrarDados ::: ", objFiltro);
+
+    $.busyLoadFull("show");
+
+    varTbl_Obj.DataTable().clear().destroy();
+
+    //console.log("fn_FiltrarDados objFiltro ::: ", objFiltro);
+
+    var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeData = 'JSON',
+        varAjax_TypeContent = 'application/json; charset=utf-8';
+
+    $.ajax({
+        url: varAjax_UrlController,
+        type: varAjax_TypeAction,
+        dataType: varAjax_TypeData,
+        contentType: varAjax_TypeContent,
+        data: JSON.stringify(objFiltro),
+        success: function (result) {
+            //console.log("fn_FiltrarDados result ::: ", result);
+
+            if (result.bResult === false) {
+                //console.log("busyLoadFull ::: hide");
+                $.busyLoadFull("hide");
+
+                Swal.fire({
+                    title: 'OPS!!',
+                    icon: 'error',
+                    html: `<b> Erro ocorrido <br><br>${result.message}</b>`,
+                    focusConfirm: false,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: {
+                        confirmButton: 'btn btn-label-danger waves-effect'
+                    }
+                });
+            } else {
+
+                var_Filtrado = true;
+
+                ///console.log("busyLoadFull ::: hide");
+                $.busyLoadFull("hide");
+
+                let lstData = result.data;
+                //console.log("jObj ::: ", jObj);
+
+                fn_GridListFilter(lstData, objFiltro, "fn_FiltrarDados");
+            }
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            fn_ModalErro(xhr, textStatus, errorThrown);
+        },
+    });
+}
+
+//#endregion
+
 //#region Filtros
+
+function fn_ChangeFiltros() {
+
+    $('#cmb_MarcaFase').on('change', function () {
+
+        let idMarcaFase = $(this).find('option:selected').val();
+
+        //console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
+        //console.log("cmb_MarcaFase change var_Filtrado ::: ", var_Filtrado);
+
+        if (idMarcaFase < 0) {
+            //fn_Limpar();
+        } else {
+            if (!var_Filtrado) {
+                if (idMarcaFase == 0) {
+
+                    swalWithBootstrapButtons.fire({
+                        title: "Tem certeza?",
+                        html: `Essa opção aumentará o tempo  <br><br> de carregamento dos dados!`,
+                        imageUrl: `${urlImgModal}`,
+                        imageWidth: 300,
+                        imageAlt: `${var_ImgAlt}`,
+                        showCancelButton: true,
+                        confirmButtonText: "Sim, vou aguardar!",
+                        cancelButtonText: "Não, vou escolher uma fase!",
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            if (var_Filtrado) {
+                                Swal.fire({
+                                    title: "Carregando!",
+                                    text: "Aguarde o carregamento das informações.",
+                                    icon: "success"
+                                }).then((result) => {
+                                    fn_FiltrarDados(objFiltro);
+                                });
+                            } else {
+                                fn_ModalConfirmarFiltros();
+                            }
+                        } else if (
+                            result.dismiss === Swal.DismissReason.cancel
+                        ) {
+                            $('#cmb_MarcaFase').prop('selectedIndex', 0).change();
+                        }
+                    });
+                } else {
+
+                    //fn_ModalConfirmarFiltros();
+                }
+            } else {
+                fn_Filtrar();
+            }
+        }
+    });
+
+    $('#cmb_MarcaFabrica').on('change', function () {
+
+        let idMarcaFabrica = $(this).find('option:selected').val();
+
+        console.log("cmb_MarcaFabrica change idMarcaFabrica ::: ", idMarcaFabrica);
+        console.log("cmb_MarcaFabrica change var_Filtrado ::: ", var_Filtrado);
+
+        if (idMarcaFabrica <= 0) {
+            //fn_Limpar();
+        } else {
+            if (!var_Filtrado) {
+                fn_ModalConfirmarFiltros();
+            } else {
+                fn_Filtrar();
+            }
+        }
+    });
+
+    $('#cmb_MarcaTipo').on('change', function () {
+
+        let idMarcaTipo = $(this).find('option:selected').val();
+
+        console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
+        console.log("cmb_MarcaTipo change var_Filtrado ::: ", var_Filtrado);
+
+        if (idMarcaTipo <= 0) {
+            //fn_Limpar();
+        } else {
+            if (!var_Filtrado) {
+                fn_ModalConfirmarFiltros();
+            } else {
+                Swal.fire({
+                    title: 'Tipo Selecionado !!!',
+                    html: `Para realizar o filtro por Tipo, <br><br> selecione o Sub-Tipo.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
+                    imageUrl: `${urlImgModaltext}`,
+                    imageWidth: 400,
+                    imageAlt: `${var_ImgAlt}`,
+                    focusConfirm: false,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: {
+                        confirmButton: 'btn btn-primary waves-effect waves-light'
+                    },
+                }).then((result) => {
+                    //console.log("cmb_MarcaFase change result ::: ", result);
+                })
+            }
+        }
+    });
+
+    $('#cmb_MarcaSubTipo').on('change', function () {
+
+        let idMarcaSubTipo = $(this).find('option:selected').val();
+
+        console.log("cmb_MarcaSubTipo change idMarcaSubTipo ::: ", idMarcaSubTipo);
+        console.log("cmb_MarcaSubTipo change var_Filtrado ::: ", var_Filtrado);
+
+        if (idMarcaSubTipo <= 0) {
+            //fn_Limpar();
+        } else {
+            if (!var_Filtrado) {
+                fn_ModalConfirmarFiltros();
+            } else {
+                fn_Filtrar();
+            }
+        }
+    });
+
+    $('#chk_PesquisarDescricao').change(function () {
+        // 1. Get the checked status (boolean: true if checked, false otherwise)
+        const isChecked = $(this).is(':checked');
+        const checkboxValue = $(this).val();
+
+        let colDesc = varTbl_Data.settings()[0].aoColumns[8];
+
+        colDesc.bSearchable = isChecked;
+
+        varTbl_Data.rows().invalidate().draw();
+
+        $("input[type='search']").trigger("search");
+    });
+}
 
 function fn_LoadFiltros() {
     //console.log("fnItemLoadFiltros  ::: ");
@@ -96,7 +403,22 @@ function fn_LoadFiltros() {
     fn_LoadCmb_MarcaFase();
     fn_LoadCmb_MarcaFabrica();
     fn_LoadCmb_MarcaTipo();
-    fn_LoadCmb_MarcaSubTipo();
+    fn_LoadCmb_MarcaSubTipo(0);
+
+    $('#cmb_MarcaTipo').on('change', function () {
+        let idMarcaTipo = $(this).find('option:selected').val();
+
+        //console.log("cmb_MarcaTipo change  idMarcaTipo ::: ", idMarcaTipo);
+
+        //Limpar Combo cinema
+        document.querySelectorAll('#cmb_Cinema option').forEach(option => option.remove());
+
+        $("#cmb_Cinema").append($("<option></option>").val(0).html("-- Selecionar --"));
+
+        if ($(this).length <= 1 && idMarcaTipo > 0) {
+            fn_LoadCmb_MarcaSubTipo(idMarcaTipo);
+        }
+    });
 
     $.busyLoadFull("hide");
 }
@@ -111,30 +433,16 @@ function fn_LoadCmb_MarcaFase() {
                 success: function (data) {
                     //console.log("fn_LoadCmb_MarcaFase  data ::: ", data);
 
+                    $("#cmb_MarcaFase").append($("<option></option>").val(0).html("Todas"));
+
                     $.each(data, function (id, result) {
                         //console.log("fn_LoadCmb_MarcaFase  result id ::: ", id);
                         //console.log("fn_LoadCmb_MarcaFase  result ::: ", result);
                         $("#cmb_MarcaFase").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                    console.log("textStatus  :: ", textStatus);
-                    console.log("errorThrown  :: ", errorThrown);
-                    console.log("result  :: Error while posting SendResult");
-
-                    $.busyLoadFull("hide");
-
-                    Swal.fire({
-                        title: 'OPS!!',
-                        icon: 'error',
-                        html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-danger waves-effect'
-                        }
-                    });
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
                 },
             }
         );
@@ -157,24 +465,8 @@ function fn_LoadCmb_MarcaFabrica() {
                         $("#cmb_MarcaFabrica").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                    console.log("textStatus  :: ", textStatus);
-                    console.log("errorThrown  :: ", errorThrown);
-                    console.log("result  :: Error while posting SendResult");
-
-                    $.busyLoadFull("hide");
-
-                    Swal.fire({
-                        title: 'OPS!!',
-                        icon: 'error',
-                        html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-danger waves-effect'
-                        }
-                    });
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
                 },
             }
         );
@@ -197,37 +489,29 @@ function fn_LoadCmb_MarcaTipo() {
                         $("#cmb_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                    console.log("textStatus  :: ", textStatus);
-                    console.log("errorThrown  :: ", errorThrown);
-                    console.log("result  :: Error while posting SendResult");
-
-                    $.busyLoadFull("hide");
-
-                    Swal.fire({
-                        title: 'OPS!!',
-                        icon: 'error',
-                        html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-danger waves-effect'
-                        }
-                    });
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
                 },
             }
         );
     }
 }
-function fn_LoadCmb_MarcaSubTipo() {
+function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
+
+    //console.log("fn_LoadCmb_MarcaSubTipo  idMarcaTipo ::: ", idMarcaTipo);
 
     if ($('#cmb_MarcaSubTipo').length <= 1) {
+
+        let urlLoad = idMarcaTipo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaSubTipoByTipo` : `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`;
+
         $.ajax(
             {
                 crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`,
+                url: urlLoad,
                 type: 'GET',
+                data: {
+                    id: idMarcaTipo,
+                },
                 success: function (data) {
                     //console.log("fn_LoadCmb_MarcaSubTipo  data ::: ", data);
 
@@ -237,24 +521,8 @@ function fn_LoadCmb_MarcaSubTipo() {
                         $("#cmb_MarcaSubTipo").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                    console.log("textStatus  :: ", textStatus);
-                    console.log("errorThrown  :: ", errorThrown);
-                    console.log("result  :: Error while posting SendResult");
-
-                    $.busyLoadFull("hide");
-
-                    Swal.fire({
-                        title: 'OPS!!',
-                        icon: 'error',
-                        html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-danger waves-effect'
-                        }
-                    });
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
                 },
             }
         );
@@ -263,100 +531,81 @@ function fn_LoadCmb_MarcaSubTipo() {
 
 //#endregion
 
+//#region MODAL
+function fn_ModalConfirmarFiltros() {
+    Swal.fire({
+        title: 'Aten&ccedil;&atilde;o !!!',
+        html: `Para confirmar a op&ccedil;&atilde;o, <br><br> clique no bot&atilde;o Pesquisar.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
+        imageUrl: `${urlImgModaltext}`,
+        imageWidth: 400,
+        imageAlt: `${var_ImgAlt}`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-primary waves-effect waves-light'
+        },
+    }).then((result) => {
+        //console.log("cmb_MarcaFase change result ::: ", result);
+    })
+}
+
+function fn_ModalErro(xhr, textStatus, errorThrown) {
+    const responseMessage = xhr.responseText;
+    console.log("Server Response:", responseMessage);
+
+    const objError = JSON.parse(xhr.responseText);
+    //console.log("Server msg:", obj.message);
+
+    console.log("XMLHttpRequest  :: ", xhr);
+    console.log("textStatus  :: ", textStatus);
+    console.log("errorThrown  :: ", errorThrown);
+    console.log("result  :: Error while posting SendResult");
+
+    $.busyLoadFull("hide");
+
+    Swal.fire({
+        title: 'OPS!!',
+        icon: 'error',
+        html: `<b> Erro ocorrido <br><br>${objError.message}</b>`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-label-danger waves-effect'
+        }
+    });
+}
+//#endregion
+
 //#region GRID
-function fn_GridList() {
-    let varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varAjax_UrlController = `${var_Controller}/ListGrid`,
-        varAjax_TypeAction = 'GET',
+function fn_GridListFilter(lstData) {
 
-        varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9,],
-        varCol_Ordenacao = [2, ''], //set any columns order asc/desc[[2, 'asc']],
+    //console.log("fn_GridListFilter lstData ::: ", lstData);
+
+    var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
+
+        varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9],
+        varCol_Ordenacao = [2, 'asc'], //set any columns order asc/desc
 
         varItems_QtdPorPage = 25,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
         varItems_Row = null,
         varItems_Id = 0;
 
-    // List Table
-    // --------------------------------------------------------------------
-
-    // E-commerce Products datatable
-
     if (varTbl_Obj.length) {
 
-        $.busyLoadFull("show");
+        //console.log("fn_GridListFilter lstData ::: ", lstData);
 
-        varTbl_Data = varTbl_Obj.DataTable({
-            //serverSide: true,
-            //paging: true,
-            //scrollCollapse: true,
-            //ordering: true,
-            //destroy: true,
+        varTbl_Data = $('.datatables-basic').DataTable({
+            //"processing": true,
+            //"deferRender": true,
+            data: lstData,
 
-            ajax: {
-                crossDomain: true,
-                url: varAjax_UrlController,
-                type: varAjax_TypeAction,
-                dataSrc: function (result) {
-                    console.log("result fn :: ", result)
-
-                    if (result.bResult === false) {
-                        $.busyLoadFull("hide");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> Erro ocorrido <br><br>${result.message}</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
-                    } else {
-                        if (result.bResult === true && result.type === "VAZIO") {
-
-                            $.busyLoadFull("hide");
-
-                            Swal.fire({
-                                title: 'SEM DADOS!!',
-                                icon: 'info',
-                                html: `N&atilde;o h&aacute; dados da API INGRESSO para serem carregados, para o cinema selecionado!!`,
-                                focusConfirm: false,
-                                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                                customClass: {
-                                    confirmButton: 'btn btn-label-secondary waves-effect'
-                                },
-                            });
-
-                        } else {
-
-                            //console.log("data.data :: ", result.data)
-
-                            return result.data;
-                        }
-                    }
-                }
-            },
             columns: [
-                // columns according to JSON
-                { data: 'id' },
-                { data: 'id' },
-                { data: 'nomeFase' },
-                { data: 'codigoAceca' },
-                { data: 'imagem' },
-                { data: 'imagemDetalhe' },
-                { data: 'nomeMarca' },
-                { data: 'fabricaNome' },
-                { data: 'descricao' },
-                { data: 'incluidoPor' },
-                { data: 'fabricaId' }
-            ],
-            columnDefs: [
-                // For Responsive
+                // COLUNA - Responsive
                 {
                     visible: false,
+                    data: 'id',
                     className: 'control',
                     searchable: false,
                     orderable: false,
@@ -366,10 +615,12 @@ function fn_GridList() {
                         return '';
                     }
                 },
-                // For Checkboxes
+                // COLUNA - ID checkbox
                 {
                     visible: false,
+                    data: 'id',
                     targets: 1,
+                    searchable: false,
                     orderable: false,
                     checkboxes: {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
@@ -377,182 +628,81 @@ function fn_GridList() {
                     render: function () {
                         return '<input type="checkbox" class="dt-checkboxes form-check-input" >';
                     },
-                    searchable: false
                 },
                 // COLUNA - nomeFase
-                {
-                    targets: 2,
-                    className: "text-center",
-                    responsivePriority: 1,
-                    searchable: false,
-                    orderable: false,
-                    render: function (data, type, full, meta) {
-                        let id = full.id;
-
-                        if (data !== undefined && data !== null) {
-                            if (id !== 0 && type === 'display') {
-                                return data;
-                            } else {
-                                return '';
-                            }
-                        } else {
-                            return '';
-                        }
-                    }
-                },
+                { data: 'nomeFase', className: "text-center" },
                 // COLUNA - codigoAceca
-                {
-                    targets: 3,
-                    className: "text-nowrap text-center",
-                    render: function (data, type, full, meta) {
-                        let id = full.id;
-
-                        if (data !== undefined && data !== null) {
-                            if (id !== 0 && type === 'display') {
-                                return data;
-                            } else {
-                                return '';
-                            }
-                        } else {
-                            return '';
-                        }
-                    }
-                },
+                { data: 'codigoAceca', className: "text-center" },
                 // COLUNA - imagem
                 {
-                    targets: 4,
-                    className: "text-center",
-                    render: function (data, type, full, meta) {
-                        let id = full.id;
-
-                        if (data !== undefined && data !== null) {
-                            if (id !== 0 && type === 'display') {
-
-                                let varImagem = full.imagem,
-                                    varCodigoAceca = full.codigoAceca;
-                                return data;
-                                //return `<img name="myImg" class="td-img cmyImg" src="${varImagem}" alt="${varCodigoAceca}">`;
-                            } else {
-                                return '<div class="td-img-placeholder">📷</div>';
-                            }
-                        } else {
-                            return '<div class="td-img-placeholder">📷</div>';
-                        }
+                    data: 'imagem', className: "text-center",
+                    render: function (data, type, row, meta) {
+                        return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
                 },
                 // COLUNA - imagemDetalhe
                 {
-                    targets: 5,
-                    className: "text-center",
-                    render: function (data, type, full, meta) {
-                        let id = full.id;
-
-                        if (data !== undefined && data !== null) {
-                            if (id !== 0 && type === 'display') {
-
-                                let varImagemmDetalhe = full.imagemDetalhe,
-                                    varCodigoAceca = full.codigoAceca;
-                                return data;
-                                //return `<img name="myImg" class="td-img cmyImg" src="${varImagemmDetalhe}" alt="${varCodigoAceca}">`;
-                            } else {
-                                return '<div class="td-img-placeholder">📷</div>';
-                            }
-                        } else {
-                            return '<div class="td-img-placeholder">📷</div>';
-                        }
+                    data: 'imagemDetalhe', className: "text-center", 
+                    render: function (data, type, row, meta) {
+                        return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
                 },
                 // COLUNA - nomeMarca
-                {
-                    targets: 6,
-                    className: "text-center",
-                    render: function (data, type, full, meta) {
-                        let id = full.id;
-
-                        if (data !== undefined && data !== null) {
-                            if (id !== 0 && type === 'display') {
-                                return data;
-                            } else {
-                                return '';
-                            }
-                        } else {
-                            return '';
-                        }
-                    }
-                },
+                { data: 'nomeMarca', className: "text-center" },
                 // COLUNA - fabricaNome
-                {
-                    targets: 7,
-                    className: "text-start",
-                    ///sWidth: '25%'
-                    render: function (data, type, full, meta) {
-                        let id = full.id;
-
-                        if (data !== undefined && data !== null) {
-                            if (id !== 0 && type === 'display') {
-                                return data;
-                            } else {
-                                return '';
-                            }
-                        } else {
-                            return '';
-                        }
-                    }
-                },
+                { data: 'fabricaNome', className: "text-start", },
                 // COLUNA - descricao
-                {
-                    targets: 8,
-                    className: "text-start",
-                    //sWidth: '25%'
+                { data: 'descricao', className: "text-start", searchable: false, },
+                // COLUNA - incluidoPor
+                { data: 'incluidoPor', className: "text-center",
                     render: function (data, type, full, meta) {
                         let id = full.id;
 
-                        if (data !== undefined && data !== null) {
-                            if (id !== 0 && type === 'display') {
-                                return data;
-                            } else {
-                                return '';
-                            }
-                        } else {
-                            return '';
-                        }
-                    }
-                },
-                // COLUNA - incluidoPor
-                {
-                    targets: 9,
-                    className: "text-nowrap text-center",
-                    //sWidth: '25%'
-                    render: function (data, type, full, meta) {
-                        let id = full.id;
+                        //data = full[9];
 
                         if (data !== undefined && data !== null) {
                             if (id !== 0 && type === 'display') {
 
                                 let bQuebraLinha = data.includes("/");
-                                //console.log("incluidoPor bQuebraLinha :::: ",bQuebraLinha );
+                                //console.log("incluidoPor bQuebraLinha :::: ",bQuebraLinha );                               
 
-                                const firstSlashIndex = data.indexOf("/");
-                                //console.log("incluidoPor :::: ", firstSlashIndex); // Output: 5
+                                let ulIn = `<ul class=" m-0 avatar-group d-flex align-items-center" style="list-style: none;">`;
+                                let htmlContent = '';
 
-                                return data.replaceAll("/", "<br><br>");
+                                for (let i = 0; i < data.split("/").length; i++) {
+                                    htmlContent += 
+                                        `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top" data-popup="tooltip-custom" data-incluido="${data.split("/")[i]}" title="${data.split("/")[i]}">
+                                        <img src="../img/avatars/${i}.png" alt="Avatar" class="rounded-circle">
+                                    </li >`;
+                                }
+
+                                let dataImg = ulIn + htmlContent + "</ul>";
+
+                                //console.log("incluidoPor for :::: ", dataImg); 
+
+                                return dataImg; // data.replaceAll("/", "<br><br>");
                             } else {
                                 return '';
                             }
                         } else {
                             return '';
                         }
+                    },
+                    filter: function (data, type) {
+                        return data; // Use the text for filtering
                     }
                 },
-                // Actions
+                // COLUNA - incluidoPor Hide
+                { data: 'incluidoPor', visible: false, },
+                // COLUNA - Botoes Acoes
                 {
                     visible: false,
+                    data: 'id',
                     targets: -1,
-                    title: 'Actions',
                     searchable: false,
                     orderable: false,
                     render: function (data, type, full, meta) {
-                        let id = full.id;
+
                         let btns = '';
 
                         //console.log("Acao data ::: ", data);
@@ -564,19 +714,19 @@ function fn_GridList() {
                             let itemObjJson = encodeURIComponent(JSON.stringify(full));
 
                             btns =
-                                '<div class="d-inline-block" data-pi="' + full[0] + '">' +
+                                '<div class="d-inline-block" data-id="' + full.id + '">' +
                                 '<a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line ri-22px"></i></a>' +
                                 '<ul class="dropdown-menu dropdown-menu-end m-0">' +
-                                '<li><a href="javascript:fnItem_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="dropdown-item edit-record" data-pi="' + full[0] + '">Editar</a></li>' +
+                                '<li><a href="javascript:fnItem_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="dropdown-item edit-record" data-id="' + full.id + '">Editar</a></li>' +
                                 '<div class="dropdown-divider"></div>' +
-                                '<li><a href="javascript:fnItem_PopInfoPi(' + itemObjJson + ',' + "'View'" + ');" class="dropdown-item edit-record">Visualizar PI</a></li>' +
+                                '<li><a href="javascript:fnItem_PopInfoPi(' + itemObjJson + ',' + "'View'" + ');" class="dropdown-item edit-record">Visualizar</a></li>' +
                                 '</ul>' +
                                 '</div>'
                         }
 
                         return (btns);
                     }
-                }
+                },
             ],
             order: varCol_Ordenacao,
             dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
@@ -592,8 +742,8 @@ function fn_GridList() {
             buttons: [
                 {
                     extend: 'collection',
-                    className: 'btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
-                    text: '<i class="ri-external-link-line me-sm-1"></i> <span class="d-none d-sm-inline-block">Exportar</span>',
+                    className: 'btn btn-primary dropdown-toggle me-4 waves-effect waves-light',
+                    text: '<i class="ri-download-line ri-16px me-2"></i><span class="d-none d-sm-inline-block">Exportar </span>',
                     buttons: [
                         // BOTAO CABECALHO - EXPORTAR - IMPRIMIR
                         {
@@ -647,12 +797,13 @@ function fn_GridList() {
                     ]
                 },
             ],
+            // For responsive popup
             responsive: {
                 details: {
                     display: $.fn.dataTable.Responsive.display.modal({
                         header: function (row) {
                             var data = row.data();
-                            return 'Detalhes de ' + data['full_name'];
+                            return 'Details of ' + data['product_name'];
                         }
                     }),
                     type: 'column',
@@ -679,65 +830,56 @@ function fn_GridList() {
                     }
                 }
             },
-            error: function (obj, textstatus) {
-                $.busyLoadFull("hide");
-                Swal.fire({
-                    title: 'OPS!!',
-                    icon: 'error',
-                    html: `<b>` + obj.msg + `</b>`,
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-danger waves-effect'
-                    }
-                });
-                //alert(obj.msg);
-            },
-            initComplete: function (settings, json) {
+            initComplete: function () {
+                //console.log("initComplete settings ::: ", settings);
+                //console.log( "initComplete json ::: ", json);
+
                 $.busyLoadFull("hide");
 
                 fn_GridComplete(this);
-
-                //fn_initComplete(this);
             }
         });
-        $('.dataTables_length').addClass('my-0');
-        $('.dt-action-buttons').addClass('pt-0');
-        $('.dt-buttons').addClass('d-flex flex-wrap');
     }
 }
 
 function fn_GridComplete(grid) {
+
+   // var_Filtrado = true;
 
     var thisApi = grid.api();
 
     var countRows = grid.api().rows().count();
     //console.log("countRows ::: ", countRows);
 
+
+    $('.card-header').after('<hr class="my-0">');
+
+    //Titulo Tabela
+    $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome}</h5>`);
+
+    $(".card-datatable").show();
+
     if (countRows > 0) {
+        $.busyLoadFull("hide");
 
         fn_Zoom();
 
-        $.busyLoadFull("hide");
+        //console.log("fn_GridComplete var_Filtrado ::: ", var_Filtrado);
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Carregado!',
-            html: `Dados carregados com sucesso.`,
-            focusConfirm: true,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-success waves-effect'
-            }
-        }).then((result) => {
-            $('.card-header').after('<hr class="my-0">');
-
-            //Titulo Filtros
-            $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome}</h5>`);
-
-            $(".card-datatable").show();
-        });
-
+        if (countRows <= 0) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Carregado!',
+                html: `Dados carregados com sucesso.`,
+                focusConfirm: true,
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: {
+                    confirmButton: 'btn btn-label-success waves-effect'
+                }
+            }).then((result) => {
+                
+            });
+        }
     } else {
         Swal.fire({
             title: 'SEM DADOS!!',
@@ -751,81 +893,14 @@ function fn_GridComplete(grid) {
         }).then((result) => {
             $('.card-header').after('<hr class="my-0">');
 
-            //Titulo Filtros
-            //$('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome}</h5>`);
+            //Titulo Tabela
+            $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome}</h5>`);
 
             $(".card-datatable").show();
         });
     }
-}
 
-function fn_initComplete(grid) {
-    // Adding status filter once table initialized
-    grid.api()
-        .columns(-2)
-        .every(function () {
-            var column = this;
-            var select = $(
-                '<select id="ProductStatus" class="form-select text-capitalize"><option value="">Select Status</option></select>'
-            )
-                .appendTo('.product_status')
-                .on('change', function () {
-                    var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                    column.search(val ? '^' + val + '$' : '', true, false).draw();
-                });
 
-            column
-                .data()
-                .unique()
-                .sort()
-                .each(function (d, j) {
-                    select.append('<option value="' + statusObj[d].title + '">' + statusObj[d].title + '</option>');
-                });
-        });
-    // Adding category filter once table initialized
-    grid.api()
-        .columns(3)
-        .every(function () {
-            var column = this;
-            var select = $(
-                '<select id="ProductCategory" class="form-select text-capitalize"><option value="">Category</option></select>'
-            )
-                .appendTo('.product_category')
-                .on('change', function () {
-                    var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                    column.search(val ? '^' + val + '$' : '', true, false).draw();
-                });
-
-            column
-                .data()
-                .unique()
-                .sort()
-                .each(function (d, j) {
-                    select.append('<option value="' + categoryObj[d].title + '">' + categoryObj[d].title + '</option>');
-                });
-        });
-    // Adding stock filter once table initialized
-    grid.api()
-        .columns(4)
-        .every(function () {
-            var column = this;
-            var select = $(
-                '<select id="ProductStock" class="form-select text-capitalize"><option value=""> Stock </option></select>'
-            )
-                .appendTo('.product_stock')
-                .on('change', function () {
-                    var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                    column.search(val ? '^' + val + '$' : '', true, false).draw();
-                });
-
-            column
-                .data()
-                .unique()
-                .sort()
-                .each(function (d, j) {
-                    select.append('<option value="' + stockObj[d].title + '">' + stockFilterValObj[d].title + '</option>');
-                });
-        });
 }
 
 //#endregion
@@ -881,7 +956,7 @@ function fn_Zoom() {
 
     // When the user clicks on <span> (x), close the modal
     $("#myModal").click(function () {
-        //console.log("fnZoom myModal::: ", img);
+        console.log("fnZoom myModal::: ", img);
 
         img01.className += " out";
         setTimeout(function () {

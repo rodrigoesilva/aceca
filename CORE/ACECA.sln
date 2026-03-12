@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aceca.Adm", "Aceca.Adm\Acec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aceca.Site", "Aceca.Site\Aceca.Site.csproj", "{C862BAC0-2316-4816-806B-341CA4713ECD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CookieAuthDemo", "..\..\ACECA_\CookieAuthDemo\CookieAuthDemo.csproj", "{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{C862BAC0-2316-4816-806B-341CA4713ECD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C862BAC0-2316-4816-806B-341CA4713ECD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C862BAC0-2316-4816-806B-341CA4713ECD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52DA4374-1C1E-B0D0-DC83-53380CD28EE2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

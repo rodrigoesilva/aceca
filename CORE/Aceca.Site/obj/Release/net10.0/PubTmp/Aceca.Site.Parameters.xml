@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <parameters>
   <parameter name="IIS Web Application Name" description="" value="site58158" tags="IisApp">
-    <parameterEntry kind="ProviderPath" scope="IisApp" match="^C:\\ACECA\\Aceca\.Site\\obj\\Release\\net10\.0\\PubTmp\\Out\\$" />
+    <parameterEntry kind="ProviderPath" scope="IisApp" match="^C:\\ACECA\\CORE\\Aceca\.Site\\obj\\Release\\net10\.0\\PubTmp\\Out\\$" />
   </parameter>
 </parameters>

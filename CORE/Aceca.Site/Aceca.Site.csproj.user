@@ -2,6 +2,6 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ActiveDebugProfile>https</ActiveDebugProfile>
-    <NameOfLastUsedPublishProfile>C:\ACECA\Aceca.Site\Properties\PublishProfiles\site58158-WebDeploy.pubxml</NameOfLastUsedPublishProfile>
+    <NameOfLastUsedPublishProfile>C:\ACECA\CORE\Aceca.Site\Properties\PublishProfiles\site58158-WebDeploy.pubxml</NameOfLastUsedPublishProfile>
   </PropertyGroup>
 </Project>

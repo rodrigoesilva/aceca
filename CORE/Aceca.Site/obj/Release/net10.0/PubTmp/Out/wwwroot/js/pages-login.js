@@ -1,26 +1,77 @@
+/**
+ * page-login
+ */
 
-const USUARIOS = [
-  { email:'admin@aceca.com.br',    senha:'Aceca@2025!',   nome:'Admin ACECA',     cargo:'admin' },
-  { email:'marcos@aceca.com.br',   senha:'Marcos#123',    nome:'Marcos Vieira',   cargo:'presidente' },
-  { email:'alberto@aceca.com.br',  senha:'Alberto@01',    nome:'Alberto Souza',   cargo:'presidente' },
-  { email:'carlos@aceca.com.br',   senha:'Carlos@02',     nome:'Carlos Lima',     cargo:'vice_presidente' },
-  { email:'ricardo@aceca.com.br',  senha:'Ricardo@03',    nome:'Ricardo Santos',  cargo:'dir_financeiro' },
-  { email:'pedro@aceca.com.br',    senha:'Pedro@04',      nome:'Pedro Martins',   cargo:'dir_extraordinario' },
-  { email:'camila@aceca.com.br',   senha:'Camila@05',     nome:'Camila Alves',    cargo:'gestao_ti' },
-  { email:'daniel@aceca.com.br',   senha:'Daniel@321',    nome:'Daniel Oliveira', cargo:'socio' },
-  { email:'fernanda@aceca.com.br', senha:'Fer@2023',      nome:'Fernanda Costa',  cargo:'socio' },
-  { email:'lucas@aceca.com.br',    senha:'Lucas#456',     nome:'Lucas Mendes',    cargo:'socio' },
-  { email:'julia@aceca.com.br',    senha:'Julia@789',     nome:'Julia Martins',   cargo:'socio' },
-  { email:'gustavo@aceca.com.br',  senha:'Gust@000',      nome:'Gustavo Lima',    cargo:'socio' },
-];
+'use strict';
 
-function verSenha() {
+//#region Declare
+
+let var_Nome = 'Auth',
+    var_Controller = '/Auth',
+    var_ControllerCmb = '/HelperExtensions',
+
+    varTbl_Obj = $('.datatables-basic'),
+    varTbl_Data;
+
+let var_Filtrado = false,
+    var_ImgAlt = "ACECA",
+    urlImgModal = "../img/logo/logo.png",
+    urlImgModalIcon = "../img/logo/logo01.png",
+    urlImgModaltext = "../img/logo/logo02.png";
+
+var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
+
+const swalWithBootstrapButtons = Swal.mixin({
+    customClass: {
+        confirmButton: "btn btn-label-secondary waves-effect",
+        cancelButton: "btn btn-label-primary waves-effect"
+    },
+    buttonsStyling: false
+});
+
+let borderColor, bodyBg, headingColor;
+
+if (isDarkStyle) {
+    borderColor = config.colors_dark.borderColor;
+    bodyBg = config.colors_dark.bodyBg;
+    headingColor = config.colors_dark.headingColor;
+} else {
+    borderColor = config.colors.borderColor;
+    bodyBg = config.colors.bodyBg;
+    headingColor = config.colors.headingColor;
+};
+
+$.busyLoadSetup({
+    animation: "slide",
+    background: "rgba(71,0,123, 0.86)"
+});
+
+//#endregion
+
+//#region CARREGAMENTO INICIAL
+
+document.addEventListener('DOMContentLoaded', function () {
+    (function () {
+        console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
+
+        fn_Limpar();
+    })();
+});
+
+//#endregion
+
+function fn_Limpar() {
+    document.getElementById('lEmail').value = '';
+    document.getElementById('lSenha').value = '';
+}
+
+function fn_Viewpass() {
   const i = document.getElementById('lSenha');
   i.type = i.type === 'password' ? 'text' : 'password';
 }
 
-async function fazerLogin(e) {
-    console.log("fazerLogin - e :::", e);
+async function fn_Auth(e) {
+    //console.log("fazerLogin - e :::", e);
 
   e.preventDefault();
   const email = document.getElementById('lEmail').value.trim().toLowerCase();
@@ -33,9 +84,8 @@ async function fazerLogin(e) {
   let user = null;
 
     try {
-        //const res = await fetch('/api/auth/login', {
 
-        const response = await fetch('/Auth/Login', {
+        const response = await fetch(`${var_Controller}/Login`, {
             method: 'POST',
             headers: {
                 "Content-Type": 'application/json',
@@ -50,15 +100,18 @@ async function fazerLogin(e) {
   }
 
   if (!user) {
-      const u = USUARIOS.find(x => x.email === email && x.senha === senha);
-
-      if (u)
-          user = {
-              nome: u.nome,
-              email: u.email,
-              cargo: u.cargo,
-              token: 'demo'
-          };
+      Swal.fire({
+          title: 'Dados Inv&aacute;lidos!!',
+          icon: 'error',
+          html: `<bN&atilde;o foi possível realizar o acesso!!!</b>`,
+          focusConfirm: false,
+          confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+          customClass: {
+              confirmButton: 'btn btn-label-danger waves-effect'
+          }
+      }).then((result) => {
+          fn_Limpar();
+      });
   }
 
   btn.disabled = false; btn.textContent = 'Entrar';
@@ -72,11 +125,12 @@ async function fazerLogin(e) {
       //window.location.href = 'dashboard.html';
       window.location.href = '/Marcas/Index';
   } else {
-    err.textContent = '❌ E-mail ou senha incorretos. Verifique suas credenciais.';
-      err.style.display = 'block';
+        err.textContent = '❌ E-mail ou senha incorretos. Verifique suas credenciais.';
+        err.style.display = 'block';
 
       console.log("fazerLogin - err :::", err);
 
-    document.getElementById('lSenha').value = '';
+      fn_Limpar();
   }
 }
+
