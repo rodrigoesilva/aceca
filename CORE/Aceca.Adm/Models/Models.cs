@@ -4,6 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Aceca.Adm.Models
 {
+    public class BaseModel
+    {
+        public bool? Ativo { get; set; }
+        public DateTime? DataCriacao { get; set; } = DateTime.Now;
+        public DateTime? DataAtualizacao { get; init; } = DateTime.Now;
+    }
+
+
     #region admin
 
     [Table("admin_usuario")]
@@ -46,47 +54,50 @@ namespace Aceca.Adm.Models
     #region agenda
 
     [Table("agenda")]
-    public class Agenda
+    public class Agenda : BaseModel
     {
         [Key] public int? Id { get; set; }
+        public string? Data { get; set; }
         [MaxLength(255)] public string? Titulo { get; set; } = string.Empty;
         [MaxLength(255)] public string? SubTitulo { get; set; } = string.Empty;
-        public string? Data { get; set; }
+       
         public string? BreveDesc { get; set; }
         public string? Descricao { get; set; }
-        [MaxLength(255)] public string? Video { get; set; } = string.Empty;
         [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
-        [MaxLength(255)] public string? Slug { get; set; } = string.Empty;
+        [MaxLength(255)] public string? Video { get; set; } = string.Empty;
     }
 
     [Table("agenda_img")]
     public class AgendaImg
     {
         [Key] public int? Id { get; set; }
-        public int? agendaId { get; set; }
+        public int? AgendaId { get; set; }
         [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
+
+        public Agenda? Agenda { get; set; }
     }
 
     #endregion
 
-    #region fabrica
+    #region Fabrica
 
     [Table("fabricas")]
-    public class Fabrica
+    public class Fabrica : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
         public string? Descricao { get; set; }
-        [Column("ano_inicio")] public DateTime? AnoInicio { get; set; } = DateTime.UtcNow;
-        [Column("ano_fim")] public DateTime? AnoFim { get; set; } = DateTime.UtcNow;
+        public int? FabricaFaseId { get; set; }
+
+        public FabricaFase? FabricaFase { get; set; }
     }
 
     [Table("fabricas_fase")]
-    public class FabricaFase
+    public class FabricaFase : BaseModel
     {
         [Key] public int? Id { get; set; }
-        public int? fabrica { get; set; }
-        [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
+        public int? Codigo { get; set; }
+        [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
     }
 
     #endregion 
@@ -94,7 +105,7 @@ namespace Aceca.Adm.Models
     #region Marca
 
     [Table("marcas")]
-    public class Marca
+    public class Marcas
     {
         [Key] public int? Id { get; set; }
         public int? BExibir { get; set; }
@@ -134,7 +145,6 @@ namespace Aceca.Adm.Models
         [MaxLength(50)][Column("incluido_por")] public string? IncluidoPor { get; set; }
         [Column("carimbo_de_hora")] public DateTime? CriadoEm { get; set; } = DateTime.UtcNow;
 
-
         public MarcaDimensao? MarcaDimensao { get; set; }
         public MarcaFabrica? MarcaFabrica { get; set; }
         public MarcaFase? MarcaFase { get; set; }
@@ -147,54 +157,46 @@ namespace Aceca.Adm.Models
     }
 
     [Table("marcas_filtro_dimensao")]
-    public class MarcaDimensao
+    public class MarcaDimensao : BaseModel
     {
         [Key] public int? Id { get; set; }
-        [MaxLength(50)] public string? tipo { get; set; } = string.Empty;
-        [MaxLength(50)] public string? descricao { get; set; } = string.Empty;
+        [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
     [Table("marcas_filtro_fabricas")]
-    public class MarcaFabrica
+    public class MarcaFabrica : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
-        public string? Descricao { get; set; }
-        [Column("ano_inicio")] public DateTime? AnoInicio { get; set; } = DateTime.UtcNow;
-        [Column("ano_fim")] public DateTime? AnoFim { get; set; } = DateTime.UtcNow;
+        [MaxLength(255)] public string? Descricao { get; set; }
     }
 
     [Table("marcas_filtro_fases")]
-    public class MarcaFase
+    public class MarcaFase : BaseModel
     {
         [Key] public int? Id { get; set; }
-
-        public bool Publica { get; set; }
-        [Column("menu_linha_exibir")] public int? MenuLinhaExibir { get; set; }
-        [Column("ordem_exibir")] public int? OrdemExibir { get; set; }
-        [MaxLength(255)] public string? Titulo { get; set; } = string.Empty;
-        [MaxLength(255)] public string? Abre { get; set; } = string.Empty;
-        [MaxLength(255)] public string? SubTitulo { get; set; } = string.Empty;
-        [Column("brevedesc")] public string? BreveDescricao { get; set; }
+        [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
+        public int? Ordem { get; set; }
+        [Column("menu_exibir")] public int? MenuExibir { get; set; }
         [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
     }
 
     [Table("marcas_filtro_finalidade")]
-    public class MarcaFinalidade
+    public class MarcaFinalidade : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
     [Table("marcas_filtro_impressora")]
-    public class MarcaImpressora
+    public class MarcaImpressora : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
     [Table("marcas_filtro_qualidade_imagem")]
-    public class MarcaQualidadeImagem
+    public class MarcaQualidadeImagem : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Sigla { get; set; } = string.Empty;
@@ -202,7 +204,7 @@ namespace Aceca.Adm.Models
     }
 
     [Table("marcas_filtro_raridade")]
-    public class MarcaRaridade
+    public class MarcaRaridade : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Sigla { get; set; } = string.Empty;
@@ -210,16 +212,17 @@ namespace Aceca.Adm.Models
     }
 
     [Table("marcas_filtro_subtipos")]
-    public class MarcaSubTipo
+    public class MarcaSubTipo : BaseModel
     {
         [Key] public int? Id { get; set; }
-        public int? TipoId { get; set; }
-        [MaxLength(50)] public string? Sigla { get; set; } = string.Empty;
+        public int? MarcaTipoId { get; set; }
+        [MaxLength(10)] public string? Sigla { get; set; } = string.Empty;
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
+        public MarcaTipo? MarcaTipo { get; set; }
     }
 
     [Table("marcas_filtro_tipos")]
-    public class MarcaTipo
+    public class MarcaTipo : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
@@ -229,35 +232,28 @@ namespace Aceca.Adm.Models
 
     #region Pais
     [Table("paises")]
-    public class Pais
+    public class Pais : BaseModel
     {
         [Key] public int? Id { get; set; }
-        [MaxLength(50)] public string? Controle { get; set; } = string.Empty;
-        [MaxLength(50)] public string? Tipo { get; set; } = string.Empty;
-        [MaxLength(255)][Column("pais")] public string? PaisNome { get; set; } = string.Empty;
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
-        [MaxLength(255)] public string? Comentario { get; set; } = string.Empty;
+        [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
+        public int? PaisCategoriaId { get; set; }
         [MaxLength(50)] public string? Imagem1 { get; set; } = string.Empty;
-        [MaxLength(255)][Column("nome_arquivo1")] public string? NomeArquvo1 { get; set; } = string.Empty;
-        [MaxLength(255)][Column("ext_arquivo1")] public string? ExtArquvo1 { get; set; } = string.Empty;
+        [MaxLength(255)][Column("ext_imagem1")] public string? ExtImagem1 { get; set; } = string.Empty;
         [MaxLength(50)] public string? Imagem2 { get; set; } = string.Empty;
-        [MaxLength(255)][Column("nome_arquivo2")] public string? NomeArquvo2 { get; set; } = string.Empty;
-        [MaxLength(255)][Column("ext_arquivo2")] public string? ExtArquvo2 { get; set; } = string.Empty;
+        [MaxLength(255)][Column("ext_imagem2")] public string? ExtImagem2 { get; set; } = string.Empty;
         [MaxLength(50)] public string? Imagem3 { get; set; } = string.Empty;
-        [MaxLength(255)][Column("nome_arquivo3")] public string? NomeArquvo3 { get; set; } = string.Empty;
-        [MaxLength(255)][Column("ext_arquivo3")] public string? ExtArquvo3 { get; set; } = string.Empty;
-        [MaxLength(50)][Column("colecao_de")] public string? ColecaoDe { get; set; } = string.Empty;
+        [MaxLength(255)][Column("ext_imagem3")] public string? ExtImagem3 { get; set; } = string.Empty;
+
+        public PaisCategoria? PaisCategoria { get; set; }
     }
 
     [Table("paises_categorias")]
-    public class PaisCategoria
+    public class PaisCategoria : BaseModel
     {
         [Key] public int? Id { get; set; }
-        public int? PaisId { get; set; }
-        [MaxLength(255)] public string? Titulo { get; set; } = string.Empty;
-        [MaxLength(255)] public string? SubTitulo { get; set; } = string.Empty;
-        [Column("brevedesc")] public string? BreveDescricao { get; set; }
-        [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
+        public int? CodigoId { get; set; }
+        [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;        
     }
 
     #endregion
@@ -265,12 +261,13 @@ namespace Aceca.Adm.Models
     #region Socio
 
     [Table("socios")]
-    public class Socio
+    public class Socios : BaseModel
     {
         [Key] public int? Id { get; set; }
-        public int? socioPerfilId { get; set; }
+        public int? SocioPerfilId { get; set; }
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
         public int? MostrarSite { get; set; }
+
         public SocioPerfil? SocioPerfil { get; set; }
     }
 
@@ -281,6 +278,8 @@ namespace Aceca.Adm.Models
         public int? SocioId { get; set; }
         public int? Dia { get; set; }
         public int? Mes { get; set; }
+
+        public Socios? Socio { get; set; }
     }
 
     [Table("socio_colecao_info")]
@@ -295,6 +294,8 @@ namespace Aceca.Adm.Models
         [MaxLength(255)] public string? QtdEmbalagem { get; set; } = string.Empty;
         [MaxLength(255)] public string? QtdEmbalagemNacional { get; set; } = string.Empty;
         public int? TempoColecao { get; set; }
+
+        public Socios? Socio { get; set; }
     }
 
     [Table("socio_contato")]
@@ -306,6 +307,8 @@ namespace Aceca.Adm.Models
         public int? DDD { get; set; }
         public int? Numero { get; set; }
         [MaxLength(255)] public string? Email { get; set; } = string.Empty;
+
+        public Socios? Socio { get; set; }
     }
 
     [Table("socio_endereco")]
@@ -320,6 +323,7 @@ namespace Aceca.Adm.Models
         [MaxLength(255)] public string? Cidade { get; set; } = string.Empty;
         [MaxLength(255)] public string? Estado { get; set; } = string.Empty;
         [MaxLength(255)] public string? CEP { get; set; } = string.Empty;
+        public Socios? Socio { get; set; }
     }
 
     [Table("socio_financeiro")]
@@ -330,10 +334,12 @@ namespace Aceca.Adm.Models
         public int? TipoPagamentoId { get; set; }
         public int? PagamentoEmDia { get; set; }
         [Column("dtUltimoPagamento")] public DateTime? DataUltimoPagamento { get; set; } = DateTime.UtcNow;
+        public Socios? Socio { get; set; }
+        public TipoPagamento? TipoPagamento { get; set; }
     }
 
     [Table("socio_perfil")]
-    public class SocioPerfil
+    public class SocioPerfil : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
@@ -344,7 +350,7 @@ namespace Aceca.Adm.Models
     #region tipos
 
     [Table("tipo_pagamento")]
-    public class TipoPagamento
+    public class TipoPagamento : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
@@ -355,7 +361,7 @@ namespace Aceca.Adm.Models
     #region Usuario
 
     [Table("usuarios")]
-    public class Usuario
+    public class Usuario : BaseModel
     {
         [Key] public int? Id { get; set; }
 
@@ -367,12 +373,10 @@ namespace Aceca.Adm.Models
         [MaxLength(255)][Column("_usuario")] public string? NomeUsuario { get; set; }
         [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
 
+        public Socios? Socio { get; set; }
+
         [NotMapped]
         public string? Token { get; set; }
-        [NotMapped]
-        public DateTime? DataCriacao { get; set; } = DateTime.Now;
-        [NotMapped]
-        public DateTime? DataAtualizacao { get; init; } = DateTime.Now;
     }
 
     [Table("usuarios_log")]
@@ -391,6 +395,8 @@ namespace Aceca.Adm.Models
         [MaxLength(50)] public string? Latitude { get; set; }
         [MaxLength(50)] public string? Longitude { get; set; }
         [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
+
+        public Usuario? Usuario { get; set; }
     }
 
     #endregion

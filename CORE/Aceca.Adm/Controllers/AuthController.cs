@@ -36,7 +36,7 @@ namespace Aceca.Adm.Controllers
         public IActionResult Access()
         {
             //return RedirectToAction("Index", "Usuario");
-            return RedirectToAction("Index", "Marcas");
+            return RedirectToAction("Inicio", "Home");
         }
 
         [HttpPost]
@@ -45,14 +45,14 @@ namespace Aceca.Adm.Controllers
             //TODO ********* para testes passa direto
             //return RedirectToAction("Inicio", "Home");
 
-            var user = await _db.Usuarios
+            var user = await _db.Usuario
                 .FirstOrDefaultAsync(s => s.Email == dto.Email.ToLower());
 
             if (!LoginValidacao(dto.Senha, user))
                 return Unauthorized(new { msg = "Credenciais inválidas." });
 
 
-            var socio = await _db.Socios
+            var socio = await _db.Socio
                 .Include(f => f.SocioPerfil)
                 .FirstOrDefaultAsync(s => s.Id == user.socioId);
             
@@ -100,7 +100,7 @@ namespace Aceca.Adm.Controllers
         #endregion
 
         #region Login - Token
-        private string LoginToken(Usuario user, Socio socio)
+        private string LoginToken(Usuario user, Socios socio)
         {
             string strTok = string.Empty;
 

@@ -1,6 +1,7 @@
-﻿using System.Diagnostics;
+﻿using Aceca.Adm.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Aceca.Adm.Models;
+using System.Diagnostics;
 
 namespace Aceca.Adm.Controllers
 {
@@ -11,6 +12,11 @@ namespace Aceca.Adm.Controllers
         public HomeController(ILogger<HomeController> logger)
         {
             _logger = logger;
+        }
+
+        public IActionResult Inicio()
+        {
+            return View("~/Views/Home/Index.cshtml");
         }
 
         public IActionResult Index()
@@ -27,6 +33,27 @@ namespace Aceca.Adm.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+
+        //
+
+
+
+        //[HttpGet("GetMaterials")]
+        //public async Task<IActionResult> GetProductsAsync()
+        [Authorize(Policy = "RequireAdministratorRole1")]
+        public ActionResult GetMaterials()
+        {
+            return Redirect("https://www.uol.cox.br");
+        }
+
+
+        //[HttpPost("CreateMaterial")]
+        //public async Task<IActionResult> CreateProductAsync()
+        public ActionResult CreateMaterial()
+        {
+            return Redirect("https://www.globo.com");
         }
     }
 }

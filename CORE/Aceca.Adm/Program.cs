@@ -102,9 +102,9 @@ app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllerRoute(
     name: "default",
-    // pattern: "{controller=Home}/{action=Index}/{Id?}");
-    //pattern: "{controller=Dashboards}/{action=Index}/{Id?}");
-    pattern: "{controller=Auth}/{action=Index}/{Id?}");
+   pattern: "{controller=Home}/{action=Inicio}/{Id?}");
+    
+    //pattern: "{controller=Auth}/{action=Index}/{Id?}");
 });
 
 app.Run();

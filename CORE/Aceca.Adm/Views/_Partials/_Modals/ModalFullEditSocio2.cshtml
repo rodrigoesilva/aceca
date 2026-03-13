@@ -1,0 +1,271 @@
+@*  *@
+@{
+  ViewData["Title"] = "Validation - Forms";
+}
+
+@section VendorStyles{
+<link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
+<link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
+<link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css" />
+<link rel="stylesheet" href="~/vendor/libs/typeahead-js/typeahead.css" />
+<link rel="stylesheet" href="~/vendor/libs/tagify/tagify.css" />
+<link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+}
+
+@section VendorScripts{
+<script src="~/vendor/libs/select2/select2.js"></script>
+<script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+<script src="~/vendor/libs/moment/moment.js"></script>
+<script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
+<script src="~/vendor/libs/typeahead-js/typeahead.js"></script>
+<script src="~/vendor/libs/tagify/tagify.js"></script>
+<script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
+<script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
+<script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+}
+
+@section PageScripts {
+<script src="~/js/form-validation.js"></script>
+}
+
+<!-- Add New Address Modal -->
+<div class="modal fade" id="modal-full-edit-item" tabindex="-1" aria-labelledby="modal-full-edit-item" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-simple modal-full-edit-item">
+    
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="backDropModalTitle">Editar Cinema</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body">
+        <!--<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="text-center mb-6">
+          <h4 class="address-title mb-2">Adicionar Cinema</h4>
+          <p class="address-subtitle">Add new address for express delivery</p>
+        </div>-->
+
+        <form id="form-modal-full-edit" class="row g-5" onsubmit="return false">
+          <input type="hidden" id="hdCinemaId" name="hdCinemaId" value="0"/>
+
+<div class="row">
+    <!-- FormValidation -->
+    <div class="col-12">
+        <div class="card">
+            <h5 class="card-header">FormValidation</h5>
+            <div class="card-body">
+
+                <form id="formValidationExamples" class="row g-4">
+                    <!-- Account Details -->
+                    <div class="col-12">
+                        <h6>1. Account Details</h6>
+                        <hr class="mt-0" />
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" id="formValidationName" class="form-control" placeholder="John Doe" name="formValidationName" />
+                            <label for="formValidationName">Full Name</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input class="form-control" type="email" id="formValidationEmail" name="formValidationEmail" placeholder="john.doe" />
+                            <label for="formValidationEmail">Email</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-password-toggle">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input class="form-control" type="password" id="formValidationPass" name="formValidationPass" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="multicol-password2" />
+                                    <label for="formValidationPass">Password</label>
+                                </div>
+                                <span class="input-group-text cursor-pointer" id="multicol-password2"><i class="ri-eye-off-line ri-20px"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-password-toggle">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input class="form-control" type="password" id="formValidationConfirmPass" name="formValidationConfirmPass" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="multicol-confirm-password2" />
+                                    <label for="formValidationConfirmPass">Confirm Password</label>
+                                </div>
+                                <span class="input-group-text cursor-pointer" id="multicol-confirm-password2"><i class="ri-eye-off-line ri-20px"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Personal Info -->
+                    <div class="col-12">
+                        <h6 class="mt-2">2. Personal Info</h6>
+                        <hr class="mt-0" />
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input class="form-control" type="file" id="formValidationFile" name="formValidationFile">
+                            <label for="formValidationFile">Profile Pic</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="date" class="form-control flatpickr-validation" name="formValidationDob" id="formValidationDob" placeholder="YYYY-MM-DD" required />
+                            <label for="formValidationDob">DOB</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <select id="formValidationSelect2" name="formValidationSelect2" class="form-select select2" data-allow-clear="true">
+                                <option value="">Select</option>
+                                <option value="Australia">Australia</option>
+                                <option value="Bangladesh">Bangladesh</option>
+                                <option value="Belarus">Belarus</option>
+                                <option value="Brazil">Brazil</option>
+                                <option value="Canada">Canada</option>
+                                <option value="China">China</option>
+                                <option value="France">France</option>
+                                <option value="Germany">Germany</option>
+                                <option value="India">India</option>
+                                <option value="Indonesia">Indonesia</option>
+                                <option value="Israel">Israel</option>
+                                <option value="Italy">Italy</option>
+                                <option value="Japan">Japan</option>
+                                <option value="Korea">Korea, Republic of</option>
+                                <option value="Mexico">Mexico</option>
+                                <option value="Philippines">Philippines</option>
+                                <option value="Russia">Russian Federation</option>
+                                <option value="South Africa">South Africa</option>
+                                <option value="Thailand">Thailand</option>
+                                <option value="Turkey">Turkey</option>
+                                <option value="Ukraine">Ukraine</option>
+                                <option value="United Arab Emirates">United Arab Emirates</option>
+                                <option value="United Kingdom">United Kingdom</option>
+                                <option value="United States">United States</option>
+                            </select>
+                            <label for="formValidationSelect2">Country</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" value="" class="form-control" name="formValidationLang" id="formValidationLang" placeholder="React" />
+                            <label for="formValidationLang">Languages</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <select class="selectpicker tech-select w-100" id="formValidationTech" data-style="btn-default" data-tick-icon="ri-check-line text-white" name="formValidationTech" multiple>
+                                <option>JavaScript</option>
+                                <option>TypeScript</option>
+                                <option>PHP</option>
+                                <option>Python</option>
+                                <option>Laravel</option>
+                                <option>.NET</option>
+                            </select>
+                            <label for="formValidationTech">Tech</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <select class="selectpicker hobbies-select w-100" id="formValidationHobbies" data-style="btn-default" data-tick-icon="ri-check-line text-white" name="formValidationHobbies" multiple>
+                                <option>Sports</option>
+                                <option>Movies</option>
+                                <option>Books</option>
+                            </select>
+                            <label for="formValidationHobbies">Hobbies</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating form-floating-outline">
+                            <textarea class="form-control h-px-100" id="formValidationBio" name="formValidationBio" placeholder="My name is john" rows="3"></textarea>
+                            <label for="formValidationBio">Bio</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Gender</label>
+                        <div class="form-check custom mb-2">
+                            <input type="radio" id="formValidationGender" name="formValidationGender" class="form-check-input" checked />
+                            <label class="form-check-label" for="formValidationGender">Male</label>
+                        </div>
+                        <div class="form-check custom">
+                            <input type="radio" id="formValidationGender2" name="formValidationGender" class="form-check-input" />
+                            <label class="form-check-label" for="formValidationGender2">Female</label>
+                        </div>
+                    </div>
+
+                    <!-- Choose Your Plan -->
+
+                    <div class="col-12">
+                        <h6 class="mt-2">3. Choose Your Plan</h6>
+                        <hr class="mt-0" />
+                    </div>
+                    <div class="row gy-3 mt-0">
+                        <div class="col-xl-3 col-md-5 col-sm-6 col-12">
+                            <div class="form-check custom-option custom-option-icon">
+                                <label class="form-check-label custom-option-content" for="basicPlanMain1">
+                                    <span class="custom-option-body">
+                                        <i class="ri-rocket-line"></i>
+                                        <span class="custom-option-title mb-2"> Starter </span>
+                                        <small> Get 5gb of space and 1 team member. </small>
+                                    </span>
+                                    <input name="formValidationPlan" class="form-check-input" type="radio" value="" id="basicPlanMain1" checked />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-5 col-sm-6 col-12">
+                            <div class="form-check custom-option custom-option-icon">
+                                <label class="form-check-label custom-option-content" for="basicPlanMain2">
+                                    <span class="custom-option-body">
+                                        <i class="ri-user-line"></i>
+                                        <span class="custom-option-title mb-2"> Personal </span>
+                                        <small> Get 15gb of space and 5 team member. </small>
+                                    </span>
+                                    <input name="formValidationPlan" class="form-check-input" type="radio" value="" id="basicPlanMain2" />
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-5 col-sm-6 col-12">
+                            <div class="form-check custom-option custom-option-icon">
+                                <label class="form-check-label custom-option-content" for="basicPlanMain3">
+                                    <span class="custom-option-body">
+                                        <i class="ri-vip-crown-line"></i>
+                                        <span class="custom-option-title mb-2"> Premium </span>
+                                        <small> Get 25gb of space and 15 members. </small>
+                                    </span>
+                                    <input name="formValidationPlan" class="form-check-input" type="radio" value="" id="basicPlanMain3" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="formValidationSwitch" name="formValidationSwitch" required />
+                            <label class="form-check-label" for="formValidationSwitch">Send me related emails</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="formValidationCheckbox" name="formValidationCheckbox" />
+                            <label class="form-check-label" for="formValidationCheckbox">Agree to our terms and conditions</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" name="submitButton" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- /FormValidation -->
+                    </div>
+
+                </form>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary btn-modal-full-edit-salvar data-submit me-sm-4 me-1">Adicionar</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -22,9 +22,9 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaFases
-                    ?.Where(s => s.Publica == true)
-                   .OrderBy(m => m.OrdemExibir)
+            var lstModel = await db.MarcaFase
+                    ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Ordem)
                    .AsNoTracking()
                    .ToListAsync();
 
@@ -32,7 +32,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
                 lst.Add(new SelectListItem
                 {
                     Value = element.Id.ToString(),
-                    Text = element.Titulo
+                    Text = element.Descricao
                 });
         }
         catch (Exception ex)
@@ -49,8 +49,8 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaTipos
-                  //?.Where(s => s.Ativo == true)
+            var lstModel = await db.MarcaTipo
+                  ?.Where(s => s.Ativo == true)
                   .OrderBy(m => m.Descricao)
                   .AsNoTracking()
                   .ToListAsync();
@@ -76,8 +76,8 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaSubTipos
-                  //?.Where(s => s.Ativo == true)
+            var lstModel = await db.MarcaSubTipo
+                  ?.Where(s => s.Ativo == true)
                   .OrderBy(m => m.Descricao)
                   .AsNoTracking()
                   .ToListAsync();
@@ -103,8 +103,8 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaSubTipos
-                  ?.Where(s => s.TipoId.Equals(id))
+            var lstModel = await db.MarcaSubTipo
+                  ?.Where(s => s.MarcaTipoId.Equals(id))
                   .OrderBy(m => m.Descricao)
                   .AsNoTracking()
                   .ToListAsync();
@@ -130,8 +130,8 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaFabricas
-                    //?.Where(s => s.Ativo == true)
+            var lstModel = await db.MarcaFabrica
+                    ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Nome)
                    .AsNoTracking()
                    .ToListAsync();
@@ -153,6 +153,119 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
     }
 
     #endregion
+
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_FabricaFase()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.FabricaFase
+                   ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_PaisCategoria()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.PaisCategoria
+                   ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_Socio()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.Socio
+                    ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Nome)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Nome
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_SocioPerfil()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.SocioPerfil
+                    ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+
 }
 
 public enum Permission
