@@ -108,43 +108,26 @@ namespace Aceca.Adm.Models
     public class Marcas
     {
         [Key] public int? Id { get; set; }
-        public int? BExibir { get; set; }
-        [Column("em_quarentena")] public int? EmQuarentena { get; set; }
-        [Column("faseId")] public int? MarcaFaseId { get; set; }
-        [Column("subtipoId")] public int? SubTipoId { get; set; }
-        [Column("_tipo")] public string? Tipo { get; set; }
-        [MaxLength(50)][Column("cod_aceca")] public string? CodigoAceca { get; set; }
-        [MaxLength(50)][Column("cod_old")] public string? CodigoOld { get; set; }
-        [MaxLength(50)][Column("cod_sc")] public string? CodigoSC { get; set; }
-        [Column("_lista")] public string? Lista { get; set; }
-        public int? FinalidadeId { get; set; }
-        [MaxLength(255)][Column("marca")] public string? NomeMarca { get; set; } = string.Empty;
-        public string? Descricao { get; set; } = string.Empty;
-        public int? RaridadeId { get; set; }
-        public int? FabricaId { get; set; }
-        [Column("fabrica_fase")] public int? FabricaFase { get; set; }
-        [MaxLength(255)][Column("fabrica_txt")] public string? FabricaDesc { get; set; } = string.Empty;
-        public int? DimensaoId { get; set; }
-        [MaxLength(50)][Column("_dimensao")] public string? Dimensao { get; set; } = string.Empty;
-        public string? Impressora { get; set; } = string.Empty;
-        public int? ImpressoraId { get; set; }
-        public string? Imagem { get; set; } = string.Empty;
-        [MaxLength(255)][Column("nome_imagem")] public string? NomeImagem { get; set; } = string.Empty;
-        [MaxLength(255)][Column("ext_imagem")] public string? ExtImagem { get; set; } = string.Empty;
-        public int? QualidadeImagemId { get; set; }
-        [MaxLength(255)][Column("detalhe")] public string? ImagemDetalhe { get; set; } = string.Empty;
-        [MaxLength(255)][Column("nome_detalhe")] public string? NomeImagemDetalhe { get; set; } = string.Empty;
-        [MaxLength(255)][Column("ext_detalhe")] public string? ExtImagemDetalhe { get; set; } = string.Empty;
-        public string? Lancamento { get; set; } = string.Empty;
-        public string? Final { get; set; } = string.Empty;
-        public string? Versao { get; set; } = string.Empty;
-        [MaxLength(50)][Column("pi-1")] public string? PI_1 { get; set; } = string.Empty;
-        [MaxLength(50)][Column("pi-2")] public string? PI_2 { get; set; } = string.Empty;
-        public string? Valor { get; set; } = string.Empty;
-        public string? Destino { get; set; } = string.Empty;
-        [MaxLength(50)][Column("incluido_por")] public string? IncluidoPor { get; set; }
-        [Column("carimbo_de_hora")] public DateTime? CriadoEm { get; set; } = DateTime.UtcNow;
 
+        public int? MarcaDimensaoId { get; set; }
+        public int? MarcaFabricaId { get; set; }
+        public int? MarcaFaseId { get; set; }
+        public int? MarcaFinalidadeId { get; set; }
+        public int? MarcaImpressoraId { get; set; }
+        public int? MarcaQualidadeImagemId { get; set; }
+        public int? MarcaRaridadeId { get; set; }
+        public int? MarcaSubTipoId { get; set; }
+        public string? CodigoAceca { get; set; }
+        public string? CodigoSC { get; set; }
+        public string? ImgPrincipal { get; set; }
+        public string? ImgDetalhe { get; set; }
+        public string? Nome { get; set; }
+        public string? Descricao { get; set; }
+        public string? Valor1PI { get; set; }
+        public string? Valor2PI { get; set; }
+        public string? Valor { get; set; }
+        public string? IncluidoPor { get; set; }
+        public int? EmQuarentena { get; set; }
         public MarcaDimensao? MarcaDimensao { get; set; }
         public MarcaFabrica? MarcaFabrica { get; set; }
         public MarcaFase? MarcaFase { get; set; }
@@ -153,7 +136,9 @@ namespace Aceca.Adm.Models
         public MarcaQualidadeImagem? MarcaQualidadeImagem { get; set; }
         public MarcaRaridade? MarcaRaridade { get; set; }
         public MarcaSubTipo? MarcaSubTipo { get; set; }
-        public MarcaTipo? MarcaTipo { get; set; }
+
+        [NotMapped] public int? bEmQuarentena { get; set; }
+
     }
 
     [Table("marcas_filtro_dimensao")]
@@ -375,8 +360,7 @@ namespace Aceca.Adm.Models
 
         public Socios? Socio { get; set; }
 
-        [NotMapped]
-        public string? Token { get; set; }
+        [NotMapped] public string? Token { get; set; }
     }
 
     [Table("usuarios_log")]

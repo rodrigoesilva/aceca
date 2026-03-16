@@ -99,7 +99,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = "DELETE - Id deve ser maior que 0",
+                    message = "GetFullById - Id deve ser maior que 0",
                     data = id
                 });
 

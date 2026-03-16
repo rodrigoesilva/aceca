@@ -16,6 +16,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
     #endregion
 
     #region Combos Marcas
+   
     public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFase()
     {
         var lst = new List<SelectListItem>();
@@ -25,6 +26,87 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
             var lstModel = await db.MarcaFase
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Ordem)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFinalidade()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.MarcaFinalidade
+                    ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFabrica()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.MarcaFabrica
+                    ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Nome)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Nome
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaDimensao()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.MarcaDimensao
+                    ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
                    .AsNoTracking()
                    .ToListAsync();
 
@@ -124,15 +206,15 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         return lst;
     }
-    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFabrica()
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaImpressora()
     {
         var lst = new List<SelectListItem>();
 
         try
         {
-            var lstModel = await db.MarcaFabrica
+            var lstModel = await db.MarcaImpressora
                     ?.Where(s => s.Ativo == true)
-                   .OrderBy(m => m.Nome)
+                   .OrderBy(m => m.Descricao)
                    .AsNoTracking()
                    .ToListAsync();
 
@@ -140,7 +222,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
                 lst.Add(new SelectListItem
                 {
                     Value = element.Id.ToString(),
-                    Text = element.Nome
+                    Text = element.Descricao
                 });
         }
         catch (Exception ex)
@@ -151,6 +233,33 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         return lst;
     }
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaQualidadeImagem()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.MarcaQualidadeImagem
+                    ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }   
 
     #endregion
 

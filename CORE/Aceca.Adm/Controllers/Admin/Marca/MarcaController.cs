@@ -1,5 +1,6 @@
 using Aceca.Adm.Data;
 using Aceca.Adm.Models;
+using Humanizer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -56,26 +57,25 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                        .Include(x => x.MarcaFase)
                        .Include(x => x.MarcaFabrica)
                        .Include(x => x.MarcaSubTipo)
-                       .Include(x => x.MarcaTipo)
+                       .Include(x => x.MarcaSubTipo.MarcaTipo)
                    .OrderBy(x => x.MarcaFaseId)
-                       .ThenBy(x => x.NomeMarca)
-                       .ThenBy(x => x.FabricaId)
-                       .ThenBy(x => x.FabricaDesc)
+                       .ThenBy(x => x.Nome)
+                       .ThenBy(x => x.MarcaFabricaId)
+                       .ThenBy(x => x.MarcaFabrica.Nome)
                        .ThenBy(x => x.Descricao)
                    .Select(x => new
                    {
                        x.Id,
                        NomeFase = x.MarcaFase.Descricao,
                        x.CodigoAceca,
-                       Imagem = $"<img name=\"myImg\" class=\"td-img cmyImg\" src=\"{strUrlPath}/{x.MarcaFaseId}/{(x.Imagem.Contains(".") ? x.Imagem : x.Imagem + x.ExtImagem)}\" alt=\"{x.CodigoAceca}\">",
-                       ImagemDetalhe = $"<img name=\"myImg\" class=\"td-img cmyImg\" src=\"{strUrlPath}/detalhes/{(x.ImagemDetalhe.Contains(".") ? x.ImagemDetalhe : x.ImagemDetalhe + x.ExtImagemDetalhe)}\" alt=\"{x.CodigoAceca}\">",
-                       x.NomeMarca,
-                       x.FabricaId,
-                       FabricaNome = x.FabricaDesc != null ? x.FabricaDesc : null,
+                       ImgPrincipal = $"<img name=\"myImg\" class=\"td-img cmyImg\" src=\"{strUrlPath}/{x.MarcaFaseId}/{x.ImgPrincipal}\" alt=\"{x.CodigoAceca}\">",
+                       ImgDetalhe = $"<img name=\"myImg\" class=\"td-img cmyImg\" src=\"{strUrlPath}/detalhes/{x.ImgDetalhe}\" alt=\"{x.CodigoAceca}\">",
+                       NomeMarca = x.Nome,
+                       x.MarcaFabricaId,
+                       FabricaNome = x.MarcaFabrica.Nome,
                        x.Descricao,
                        x.IncluidoPor,
                    })
-                   .Take(110)
                    .AsNoTracking()
                    .ToListAsync();
 
@@ -98,7 +98,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     $"{resultado.Kelvin} graus Kelvin");
                 return resultado;
                     */
-                bResult = true,
+                    bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
                     data = lstModel,
@@ -118,14 +118,83 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetFullById(int id)
         {
-            var m = new Marcas();
+            if (id < 1)
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "GetFullById - Id deve ser maior que 0",
+                    data = id
+                });
 
-            //var m = await _db.Marcas.Include(x=>x.Fase).Include(x=>x.Fabrica).Include(x=>x.Tipo).FirstOrDefaultAsync(x=>x.Id==id);
+            try
+            {
 
-            return m == null ? NotFound() : Ok(m);
+                var result = from m in _db.Marca
+                             join mfas in _db.MarcaFase on m.MarcaFaseId equals mfas.Id
+                             join msub in _db.MarcaSubTipo on m.MarcaSubTipoId equals msub.Id
+                             join mtip in _db.MarcaTipo on msub.MarcaTipoId equals mtip.Id
+                             join mfin in _db.MarcaFinalidade on m.MarcaFinalidadeId equals mfin.Id
+                             join mr in _db.MarcaRaridade on m.MarcaRaridadeId equals mr.Id
+                             //join mfab in _db.MarcaFabrica on m.MarcaFabricaId equals mfab.Id
+                             join mfab_temp in _db.MarcaFabrica on m.MarcaFabricaId equals mfab_temp.Id into grouping
+                             from mfab in grouping.DefaultIfEmpty()
+                             join mdim in _db.MarcaDimensao on m.MarcaDimensaoId equals mdim.Id
+                             join mimp in _db.MarcaImpressora on m.MarcaImpressoraId equals mimp.Id
+                             join mqua in _db.MarcaQualidadeImagem on m.MarcaQualidadeImagemId equals mqua.Id
+                             where m.Id == id
+                             select new
+                             {
+                                 Marca = m,
+                                 MarcaFase = mfas,
+                                 MarcaSubTipo = msub,
+                                 MarcaTipo = mtip,
+                                 MarcaFinalidade = mfin,
+                                 MarcaRaridade = mr,
+                                 MarcaFabrica = mfab,
+                                 MarcaDimensao = mdim,
+                                 MarcaImpressora = mimp,
+                                 MarcaQualidadeImagem = mqua,
+                             };
+
+                var lstModel = await result.AsNoTracking().ToListAsync();
+
+                if (lstModel.Count <= 0)
+                {
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "ERRO - VAZIO - lstResult",
+                        message = "listagem em branco",
+                        data = lstModel
+                    });
+                }
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = lstModel.FirstOrDefault()
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ListGrid : {ex?.Message}";
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
         }
 
         [HttpPost]
@@ -237,14 +306,14 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     query = query.Where(p => p.MarcaFaseId.Equals(paramDynObj.param_MarcaFaseId));
 
                 if (paramDynObj?.param_MarcaFabricaId >= 0)
-                    query = query.Where(p => p.FabricaDesc.Equals(paramDynObj.param_MarcaFabricaNome));
+                    query = query.Where(p => p.MarcaFabrica.Nome.Equals(paramDynObj.param_MarcaFabricaNome));
                 // query = query.Where(p => p.FabricaId.Equals(paramDynObj.param_MarcaFabricaId));
                 /*
                 if (paramDynObj?.param_MarcaTipoId >= 0)
                     query = query.Where(p => p.SubTipoId.Equals(paramDynObj.param_MarcaTipoId));
                 */
                 if (paramDynObj?.param_MarcaSubTipoId >= 0)
-                    query = query.Where(p => p.SubTipoId.Equals(paramDynObj.param_MarcaSubTipoId));
+                    query = query.Where(p => p.MarcaSubTipoId.Equals(paramDynObj.param_MarcaSubTipoId));
 
                 if (!string.IsNullOrWhiteSpace(paramDynObj?.param_IncluidoPor))
                     query = query.Where(p => p.IncluidoPor.Contains(paramDynObj.param_IncluidoPor));
@@ -253,40 +322,39 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     query = query.Where(p => p.CodigoAceca.Contains(paramDynObj.param_CodigoAceca));
 
                 if (!string.IsNullOrWhiteSpace(paramDynObj?.param_NomeMarca))
-                        query = paramDynObj.param_PesquisarDescricao 
-                        ? query.Where(p => p.NomeMarca.Contains(paramDynObj.param_NomeMarca) || p.Descricao.Contains(paramDynObj.param_NomeMarca)) 
-                        : query.Where(p => p.NomeMarca.Contains(paramDynObj.param_NomeMarca));
+                    query = paramDynObj.param_PesquisarDescricao
+                    ? query.Where(p => p.Nome.Contains(paramDynObj.param_NomeMarca) || p.Descricao.Contains(paramDynObj.param_NomeMarca))
+                    : query.Where(p => p.Nome.Contains(paramDynObj.param_NomeMarca));
 
 
                 var lstModelQuery = query
                     .Include(x => x.MarcaFase)
                     .Include(x => x.MarcaFabrica)
                     .Include(x => x.MarcaSubTipo)
-                    .Include(x => x.MarcaTipo)
+                    .Include(x => x.MarcaSubTipo.MarcaTipo)
                     .OrderBy(x => x.MarcaFaseId)
-                       .ThenBy(x => x.NomeMarca)
-                       .ThenBy(x => x.FabricaId)
-                       .ThenBy(x => x.FabricaDesc)
+                       .ThenBy(x => x.Nome)
+                       .ThenBy(x => x.MarcaFabricaId)
+                       .ThenBy(x => x.MarcaFabrica.Nome)
                        .ThenBy(x => x.Descricao)
                     .Select(x => new
                     {
                         x.Id,
                         NomeFase = x.MarcaFase.Descricao,
                         x.CodigoAceca,
-                        Imagem = $"{strUrlPath}/{x.MarcaFaseId}/{(x.Imagem.Contains(".") ? x.Imagem : x.Imagem + x.ExtImagem)}\"",
-                        ImagemDetalhe = $"{strUrlPath}/detalhes/{(x.ImagemDetalhe.Contains(".") ? x.ImagemDetalhe : x.ImagemDetalhe + x.ExtImagemDetalhe)}\"",
+                        ImgPrincipal = $"{strUrlPath}/{x.MarcaFaseId}/{x.ImgPrincipal}\"",
+                        ImgDetalhe = $"{strUrlPath}/detalhes/{x.ImgDetalhe}\"",
                         // Imagem = $"<img name=\"myImg\" class=\"td-img cmyImg\" src=\"{strUrlPath}/{x.MarcaFaseId}/{(x.Imagex.Contains(".") ? x.Imagem : x.Imagem + x.ExtImagem)}\" alt=\"{x.CodigoAceca}\">",
                         // ImagemDetalhe = $"<img name=\"myImg\" class=\"td-img cmyImg\" src=\"{strUrlPath}/detalhes/{(x.ImagemDetalhe.Contains(".") ? x.ImagemDetalhe : x.ImagemDetalhe + x.ExtImagemDetalhe)}\" alt=\"{x.CodigoAceca}\">",
-                        x.NomeMarca,
-                        x.FabricaId,
-                        FabricaNome = x.FabricaDesc != null ? x.FabricaDesc : null,
+                        NomeMarca = x.Nome,
+                        x.MarcaFabricaId,
+                        FabricaNome = x.MarcaFabrica.Nome,
                         x.Descricao,
                         x.IncluidoPor,
                     })
                     .AsQueryable();
 
                 var lstModel = await lstModelQuery
-                    .Take(110)
                     .AsNoTracking()
                     .ToListAsync();
 

@@ -19,7 +19,7 @@ var jwtKey = builder.Configuration["Jwt:Key"] ?? "ACECA_JWT_SECRET_MUDE_EM_PRODU
 var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
 
 
-
+/*
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -36,8 +36,20 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 });
+*/
 
 builder.Services.AddControllersWithViews();
+
+// 1. Add Distributed Memory Cache (required as a backing store for session)
+builder.Services.AddDistributedMemoryCache(); //
+
+// 2. Add Session services, optionally configuring options like timeout
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true; // Makes the session cookie essential for compliance
+    options.IdleTimeout = TimeSpan.FromMinutes(20); // Default is 20 minutes
+});
 
 /*
  * 
@@ -94,6 +106,9 @@ app.UseRouting();
 app.UseAuthentication();
 //app.UseIdentityServer();
 app.UseAuthorization();
+
+// 3. Use the Session middleware, it must be placed BEFORE UseMvc/UseEndpoints/MapControllers
+app.UseSession(); //
 
 //app.MapDefaultControllerRoute();
 //app.MapRazorPages();

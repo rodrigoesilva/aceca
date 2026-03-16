@@ -1,9 +1,18 @@
 ﻿@{
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
-    var pageTipo = string.Empty; //" - Listagem - ";
+    var pageTipo = 1; // string.Empty; //" - Listagem - ";
 
     ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
-    Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
+
+    @if (Context?.Session?.Keys?.Count() > 0)
+    {
+        var userRole = Context?.Session?.GetString("UserRole");
+        Layout = $"~/Views/Shared/{(userRole == "Admin" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_WithoutMenuLayout.cshtml";
+    }
 }
 
 @section VendorStyles {
@@ -16,6 +25,12 @@
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
     <!-- Form Validation -->
     <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
+
+    @* ************** Content ************** *@
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
+    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/typeahead-js/typeahead.css" />
+    <link rel="stylesheet" href="~/vendor/libs/tagify/tagify.css" />
 }
 
 @section VendorScripts {
@@ -27,10 +42,19 @@
     <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+    
+    @* ************** Content ************** *@
+    <script src="~/vendor/libs/select2/select2.js"></script>
+    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+    <script src="~/vendor/libs/moment/moment.js"></script>
+    <script src="~/vendor/libs/typeahead-js/typeahead.js"></script>
+    <script src="~/vendor/libs/tagify/tagify.js"></script>
 }
 
 @section PageScripts {
     <script src="~/js/admin/socio/admin-socio.js"></script>
+    @* ************** Content ************** *@
+    <script src="~/js/form-validation.js"></script>
 }
 
 @* ************** Content ************** *@
@@ -103,6 +127,3 @@
 
     </div>
 </div>
-
-<!-- Add new address modal -->
-@await Html.PartialAsync("../_Partials/_Modals/ModalAddNewAddress")

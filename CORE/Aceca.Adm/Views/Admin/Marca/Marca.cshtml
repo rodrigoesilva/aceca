@@ -1,10 +1,18 @@
 @{
-    var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? ""; //"ACECA - Marcas"; //
-    var pageTipo = string.Empty; //" - Listagem - ";
+    var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
+    var pageTipo = 1; // string.Empty; //" - Listagem - ";
 
     ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
-    //Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
-    Layout = "_WithoutMenuLayout";
+
+    @if (Context?.Session?.Keys?.Count() > 0)
+    {
+        var userRole = Context?.Session?.GetString("UserRole");
+        Layout = $"~/Views/Shared/{(userRole == "Admin" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_WithoutMenuLayout.cshtml";
+    }
 }
 
 @section VendorStyles {
@@ -19,7 +27,6 @@
 
     <!-- CSS PAGE -->
     <link rel="stylesheet" href="~/css/zoom.css">
-    <link rel="stylesheet" href="~/css/marcas.css">
 }
 
 @section VendorScripts {
@@ -169,3 +176,6 @@
     <span id="caption">img</span>
     <img class="modal-content" id="img01">
 </div>
+
+<!-- Add new address modal -->
+@await Html.PartialAsync("../../_Partials/_Modals/ModalAddNovaMarca.cshtml")
