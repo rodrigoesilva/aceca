@@ -1,12 +1,12 @@
 using Aceca.Adm.Data;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel;
 
 namespace Aceca.Adm.Helper;
 
-public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env) : ControllerBase
+public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env) : Controller
 {
 
     #region variaveis
@@ -16,7 +16,31 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
     #endregion
 
     #region Combos Marcas
-   
+
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_Variante()
+    {
+        var enumData = new List<SelectListItem>();
+
+        try
+        {
+            enumData = (Enum.GetValues(typeof(ESimNao))
+                .Cast<ESimNao>()
+                .Select(e => new SelectListItem()
+                {
+                    Text = GetEnumDescription((ESimNao)e),
+                    Value = Convert.ToInt32(e).ToString(),
+                }))
+            .ToList();
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+
+            throw;
+        }
+
+        return enumData;
+    }
     public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFase()
     {
         var lst = new List<SelectListItem>();
@@ -259,7 +283,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
         }
 
         return lst;
-    }   
+    }
 
     #endregion
 
@@ -375,20 +399,31 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
         return lst;
     }
 
-}
 
-public enum Permission
-{
-    Fundador,
-    CanViewProducts,
-    CanCreateProduct,
-    CanDeleteProduct
-}
-
-public class HasPermissionAttribute : AuthorizeAttribute
-{
-    public HasPermissionAttribute(Permission permission)
+    #region Enums Functions
+    public static string GetEnumDescription(Enum value)
     {
-        Policy = permission.ToString();
+        var fi = value.GetType().GetField(value.ToString());
+
+        var attributes = fi.GetCustomAttributes(typeof(DescriptionAttribute), false) as DescriptionAttribute[];
+
+        if (attributes != null && attributes.Any())
+        {
+            return attributes.First().Description;
+        }
+
+        return value.ToString();
     }
+
+    #endregion
+
+    #region Enums
+    public enum ESimNao
+    {
+        [Description("Não")] Nao = 0,
+        Sim = 1
+    }
+
+    #endregion
+
 }

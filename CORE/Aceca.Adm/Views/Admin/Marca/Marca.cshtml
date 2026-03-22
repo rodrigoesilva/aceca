@@ -1,16 +1,17 @@
 @{
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
-    var pageTipo = 1; // string.Empty; //" - Listagem - ";
+    var pageTipo = string.Empty; //" - Listagem - ";
 
     ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
 
-    @if (Context?.Session?.Keys?.Count() > 0)
+    @if(Context?.Session?.Keys?.Count() > 0)
     {
         var userRole = Context?.Session?.GetString("UserRole");
         Layout = $"~/Views/Shared/{(userRole == "Admin" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
     }
     else
     {
+        //Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
         Layout = "~/Views/Shared/_WithoutMenuLayout.cshtml";
     }
 }
@@ -30,8 +31,8 @@
 }
 
 @section VendorScripts {
-    <!-- <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script>
-     Select Dropdownlist -->
+   @* <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script> *@
+            <!-- Select Dropdownlist -->
     <script src="~/vendor/libs/select2/select2.js"></script>
     <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
 } 
@@ -161,6 +162,7 @@
                     <th>Detalhe</th>
                     <th>Nome</th>
                     <th>F&aacute;brica</th>
+                    <th>Tipo</th>
                     <th class="text-start w-50">Descri&ccedil;&atilde;o</th>
                     <th class="text-nowrap text-center">Inclu&iacute;do por</th>
                     <th>Inclu&iacute;do por Hide</th>

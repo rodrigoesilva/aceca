@@ -72,10 +72,6 @@ document.addEventListener('DOMContentLoaded', function () {
             fn_Limpar();
         });
 
-        // Update the clock immediately on load, and then every second
-        fn_UpdateClock();
-        setInterval(fn_UpdateClock, 1000); // Updates every 1000 milliseconds
-
         // Carrega Dados Combos Modal
         //fn_PopLoadCombos();
 
@@ -85,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
 //#endregion
 
 //#region Botoes
+
 function fn_Filtrar() {
     // Btn Filtro
     //console.log("fn_Filtrar ::: ");
@@ -101,18 +98,18 @@ function fn_Filtrar() {
         param_NomeMarca: $('#txt_NomeMarca').val(),
         param_PesquisarDescricao: $('#chk_PesquisarDescricao')[0].checked,
     };
-   
+
     //console.log("fn_Filtrar objFiltro : ", objFiltro);
 
-     /*
-    console.log("fn_Filtrar param_MarcaFaseId ::: ", objFiltro.param_MarcaFaseId);
-    console.log("fn_Filtrar param_MarcaFabricaId ::: ", objFiltro.param_MarcaFabricaId);
-    console.log("fn_Filtrar param_MarcaTipoId ::: ", objFiltro.param_MarcaTipoId);
-    console.log("fn_Filtrar param_MarcaSubTipoId ::: ", objFiltro.param_MarcaSubTipoId);
-    console.log("fn_Filtrar param_IncluidoPor ::: ", objFiltro.param_IncluidoPor.length);
-    console.log("fn_Filtrar param_CodigoAceca ::: ", objFiltro.param_CodigoAceca.length);
-    console.log("fn_Filtrar param_NomeMarca ::: ", objFiltro.param_NomeMarca.length);
-    */
+    /*
+   console.log("fn_Filtrar param_MarcaFaseId ::: ", objFiltro.param_MarcaFaseId);
+   console.log("fn_Filtrar param_MarcaFabricaId ::: ", objFiltro.param_MarcaFabricaId);
+   console.log("fn_Filtrar param_MarcaTipoId ::: ", objFiltro.param_MarcaTipoId);
+   console.log("fn_Filtrar param_MarcaSubTipoId ::: ", objFiltro.param_MarcaSubTipoId);
+   console.log("fn_Filtrar param_IncluidoPor ::: ", objFiltro.param_IncluidoPor.length);
+   console.log("fn_Filtrar param_CodigoAceca ::: ", objFiltro.param_CodigoAceca.length);
+   console.log("fn_Filtrar param_NomeMarca ::: ", objFiltro.param_NomeMarca.length);
+   */
 
     if (objFiltro.param_MarcaFaseId < 0
         && objFiltro.param_MarcaFabricaId <= 0
@@ -179,6 +176,7 @@ function fn_Filtrar() {
         }
     }
 }
+
 function fn_Limpar() {
     //console.log("fn_Limpar ::: ");
 
@@ -188,11 +186,7 @@ function fn_Limpar() {
     $('#cmb_MarcaFabrica').prop('selectedIndex', 0).change();
     $('#cmb_MarcaTipo').prop('selectedIndex', 0).change();
     $('#cmb_MarcaSubTipo').prop('selectedIndex', 0).change();
-    $('#txt_IncluidoPor').val('');
-    $('#txt_CodigoAceca').val('');
-    $('#txt_NomeMarca').val('');
     $('#chk_PesquisarDescricao')[0].checked = false;
-
 
     $(".card-datatable").hide();
     $('.datatables-basic').DataTable().clear().draw();
@@ -485,7 +479,7 @@ function fn_GridListFilter(lstData) {
                 // COLUNA - imagem
                 {
                     targets: 4,
-                    data: 'imgPrincipal',
+                    data: 'imgPrincipalFull',
                     className: "text-center",
                     render: function (data, type, row, meta) {
                         return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
@@ -494,8 +488,8 @@ function fn_GridListFilter(lstData) {
                 // COLUNA - imagemDetalhe
                 {
                     targets: 5,
-                    data: 'imgDetalhe',
-                    className: "text-center", 
+                    data: 'imgDetalheFull',
+                    className: "text-center",
                     render: function (data, type, row, meta) {
                         return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
@@ -509,25 +503,29 @@ function fn_GridListFilter(lstData) {
                 // COLUNA - fabricaNome
                 {
                     targets: 7,
-                    data: 'fabricaNome',
+                    data: 'nomeFabrica',
+                    className: "text-start",
+                },
+                // COLUNA - subTipo
+                {
+                    targets: 8,
+                    data: 'subTipo',
                     className: "text-start",
                 },
                 // COLUNA - descricao
                 {
-                    targets: 8,
+                    targets: 9,
                     data: 'descricao',
                     className: "text-start",
                     searchable: false,
                 },
                 // COLUNA - incluidoPor
                 {
-                    targets: 9,
+                    targets: 10,
                     data: 'incluidoPor',
                     className: "text-center",
                     render: function (data, type, full, meta) {
                         let id = full.id;
-
-                        //data = full[9];
 
                         if (data !== undefined && data !== null) {
                             if (id !== 0 && type === 'display') {
@@ -539,7 +537,7 @@ function fn_GridListFilter(lstData) {
                                 let htmlContent = '';
 
                                 for (let i = 0; i < data.split("/").length; i++) {
-                                    htmlContent += 
+                                    htmlContent +=
                                         `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top" data-popup="tooltip-custom" data-incluido="${data.split("/")[i]}" title="${data.split("/")[i]}">
                                         <img src="../img/avatars/${i}.png" alt="Avatar" class="rounded-circle">
                                     </li >`;
@@ -588,7 +586,7 @@ function fn_GridListFilter(lstData) {
 
                             btns =
                                 '<div class="d-inline-block text-nowrap">' +
-                                '<a href="javascript:fnItem_Edit_CarregarDados(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
+                                '<a href="javascript:fn_Modal(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
                                 '</div>'
                         }
 
@@ -610,8 +608,8 @@ function fn_GridListFilter(lstData) {
             buttons: [
                 {
                     extend: 'collection',
-                    className: 'btn btn-primary dropdown-toggle me-4 waves-effect waves-light',
-                    text: '<i class="ri-download-line ri-16px me-2"></i><span class="d-none d-sm-inline-block">Exportar </span>',
+                    className: 'btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
+                    text: '<i class="ri-external-link-line me-sm-1"></i> <span class="d-none d-sm-inline-block">Exportar</span>',
                     buttons: [
                         // BOTAO CABECALHO - EXPORTAR - IMPRIMIR
                         {
@@ -664,6 +662,15 @@ function fn_GridListFilter(lstData) {
                         }
                     ]
                 },
+
+                {
+                    text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
+                    className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
+                    action: function (e, dt, node, config) {
+                        //console.log("BTN NEW ::: ", dt);
+                        fn_Pop(null, 'Create');
+                    }
+                }
             ],
             // For responsive popup
             responsive: {
@@ -712,7 +719,7 @@ function fn_GridListFilter(lstData) {
 
 function fn_GridComplete(grid) {
 
-   // var_Filtrado = true;
+    // var_Filtrado = true;
 
     var thisApi = grid.api();
 
@@ -745,7 +752,7 @@ function fn_GridComplete(grid) {
                     confirmButton: 'btn btn-label-success waves-effect'
                 }
             }).then((result) => {
-                
+
             });
         }
     } else {
@@ -769,34 +776,6 @@ function fn_GridComplete(grid) {
     }
 
 
-}
-
-//#endregion
-
-//#region AUTH GUARD
-function fn_Auth() {
-    console.log("fn_Auth ::: ");
-    /*
-    const sess = sessionStorage.getItem('aceca_sessao');
-
-    if (!sess) {
-       // window.location.href = 'login.html'; return;
-    }
-
-    const u = JSON.parse(sess);
-
-    document.getElementById('tbNome').textContent = u.nome || 'Usuário';
-    document.getElementById('tbCargo').textContent = u.cargo || '—';
-    document.getElementById('tbAvatar').textContent = (u.nome || 'U')[0].toUpperCase();
-
-    //console.log("AUTH GUARD - sess :::", sess);
-    */
-};
-
-function fn_Logout() {
-    console.log("fn_Logout ::: ");
-    sessionStorage.removeItem('aceca_sessao');
-    //window.location.href = 'login.html';
 }
 
 //#endregion
@@ -849,18 +828,329 @@ document.addEventListener('hidden.bs.modal', function (event) {
 
 //#endregion
 
-//#region CLOCK DATE
-function fn_UpdateClock() {
-    const now = new Date();
-    // Format the date and time for display
-    const timeString = now.toLocaleTimeString();
-    const dateString = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+//#region COMBO
+function fn_PopLoadCombos() {
 
-    document.getElementById('date-time').textContent = `${dateString} - ${timeString}`;
+    //console.log("fn_PopLoadCombos  ::: ");
+
+    fn_LoadCmb_MarcaFase();
+    fn_LoadCmb_MarcaFinalidade();
+    fn_LoadCmb_MarcaFabrica();
+    fn_LoadCmb_MarcaDimensao();
+    fn_LoadCmb_MarcaTipo();
+    fn_LoadCmb_MarcaSubTipo(0);
+    fn_LoadCmb_MarcaImpressora();
+    fn_LoadCmb_MarcaQualidadeImagem();
+
+    $('#cmb_MarcaTipo').on('change', function () {
+        let idMarcaTipo = $(this).find('option:selected').val();
+
+        //console.log("cmb_MarcaTipo change  idMarcaTipo ::: ", idMarcaTipo);
+
+        //Limpar Combo cinema
+        document.querySelectorAll('#cmb_MarcaSubTipo option').forEach(option => option.remove());
+
+        $("#cmb_MarcaSubTipo").append($("<option></option>").val(0).html("-- Selecionar --"));
+
+        if ($(this).length <= 1 && idMarcaTipo > 0) {
+            fn_LoadCmb_MarcaSubTipo(idMarcaTipo);
+        }
+    });
 }
 
-//#endregion
+function fn_LoadCmb_MarcaFase() {
+    // console.log("fn_LoadCmb_MarcaFase ::: ");
 
+    if ($('#cmb_MarcaFase').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaFase`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaFase  data ::: ", data);
+
+                    $("#cmb_MarcaFase").append($("<option></option>").val(0).html("Todas"));
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaFase  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaFase  result ::: ", result);
+                        $("#cmb_MarcaFase").append($("<option></option>").val(result.value).html(result.text));
+                        $("#cmbPop_MarcaFase").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+function fn_LoadCmb_MarcaFinalidade() {
+    //console.log("fn_LoadCmb_MarcaFinalidade ::: ");
+
+    if ($('#cmbPop_MarcaFinalidade').length <= 1) {
+
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaFinalidade`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaFinalidade  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaFinalidade  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaFinalidade  result ::: ", result);
+                        $("#cmbPop_MarcaFinalidade").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+
+    //console.log("fn_LoadCmb_CinemaProgramacao ::: ");
+}
+
+function fn_LoadCmb_MarcaFabrica() {
+    //console.log("fn_LoadCmb_MarcaFabrica ::: ");
+
+    if ($('#cmb_MarcaFabrica').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaFabrica`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaFabrica  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaFabrica  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaFabrica  result ::: ", result);
+                        $("#cmb_MarcaFabrica").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+
+    if ($('#cmbPop_MarcaFabrica').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaFabrica`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaFabrica  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaFabrica  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaFabrica  result ::: ", result);
+                        $("#cmbPop_MarcaFabrica").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+function fn_LoadCmb_MarcaDimensao() {
+    //console.log("fn_LoadCmb_MarcaDimensao ::: ");
+
+    if ($('#cmbPop_MarcaDimensao').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaDimensao`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaDimensao  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaDimensao  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaDimensao  result ::: ", result);
+                        $("#cmbPop_MarcaDimensao").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+function fn_LoadCmb_MarcaTipo() {
+    //console.log("fn_LoadCmb_MarcaTipo ::: ");
+
+    if ($('#cmb_MarcaTipo').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
+                        $("#cmb_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+
+    if ($('#cmbPop_MarcaTipo').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
+                        $("#cmbPop_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
+
+    //console.log("fn_LoadCmb_MarcaSubTipo  idMarcaTipo ::: ", idMarcaTipo);
+
+    let urlLoad = idMarcaTipo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaSubTipoByTipo` : `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`;
+
+    if ($('#cmb_MarcaSubTipo').length <= 1) {
+
+        $.ajax(
+            {
+                crossDomain: true,
+                url: urlLoad,
+                type: 'GET',
+                data: {
+                    id: idMarcaTipo,
+                },
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaSubTipo  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaSubTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaSubTipo  result ::: ", result);
+                        $("#cmb_MarcaSubTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+
+    if ($('#cmbPop_MarcaSubTipo').length <= 1) {
+
+        $.ajax(
+            {
+                crossDomain: true,
+                url: urlLoad,
+                type: 'GET',
+                data: {
+                    id: idMarcaTipo,
+                },
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaSubTipo  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaSubTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaSubTipo  result ::: ", result);
+                        $("#cmbPop_MarcaSubTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+function fn_LoadCmb_MarcaImpressora() {
+    //console.log("fn_LoadCmb_MarcaImpressora ::: ");
+
+    if ($('#cmbPop_MarcaImpressora').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaImpressora`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaImpressora  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaImpressora  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaImpressora  result ::: ", result);
+                        $("#cmbPop_MarcaImpressora").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+function fn_LoadCmb_MarcaQualidadeImagem() {
+    //console.log("fn_LoadCmb_MarcaQualidadeImagem ::: ");
+
+    if ($('#cmbPop_MarcaQualidadeImagem').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaQualidadeImagem`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaQualidadeImagem  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaQualidadeImagem  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaQualidadeImagem  result ::: ", result);
+                        $("#cmbPop_MarcaQualidadeImagem").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+
+//#endregion
 
 //#region MODAL
 
@@ -912,42 +1202,42 @@ function fn_Modal(obj, action) {
     //console.log("fn_Modal action::: ", action);
 
     //let resultLoad = fnItem_Edit_CarregarDados(obj, action)
-   // console.log("fn_Modal resultLoad::: ", resultLoad);
+    // console.log("fn_Modal resultLoad::: ", resultLoad);
 
     const popAddNewItem = document.querySelector('#modalAddNovaMarca');
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.marca.id)),
-        (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.marca.marcaFaseId)),
-        (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.marca.marcaFinalidadeId)),
-        (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.marca.marcaFabricaId)),
-        (popAddNewItem.querySelector('#hdMarcaDimensaoId').value = (obj === null ? 0 : obj.marca.marcaDimensaoId)),
-        (popAddNewItem.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.marcaTipo.id)),
-        (popAddNewItem.querySelector('#hdMarcaSubTipoId').value = (obj === null ? 0 : obj.marca.marcaSubTipoId)),
-        (popAddNewItem.querySelector('#hdMarcaImpressoraId').value = (obj === null ? 0 : obj.marca.marcaImpressoraId)),
-        (popAddNewItem.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.marca.marcaQualidadeImagemId)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
+        (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.idMarcaFase)),
+        (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.idMrcaFinalidade)),
+        (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.idMarcaFabrica)),
+        (popAddNewItem.querySelector('#hdMarcaDimensaoId').value = (obj === null ? 0 : obj.idMarcaDimensao)),
+        (popAddNewItem.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.idMarcaTipo)),
+        (popAddNewItem.querySelector('#hdMarcaSubTipoId').value = (obj === null ? 0 : obj.idMarcaSubTipo)),
+        (popAddNewItem.querySelector('#hdMarcaImpressoraId').value = (obj === null ? 0 : obj.idMarcaImpressora)),
+        (popAddNewItem.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.idMarcaQualidadeImagem)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-- Selecionar --' : obj.marca.marcaFaseId));
-    (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '-- Selecionar --' : obj.marca.codigoAceca));
-    (popAddNewItem.querySelector('#txt_Nome').checked = (obj === null ? false : obj.marca.nome));
-    (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.marca.incluidoPor)),
-        (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-- Selecionar --' : obj.marca.marcaFinalidadeId));
-    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-- Selecionar --' : obj.marca.marcaFabricaId));
-    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-- Selecionar --' : obj.marca.marcaDimensaoId));
-    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-- Selecionar --' : obj.marcaTipo.id));
-    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-- Selecionar --' : obj.marca.marcaSubTipoId));
-    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-- Selecionar --' : obj.marca.marcaImpressoraId));
-    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-- Selecionar --' : obj.marca.marcaQualidadeImagemId));
-    (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.marca.descricao));
+        (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFase));
+    (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '-- Selecionar --' : obj.codigoAceca));
+    (popAddNewItem.querySelector('#txt_Nome').checked = (obj === null ? false : obj.nomeMarca));
+    (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
+        (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-- Selecionar --' : obj.idMrcaFinalidade));
+    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFabrica));
+    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-- Selecionar --' : obj.idMarcaDimensao));
+    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-- Selecionar --' : obj.idMarcaTipo));
+    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-- Selecionar --' : obj.idMarcaSubTipo));
+    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-- Selecionar --' : obj.idMarcaImpressora));
+    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-- Selecionar --' : obj.idMarcaQualidadeImagem));
+    (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.descricao));
 
-    (popAddNewItem.querySelector('#txt_Valor').value = (obj === null ? '' : obj.marca.valor));
-    (popAddNewItem.querySelector('#txt_Valor1PI').value = (obj === null ? '' : obj.marca.valor1PI));
-    (popAddNewItem.querySelector('#txt_Valor2PI').value = (obj === null ? '' : obj.marca.valor2PI));
+    (popAddNewItem.querySelector('#txt_Valor').value = (obj === null ? '' : obj.valor));
+    (popAddNewItem.querySelector('#txt_Valor1PI').value = (obj === null ? '' : obj.valor1PI));
+    (popAddNewItem.querySelector('#txt_Valor2PI').value = (obj === null ? '' : obj.valor2PI));
 
     //Pop Arquivos
-    (obj === null || obj?.marca?.imgPrincipal === null) ? (popAddNewItem.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
-    (obj === null || obj?.marca?.imgDetalhe === null)  ? (popAddNewItem.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
+    (obj === null || obj?.imgPrincipal === null) ? (popAddNewItem.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
+    (obj === null || obj?.imgDetalhe === null) ? (popAddNewItem.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
 
     // Pop Action
     (popAddNewItem.querySelector('.address-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -958,16 +1248,16 @@ function fn_Modal(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmbPop_MarcaFase").val(obj.marca.marcaFaseId).change();
-        $("#cmbPop_MarcaFinalidade").val(obj.marca.marcaFinalidadeId).change();
-        $("#cmbPop_MarcaFabrica").val(obj.marca.marcaFabricaId).change();
-        $("#cmbPop_MarcaDimensao").val(obj.marca.marcaDimensaoId).change();
-        $("#cmbPop_MarcaTipo").val(obj.marcaTipo.id).change();
-        $("#cmbPop_MarcaSubTipo").val(obj.marca.marcaSubTipoId).change();
-        $("#cmbPop_MarcaImpressora").val(obj.marca.marcaImpressoraId).change();
-        $("#cmbPop_MarcaQualidadeImagem").val(obj.marca.marcaQualidadeImagemId).change();
+        $("#cmbPop_MarcaFase").val(obj.idMarcaFase).change();
+        $("#cmbPop_MarcaFinalidade").val(obj.idMrcaFinalidade).change();
+        $("#cmbPop_MarcaFabrica").val(obj.idMarcaFabrica).change();
+        $("#cmbPop_MarcaDimensao").val(obj.idMarcaDimensao).change();
+        $("#cmbPop_MarcaTipo").val(obj.idMarcaTipo).change();
+        $("#cmbPop_MarcaSubTipo").val(obj.idMarcaSubTipo).change();
+        $("#cmbPop_MarcaImpressora").val(obj.idMarcaImpressora).change();
+        $("#cmbPop_MarcaQualidadeImagem").val(obj.idMarcaQualidadeImagem).change();
 
-        (obj.marca.valor !== null || obj.marca.valor1PI !== null || obj.marca.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
+        (obj.valor !== null || obj.valor1PI !== null || obj.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
     }
 
     $('#modalAddNovaMarca').modal('show');
@@ -978,7 +1268,7 @@ function fnItem_PopImgPrincipal(obj) {
 
     if (obj !== null) {
         let objFile = {},
-            fileArq = obj?.marca?.imgPrincipal;
+            fileArq = obj?.imgPrincipal;
 
         const fileInput = document.querySelector('#txt_ImgPrincipal');
 
@@ -1012,7 +1302,7 @@ function fnItem_PopImgDetalhe(obj) {
 
     if (obj !== null) {
         let objFile = {},
-            fileArq = obj?.marca?.imgDetalhe;
+            fileArq = obj?.imgDetalhe;
 
         const fileInput = document.querySelector('#txt_ImgDetalhe');
 
@@ -1082,7 +1372,7 @@ function fn_ModalGetObj(data, action) {
 
         Valor: $('#txt_Valor').val(),
         Valor1PI: $('#txt_Valor1PI').val(),
-       Valor2PI: $('#txt_Valor2PI').val(),
+        Valor2PI: $('#txt_Valor2PI').val(),
 
         ImgPrincipal: $('#txt_ImgPrincipal').val(),
         ImgDetalhe: $('#txt_ImgDetalhe').val(),
@@ -1156,328 +1446,5 @@ function fnItem_Edit_CarregarDados(obj, action) {
             });
     }
 }
-
-//#endregion
-
-//#region COMBO
-function fn_PopLoadCombos() {
-
-    console.log("fn_PopLoadCombos  ::: ");
-
-    fn_LoadCmb_MarcaFase();
-    fn_LoadCmb_MarcaFinalidade();
-    fn_LoadCmb_MarcaFabrica();
-    fn_LoadCmb_MarcaDimensao();
-    fn_LoadCmb_MarcaTipo();
-    fn_LoadCmb_MarcaSubTipo(0);
-    fn_LoadCmb_MarcaImpressora();
-    fn_LoadCmb_MarcaQualidadeImagem();
-
-    $('#cmb_MarcaTipo').on('change', function () {
-        let idMarcaTipo = $(this).find('option:selected').val();
-
-        //console.log("cmb_MarcaTipo change  idMarcaTipo ::: ", idMarcaTipo);
-
-        //Limpar Combo cinema
-        document.querySelectorAll('#cmb_Cinema option').forEach(option => option.remove());
-
-        $("#cmb_Cinema").append($("<option></option>").val(0).html("-- Selecionar --"));
-
-        if ($(this).length <= 1 && idMarcaTipo > 0) {
-            fn_LoadCmb_MarcaSubTipo(idMarcaTipo);
-        }
-    });
-}
-function fn_LoadCmb_MarcaFase() {
-    console.log("fn_LoadCmb_MarcaFase ::: ");
-
-    if ($('#cmb_MarcaFase').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFase`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFase  data ::: ", data);
-
-                    $("#cmb_MarcaFase").append($("<option></option>").val(0).html("Todas"));
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFase  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFase  result ::: ", result);
-                        $("#cmb_MarcaFase").append($("<option></option>").val(result.value).html(result.text));
-                        $("#cmbPop_MarcaFase").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
-function fn_LoadCmb_MarcaFinalidade() {
-    console.log("fn_LoadCmb_MarcaFinalidade ::: ");
-
-    if ($('#cmbPop_MarcaFinalidade').length <= 1) {
-
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFinalidade`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFinalidade  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFinalidade  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFinalidade  result ::: ", result);
-                        $("#cmbPop_MarcaFinalidade").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-
-    //console.log("fn_LoadCmb_CinemaProgramacao ::: ");
-}
-
-function fn_LoadCmb_MarcaFabrica() {
-    console.log("fn_LoadCmb_MarcaFabrica ::: ");
-
-    if ($('#cmb_MarcaFabrica').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFabrica`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFabrica  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFabrica  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFabrica  result ::: ", result);
-                        $("#cmb_MarcaFabrica").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-
-    if ($('#cmbPop_MarcaFabrica').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFabrica`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFabrica  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFabrica  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFabrica  result ::: ", result);
-                        $("#cmbPop_MarcaFabrica").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
-function fn_LoadCmb_MarcaDimensao() {
-    console.log("fn_LoadCmb_MarcaDimensao ::: ");
-
-    if ($('#cmbPop_MarcaDimensao').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaDimensao`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaDimensao  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaDimensao  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaDimensao  result ::: ", result);
-                        $("#cmbPop_MarcaDimensao").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
-function fn_LoadCmb_MarcaTipo() {
-    console.log("fn_LoadCmb_MarcaTipo ::: ");
-
-    if ($('#cmb_MarcaTipo').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
-                        $("#cmb_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-
-    if ($('#cmbPop_MarcaTipo').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
-                        $("#cmbPop_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
-function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
-
-    console.log("fn_LoadCmb_MarcaSubTipo  idMarcaTipo ::: ", idMarcaTipo);
-
-    let urlLoad = idMarcaTipo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaSubTipoByTipo` : `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`;
-
-    if ($('#cmb_MarcaSubTipo').length <= 1) {
-
-        $.ajax(
-            {
-                crossDomain: true,
-                url: urlLoad,
-                type: 'GET',
-                data: {
-                    id: idMarcaTipo,
-                },
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaSubTipo  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaSubTipo  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaSubTipo  result ::: ", result);
-                        $("#cmb_MarcaSubTipo").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-
-    if ($('#cmbPop_MarcaSubTipo').length <= 1) {
-
-        $.ajax(
-            {
-                crossDomain: true,
-                url: urlLoad,
-                type: 'GET',
-                data: {
-                    id: idMarcaTipo,
-                },
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaSubTipo  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaSubTipo  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaSubTipo  result ::: ", result);
-                        $("#cmbPop_MarcaSubTipo").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
-function fn_LoadCmb_MarcaImpressora() {
-    console.log("fn_LoadCmb_MarcaImpressora ::: ");
-
-    if ($('#cmbPop_MarcaImpressora').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaImpressora`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaImpressora  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaImpressora  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaImpressora  result ::: ", result);
-                        $("#cmbPop_MarcaImpressora").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
-function fn_LoadCmb_MarcaQualidadeImagem() {
-    console.log("fn_LoadCmb_MarcaQualidadeImagem ::: ");
-
-    if ($('#cmbPop_MarcaQualidadeImagem').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaQualidadeImagem`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaQualidadeImagem  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaQualidadeImagem  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaQualidadeImagem  result ::: ", result);
-                        $("#cmbPop_MarcaQualidadeImagem").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
 
 //#endregion

@@ -1,11 +1,11 @@
 ﻿using Aceca.Adm.Data;
+using Aceca.Adm.Helper;
 using Aceca.Adm.Models;
-using Microsoft.AspNetCore.Authorization;
+using Aceca.Adm.VMModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
-using static System.Collections.Specialized.BitVector32;
+using System.Net.Mail;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
@@ -45,12 +45,31 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         {
             try
             {
-
+                /*
                 var lstModel = await _db.Socio
                     .Include(x => x.SocioPerfil)
                     .OrderBy(x => x.Nome)
                     .AsNoTracking()
                     .ToListAsync();
+                */
+
+                var result = from s in _db.Socio
+                             join sa in _db.SocioAniversario on s.Id equals sa.SocioId
+                             join sc in _db.SocioContato on s.Id equals sc.SocioId
+                             join se in _db.SocioEndereco on s.Id equals se.SocioId
+                             join sp in _db.SocioPerfil on s.SocioPerfilId equals sp.Id
+                             orderby s.Nome
+                             select new
+                             {
+                                 Socio = s,
+                                 SocioAniversario = sa,
+                                 SocioContato = sc,
+                                 SocioEndereco = se,
+                                 SocioPerfil = sp,
+                             };
+
+
+                var lstModel = await result.AsNoTracking().ToListAsync();
 
                 if (lstModel.Count <= 0)
                 {
@@ -106,21 +125,21 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             try
             {
                 var result = from s in _db.Socio // Table 1
-                                            join sa in _db.SocioAniversario on s.Id equals sa.SocioId
-                                            join sc in _db.SocioContato on s.Id equals sc.SocioId
-                                            join se in _db.SocioEndereco on s.Id equals se.SocioId
-                                            join sf in _db.SocioFinanceiro on s.Id equals sf.SocioId
-                                            join sp in _db.SocioPerfil on s.SocioPerfilId equals sp.Id
-                                            where s.Id == id
-                                            select new
-                                            {
-                                                Socio = s,
-                                                SocioAniversario = sa,
-                                                SocioContato = sc,
-                                                SocioEndereco = se,
-                                                SocioFinanceiro = sf,
-                                                SocioPerfil = sp,
-                                            };
+                             join sa in _db.SocioAniversario on s.Id equals sa.SocioId
+                             join sc in _db.SocioContato on s.Id equals sc.SocioId
+                             join se in _db.SocioEndereco on s.Id equals se.SocioId
+                             join sf in _db.SocioFinanceiro on s.Id equals sf.SocioId
+                             join sp in _db.SocioPerfil on s.SocioPerfilId equals sp.Id
+                             where s.Id == id
+                             select new
+                             {
+                                 Socio = s,
+                                 SocioAniversario = sa,
+                                 SocioContato = sc,
+                                 SocioEndereco = se,
+                                 SocioFinanceiro = sf,
+                                 SocioPerfil = sp,
+                             };
 
 
                 var lstModel = await result.AsNoTracking().ToListAsync();
@@ -163,118 +182,209 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
         }
 
-        /*
         [HttpPost]
-        public ActionResult Create(Socio data)
+        public async Task<IActionResult> Create(VMSocio model)
         {
             try
             {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Nome))
+                if (ModelState.IsValid)
                 {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Nome deve ser preenchido"
-                    });
-                }
+                    #region Socio
 
-                try
-                {
-                    var result = AsyncActionAPI(data, "Create");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
+                    if (string.IsNullOrEmpty(model.Nome))
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = result?.ToString()
+                            message = "Nome deve ser preenchido"
                         });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
+
+                    var newModel = new Models.Socio
                     {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
+                        SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
+                        Nome = model.Nome,
+                        MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
+                        Ativo = model.Ativo,
+                    };
+
+                    _db.Socio.Add(newModel);
+                    _db.SaveChanges();
+
+                    model.Id = newModel?.Id;
+
+                    if (newModel?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Cadastrar Socio"
+                        });
+
+                    #endregion
+
+                    #region SocioContato
+
+                    if (string.IsNullOrEmpty(model?.Email))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Email deve ser preenchido"
+
+                        });
+
+                    var resulCreateSocioContato = await Create_SocioContato(model);
+
+                    if (resulCreateSocioContato.GetType() == typeof(NotFoundObjectResult) ||
+                               resulCreateSocioContato.GetType() == typeof(NotFoundResult) ||
+                               resulCreateSocioContato.GetType() == typeof(BadRequestObjectResult) ||
+                               resulCreateSocioContato.GetType() == typeof(BadRequestResult))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Cadastrar Socio Contato",
+                            data = model
+                        });
+
+                    var objJsonResulCreateSocioContatoReturnApi = ((ObjectResult)resulCreateSocioContato).Value;
+
+                    #endregion
+
+                    #region SocioEndereco
+
+                    var resulCreateSocioEndereco = await Create_SocioEndereco(model);
+
+                    if (resulCreateSocioEndereco.GetType() == typeof(NotFoundObjectResult) ||
+                               resulCreateSocioEndereco.GetType() == typeof(NotFoundResult) ||
+                               resulCreateSocioEndereco.GetType() == typeof(BadRequestObjectResult) ||
+                               resulCreateSocioEndereco.GetType() == typeof(BadRequestResult))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Cadastrar Socio Contato",
+                            data = model
+                        });
+
+                    var objJsonResulCreateSocioEnderecoReturnApi = ((ObjectResult)resulCreateSocioEndereco).Value;
+
+                    #endregion
+
+                    #region SocioAniversario
+
+                    var resulCreateSocioAniversario = await Create_SocioAniversario(model);
+
+                    if (resulCreateSocioAniversario.GetType() == typeof(NotFoundObjectResult) ||
+                               resulCreateSocioAniversario.GetType() == typeof(NotFoundResult) ||
+                               resulCreateSocioAniversario.GetType() == typeof(BadRequestObjectResult) ||
+                               resulCreateSocioAniversario.GetType() == typeof(BadRequestResult))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Cadastrar Socio Contato",
+                            data = model
+                        });
+
+                    var objJsonResulCreateSocioAniversarioReturnApi = ((ObjectResult)resulCreateSocioAniversario).Value;
+
+                    #endregion
+
+                    return Ok(new
+                    {/*
+                        _logger.LogInformation(
+                        $"{lstModel} graus Fahrenheit = " +
+                        $"{resultado.Celsius} graus Celsius = " +
+                        $"{resultado.Kelvin} graus Kelvin");
+                    return resultado;
+                        */
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
                     });
                 }
 
-                return Ok(new
+                return BadRequest(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: "
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Model Inválida",
+                    data = model,
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                var mensagemErro = $"ListGrid : {ex?.Message}";
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
             }
         }
 
         [HttpPost]
-        public ActionResult Edit(Socio data)
+        public async Task<IActionResult> Edit(VMSocio model)
         {
+
             try
             {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Nome))
+                if (ModelState.IsValid)
                 {
-                    return BadRequest(new
+                    if (string.IsNullOrEmpty(model.Nome))
                     {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Nome deve ser preenchido"
-                    });
-                }
-
-                try
-                {
-                    var result = AsyncActionAPI(data, "Edit");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = result?.ToString()
+                            message = "Nome deve ser preenchido"
                         });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
-                    });
+                    }
+
+                    //model = await _db.Socio.FindAsync(id);
+
+                    // Mark the entity state as modified
+                    _db.Entry(model).State = EntityState.Modified;
+                    _db.SaveChanges();
+                    return RedirectToAction("Index");
                 }
 
                 return Ok(new
-                {
+                {/*
+                    _logger.LogInformation(
+                    $"{lstModel} graus Fahrenheit = " +
+                    $"{resultado.Celsius} graus Celsius = " +
+                    $"{resultado.Kelvin} graus Kelvin");
+                return resultado;
+                    */
                     bResult = true,
                     type = "OK",
-                    message = "SUCESSO ::: "
+                    message = "SUCESSO ::: ",
+                    data = model,
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                var mensagemErro = $"ListGrid : {ex?.Message}";
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
             }
         }
 
         [HttpDelete]
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            dynamic response = new { bResult = false, message = string.Empty };
-
             if (id < 1)
             {
                 return BadRequest(new
@@ -285,42 +395,217 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 });
             }
 
-            var model = new List<Socio>();
-
             try
             {
-                var result = AsyncDeleteById(id);
+                var model = await _db.Socio.FindAsync(id);
 
-                if (result.GetType() == typeof(NotFoundObjectResult) ||
-                     result.GetType() == typeof(BadRequestObjectResult))
-                    return BadRequest(new
+                if (model == null)
+                    return Ok(new
                     {
-                        bResult = false,
-                        type = "ERRO",
-                        message = result?.ToString()
+                        bResult = true,
+                        type = "ERRO - ID nao localizado",
+                        message = "ID nao localizado",
+                        data = id
                     });
+
+                _db.Socio.Remove(model);
+                _db.SaveChanges();
+
+                return Ok(new
+                {/*
+                    _logger.LogInformation(
+                    $"{lstModel} graus Fahrenheit = " +
+                    $"{resultado.Celsius} graus Celsius = " +
+                    $"{resultado.Kelvin} graus Kelvin");
+                return resultado;
+                    */
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
+                });
             }
             catch (Exception ex)
             {
+                var mensagemErro = $"ListGrid : {ex?.Message}";
+                _logger.LogError(mensagemErro);
+
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = ex?.Message?.ToString()
+                    message = mensagemErro
                 });
             }
-
-            return Ok(new
-            {
-                bResult = true,
-                type = "OK",
-                message = "SUCESSO ::: "
-            });
-
-            //return View();
         }
 
-        */
+        #endregion
+
+        #region Socio Derivacao
+        public async Task<IActionResult> Create_SocioContato(VMSocio model)
+        {
+            try
+            {
+                if (!IsValidEmailUsingMailAddress(model?.Email?.Trim()?.ToLower()))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Formato de Email Inválido"
+                    });
+
+                var newModel = new SocioContato
+                {
+                    SocioId = model.Id,
+                    DDI =  model.DDI > 0 ? model.DDI : 55,
+                    DDD =  !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt16(model.Telefone.Split(")")[0].Replace("(", string.Empty)) : null,
+                    Telefone = !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt32(model.Telefone.Split(")")[1].Replace("-", string.Empty)) : null,
+                    Email = model?.Email?.Trim()?.ToLower(),
+                };
+
+                _db.SocioContato.Add(newModel);
+                _db.SaveChanges();
+
+                var newSocioContatoId = newModel?.Id;
+
+                return Ok(new
+                {/*
+                        _logger.LogInformation(
+                        $"{lstModel} graus Fahrenheit = " +
+                        $"{resultado.Celsius} graus Celsius = " +
+                        $"{resultado.Kelvin} graus Kelvin");
+                    return resultado;
+                        */
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ListGrid : {ex?.Message}";
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+        public async Task<IActionResult> Create_SocioEndereco(VMSocio model)
+        {
+            try
+            {
+                var newModel = new SocioEndereco
+                {
+                    SocioId = model.Id,
+                    Endereco = model.Endereco,
+                    Numero = model.Numero,
+                    Complemento = model.Complemento,
+                    Bairro = model.Bairro,
+                    Cidade = model.Cidade,
+                    Estado = model.Estado,
+                    CEP = !string.IsNullOrEmpty(model.CEP) ? model.CEP.Replace("-", string.Empty) : string.Empty,
+                };
+
+                _db.SocioEndereco.Add(newModel);
+                _db.SaveChanges();
+
+                var newSocioEnderecoId = newModel?.Id;
+
+                return Ok(new
+                {/*
+                        _logger.LogInformation(
+                        $"{lstModel} graus Fahrenheit = " +
+                        $"{resultado.Celsius} graus Celsius = " +
+                        $"{resultado.Kelvin} graus Kelvin");
+                    return resultado;
+                        */
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ListGrid : {ex?.Message}";
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+        public async Task<IActionResult> Create_SocioAniversario(VMSocio model)
+        {
+            try
+            {
+                var newModel = new SocioAniversario
+                {
+                    SocioId = model.Id,
+                    Dia = !string.IsNullOrEmpty(model.DataAniversario) ? Convert.ToInt32(model.DataAniversario.Split("/")[0]) : null,
+                    Mes = !string.IsNullOrEmpty(model.DataAniversario) ? Convert.ToInt32(model.DataAniversario.Split("/")[1]) : null,
+                };
+
+                _db.SocioAniversario.Add(newModel);
+                _db.SaveChanges();
+
+                var newSocioAniversarioId = newModel?.Id;
+
+                return Ok(new
+                {/*
+                        _logger.LogInformation(
+                        $"{lstModel} graus Fahrenheit = " +
+                        $"{resultado.Celsius} graus Celsius = " +
+                        $"{resultado.Kelvin} graus Kelvin");
+                    return resultado;
+                        */
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ListGrid : {ex?.Message}";
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
+        #endregion
+
+        #region Validador Email
+        public bool IsValidEmailUsingMailAddress(string emailAddress)
+        {
+            if (string.IsNullOrWhiteSpace(emailAddress))
+                return false;
+            try
+            {
+                var mailAddress = new MailAddress(emailAddress);
+                // Optional extra check to ensure the original input matches the parsed address,
+                // preventing issues with inputs like "John Doe" <john@doe.com>.
+                return mailAddress.Address == emailAddress;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+        }
         #endregion
     }
 }

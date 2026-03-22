@@ -100,7 +100,7 @@ namespace Aceca.Adm.Controllers
         #endregion
 
         #region Login - Token
-        private string LoginToken(Usuario user, Socios socio)
+        private string LoginToken(Usuario user, Socio socio)
         {
             string strTok = string.Empty;
 

@@ -133,14 +133,14 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Contato
                 {
-                    data: 'numero',
+                    data: 'telefone',
                     targets: 3,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.id;
 
                         if (id != 0 && data !== undefined && data !== null) {
-                            return `+${full.ddi} (${full.ddd}) ${full.numero}`;
+                            return `+${full.ddi} (${full.ddd}) ${full.telefone}`;
                         } else {
                             return '';//'Data Indispon&iacute;vel';
                         }

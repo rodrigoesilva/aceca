@@ -1,10 +1,11 @@
 
+using Aceca.Adm.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Aceca.Adm.Models
+namespace Aceca.Adm.VMModels
 {
-    public class BaseModel
+    public class VMBaseModel
     {
         public bool? Ativo { get; set; }
         public DateTime? DataCriacao { get; set; } = DateTime.Now;
@@ -54,7 +55,7 @@ namespace Aceca.Adm.Models
     #region agenda
 
     [Table("agenda")]
-    public class Agenda : BaseModel
+    public class Agenda : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         public string? Data { get; set; }
@@ -82,7 +83,7 @@ namespace Aceca.Adm.Models
     #region Fabrica
 
     [Table("fabricas")]
-    public class Fabrica : BaseModel
+    public class Fabrica : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
@@ -93,7 +94,7 @@ namespace Aceca.Adm.Models
     }
 
     [Table("fabricas_fase")]
-    public class FabricaFase : BaseModel
+    public class FabricaFase : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         public int? Codigo { get; set; }
@@ -105,10 +106,9 @@ namespace Aceca.Adm.Models
     #region Marca
 
     [Table("marcas")]
-    public class Marcas : BaseModel
+    public class VMMarca : VMBaseModel
     {
-        [Key] public int? Id { get; set; }
-
+        public int? Id { get; set; }
         public int? MarcaDimensaoId { get; set; }
         public int? MarcaFabricaId { get; set; }
         public int? MarcaFaseId { get; set; }
@@ -117,6 +117,7 @@ namespace Aceca.Adm.Models
         public int? MarcaQualidadeImagemId { get; set; }
         public int? MarcaRaridadeId { get; set; }
         public int? MarcaSubTipoId { get; set; }
+
         public string? CodigoAceca { get; set; }
         public string? CodigoSC { get; set; }
         public string? ImgPrincipal { get; set; }
@@ -128,25 +129,17 @@ namespace Aceca.Adm.Models
         public string? Valor { get; set; }
         public string? IncluidoPor { get; set; }
         public int? EmQuarentena { get; set; }
-        public MarcaDimensao? MarcaDimensao { get; set; }
-        public MarcaFabrica? MarcaFabrica { get; set; }
-        public MarcaFase? MarcaFase { get; set; }
-        public MarcaFinalidade? MarcaFinalidade { get; set; }
-        public MarcaImpressora? MarcaImpressora { get; set; }
-        public MarcaQualidadeImagem? MarcaQualidadeImagem { get; set; }
-        public MarcaRaridade? MarcaRaridade { get; set; }
-        public MarcaSubTipo? MarcaSubTipo { get; set; }
     }
 
     [Table("marcas_filtro_dimensao")]
-    public class MarcaDimensao : BaseModel
+    public class VMMarcaDimensao : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
     [Table("marcas_filtro_fabricas")]
-    public class MarcaFabrica : BaseModel
+    public class VMMarcaFabrica : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
@@ -154,7 +147,7 @@ namespace Aceca.Adm.Models
     }
 
     [Table("marcas_filtro_fases")]
-    public class MarcaFase : BaseModel
+    public class VMMarcaFase : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
@@ -164,21 +157,21 @@ namespace Aceca.Adm.Models
     }
 
     [Table("marcas_filtro_finalidade")]
-    public class MarcaFinalidade : BaseModel
+    public class VMMarcaFinalidade : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
     [Table("marcas_filtro_impressora")]
-    public class MarcaImpressora : BaseModel
+    public class VMMarcaImpressora : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
     [Table("marcas_filtro_qualidade_imagem")]
-    public class MarcaQualidadeImagem : BaseModel
+    public class VMMarcaQualidadeImagem : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Sigla { get; set; } = string.Empty;
@@ -186,7 +179,7 @@ namespace Aceca.Adm.Models
     }
 
     [Table("marcas_filtro_raridade")]
-    public class MarcaRaridade : BaseModel
+    public class VMMarcaRaridade : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Sigla { get; set; } = string.Empty;
@@ -194,17 +187,17 @@ namespace Aceca.Adm.Models
     }
 
     [Table("marcas_filtro_subtipos")]
-    public class MarcaSubTipo : BaseModel
+    public class VMMarcaSubTipo : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         public int? MarcaTipoId { get; set; }
         [MaxLength(10)] public string? Sigla { get; set; } = string.Empty;
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
-        public MarcaTipo? MarcaTipo { get; set; }
+        public VMMarcaTipo? MarcaTipo { get; set; }
     }
 
     [Table("marcas_filtro_tipos")]
-    public class MarcaTipo : BaseModel
+    public class VMMarcaTipo : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
@@ -214,7 +207,7 @@ namespace Aceca.Adm.Models
 
     #region Pais
     [Table("paises")]
-    public class Pais : BaseModel
+    public class Pais : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
@@ -231,7 +224,7 @@ namespace Aceca.Adm.Models
     }
 
     [Table("paises_categorias")]
-    public class PaisCategoria : BaseModel
+    public class PaisCategoria : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         public int? CodigoId { get; set; }
@@ -243,63 +236,19 @@ namespace Aceca.Adm.Models
     #region Socio
 
     [Table("socios")]
-    public class Socio : BaseModel
+    public class VMSocio : VMBaseModel
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] 
         public int? Id { get; set; }
+        public int? SocioContatoId { get; set; }
+        public int? SocioEnderecoId { get; set; }
+        public int? SocioAniversarioId { get; set; }
         public int? SocioPerfilId { get; set; }
+
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
-        public bool? MostrarSite { get; set; }
-
-        public SocioPerfil? SocioPerfil { get; set; }
-    }
-
-    [Table("socio_aniversario")]
-    public class SocioAniversario
-    {
-        [Key] public int? Id { get; set; }
-        public int? SocioId { get; set; }
-        public int? Dia { get; set; }
-        public int? Mes { get; set; }
-
-        public Socio? Socio { get; set; }
-    }
-
-    [Table("socio_colecao_info")]
-    public class SocioColecao
-    {
-        [Key] public int? Id { get; set; }
-        public int? SocioId { get; set; }
-        [MaxLength(255)] public string? TipoColecao { get; set; } = string.Empty;
-        public string? ItensColecao { get; set; } = string.Empty;
-        [MaxLength(255)] public string? Advertencia { get; set; } = string.Empty;
-        [MaxLength(255)] public string? NegociacaoColecao { get; set; } = string.Empty;
-        [MaxLength(255)] public string? QtdEmbalagem { get; set; } = string.Empty;
-        [MaxLength(255)] public string? QtdEmbalagemNacional { get; set; } = string.Empty;
-        public int? TempoColecao { get; set; }
-
-        public Socio? Socio { get; set; }
-    }
-
-    [Table("socio_contato")]
-    public class SocioContato
-    {
-        [Key] public int? Id { get; set; }
-        public int? SocioId { get; set; }
+        [MaxLength(255)] public string? Email { get; set; } = string.Empty;
         public int? DDI { get; set; }
         public int? DDD { get; set; }
-        public long? Telefone { get; set; }
-        [MaxLength(255)] public string? Email { get; set; } = string.Empty;
-
-        public Socio? Socio { get; set; }
-    }
-
-    [Table("socio_endereco")]
-    public class SocioEndereco
-    {
-        [Key] public int? Id { get; set; }
-        public int? SocioId { get; set; }
+        public string? Telefone { get; set; } = string.Empty;
         [MaxLength(255)] public string? Endereco { get; set; } = string.Empty;
         [MaxLength(50)] public string? Numero { get; set; } = string.Empty;
         [MaxLength(50)] public string? Complemento { get; set; } = string.Empty;
@@ -307,23 +256,16 @@ namespace Aceca.Adm.Models
         [MaxLength(255)] public string? Cidade { get; set; } = string.Empty;
         [MaxLength(255)] public string? Estado { get; set; } = string.Empty;
         [MaxLength(255)] public string? CEP { get; set; } = string.Empty;
-        public Socio? Socio { get; set; }
-    }
+        public string? DataAniversario { get; set; } = string.Empty;
+        public int? Dia { get; set; }
+        public int? Mes { get; set; }
+        public bool? MostrarSite { get; set; }
 
-    [Table("socio_financeiro")]
-    public class SocioFinanceiro
-    {
-        [Key] public int? Id { get; set; }
-        public int? SocioId { get; set; }
-        public int? TipoPagamentoId { get; set; }
-        public int? PagamentoEmDia { get; set; }
-        [Column("dtUltimoPagamento")] public DateTime? DataUltimoPagamento { get; set; } = DateTime.UtcNow;
-        public Socio? Socio { get; set; }
-        public TipoPagamento? TipoPagamento { get; set; }
+        public SocioPerfil? SocioPerfil { get; set; }
     }
 
     [Table("socio_perfil")]
-    public class SocioPerfil : BaseModel
+    public class SocioPerfil : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
@@ -334,7 +276,7 @@ namespace Aceca.Adm.Models
     #region tipos
 
     [Table("tipo_pagamento")]
-    public class TipoPagamento : BaseModel
+    public class TipoPagamento : VMBaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
@@ -345,7 +287,7 @@ namespace Aceca.Adm.Models
     #region Usuario
 
     [Table("usuarios")]
-    public class Usuario : BaseModel
+    public class Usuario : VMBaseModel
     {
         [Key] public int? Id { get; set; }
 
@@ -357,7 +299,7 @@ namespace Aceca.Adm.Models
         [MaxLength(255)][Column("_usuario")] public string? NomeUsuario { get; set; }
         [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
 
-        public Socio? Socio { get; set; }
+        public VMSocio? Socio { get; set; }
 
         [NotMapped] public string? Token { get; set; }
     }
@@ -384,3 +326,250 @@ namespace Aceca.Adm.Models
 
     #endregion
 }
+
+//###############################
+/*
+[Table("agendas")]
+public class AgendaItem
+{
+    [Key] public int? Id { get; set; }
+    [MaxLength(200)] public string? Titulo { get; set; } = "";
+    public string? Descricao { get; set; }
+    public DateOnly Data { get; set; }
+    public TimeOnly? HoraInicio { get; set; }
+    public TimeOnly? HoraFim { get; set; }
+    [MaxLength(255)] public string? Local { get; set; }
+    [MaxLength(30)] public string? Tipo { get; set; } = "proximo";
+    public string? CoverUrl { get; set; }
+    public DateTime? CriadoEm { get; set; } = DateTime.UtcNow;
+}
+
+[Table("dimensoes")]
+public class Dimensao
+{
+    [Key] public int? Id { get; set; }
+    [MaxLength(80)] public string? Nome { get; set; } = "";
+    public decimal? Largura { get; set; }
+    public decimal? Altura { get; set; }
+}
+
+[Table("fases")]
+public class Fase
+{
+    [Key] public int? Id { get; set; }
+    [MaxLength(80)] public string? Nome { get; set; } = "";
+    public string? Descricao { get; set; }
+    public ICollection<Marca> Marcas { get; set; } = [];
+}
+
+[Table("impressoras")]
+public class Impressora
+{
+    [Key] public int? Id { get; set; }
+    [MaxLength(80)] public string? Nome { get; set; } = "";
+    [MaxLength(80)] public string? Modelo { get; set; }
+}
+
+[Table("tipos")]
+public class Tipo
+{
+    [Key] public int? Id { get; set; }
+    [MaxLength(80)] public string? Nome { get; set; } = "";
+    public string? Descricao { get; set; }
+    [Column("ano_inicio")] public DateTime? AnoInicio { get; set; } = DateTime.UtcNow;
+    [Column("ano_fim")] public DateTime? AnoFim { get; set; } = DateTime.UtcNow;
+}
+
+[Table("subtipos")]
+public class SubTipo
+{
+    [Key] public int? Id { get; set; }
+    [MaxLength(80)] public string? Nome { get; set; } = "";
+    public int? TipoId { get; set; }
+    public Tipo? Tipo { get; set; }
+}
+[Table("colecoes")]
+public class Colecao
+{
+    [Key] public int? Id { get; set; }
+    public int? SocioId { get; set; }
+    public Socio? Socio { get; set; }
+    [MaxLength(120)] public string? Nome { get; set; } = "";
+    [MaxLength(80)] public string? Tipo { get; set; }
+    public string? Descricao { get; set; }
+    public int? Itens { get; set; }
+}
+
+[Table("contatos")]
+public class Contato
+{
+    [Key] public int? Id { get; set; }
+    [MaxLength(120)] public string? Nome { get; set; } = "";
+    [MaxLength(180)] public string? Email { get; set; } = "";
+    [MaxLength(30)] public string? Telefone { get; set; }
+    [MaxLength(40)] public string? Assunto { get; set; } = "";
+    public string? Mensagem { get; set; } = "";
+    public string? Anexos { get; set; }
+    [MaxLength(20)] public string? Status { get; set; } = "novo";
+    public DateTime? CriadoEm { get; set; } = DateTime.UtcNow;
+}
+
+[Table("socio_perfil")]
+public class SocioPerfil
+{
+    [Key] public int? Id { get; set; }
+    public int? perfilId { get; set; }
+    [MaxLength(120)] public string? Nome { get; set; } = "";
+    [MaxLength(180)] public string? Email { get; set; } = "";
+    [MaxLength(255)] public string? SenhaHash { get; set; } = "";
+    [MaxLength(40)] public string? Cargo { get; set; } = "socio";
+    public DateOnly? Associado { get; set; }
+    public string? Foto { get; set; }
+    public bool Ativo { get; set; } = true;
+    public DateTime? CriadoEm { get; set; } = DateTime.UtcNow;
+    public ICollection<Colecao> Colecoes { get; set; } = [];
+}
+
+[Table("agendas")]
+public class AgendaItem
+{
+    [Key] public int?    Id        { get; set; }
+    [MaxLength(200)] public string? Titulo     { get; set; } = "";
+    public string?               Descricao  { get; set; }
+    public DateOnly              Data       { get; set; }
+    public TimeOnly?             HoraInicio { get; set; }
+    public TimeOnly?             HoraFim    { get; set; }
+    [MaxLength(255)] public string? Local    { get; set; }
+    [MaxLength(30)]  public string?  Tipo     { get; set; } = "proximo";
+    public string?               CoverUrl   { get; set; }
+    public DateTime?              CriadoEm   { get; set; } = DateTime.UtcNow;
+}
+
+[Table("paises")]
+public class Pais
+{
+    [Key] public int?    Id    { get; set; }
+    [MaxLength(80)] public string? Nome  { get; set; } = "";
+    [MaxLength(5)]  public string? Sigla { get; set; } = "";
+    public ICollection<Fabrica> Fabricas { get; set; } = [];
+}
+
+[Table("fabricas")]
+public class Fabrica
+{
+    [Key] public int?    Id       { get; set; }
+    [MaxLength(120)] public string? Nome    { get; set; } = "";
+    [MaxLength(80)]  public string? Cidade { get; set; }
+    public int?                  PaisId   { get; set; }
+    public Pais?                 Pais     { get; set; }
+    public ICollection<Marca>    Marcas   { get; set; } = [];
+}
+
+[Table("dimensoes")]
+public class Dimensao
+{
+    [Key] public int?    Id      { get; set; }
+    [MaxLength(80)] public string? Nome    { get; set; } = "";
+    public decimal?              Largura { get; set; }
+    public decimal?              Altura  { get; set; }
+}
+
+[Table("fases")]
+public class Fase
+{
+    [Key] public int?    Id        { get; set; }
+    [MaxLength(80)] public string? Nome      { get; set; } = "";
+    public string?               Descricao { get; set; }
+    public ICollection<Marca>    Marcas    { get; set; } = [];
+}
+
+[Table("impressoras")]
+public class Impressora
+{
+    [Key] public int?    Id     { get; set; }
+    [MaxLength(80)] public string? Nome   { get; set; } = "";
+    [MaxLength(80)] public string? Modelo{ get; set; }
+}
+
+[Table("tipos")]
+public class Tipo
+{
+    [Key] public int?    Id        { get; set; }
+    [MaxLength(80)] public string? Nome      { get; set; } = "";
+    public string?               Descricao { get; set; }
+    public ICollection<SubTipo>  SubTipos  { get; set; } = [];
+    public ICollection<Marca>    Marcas    { get; set; } = [];
+}
+
+[Table("subtipos")]
+public class SubTipo
+{
+    [Key] public int?    Id     { get; set; }
+    [MaxLength(80)] public string? Nome   { get; set; } = "";
+    public int?                  TipoId { get; set; }
+    public Tipo?                 Tipo   { get; set; }
+}
+
+[Table("0_new_geral")]
+public class Marca
+{
+    [Key] public int?    Id                { get; set; }
+    [MaxLength(120)]
+    [Column("marca")] 
+    public string? Nome   { get; set; } = "";
+    [MaxLength(30)]
+    [Column("cod_aceca")] 
+    public string? CodigoAceca { get; set; }
+    public int?                    FaseId { get; set; }
+    public Fase?                   Fase   { get; set; }
+    public int?                    FabricaId { get; set; }
+    public Fabrica?                Fabrica   { get; set; }
+    [Column("subtipoId")] public int? TipoId    { get; set; }
+    public Tipo?                   Tipo      { get; set; }
+    public string?                 Descricao { get; set; }
+    [MaxLength(512)][Column("imagem")] public string? ImagemUrl        { get; set; }
+    [MaxLength(512)][Column("detalhe")] public string? ImagemDetalheUrl { get; set; }
+    [MaxLength(120)][Column("incluido_por")] public string? IncluidoPor      { get; set; }
+    [Column("carimbo_de_hora")] public DateTime?                CriadoEm          { get; set; } = DateTime.UtcNow;
+    //[Column("carimbo_de_hora")] public DateTime?                AtualizadoEm      { get; set; } = DateTime.UtcNow;
+}
+
+[Table("colecoes")]
+public class Colecao
+{
+    [Key] public int?    Id       { get; set; }
+    public int?          SocioId  { get; set; }
+    public Socio?       Socio    { get; set; }
+    [MaxLength(120)] public string? Nome     { get; set; } = "";
+    [MaxLength(80)]  public string? Tipo    { get; set; }
+    public string?               Descricao { get; set; }
+    public int?                   Itens     { get; set; }
+}
+
+[Table("contatos")]
+public class Contato
+{
+    [Key] public int?    Id       { get; set; }
+    [MaxLength(120)] public string? Nome     { get; set; } = "";
+    [MaxLength(180)] public string? Email    { get; set; } = "";
+    [MaxLength(30)]  public string? Telefone{ get; set; }
+    [MaxLength(40)]  public string? Assunto  { get; set; } = "";
+    public string?                 Mensagem  { get; set; } = "";
+    public string?                Anexos    { get; set; }
+    [MaxLength(20)]  public string? Status   { get; set; } = "novo";
+    public DateTime?               CriadoEm  { get; set; } = DateTime.UtcNow;
+}
+
+[Table("usuarios")]
+public class Usuario
+{
+    [Key] public int? Id { get; set; }
+    public int? socioId { get; set; }
+    [MaxLength(180)] public string? Email { get; set; } = "";
+    [MaxLength(255)] public string? Senha { get; set; } = "";
+    public string? Senha_Aberta { get; set; }
+    public string? _Usuario { get; set; }
+    public DateTime? Last_Login { get; set; } = DateTime.UtcNow;
+}
+*/
+

@@ -48,9 +48,9 @@ $.busyLoadSetup({
 
 document.addEventListener('DOMContentLoaded', function () {
     (function () {
-        console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
+        console.log(`LIST ${var_Controller}- Todos os recursos terminaram o carregamento!`);
 
-        fn_LoadCmb_SocioPerfil();
+        fn_Masks();
 
         // Form validation
         const formAddNewItem = document.getElementById('form-pop-add-new-item');
@@ -64,7 +64,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //#endregion
 
+//#region DATA PICKERS
+
+
+$(function () {
+    var bsDatepickerFormat = $('.dt-calendar');
+
+    // Format
+    if (bsDatepickerFormat.length) {
+        bsDatepickerFormat.datepicker({
+            autoclose: true,
+            todayHighlight: true,
+            format: 'dd/mm',
+            language: 'pt-BR',
+            orientation: isRtl ? 'auto right' : 'auto left'
+        });
+    }
+});
+//#endregion
+
 //#region GRID
+
 function fn_GridList(formValid) {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
@@ -107,7 +127,7 @@ function fn_GridList(formValid) {
             columnDefs: [
                 // COLUNA - Responsive
                 {
-                    data: 'id',
+                    data: 'socio.id',
                     targets: 0,
                     className: 'control',
                     visible: false,
@@ -117,7 +137,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - ID checkbox
                 {
-                    data: 'id',
+                    data: 'socio.id',
                     targets: 1,
                     visible: false,
                     checkboxes: true,
@@ -130,15 +150,16 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'nome',
+                    data: 'socio.nome',
                     targets: 2,
                 },
                 // COLUNA - Tipo Socio
                 {
-                    data: 'socioPerfilId',
+                    data: 'socio.socioPerfilId',
                     targets: 3,
                     className: "text-center",
                     render: function (data, type, full) {
+
                         let id = full.id;
 
                         if (id != 0 && data !== undefined && data !== null) {
@@ -183,7 +204,7 @@ function fn_GridList(formValid) {
                 // COLUNA - Status                    
                 {
                     targets: -2,
-                    data: 'ativo',
+                    data: 'socio.ativo',
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -210,7 +231,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Botoes Acoes
                 {
-                    data: 'id',
+                    data: 'socio.id',
                     targets: -1,
                     className: "text-center",
                     orderable: false,
@@ -229,9 +250,22 @@ function fn_GridList(formValid) {
                             let itemObjJson = encodeURIComponent(JSON.stringify(full));
 
                             btns =
+                                '<div class="d-inline-block">' +
+                                '<a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line ri-22px"></i></a>' +
+                                '<ul class="dropdown-menu dropdown-menu-end m-0">' +
+                                '<li><a href="javascript:fn_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="dropdown-item edit-record">Editar</a></li>' +
+                                '<div class="dropdown-divider"></div>' +
+                                '<li><a href="javascript:fnItem_Delete(' + itemObjJson + ');" class="dropdown-item text-danger delete-record">Excluir</a></li>' +
+                                '</ul>' +
+                                '</div>'
+
+                            /*
+                            btns =
                                 '<div class="d-inline-block text-nowrap">' +
                                 '<a href="javascript:fn_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
                                 '</div>'
+
+                                */
                         }
 
                         return (btns);
@@ -369,7 +403,7 @@ function fn_GridList(formValid) {
             }
         });
     }
-
+  
     // VALIDA SUBMIT POP
     formValid.on('core.form.valid', function (e) {
         //console.log("e ::: ", e);
@@ -385,8 +419,8 @@ function fn_GridList(formValid) {
         } else {
             fnItem_Add(varTbl_Obj)
         }
-        //fnItem_Add(abc);
     });
+     /* */
 }
 
 function fn_GridComplete(grid) {
@@ -506,6 +540,29 @@ function fn_CheckVerAtivos() {
 
 //#endregion
 
+//#region FUNCOES MASCARA
+
+function fn_Masks() {
+
+    //mascar para telefone celular
+    $('.phone-mask').mask('(00) 00000-0000');
+}
+
+function fn_MaskCEP(input) {
+    // Remove tudo que não for dígito
+    let value = input.value.replace(/\D/g, '');
+
+    // Limita a 8 dígitos
+    value = value.substring(0, 8);
+
+    // Aplica a máscara: 00000-000
+    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+
+    input.value = value;
+}
+
+//#endregion
+
 //#region POP
 
 function fn_Pop(obj, action) {
@@ -515,16 +572,30 @@ function fn_Pop(obj, action) {
     const popAddNewItem = document.querySelector('#pop-add-new-item');
 
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
-
-    // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
-        (popAddNewItem.querySelector('#hdSocioPerfilId').value = (obj === null ? 0 : obj.socioPerfilId)),
-
+    
+        // Pop ID
+        (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.socio.id)),
+        (popAddNewItem.querySelector('#hdSocioContatoId').value = (obj === null ? 0 : obj.socioContato.id)),
+        (popAddNewItem.querySelector('#hdSocioEnderecoId').value = (obj === null ? 0 : obj.socioEndereco.id)),
+        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj.socioAniversario.id)),
+        (popAddNewItem.querySelector('#hdSocioPerfilId').value = (obj === null ? 0 : obj.socio.socioPerfilId)),
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.nome)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.socioPerfilId));
-        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),        
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.socioContato.email)),
+        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : `(${obj.socioContato.ddd}) ${obj.socioContato.telefone}`)),
+        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : obj.socioEndereco.cep)),
+        (popAddNewItem.querySelector('.dt-line-05').value = (obj === null ? '' : obj.socioEndereco.endereco)),
+        (popAddNewItem.querySelector('.dt-line-06').value = (obj === null ? '' : obj.socioEndereco.numero)),
+        (popAddNewItem.querySelector('.dt-line-07').value = (obj === null ? '' : obj.socioEndereco.complemento)),
+        (popAddNewItem.querySelector('.dt-line-08').value = (obj === null ? '' : obj.socioEndereco.bairro)),
+        (popAddNewItem.querySelector('.dt-line-09').value = (obj === null ? '' : obj.socioEndereco.estado)),
+        (popAddNewItem.querySelector('.dt-line-10').value = (obj === null ? '' : obj.socioEndereco.cidade)),
+        (popAddNewItem.querySelector('.dt-line-11').value = (obj === null ? '' : `${obj.socioAniversario.dia} / ${obj.socioAniversario.mes}`)),
+        (popAddNewItem.querySelector('.dt-line-12').checked = (obj === null ? true : obj.socio.ativo));
+        (popAddNewItem.querySelector('.dt-line-13').checked = (obj === null ? true : obj.socio.mostrarSite));
 
+        //(popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.socioPerfilId));
+       
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -532,10 +603,13 @@ function fn_Pop(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmb_SocioPerfil").val(obj.socioPerfilId).change();
+        $("#cmb_SocioEstado").val(obj.socioEndereco.estado).change();
 
-        console.log("fn_Pop ex val ::: ", $("#cmb_SocioPerfil").val());
+        console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
     }
+
+
+    console.log("fn_Pop popAddNewItem ::: ", popAddNewItem);
 
     // Open Pop
     popAddNewItemEl.show();
@@ -546,8 +620,20 @@ function fn_PopGetObj() {
     const objFormData = {
         Id: $('#hdId').val(),
         Nome: $('.form-add-new-item .dt-line-01').val(),
-        SocioPerfilId: $('#cmb_SocioPerfil').val(),
-        Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
+        Email: $('.form-add-new-item .dt-line-02').val(),
+        Telefone: $('.form-add-new-item .dt-line-03').val(),
+        CEP: $('.form-add-new-item .dt-line-04').val(),
+        Endereco: $('.form-add-new-item .dt-line-05').val(),
+        Numero: $('.form-add-new-item .dt-line-06').val(),
+        Complemento: $('.form-add-new-item .dt-line-07').val(),
+        Bairro: $('.form-add-new-item .dt-line-08').val(),
+        Estado: $('#cmb_SocioEstado').val(),
+        Cidade: $('.form-add-new-item .dt-line-10').val(),
+        DataAniversario: $('.form-add-new-item .dt-line-11').val(),
+        Ativo: $('.form-add-new-item .dt-line-12').is(':checked'),
+        MostrarSite: $('.form-add-new-item .dt-line-13').is(':checked'),
+        
+        SocioEstadoId: $('#cmb_SocioEstado').val(),
     };
 
     console.log("fn_PopGetObj !", objFormData);
@@ -556,6 +642,7 @@ function fn_PopGetObj() {
 }
 
 function fn_PopValidator(formAddNewItem) {
+
     var varformValid = FormValidation.formValidation(formAddNewItem, {
         fields: {
             pop_line_item_01: {
@@ -572,7 +659,7 @@ function fn_PopValidator(formAddNewItem) {
                 // Use this for enabling/changing valid/invalid class
                 // eleInvalidClass: '',
                 eleValidClass: '',
-                rowSelector: '.col-sm-12'
+                rowSelector: '.form-floating-outline'
             }),
             submitButton: new FormValidation.plugins.SubmitButton(),
             // defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
@@ -658,22 +745,8 @@ function fnItem_Delete(varItems_Row) {
                             });
                         }
                     },
-                    error: function (XMLHttpRequest, textStatus, errorThrown) {
-                        console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                        console.log("textStatus  :: ", textStatus);
-                        console.log("errorThrown  :: ", errorThrown);
-                        console.log("result  :: Error while posting SendResult");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
+                    error: function (xhr, textStatus, errorThrown) {
+                        fn_ModalErro(xhr, textStatus, errorThrown);
 
                         return false;
                     }
@@ -695,7 +768,7 @@ function fnItem_Delete(varItems_Row) {
 }
 
 function fnItem_Edit(varItems_Row) {
-    //console.log("EDIT CLICK ::: ", varItems_Row);
+    console.log("fnItem_Edit varItems_Row ::: ", varItems_Row);
     //var varPop_BtnAction = 'Edit';
 
     //fn_Pop(varItems_Row, varPop_BtnAction);
@@ -729,7 +802,7 @@ function fnItem_Edit(varItems_Row) {
                 // contentType: varAjax_TypeContent,
                 success: function (result) {
 
-                    //console.log("result  :: ", result);
+                    console.log("result  :: ", result);
                     //console.log("result bResult :: ", result.bResult);
 
                     if (result.bResult) {
@@ -779,24 +852,8 @@ function fnItem_Edit(varItems_Row) {
                         });
                     }
                 },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    //console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                    //console.log("textStatus  :: ", textStatus);
-                    //console.log("errorThrown  :: ", errorThrown);
-                    //console.log("result  :: Error while posting SendResult");
-
-                    $.busyLoadFull("hide");
-
-                    Swal.fire({
-                        title: 'OPS!!',
-                        icon: 'error',
-                        html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-danger waves-effect'
-                        }
-                    });
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
 
                     return false;
                 }
@@ -805,7 +862,7 @@ function fnItem_Edit(varItems_Row) {
 }
 
 function fnItem_Add(varTbl_Obj) {
-    //console.log("ADD CLICK ::: ", varTbl_Obj.row);
+    //console.log("fnItem_Add varTbl_Obj ::: ", varTbl_Obj);
 
     var varPop_BtnAction = 'Create';
 
@@ -815,6 +872,7 @@ function fnItem_Add(varTbl_Obj) {
         varAjax_TypeContent = 'application/json; charset=utf-8';
 
     const formData_newItem = fn_PopGetObj();
+    console.log("fnItem_Add formData_newItem ::: ", formData_newItem);
 
     if (formData_newItem != '') {
 
@@ -828,8 +886,7 @@ function fnItem_Add(varTbl_Obj) {
                 data: formData_newItem,
                 // contentType: varAjax_TypeContent,
                 success: function (result) {
-
-                    //console.log("result  :: ", result);
+                    console.log("result  :: ", result);
                     //console.log("result bResult :: ", result.bResult);
 
                     if (result.bResult) {
@@ -841,7 +898,6 @@ function fnItem_Add(varTbl_Obj) {
                         if ($.fn.dataTable.isDataTable('.datatables-basic')) {
                             //console.log("YES :: ");
                             varTbl = varTbl_Obj.DataTable();
-
 
                             // Hide offcanvas using javascript method
                             popAddNewItemEl.hide();
@@ -872,7 +928,7 @@ function fnItem_Add(varTbl_Obj) {
                         Swal.fire({
                             title: 'OPS!!',
                             icon: 'error',
-                            html: `<b> Erro ocorrido <br><br>` + result + `</b>`,
+                            html: `<b> Erro ocorrido :: <br><br>` + result.message + `</b>`,
                             focusConfirm: false,
                             confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
                             customClass: {
@@ -881,24 +937,8 @@ function fnItem_Add(varTbl_Obj) {
                         });
                     }
                 },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                    console.log("textStatus  :: ", textStatus);
-                    console.log("errorThrown  :: ", errorThrown);
-                    console.log("result  :: Error while posting SendResult");
-
-                    $.busyLoadFull("hide");
-
-                    Swal.fire({
-                        title: 'OPS!!',
-                        icon: 'error',
-                        html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-danger waves-effect'
-                        }
-                    });
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
 
                     return false;
                 }
@@ -908,605 +948,7 @@ function fnItem_Add(varTbl_Obj) {
 
 //#endregion
 
-
 //#region MODAL
-
-function fn_Modal(obj, action) {
-    //console.log("fn_Modal obj::: ", obj);
-    //console.log("fn_Modal action::: ", action);
-
-    let resultLoad = fnItem_Edit_CarregarDados(obj, action)
-
-    // console.log("fn_Modal resultLoad::: ", resultLoad);
-}
-function fn_ModalSalvar(e) {
-    const formData = new FormData(document.forms['form-modal-full-edit']);
-    //console.log("fn_ModalSalvar formData ::: ", formData);
-    //console.log("fn_ModalSalvar formEle GET ::: ", formData.get('cinema_Nome'));
-
-    fn_ModalGetObj(formData, 'Save')
-}
-async function fn_ModalGetObj(data, action) {
-    console.log("fn_ModalGetObj data ::: ", data);
-    console.log("fn_ModalGetObj action ::: ", action);
-
-    $.busyLoadFull("hide");
-
-    $('#modalAddNovaMarca').modal('show');
-
-    /*
-    //Carregamento de dados ao abrir
-    if (action === 'Edit') {
-        let socioId = $("#hdId").val(data.socio.id),
-            socioAniversarioId = $("#hdSocioAniversarioId").val(data.socioAniversario.id),
-            socioContatoId = $("#hdSocioContatoId").val(data.socioContato.id),
-            socioEnderecoId = $("#hdSocioEnderecoId").val(data.socioEndereco.id),
-            socioFinanceiroId = $("#hdSocioFinanceiroId").val(data.socioFinanceiro.id),
-            socioPerfilId = $("#hdSocioPerfilId").val(data.socioPerfil.id);
-
-        var loadCmbs = await fn_PopLoadCombos(action);
-        console.log("fn_ModalGetObj loadCmb ::: ", loadCmbs);
-
-        if (loadCmbs) {
-
-            const modalFullEditItem = document.querySelector('#modal-full-edit-item');
-            (modalFullEditItem.querySelector('.modal-title').textContent = (action === 'UPDATE') ? 'Alterar Registro' : 'Novo Registro');
-            (modalFullEditItem.querySelector('.data-submit').textContent = (action === 'UPDATE') ? 'Alterar' : 'Adicionar');
-
-            //#region ACCORDIONS
-
-            //#region <!-- Cinema Info -->//Table: cinema
-
-            $('#cinema_Nome').val(data.nome);
-            $('#cinema_Exibidor').val(data.exibidorId);
-            $('#cinema_Tipo').val(data.tipoCinemaId);
-            $('#cinema_Classificacao').val(data.cinemaClassificacaoId);
-            $('#cinema_Programacao').val(data.tipoCinemaProgramacaoId);
-            $('#cinema_Salas').val(data.quantidadeSalas);
-            $('#cinema_QtdMonitores').val(data.quantidadeMonitores);
-            $('#cinema_IdSEcom').val(data.codSecom);
-            $('#cinema_Obs').val(data.observacao);
-            $('#cinema_Status').prop('checked', data.ativo);
-            //PublicoAnual
-            //NaoMostrarSite
-            //Fechado
-
-            //#endregion
-
-            //#region <!-- Email Receber Material Info -->//Table: cinema_email_recebe_material -- 
-            // id
-            // cinemaId
-
-            //$('#chkCinemaEmailReceberMaterial_SalvarDados').prop('checked', data.cinemaEmailRecebeMaterial.ativo);
-
-            $('#cinemaEmailReceberMaterial_Email01').val(data.cinemaEmailRecebeMaterial.emailRecebeMaterial1);
-            $('#cinemaEmailReceberMaterial_Email02').val(data.cinemaEmailRecebeMaterial.emailRecebeMaterial2);
-            $('#cinemaEmailReceberMaterial_Email03').val(data.cinemaEmailRecebeMaterial.emailRecebeMaterial3);
-            $('#cinemaEmailReceberMaterial_Email04').val(data.cinemaEmailRecebeMaterial.emailRecebeMaterial4);
-
-            //#endregion
-
-            //#region <!-- Email Programacao Info -->//Table: cinema_email_programacao -- 
-            // id
-            // cinemaId
-
-            //$('#chkCinemaEmailProgramacao_SalvarDados').prop('checked', data.cinemaEmailProgramacao.ativo);
-
-            $('#cinemaEmailProgramacao_Email01').val(data.cinemaEmailProgramacao.emailProg1);
-            $('#cinemaEmailProgramacao_Email02').val(data.cinemaEmailProgramacao.emailProg2);
-            $('#cinemaEmailProgramacao_Email03').val(data.cinemaEmailProgramacao.emailProg3);
-            $('#cinemaEmailProgramacao_Email04').val(data.cinemaEmailProgramacao.emailProg4);
-            $('#cinemaEmailProgramacao_Email05').val(data.cinemaEmailProgramacao.emailProg5);
-            $('#cinemaEmailProgramacao_Email06').val(data.cinemaEmailProgramacao.emailProg6);
-            $('#cinemaEmailProgramacao_Email07').val(data.cinemaEmailProgramacao.emailProg7);
-            $('#cinemaEmailProgramacao_Email08').val(data.cinemaEmailProgramacao.emailProg8);
-            $('#cinemaEmailProgramacao_Email09').val(data.cinemaEmailProgramacao.emailProg9);
-            $('#cinemaEmailProgramacao_Email10').val(data.cinemaEmailProgramacao.emailProg10);
-
-            //#endregion
-
-            //#region <!-- Contato Info -->//Table: cinema_contato --  
-            // id
-            // cinemaId
-
-            //$('#chkCinemaContato_SalvarDados').prop('checked', data.cinemaContato.ativo);
-
-            $('#cinemaContato_Nome').val(data.cinemaContato.contato); // contato
-            $('#cinemaContato_Tel01').val(data.cinemaContato.tel1);
-            $('#cinemaContato_Email01').val(data.cinemaContato.email);
-            $('#cinemaContato_Tel02').val(data.cinemaContato.tel2);
-            $('#cinemaContato_Email02').val(data.cinemaContato.email);
-
-
-            // ddd1
-            // tel1
-            // tipoTel1
-            // compTel1
-            // tel2
-            // ddd2
-            // tipoTel2
-            // compTel2
-            // email
-            //#endregion
-
-            //#region <!-- Ingresso.com Info -->//Table: cinema_ingresso
-            // id
-            // cinemaId
-
-            //$('#chkCinemaIngresso_SalvarDados').prop('checked', data.cinemaIngresso.ativo);
-
-            $('#cinemaIngresso_Nome').val(data.cinemaIngresso.ingressoComName);
-            $('#cinemaIngresso_ID').val(data.cinemaIngresso.ingressoComId);
-            $('#cinemaIngresso_CidadeID').val(data.cinemaIngresso.ingressoComCityId);
-            $('#cinemaIngresso_UrlKey').val(data.cinemaIngresso.ingressoComUrlKey);
-
-            //#endregion
-
-            //#region <!-- Venda Bem Info -->//Table: cinema_vendabem -- 
-            // id
-            // cinemaId
-
-            //$('#chkCinemaVendaBem_SalvarDados').prop('checked', data.cinemaVendaBem.ativo);
-
-            $('#cinemaVendaBem_Nome').val(data.cinemaVendaBem.descricao);
-            $('#cinemaVendaBem_Filial').val(data.cinemaVendaBem.filial);
-
-            //#endregion
-
-            //#region <!-- Velox Info -->//Table: cinema_velox --  
-            // id
-            // cinemaId
-
-            //$('#chkCinemaVelox_SalvarDados').prop('checked', data.cinemaVelox.ativo);
-
-            $('#cinemaVelox_Nome').val(data.cinemaVelox.descricao); // descricao
-            $('#cinemaVelox_Praca').val(data.cinemaVelox.codpraca);
-
-            //#endregion
-
-            //#region <!-- Rentrak Info -->//Table: cinema_rentrak --  
-            // id
-            // cinemaId
-
-            //$('#chkCinemaRentrak_SalvarDados').prop('checked', data.cinemaRentrak.ativo);
-
-            $('#cinemaRentrak_Nome').val(data.cinemaRentrak.descricao);
-            $('#cinemaRentrak_CodigoReferencia').val(data.cinemaRentrak.codigoReferencia);
-
-            //#endregion
-
-            //#region <!-- Endereco Info -->//Table: cinema_endereco -- 
-            // id
-            // cinemaId
-
-            //$('#chkCinemaEndereco_SalvarDados').prop('checked', data.cinemaEndereco.ativo);
-
-            $('#cinemaEndereco_Localizacao').val(data.cinemaEndereco.localizacao);
-            $('#cinemaEndereco_Endereco').val(data.cinemaEndereco.endereco);
-            $('#cinemaEndereco_Numero').val(data.cinemaEndereco.numero);
-            $('#cinemaEndereco_Complemento').val(data.cinemaEndereco.complemento);
-            $('#cinemaEndereco_Bairro').val(data.cinemaEndereco.bairro);
-            $('#cinemaEndereco_Cidade').val(data.cinemaEndereco.cidade);
-            $('#cinemaEndereco_UF').val(data.cinemaEndereco.estadoId);
-            $('#cinemaEndereco_Regiao').val(data.cinemaEndereco.regiaoId);
-
-            //#endregion
-
-            //#region <!-- Classe Social Info -->//Table: cinema_classe_social --  
-            // id
-            // cinemaId
-
-            //$('#chkCinemaClasseSocial_SalvarDados').prop('checked', true);
-
-            //#endregion
-
-            //#region <!-- Juridico Info -->//Table: cinema_juridico -  
-            // id
-            // cinemaId
-            // razaoSocial
-            // cnpj
-            // ie
-            // ccm
-
-            //$('#chkCinemaJuridico_SalvarDados').prop('checked', data.cinemaJuridico.ativo);
-
-            $('#cinemaJuridico_RazaoSocial').val(data.cinemaJuridico.razaoSocial);
-            $('#cinemaJuridico_CNPJ').val(data.cinemaJuridico.cnpj);
-            $('#cinemaJuridico_InscricaoEstadual').val(data.cinemaJuridico.ie);
-            $('#cinemaJuridico_CCM').val(data.cinemaJuridico.ccm);
-
-            //#endregion
-
-            //#region <!-- Carimbo Info -->//Table: cinema_carimbo --  
-            // id
-            // cinemaId
-            // carimboComprovanteExibicao
-            // mostraCarimboComprovanteExibicao
-            //#endregion
-
-            //#endregion      
-
-            $.busyLoadFull("hide");
-
-            $('#modal-full-edit-item').modal('show');
-        }
-    } else {
-
-        let socioId = $("#hdId").val(data.socio.id),
-            socioAniversarioId = $("#hdSocioAniversarioId").val(data.socioAniversario.id),
-            socioContatoId = $("#hdSocioContatoId").val(data.socioContato.id),
-            socioEnderecoId = $("#hdSocioEnderecoId").val(data.socioEndereco.id),
-            socioFinanceiroId = $("#hdSocioFinanceiroId").val(data.socioFinanceiro.id),
-            socioPerfilId = $("#hdSocioPerfilId").val(data.socioPerfil.id);
-
-        //#region ACCORDIONS
-
-        //#region <!-- Cinema Info -->//Table: cinema
-
-        const objFormData_CinemaInfo = {
-            Id: data.get('hdCinemaId'),
-            Nome: data.get('cinema_Nome'),
-            ExibidorId: data.get('#cinema_Exibidor'),
-            TipoCinemaId: data.get('cinema_Tipo'),
-            CinemaClassificacaoId: data.get('cinema_Classificacao'),
-            TipoCinemaProgramacaoId: data.get('cinema_Programacao'),
-            QuantidadeSalas: data.get('cinema_Salas'),
-            QuantidadeMonitores: data.get('cinema_QtdMonitores'),
-            CodSecom: data.get('cinema_IdSEcom'),
-            Observacao: data.get('cinema_Obs'),
-            Ativo: data.get('cinema_Status') === 'on' ? true : false
-
-            //PublicoAnual
-            //NaoMostrarSite
-            //Fechado
-        };
-        //console.log("fn_ModalSalvar objFormData_CinemaInfo ::: ", objFormData_CinemaInfo);
-
-        //#endregion
-
-        //#region <!-- Email Receber Material Info -->//Table: cinema_email_recebe_material -- 
-        // id
-        // cinemaId
-
-        const objFormData_CinemaEmailReceberMaterial = {
-            CinemaEmailReceberMaterial_SalvarDados: data.get('chkCinemaEmailReceberMaterial_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            EmailReceberMaterial_Email01: data.get('cinemaEmailReceberMaterial_Email01'),
-            EmailReceberMaterial_Email02: data.get('cinemaEmailReceberMaterial_Email02'),
-            EmailReceberMaterial_Email03: data.get('cinemaEmailReceberMaterial_Email03'),
-            EmailReceberMaterial_Email04: data.get('cinemaEmailReceberMaterial_Email04'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaEmailReceberMaterial ::: ", objFormData_CinemaEmailReceberMaterial);
-
-        //#endregion
-
-        //#region <!-- Email Programacao Info -->//Table: cinema_email_programacao -- 
-        // id
-
-        const objFormData_CinemaEmailProgramacao = {
-            CinemaEmailProgramacao_SalvarDados: data.get('chkCinemaEmailProgramacao_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            EmailProgramacao_Email01: data.get('cinemaEmailProgramacao_Email01'),
-            EmailProgramacao_Email02: data.get('cinemaEmailProgramacao_Email02'),
-            EmailProgramacao_Email03: data.get('cinemaEmailProgramacao_Email03'),
-            EmailProgramacao_Email04: data.get('cinemaEmailProgramacao_Email04'),
-            EmailProgramacao_Email05: data.get('cinemaEmailProgramacao_Email05'),
-            EmailProgramacao_Email06: data.get('cinemaEmailProgramacao_Email06'),
-            EmailProgramacao_Email07: data.get('cinemaEmailProgramacao_Email07'),
-            EmailProgramacao_Email08: data.get('cinemaEmailProgramacao_Email08'),
-            EmailProgramacao_Email09: data.get('cinemaEmailProgramacao_Email09'),
-            EmailProgramacao_Email10: data.get('cinemaEmailProgramacao_Email10'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaEmailProgramacao ::: ", objFormData_CinemaEmailProgramacao);
-
-        //#endregion
-
-        //#region <!-- Contato Info -->//Table: cinema_contato --  
-        // id
-        // ddd1
-        // tipoTel1
-        // compTel1
-        // tel2
-        // ddd2
-        // tipoTel2
-        // compTel2
-
-        const objFormData_CinemaContato = {
-            CinemaContato_SalvarDados: data.get('chkCinemaContato_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            Nome: data.get('cinemaContato_Nome'),
-            Tel01: data.get('cinemaContato_Tel01'),
-            Email01: data.get('cinemaContato_Email01'),
-            Tel02: data.get('cinemaContato_Tel02'),
-            Email02: data.get('cinemaContato_Email02'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaContato ::: ", objFormData_CinemaContato);
-        //#endregion
-
-        //#region <!-- Ingresso.com Info -->//Table: cinema_ingresso
-        // id
-
-        const objFormData_CinemaIngresso = {
-            CinemaIngresso_SalvarDados: data.get('chkCinemaIngresso_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            Nome: data.get('cinemaIngresso_Nome'),
-            ID: data.get('cinemaIngresso_ID'),
-            CidadeID: data.get('cinemaIngresso_CidadeID'),
-            UrlKey: data.get('cinemaIngresso_UrlKey'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaIngresso ::: ", objFormData_CinemaIngresso);
-
-        //#endregion
-
-        //#region <!-- Venda Bem Info -->//Table: cinema_vendabem -- 
-        // id
-        const objFormData_CinemaVendaBem = {
-            CinemaVendaBem_SalvarDados: data.get('chkCinemaVendaBem_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            Nome: data.get('cinemaVendaBem_Nome'),
-            Filial: data.get('cinemaVendaBem_Filial'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaVendaBem ::: ", objFormData_CinemaVendaBem);
-
-        //#endregion
-
-        //#region <!-- Velox Info -->//Table: cinema_velox --  
-        // id
-        const objFormData_CinemaVelox = {
-            CinemaVendaBem_SalvarDados: data.get('chkCinemaVelox_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            Nome: data.get('cinemaVelox_Nome'),
-            Praca: data.get('cinemaVelox_Praca'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaVelox ::: ", objFormData_CinemaVelox);
-
-        //#endregion
-
-        //#region <!-- Rentrak Info -->//Table: cinema_rentrak --  
-        // id
-        const objFormData_CinemaRentrak = {
-            CinemaVendaBem_SalvarDados: data.get('chkCinemaRentrak_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            Nome: data.get('cinemaRentrak_Nome'),
-            CodigoReferencia: data.get('cinemaRentrak_CodigoReferencia'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaRentrak ::: ", objFormData_CinemaRentrak);
-
-        //#endregion
-
-        //#region <!-- Endereco Info -->//Table: cinema_endereco -- 
-        // id
-        const objFormData_CinemaEndereco = {
-            CinemaEmailProgramacao_SalvarDados: data.get('chkCinemaEndereco_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            Localizacao: data.get('cinemaEndereco_Localizacao'),
-            Endereco: data.get('cinemaEndereco_Endereco'),
-            Numero: data.get('cinemaEndereco_Numero'),
-            Complemento: data.get('cinemaEndereco_Complemento'),
-            Bairro: data.get('cinemaEndereco_Bairro'),
-            Cidade: data.get('cinemaEndereco_Cidade'),
-            UF: data.get('cinemaEndereco_UF'),
-            Regiao: data.get('cinemaEndereco_Regiao'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaEndereco ::: ", objFormData_CinemaEndereco);
-
-        //#endregion
-
-        //#region <!-- Classe Social Info -->//Table: cinema_classe_social --  
-        // id
-        // cinemaId
-
-        //$('#chkCinemaClasseSocial_SalvarDados').prop('checked', true);
-
-
-        //#endregion
-
-        //#region <!-- Juridico Info -->//Table: cinema_juridico -  
-        // id
-        const objFormData_CinemaJuridico = {
-            CinemaJuridico_SalvarDados: data.get('chkCinemaJuridico_SalvarDados') === 'on' ? true : false,
-
-            CinemaId: cinemaId,
-            RazaoSocial: data.get('cinemaJuridico_RazaoSocial'),
-            CNPJ: data.get('cinemaJuridico_CNPJ'),
-            InscricaoEstadual: data.get('cinemaJuridico_InscricaoEstadual'),
-            CCM: data.get('cinemaJuridico_CCM'),
-        }
-        console.log("fn_ModalSalvar objFormData_CinemaJuridico ::: ", objFormData_CinemaJuridico);
-
-        //#endregion
-
-        //#region <!-- Carimbo Info -->//Table: cinema_carimbo --  
-        // id
-        // cinemaId
-        // carimboComprovanteExibicao
-        // mostraCarimboComprovanteExibicao
-        //#endregion
-
-        //#endregion
-
-        $.busyLoadFull("hide");
-
-        $('#modal-full-edit-item').modal('hide');
-    }
-
-    */
-}
-function fn_ModalGetInfoAccordion(cinemaId, dataInfo) {
-    console.log("fn_ModalGetInfoAccordion cinemaId ::: ", cinemaId);
-    console.log("fn_ModalGetInfoAccordion dataInfo ::: ", dataInfo);
-
-    /* 
-    if (cinemaId === undefined || cinemaId === null || cinemaId === 0) {
-        Swal.fire({
-            title: 'OPS!!',
-            icon: 'error',
-            html: `Dados n&atilde;o identificados !!`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-danger waves-effect'
-            },
-        });
-    } else {
-        
-        let var_ControllerBusca= dataInfo.toLowerCase(),
-            varAjax_UrlController = `${var_ControllerBusca}/GetFullById`,
-            varAjax_TypeAction = 'POST',
-            varAjax_TypeData = 'JSON',
-            varAjax_TypeContent = 'application/json; charset=utf-8';
-
-        console.log("fn_ModalGetInfoAccordion varAjax_UrlController ::: ", varAjax_UrlController);
-        
-        
-           $.busyLoadFull("show");
-   
-           $.ajax(
-               {
-                   url: varAjax_UrlController,
-                   type: varAjax_TypeAction,
-                   dataType: varAjax_TypeData,
-                   data: {
-                       id: obj.Id
-                   },
-                   success: function (result) {
-                       //console.log("result  :: ", result);
-   
-                       if (result.bResult) {
-   
-                           fn_ModalGetObj(result.data, action);
-   
-                       } else {
-                           //console.log("result  :: ", result);
-                           $.busyLoadFull("hide");
-   
-                           Swal.fire({
-                               title: 'OPS!!',
-                               icon: 'error',
-                               html: `<b> Erro ocorrido <br><br>` + result + `</b>`,
-                               focusConfirm: false,
-                               confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                               customClass: {
-                                   confirmButton: 'btn btn-label-danger waves-effect'
-                               }
-                           });
-                       }
-                   },
-                   error: function (XMLHttpRequest, textStatus, errorThrown) {
-                       //console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                       //console.log("textStatus  :: ", textStatus);
-                       //console.log("errorThrown  :: ", errorThrown);
-                       //console.log("result  :: Error while posting SendResult");
-   
-                       $.busyLoadFull("hide");
-   
-                       Swal.fire({
-                           title: 'OPS!!',
-                           icon: 'error',
-                           html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                           focusConfirm: false,
-                           confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                           customClass: {
-                               confirmButton: 'btn btn-label-danger waves-effect'
-                           }
-                       });
-   
-                       return false;
-                   }
-               });
-       
-    }
-    */
-}
-function fnItem_Edit_CarregarDados(obj, action) {
-    console.log("EfnItem_Edit_CarregarDados obj ::: ", obj);
-    //var varPop_BtnAction = 'Edit';
-
-    //fn_Pop(obj, varPop_BtnAction);
-
-    var varAjax_UrlController = `${var_Controller}/GetFullById`,
-        varAjax_TypeAction = 'POST',
-        varAjax_TypeData = 'JSON',
-        varAjax_TypeContent = 'application/json; charset=utf-8';
-
-    if (obj === undefined || obj === null || obj.id === 0) {
-        Swal.fire({
-            title: 'OPS!!',
-            icon: 'error',
-            html: `Dados n&atilde;o identificados !!`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-danger waves-effect'
-            },
-        });
-    } else {
-
-        $.busyLoadFull("show");
-
-        $.ajax(
-            {
-                url: varAjax_UrlController,
-                type: varAjax_TypeAction,
-                dataType: varAjax_TypeData,
-                data: {
-                    id: obj.id
-                },
-                success: function (result) {
-                    console.log("result  :: ", result);
-
-                    if (result.bResult) {
-
-                        fn_ModalGetObj(result.data, action);
-
-                    } else {
-                        //console.log("result  :: ", result);
-                        $.busyLoadFull("hide");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> Erro ocorrido <br><br>` + result + `</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
-                    }
-                },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                    console.log("textStatus  :: ", textStatus);
-                    console.log("errorThrown  :: ", errorThrown);
-                    console.log("result  :: Error while posting SendResult");
-
-                    $.busyLoadFull("hide");
-
-                    Swal.fire({
-                        title: 'OPS!!',
-                        icon: 'error',
-                        html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-danger waves-effect'
-                        }
-                    });
-
-                    return false;
-                }
-            });
-    }
-}
 
 function fn_ModalErro(xhr, textStatus, errorThrown) {
     const responseMessage = xhr.responseText;
@@ -1533,32 +975,5 @@ function fn_ModalErro(xhr, textStatus, errorThrown) {
         }
     });
 }
-//#endregion
 
-//#region COMBO
-function fn_LoadCmb_SocioPerfil() {
-    console.log("fn_LoadCmb_SocioPerfil ::: ");
-
-    if ($('#cmb_SocioPerfil').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_SocioPerfil`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_SocioPerfil  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_SocioPerfil  result id ::: ", id);
-                        //console.log("fn_LoadCmb_SocioPerfil  result ::: ", result);
-                        $("#cmb_SocioPerfil").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
 //#endregion

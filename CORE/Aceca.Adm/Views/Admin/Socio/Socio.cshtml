@@ -1,18 +1,9 @@
 ﻿@{
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
-    var pageTipo = 1; // string.Empty; //" - Listagem - ";
+    var pageTipo = string.Empty; //" - Listagem - ";
 
     ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
-
-    @if (Context?.Session?.Keys?.Count() > 0)
-    {
-        var userRole = Context?.Session?.GetString("UserRole");
-        Layout = $"~/Views/Shared/{(userRole == "Admin" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
-    }
-    else
-    {
-        Layout = "~/Views/Shared/_WithoutMenuLayout.cshtml";
-    }
+    Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
 }
 
 @section VendorStyles {
@@ -23,14 +14,14 @@
     <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css"/>
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
+     <!-- Flat Picker - Calendar -->
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.css" />
+    <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css">
     <!-- Form Validation -->
     <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
-
-    @* ************** Content ************** *@
-    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
-    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
-    <link rel="stylesheet" href="~/vendor/libs/typeahead-js/typeahead.css" />
-    <link rel="stylesheet" href="~/vendor/libs/tagify/tagify.css" />
+    <!-- Select Dropdownlist -->
+    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css"/>
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css"/>
 }
 
 @section VendorScripts {
@@ -38,92 +29,182 @@
     <!-- Flat Picker -->
     <script src="~/vendor/libs/moment/moment.js"></script>
     <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
+     <!-- Select Dropdownlist -->
+    <script src="~/vendor/libs/select2/select2.js"></script>
+    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+    <!-- DatePicker Range -->
+    <script src="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js"></script>
+
     <!-- Form Validation -->
     <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
-    
-    @* ************** Content ************** *@
-    <script src="~/vendor/libs/select2/select2.js"></script>
-    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
-    <script src="~/vendor/libs/moment/moment.js"></script>
-    <script src="~/vendor/libs/typeahead-js/typeahead.js"></script>
-    <script src="~/vendor/libs/tagify/tagify.js"></script>
 }
 
 @section PageScripts {
     <script src="~/js/admin/socio/admin-socio.js"></script>
-    @* ************** Content ************** *@
-    <script src="~/js/form-validation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 }
 
 @* ************** Content ************** *@
 <div class="card">
-    <div class="card-datatable table-responsive pt-0">
-        <table class="datatables-basic table table-bordered">
-            <thead>
-            <tr>
-                <th></th>
-                <th>id</th>
-                <th>Nome</th>
-                <th>Tipo</th>
-                <th>Status</th>
-                <th>A&ccedil;&otilde;es</th>
-            </tr>
-            </thead>
-        </table>
-    </div>
-</div>
+                        <div class="card-datatable table-responsive pt-0">
+                            <table class="datatables-basic table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>id</th>
+                                        <th>Nome</th>
+                                        <th>Tipo</th>
+                                        <th>Status</th>
+                                        <th>A&ccedil;&otilde;es</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
 
 <!-- Modal Add new Item -->
-<div class="offcanvas offcanvas-end" id="pop-add-new-item">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="pop-add-new-item" aria-labelledby="offcanvasEcommerceCustomerAddLabel">
     <div class="offcanvas-header border-bottom">
-        <input type="hidden" id="hdId" name="hdId" value="0"/>
-        <input type="hidden" id="hdSocioAniversarioId" name="hdSocioAniversarioId" value="0" />
+        <input type="hidden" id="hdId" name="hdId" value="0" />
         <input type="hidden" id="hdSocioContatoId" name="hdSocioContatoId" value="0" />
         <input type="hidden" id="hdSocioEnderecoId" name="hdSocioEnderecoId" value="0" />
-        <input type="hidden" id="hdSocioFinanceiroId" name="hdSocioFinanceiroId" value="0" />
+        <input type="hidden" id="hdSocioAniversarioId" name="hdSocioAniversarioId" value="0" />
         <input type="hidden" id="hdSocioPerfilId" name="hdSocioPerfilId" value="0" />
         <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <div class="offcanvas-body flex-grow-1">
-        <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
-            <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <span id="line_item_01" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
-                    <div class="form-floating form-floating-outline">
-                        <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01"
-                               placeholder="Nome" aria-label="Nome" aria-describedby="line_item_01"/>
-                        <label for="pop_line_item_01">Nome</label>
+
+    <div class="offcanvas-body mx-0 flex-grow-0">
+         <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
+                               
+            <div class="div-dados mb-2">
+                <h6 class="mb-3">Dados</h6>
+
+                <div class="div-dados-nome form-floating form-floating-outline">
+                    <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01" placeholder="Nome" aria-label="Nome"/>
+                    <label for="pop_line_item_01">Nome*</label>
+                </div>
+            </div>
+                               
+            <div class="div-contato mb-2 ">
+                <h6 class="mb-3">Contato</h6>
+                <div class="div-contato-email form-floating form-floating-outline mb-5">
+                    <input type="text" id="pop_line_item_02" class="form-control dt-line-02" name="pop_line_item_02" placeholder="email&#64;example.com" aria-label="email&#64;example.com"/>
+                    <label for="pop_line_item_02">Email*</label>
+                </div>
+                <div class="div-contato-telefone form-floating form-floating-outline">
+                    <input type="text" id="pop_line_item_03" class="form-control phone-mask dt-line-03" name="pop_line_item_03" placeholder="(00) 00000-0000" aria-label="(99) 99999-0000"/>
+                    <label for="pop_line_item_03">Telefone</label>
+                </div>
+            </div>
+
+            <div class="div-endereco mb-2">
+                <h6 class="mb-3">Endere&ccedil;o</h6>
+
+                <div class="div-endereco-cep form-floating form-floating-outline mb-5">
+                    <input type="text" id="pop_line_item_04" class="form-control dt-line-04" name="pop_line_item_04" placeholder="00000-999" aria-label="00000-999" pattern="[0-9]{9}" maxlength="9" oninput="fn_MaskCEP(this)"/>
+                    <label for="pop_line_item_04">CEP</label>
+                </div>
+
+                <div class="div-endereco-endereco form-floating form-floating-outline mb-5">
+                    <input type="text" id="pop_line_item_05" class="form-control dt-line-05" name="pop_line_item_05" placeholder="45 Roker Terrace" aria-label="45 Roker Terrace"/>
+                    <label for="pop_line_item_05">Endere&ccedil;o</label>
+                </div>
+
+                <div class="div-endereco-numero-complemento d-sm-flex">
+                    <div class="div-endereco-numero form-floating form-floating-outline mb-5 me-3">
+                        <input type="text" id="pop_line_item_06" class="form-control dt-line-06" name="pop_line_item_06" placeholder="99999999" aria-label="99999999" pattern="[0-9]{8}" maxlength="8" />
+                        <label for="pop_line_item_06">N&uacute;mero</label>
+                    </div>
+                    <div class="div-endereco-complemento form-floating form-floating-outline mb-5 mr-3">
+                        <input type="text" id="pop_line_item_07" class="form-control dt-line-07" name="pop_line_item_07" placeholder="Complemento" aria-label="Complemento"/>
+                        <label for="pop_line_item_07">Complemento</label>
+                    </div>
+                </div>
+
+                <div class="div-endereco-bairro form-floating form-floating-outline mb-5">
+                    <input type="text" id="pop_line_item_08" class="form-control dt-line-08" name="pop_line_item_08" placeholder="Bairro" aria-label="Bairro" />
+                    <label for="pop_line_item_08">Bairro</label>
+                </div>
+
+                <div class="div-endereco-estado-cidade d-sm-flex">
+                    <div class="div-endereco-estado form-floating form-floating-outline me-3">
+                        <select id="cmb_SocioEstado" class="select2 form-select form-select dt-line-09">
+                                <option value="">-- Selecionar --</option>
+                                <option value="AC">Acre</option>
+                                <option value="AL">Alagoas</option>
+                                <option value="AP">Amap&aacute;</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="BA">Bahia</option>
+                                <option value="CE">Cear&aacute;</option>
+                                <option value="DF">Distrito Federal</option>
+                                <option value="ES">Espirito Santo</option>
+                                <option value="GO">Goi&aacute;s</option>
+                                <option value="MA">Maranh&atilde;o</option>
+                                <option value="MS">Mato Grosso do Sul</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="PA">Par&aacute;</option>
+                                <option value="PB">Para&iacute;ba</option>
+                                <option value="PR">Paran&aacute;</option>
+                                <option value="PE">Pernambuco</option>
+                                <option value="PI">Piau&iacute;</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="RN">Rio Grande do Norte</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="RO">Rond&ocirc;nia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="SC">Santa Catarina</option>
+                                <option value="SP">S&atilde;o Paulo</option>
+                                <option value="SE">Sergipe</option>
+                                <option value="TO">Tocantins</option>
+                        </select>
+                        <label for="cmb_SocioEstado">Estado</label>
+                    </div>
+                    <div class="div-endereco-cidade form-floating form-floating-outline mr-3">
+                        <input type="text" id="pop_line_item_10" class="form-control dt-line-10" name="pop_line_item_10" placeholder="Cidade" aria-label="Cidade" />
+                        <label for="pop_line_item_10">Cidade</label>
                     </div>
                 </div>
             </div>
-            <div id="pop_div_line_item_04" name="Exibidor" class="col-sm-12">
-                <div class="form-floating form-floating-outline">
-                    <select id="cmb_SocioPerfil" name="cmb_UsuarioPerfil"
-                            class="form-select select2 dt-line-04"
-                            data-allow-clear="true">
-                        <option value="-1">-- Selecionar --</option>
-                    </select>
-                    <label for="cmb_SocioPerfil">Perfil</label>
+
+            <div class="div-aniversario">
+                <h6 class="mb-3">Anivers&aacute;rio</h6>
+                <div class="div-aniversario-aniversario form-floating form-floating-outline">
+                    <input type="text" id="pop_line_item_11" class="form-control dt-calendar dt-line-11" name="pop_line_item_11" placeholder="DD/MM/YYYY" aria-label="Data de Anivers&aacute;rio" />
+                    <label for="pop_line_item_11">Data de Anivers&aacute;rio</label>
                 </div>
             </div>
-            <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <div class="form-check form-switch mb-2">
-                        <input type="checkbox" id="pop_line_item_05" class="form-check-input dt-line-05"
-                               name="pop_line_item_05" placeholder="Status" aria-label="Status"
-                               aria-describedby="line_item_03"/>
-                        <label class="form-check-label" for="pop_line_item_05">Status</label>
+
+            <div class="div-status-exibir d-sm-flex mt-n1 mb-n5">
+                <div class="row g-0">
+                    <div class="col-md p-6 ms-8 me-12">
+                        <div class="form-check form-switch mb-2">
+                            <input type="checkbox" id="pop_line_item_12" class="form-check-input dt-line-12"
+                                   name="pop_line_item_12" placeholder="Ativo" aria-label="Ativo"
+                                   aria-describedby="line_item_12" />
+                            <label class="form-check-label" for="pop_line_item_12">Ativo</label>
+                        </div>
+                        
+                    </div>
+                    <div class="col-md p-6">
+                        <div class="form-check form-switch mb-2">
+                            <input type="checkbox" id="pop_line_item_13" class="form-check-input dt-line-13"
+                                   name="pop_line_item_13" placeholder="MostrarSite" aria-label="MostrarSite"
+                                   aria-describedby="line_item_13" />
+                            <label class="form-check-label" for="pop_line_item_13">Exibir</label>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-sm-12">
+
+            <div class="div-botoes text-center">
                 <button type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
                 <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>
             </div>
+                                
         </form>
-
     </div>
 </div>

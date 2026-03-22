@@ -1,0 +1,256 @@
+@using Aceca.Adm.VMModels
+@model VMMarca
+
+@{
+    var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
+    var pageTipo = string.Empty; //" - Listagem - ";
+
+    ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
+
+    @if (Context?.Session?.Keys?.Count() > 0)
+    {
+        var userRole = Context?.Session?.GetString("UserRole");
+        Layout = $"~/Views/Shared/{(userRole == "Admin" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
+        //Layout = "~/Views/Shared/_WithoutMenuLayout.cshtml";
+    }
+}
+
+@section VendorStyles {
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
+    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css" />
+    <link rel="stylesheet" href="~/vendor/libs/typeahead-js/typeahead.css" />
+    <link rel="stylesheet" href="~/vendor/libs/tagify/tagify.css" />
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+}
+
+@section VendorScripts {
+    <script src="~/vendor/libs/select2/select2.js"></script>
+    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+    <script src="~/vendor/libs/moment/moment.js"></script>
+    <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
+    <script src="~/vendor/libs/typeahead-js/typeahead.js"></script>
+    <script src="~/vendor/libs/tagify/tagify.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+}
+
+@section PageScripts {
+    @* <script src="~/js/form-validation.js"></script> *@    
+    <!-- Select Dropdownlist -->
+    <script src="~/js/forms-selects.js"></script>
+
+    <script src="~/js/admin/marca/admin-marca-cadastro.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.js"></script>
+}
+
+@* ************** Content ************** *@
+
+<div class="row">
+    <!-- FormValidation -->
+    <div class="col-12">
+        <div class="card">
+            <input type="hidden" id="hdId" name="hdId" value="0" />
+            <input type="hidden" id="hdMarcaFaseId" name="hdMarcaFaseId" value="0" />
+            <input type="hidden" id="hdMarcaFinalidadeId" name="hdMarcaFinalidadeId" value="0" />
+            <input type="hidden" id="hdMarcaFabricaId" name="hdMarcaFabricaId" value="0" />
+            <input type="hidden" id="hdMarcaDimensaoId" name="hdMarcaDimensaoId" value="0" />
+            <input type="hidden" id="hdMarcaTipoId" name="hdMarcaTipoId" value="0" />
+            <input type="hidden" id="hdMarcaSubTipoId" name="hdMarcaSubTipoId" value="0" />
+            <input type="hidden" id="hdMarcaImpressoraId" name="hdMarcaImpressoraId" value="0" />
+            <input type="hidden" id="hdMarcaQualidadeImagemId" name="hdMarcaQualidadeImagemId" value="0" />
+            <h5 class="card-header">Novo Registro</h5>
+            
+            <div class="card-body">
+                <form id="formPage" class="row g-4">
+                    <!-- Dados da Marca -->
+                    <div class="col-12">
+                        <h6>Dados da Marca</h6>
+                        <hr class="mt-0" />
+                    </div>
+
+                    <!-- 01 -->
+
+                    <div class="col-md-3 div_nome">
+                        <div class="form-floating form-floating-outline">
+                            <input class="form-control" type="text" id="txt_Nome" name="txt_Nome" placeholder="Nome"/>
+                            <label for="txt_Nome">Nome</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 div_variante">
+                        <div class="form-floating form-floating-outline">
+                            <select id="cmbPop_MarcaVariante" name="cmbPop_MarcaVariante" class="select2 form-select form-select">
+                                <option value="-1">-- Selecionar --</option>
+                            </select>
+                            <label for="cmbPop_MarcaVariante">&Eacute; uma variante</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 div_fase">
+                        <div class="form-floating form-floating-outline">
+                            <select id="cmbPop_MarcaFase" name="cmbPop_MarcaFase" class="form-select select2">
+                                <option value="-1">-- Selecionar --</option>
+                            </select>
+                            <label for="cmbPop_MarcaFase">Fase</label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mt-n1 text-center div_Codigo">
+                        <label>Novo C&oacute;digo ACECA</label>
+                        <input class="form-control" type="text" id="txt_Codigo" name="txt_Codigo" placeholder="C&oacute;digo ACECA" disabled readonly />
+                    </div>
+
+                    <div class="row mt-8 div_dados">
+                        <!-- 02 -->
+                        <div class="col-md-3 mt-8 div_Incluido">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="txt_IncluidoPor" name="txt_IncluidoPor" placeholder="Inclu&iacute;do Por" />
+                                <label for="formValidationName">Inclu&iacute;do Por</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mt-8 div_finalidade">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaFinalidade" name="cmbPop_MarcaFinalidade" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaFinalidade">Finalidade</label>
+                            </div>
+                        </div>
+                    
+                        <div class="col-md-3 mt-8 div_fabrica">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaFabrica" name="cmbPop_MarcaFabrica" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaFabrica">F&aacute;brica</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mt-8 div_dimensao">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaDimensao" name="cmbPop_MarcaDimensao" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaDimensao">Dimens&atilde;o</label>
+                            </div>
+                        </div>
+
+                        <!-- 03 -->
+                        <div class="col-md-3 mt-8 div_tipo">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaTipo" name="cmbPop_MarcaTipo" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaTipo">Tipo</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mt-8 div_subtipo">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaSubTipo" name="cmbPop_MarcaSubTipo" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaSubTipo">Sub-Tipo</label>
+                            </div>
+                        </div>
+                   
+                        <div class="col-md-3 mt-8 div_impressora">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaImpressora" name="cmbPop_MarcaImpressora" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaImpressora">Impressora</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mt-8 div_qualidade">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaQualidadeImagem" name="cmbPop_MarcaQualidadeImagem" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaQualidadeImagem">Qualidade da Imagem</label>
+                            </div>
+                        </div>
+
+                        <!-- 05 -->
+                        <div class="col-md-12 mt-8 div_descricao">
+                            <div class="form-floating form-floating-outline">
+                                <textarea class="form-control h-px-100" id="txt_Descricao" name="txt_Descricao" placeholder="Descricao" rows="3"></textarea>
+                                <label for="formValidationBio">Descri&ccedil;&atilde;o</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Adicional Info -->
+                    <div class="row mt-8 div_adicional">
+                        <div class="col-12">
+                            <h6 class="mt-2">Adicional Info</h6>
+                            <hr class="mt-0" />
+                        </div>
+
+                        <!-- 01 -->
+                        <div class="col-md-4 mt-8 div_valor">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" name="txt_Valor" id="txt_Valor" placeholder="Valor" />
+                                <label for="txt_Valor">Pre&ccedil;o</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mt-8 div_preco_1pi">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" name="txt_Valor1PI" id="txt_Valor1PI" placeholder="1º PI Cr$" />
+                                <label for="txt_Valor1PI">1º PI Cr$:</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mt-8 div_preco_2pi">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" name="txt_Valor2PI" id="txt_Valor2PI" placeholder="2º PI Cr$" />
+                                <label for="txt_Valor2PI">2º PI Cr$:</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imagens -->
+                    <div class="row div_imagem">
+                        <div class="col-12">
+                            <h6 class="mt-2">Imagens</h6>
+                            <hr class="mt-0" />
+                        </div>
+
+                        <!-- 01 -->
+                        <div class="col-md-6" name="div_preco_imagem_principal">
+                            <div class="mb-4">
+                                <label for="txt_ImgPrincipal" class="form-label">Imagem Principal</label>
+                                <input class="form-control" type="file" id="txt_ImgPrincipal">
+                            </div>
+                        </div>
+
+                        <!-- 02 -->
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label for="txt_ImgDetalhe" class="form-label">Imagem Detalhe</label>
+                                <input class="form-control" type="file" id="txt_ImgDetalhe">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botoes -->
+                    <div class="col-12 mt-8 div_botoes text-center">
+                        <button type="submit" class="btn btn-primary data-submit me-3">Enviar</button>
+                        <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- /FormValidation -->
+</div>

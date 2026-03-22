@@ -390,7 +390,6 @@ function fn_GridList(formValid) {
         } else {
             fnItem_Add(varTbl_Obj)
         }
-        //fnItem_Add(abc);
     });
 }
 

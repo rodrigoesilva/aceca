@@ -41,7 +41,7 @@ namespace Aceca.Adm.Data
         #endregion
 
         #region Socio
-        public DbSet<Socios> Socio { get; set; }
+        public DbSet<Socio> Socio { get; set; }
         public DbSet<SocioAniversario> SocioAniversario { get; set; }
         public DbSet<SocioColecao> SocioColecao { get; set; }
         public DbSet<SocioContato> SocioContato { get; set; }
