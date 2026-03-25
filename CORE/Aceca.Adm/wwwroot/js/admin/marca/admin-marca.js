@@ -217,7 +217,7 @@ function fn_FiltrarDados(objFiltro) {
         contentType: varAjax_TypeContent,
         data: JSON.stringify(objFiltro),
         success: function (result) {
-            //console.log("fn_FiltrarDados result ::: ", result);
+            console.log("fn_FiltrarDados result ::: ", result);
 
             if (result.bResult === false) {
                 //console.log("busyLoadFull ::: hide");
@@ -247,6 +247,12 @@ function fn_FiltrarDados(objFiltro) {
             }
         },
         error: function (xhr, textStatus, errorThrown) {
+
+            console.log("XMLHttpRequest  :: ", xhr);
+            console.log("textStatus  :: ", textStatus);
+            console.log("errorThrown  :: ", errorThrown);
+            console.log("result  :: Error while posting SendResult");
+
             fn_ModalErro(xhr, textStatus, errorThrown);
         },
     });
@@ -1209,7 +1215,7 @@ function fn_Modal(obj, action) {
     // Pop ID
     (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
         (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.idMarcaFase)),
-        (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.idMrcaFinalidade)),
+        (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.idMarcaFinalidade)),
         (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.idMarcaFabrica)),
         (popAddNewItem.querySelector('#hdMarcaDimensaoId').value = (obj === null ? 0 : obj.idMarcaDimensao)),
         (popAddNewItem.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.idMarcaTipo)),
@@ -1222,7 +1228,7 @@ function fn_Modal(obj, action) {
     (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '-- Selecionar --' : obj.codigoAceca));
     (popAddNewItem.querySelector('#txt_Nome').checked = (obj === null ? false : obj.nomeMarca));
     (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
-        (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-- Selecionar --' : obj.idMrcaFinalidade));
+        (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFinalidade));
     (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFabrica));
     (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-- Selecionar --' : obj.idMarcaDimensao));
     (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-- Selecionar --' : obj.idMarcaTipo));
@@ -1249,7 +1255,7 @@ function fn_Modal(obj, action) {
     if (obj !== null) {
 
         $("#cmbPop_MarcaFase").val(obj.idMarcaFase).change();
-        $("#cmbPop_MarcaFinalidade").val(obj.idMrcaFinalidade).change();
+        $("#cmbPop_MarcaFinalidade").val(obj.idMarcaFinalidade).change();
         $("#cmbPop_MarcaFabrica").val(obj.idMarcaFabrica).change();
         $("#cmbPop_MarcaDimensao").val(obj.idMarcaDimensao).change();
         $("#cmbPop_MarcaTipo").val(obj.idMarcaTipo).change();

@@ -119,10 +119,15 @@ namespace Aceca.Adm.VMModels
         public int? MarcaSubTipoId { get; set; }
 
         public string? CodigoAceca { get; set; }
-        public string? CodigoSC { get; set; }
+        public string? CodigoVariante { get; set; }
+        public string? CodigoSC { get; set; }        
         public string? ImgPrincipal { get; set; }
         public string? ImgDetalhe { get; set; }
+        public IFormFile? FileImgPrincipal { get; set; }
+        public IFormFile? FileImgDetalhe { get; set; }
         public string? Nome { get; set; }
+
+        //[Required(ErrorMessage = "Descrição deve ser preenchida")]
         public string? Descricao { get; set; }
         public string? Valor1PI { get; set; }
         public string? Valor2PI { get; set; }

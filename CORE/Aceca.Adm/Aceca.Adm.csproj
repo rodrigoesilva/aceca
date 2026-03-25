@@ -6,6 +6,12 @@
     <AssemblyName>Aceca.Adm</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="wwwroot\midia\**" />
+    <Content Remove="wwwroot\midia\**" />
+    <EmbeddedResource Remove="wwwroot\midia\**" />
+    <None Remove="wwwroot\midia\**" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" />

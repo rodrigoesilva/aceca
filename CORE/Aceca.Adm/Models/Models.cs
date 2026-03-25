@@ -107,8 +107,9 @@ namespace Aceca.Adm.Models
     [Table("marcas")]
     public class Marcas : BaseModel
     {
-        [Key] public int? Id { get; set; }
-
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int? Id { get; set; }
         public int? MarcaDimensaoId { get; set; }
         public int? MarcaFabricaId { get; set; }
         public int? MarcaFaseId { get; set; }
@@ -117,16 +118,16 @@ namespace Aceca.Adm.Models
         public int? MarcaQualidadeImagemId { get; set; }
         public int? MarcaRaridadeId { get; set; }
         public int? MarcaSubTipoId { get; set; }
-        public string? CodigoAceca { get; set; }
-        public string? CodigoSC { get; set; }
-        public string? ImgPrincipal { get; set; }
-        public string? ImgDetalhe { get; set; }
-        public string? Nome { get; set; }
-        public string? Descricao { get; set; }
-        public string? Valor1PI { get; set; }
-        public string? Valor2PI { get; set; }
-        public string? Valor { get; set; }
-        public string? IncluidoPor { get; set; }
+        public string? CodigoAceca { get; set; } = string.Empty;
+        public string? CodigoSC { get; set; } = string.Empty;
+        public string? ImgPrincipal { get; set; } = string.Empty;
+        public string? ImgDetalhe { get; set; } = string.Empty;
+        public string? Nome { get; set; } = string.Empty;
+        public string? Descricao { get; set; } = string.Empty;
+        public string? Valor1PI { get; set; } = string.Empty;
+        public string? Valor2PI { get; set; } = string.Empty;
+        public string? Valor { get; set; } = string.Empty;
+        public string? IncluidoPor { get; set; } = string.Empty;
         public int? EmQuarentena { get; set; }
         public MarcaDimensao? MarcaDimensao { get; set; }
         public MarcaFabrica? MarcaFabrica { get; set; }

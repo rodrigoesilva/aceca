@@ -76,38 +76,48 @@
                     </div>
 
                     <!-- 01 -->
+                    <div class="row mt-8 text-center">
+                        <div class="col-md-3 div_nome">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="txt_Nome" name="txt_Nome" placeholder="Nome"/>
+                                <label for="txt_Nome">Nome</label>
+                            </div>
+                        </div>
 
-                    <div class="col-md-3 div_nome">
-                        <div class="form-floating form-floating-outline">
-                            <input class="form-control" type="text" id="txt_Nome" name="txt_Nome" placeholder="Nome"/>
-                            <label for="txt_Nome">Nome</label>
+                        <div class="col-md-3 div_fase">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaFase" name="cmbPop_MarcaFase" class="form-select select2">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaFase">Fase</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 div_variante">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaVariante" name="cmbPop_MarcaVariante" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaVariante">&Eacute; uma variante</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 div_variante_codigo">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="txt_CodigoVariante" name="txt_CodigoVariante" placeholder="C&oacute;digo Variante" />
+                                <label for="txt_CodigoVariante">C&oacute;digo Variante</label>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="col-md-3 div_variante">
-                        <div class="form-floating form-floating-outline">
-                            <select id="cmbPop_MarcaVariante" name="cmbPop_MarcaVariante" class="select2 form-select form-select">
-                                <option value="-1">-- Selecionar --</option>
-                            </select>
-                            <label for="cmbPop_MarcaVariante">&Eacute; uma variante</label>
+                    <div class="row mt-8 text-center div_codigo">
+                        <div class="col-md-12 mt-n1 text-center">
+                            <label>Novo C&oacute;digo ACECA</label>
+                            <input class="form-control" type="text" id="txt_Codigo" name="txt_Codigo" placeholder="C&oacute;digo ACECA"/>
                         </div>
                     </div>
 
-                    <div class="col-md-3 div_fase">
-                        <div class="form-floating form-floating-outline">
-                            <select id="cmbPop_MarcaFase" name="cmbPop_MarcaFase" class="form-select select2">
-                                <option value="-1">-- Selecionar --</option>
-                            </select>
-                            <label for="cmbPop_MarcaFase">Fase</label>
-                        </div>
-                    </div>
-
-                    <div class="col-md-3 mt-n1 text-center div_Codigo">
-                        <label>Novo C&oacute;digo ACECA</label>
-                        <input class="form-control" type="text" id="txt_Codigo" name="txt_Codigo" placeholder="C&oacute;digo ACECA" disabled readonly />
-                    </div>
-
-                    <div class="row mt-8 div_dados">
+                    <div class="row mt-8 text-center div_dados">
                         <!-- 02 -->
                         <div class="col-md-3 mt-8 div_Incluido">
                             <div class="form-floating form-floating-outline">
@@ -190,12 +200,12 @@
                     </div>
 
                     <!-- Adicional Info -->
-                    <div class="row mt-8 div_adicional">
-                        <div class="col-12">
-                            <h6 class="mt-2">Adicional Info</h6>
-                            <hr class="mt-0" />
-                        </div>
+                    <div class="col-12 div_adicional">
+                        <h6 class="mt-2">Adicional Info</h6>
+                        <hr class="mt-0" />
+                    </div>
 
+                    <div class="row mt-8 text-center div_adicional">
                         <!-- 01 -->
                         <div class="col-md-4 mt-8 div_valor">
                             <div class="form-floating form-floating-outline">
@@ -220,12 +230,12 @@
                     </div>
 
                     <!-- Imagens -->
-                    <div class="row div_imagem">
-                        <div class="col-12">
-                            <h6 class="mt-2">Imagens</h6>
-                            <hr class="mt-0" />
-                        </div>
+                    <div class="col-12 div_imagem">
+                        <h6 class="mt-2">Imagens</h6>
+                        <hr class="mt-0" />
+                    </div>
 
+                    <div class="row mt-8 text-center div_imagem">
                         <!-- 01 -->
                         <div class="col-md-6" name="div_preco_imagem_principal">
                             <div class="mb-4">

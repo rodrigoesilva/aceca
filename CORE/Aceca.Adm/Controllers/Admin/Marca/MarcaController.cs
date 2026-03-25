@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using static System.Collections.Specialized.BitVector32;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Aceca.Adm.Controllers.Admin.Marca
 {
@@ -390,11 +393,11 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> GetCodigoAceca(int idFase, string nome, bool bvariante)
+        public async Task<IActionResult> GetNovoCodigoAceca(int idFase, string strTermoBusca, bool bvariante)
         {
             string strNovoCodigoAceca = string.Empty;
 
-            if (idFase < 1 || string.IsNullOrEmpty(nome))
+            if (idFase < 1 || string.IsNullOrEmpty(strTermoBusca))
                 return BadRequest(new
                 {
                     bResult = false,
@@ -405,11 +408,11 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
             try
             {
-                var msgErroData = $"idMarcaFase :: {idFase} , NomeMarca :: {nome}";
+                var msgErroData = $"idMarcaFase :: {idFase} , strTermoBusca :: {strTermoBusca}";
 
                 var strCodigoAceca = string.Empty;
 
-                var strLetraInicial = nome.Trim()[0].ToString();
+                var strLetraInicial = strTermoBusca.Trim()[0].ToString();
 
                 var query = _db.Marca.Where(x => x.MarcaFaseId.Equals(idFase));
 
@@ -423,8 +426,14 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         || (idFase >= 39 && idFase <= 41) //39-Clandestinas, 40-Exterior, 41-M&C
                     )
                 {
+                        query = query.Where(x => x.CodigoAceca != null 
+                                            && (bvariante 
+                                                ? x.CodigoAceca.StartsWith(strTermoBusca.Trim().ToString()) 
+                                                : x.Nome.StartsWith(strTermoBusca.Trim().ToString())
+                                                )
+                                            )
 
-                    query = query.Where(x => x.CodigoAceca != null && x.Nome.StartsWith(nome.Trim().ToString()))
+
                    //query = query.Where(x => x.CodigoAceca != null && x.Nome.Contains(nome.Trim().ToString()))
                    //query = query.Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(nome.Trim()[0].ToString()))
 
@@ -448,10 +457,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         });
                     }
 
-                    //var strCodigoAceca = lstmodel?.OrderByDescending(c => c.CodigoAceca)?.FirstOrDefault()?.CodigoAceca?.ToString();
-                    //strCodigoAceca = lstmodel?.FirstOrDefault()?.CodigoAceca?.ToString();
-
-                    strCodigoAceca = lstmodel?.CodigoAceca?.ToString();
+                    strCodigoAceca = lstmodel?.CodigoAceca?.ToString()?.Trim();
                 }
 
                 string strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
@@ -467,18 +473,32 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     });
                 }
 
+                var strUltimaLetraCodigoAceca = 'A';
+
                 if (int.TryParse(strNumCodigoAceca, out int intNumCodigoAceca))
                     if (!bvariante)
                     {
                         strNovoCodigoAceca = strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString());
+
+                        if (Char.IsLetter(strNovoCodigoAceca[^1]))
+                            strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1]) 
+                                ? strNovoCodigoAceca.Remove(strNovoCodigoAceca.Length - 1)
+                                : string.Concat(strNovoCodigoAceca, strUltimaLetraCodigoAceca);
                     }
                     else
                     {
-                        var strUltimaLetraCodigoAceca = strCodigoAceca[^1];
+                        if (Char.IsLetter(strCodigoAceca[^1]))
+                        {
+                            strUltimaLetraCodigoAceca = strCodigoAceca[^1];
 
-                        char charProximaLetraCodigoAceca = (char)(strUltimaLetraCodigoAceca + 1);
+                            char charProximaLetraCodigoAceca = (char)(strUltimaLetraCodigoAceca + 1);
 
-                        strNovoCodigoAceca = ReplaceInPosition(strCodigoAceca.ToString(), strCodigoAceca.Length - 1, charProximaLetraCodigoAceca);
+                            strNovoCodigoAceca = ReplaceInPosition(strCodigoAceca.ToString(), strCodigoAceca.Length - 1, charProximaLetraCodigoAceca);
+                        }
+                        else
+                        {
+                            strNovoCodigoAceca = string.Concat(strCodigoAceca, strUltimaLetraCodigoAceca);
+                        }
                     }
 
                 if (string.IsNullOrEmpty(strNovoCodigoAceca))
@@ -497,7 +517,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
-                    data = strNovoCodigoAceca?.ToUpper()
+                    data = strNovoCodigoAceca
                 });
             }
             catch (Exception ex)
@@ -515,49 +535,24 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create1([FromBody] object obj)
+        public async Task<IActionResult> Create(string strObjModel, IFormFile iFileImgPrincipal, IFormFile iFileImgDetalhe)
         {
             try
             {
-                if (string.IsNullOrEmpty(obj?.ToString()))
+                if (string.IsNullOrEmpty(strObjModel))
                     return BadRequest(new
                     {
                         bResult = false,
                         type = "ERRO",
                         message = "Model Inválida",
-                        data = obj,
+                        data = strObjModel,
                     });
 
                 #region Marca
 
-                var jObj = JObject.Parse(obj?.ToString());
+                var vmModel = JsonConvert.DeserializeObject<VMMarca>(strObjModel);
 
-                var newModel = new Marcas
-                {
-                    Ativo = true,
-
-                    MarcaDimensaoId = jObj["cmbPop_MarcaDimensao"].ToObject<int>(),
-                    MarcaFabricaId = jObj["cmbPop_MarcaFabrica"].ToObject<int>(),
-                    MarcaFaseId = jObj["cmbPop_MarcaFase"].ToObject<int>(),
-                    MarcaFinalidadeId = jObj["cmbPop_MarcaFinalidade"].ToObject<int>(),
-                    MarcaImpressoraId = jObj["cmbPop_MarcaImpressora"].ToObject<int>(),
-                    MarcaQualidadeImagemId = jObj["cmbPop_MarcaQualidadeImagem"].ToObject<int>(),
-                    //MarcaRaridadeId = jObj["MarcaRaridadeId"].ToObject<int>(),
-                    MarcaSubTipoId = jObj["cmbPop_MarcaSubTipo"].ToObject<int>(),
-                    CodigoAceca = jObj["txt_Codigo"]?.ToObject<string>()?.Trim(),
-                    //CodigoSC = jObj["CodigoSC"]?.ToObject<string>()?.Trim(),
-                    ImgPrincipal = !string.IsNullOrEmpty(jObj["File"]?.ToString()) ? jObj["File"]?["name"]?.ToObject<string>()?.Trim() : null,
-                    ImgDetalhe = !string.IsNullOrEmpty(jObj["File"]?.ToString()) ? jObj["File"]?["name"]?.ToObject<string>()?.Trim() : null,
-                    Nome = jObj["txt_Nome"]?.ToObject<string>()?.Trim(),
-                    Descricao = jObj["txt_Descricao"]?.ToObject<string>()?.Trim(),
-                    Valor1PI = jObj["txt_Valor1PI"]?.ToObject<string>()?.Trim(),
-                    Valor2PI = jObj["txt_Valor2PI"]?.ToObject<string>()?.Trim(),
-                    Valor = jObj["txt_Valor"]?.ToObject<string>()?.Trim(),
-                    IncluidoPor = jObj["txt_IncluidoPor"]?.ToObject<string>()?.Trim(),
-                    //EmQuarentena = !string.IsNullOrEmpty(formCollection["EmQuarentena"]) ? jObj["EmQuarentena"]) : 0,
-                };
-
-                if (string.IsNullOrEmpty(newModel.Nome))
+                if (string.IsNullOrEmpty(vmModel?.Nome))
                     return BadRequest(new
                     {
                         bResult = false,
@@ -565,15 +560,18 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         message = "Nome deve ser preenchido"
                     });
 
-                //Verifica se existe imagem para upload
-                var objFile = jObj["File"]?.ToString();
+                #region Upload Imagem
 
-                if (!string.IsNullOrEmpty(objFile?.ToString()))
+                //Verifica se existe ImgPrincipal para upload
+                if (iFileImgPrincipal == null)
+                    vmModel.ImgPrincipal = string.Empty;
+                else
                 {
-                    var result = await UploadImg(objFile, jObj);
+
+                    var result = await UploadImg(vmModel, iFileImgPrincipal, true);
 
                     if (result.GetType() == typeof(NotFoundObjectResult) ||
-                        result.GetType() == typeof(BadRequestObjectResult))
+                         result.GetType() == typeof(BadRequestObjectResult))
                         return BadRequest(new
                         {
                             bResult = false,
@@ -582,16 +580,66 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         });
                 }
 
-                _db.Marca.Add(newModel);
+                //Verifica se existe ImgDetalhe para upload
+                if (iFileImgDetalhe == null)
+                    vmModel.ImgDetalhe = string.Empty;
+                else
+                {
+                    var result = await UploadImg(vmModel, iFileImgDetalhe, false);
+
+                    if (result.GetType() == typeof(NotFoundObjectResult) ||
+                         result.GetType() == typeof(BadRequestObjectResult))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = result?.ToString()
+                        });
+                }
+
+                #endregion
+
+                #region obj Marca
+
+                var model = new Marcas
+                {
+                    Ativo = true,
+
+                    MarcaDimensaoId = vmModel?.MarcaDimensaoId,
+                    MarcaFabricaId = vmModel?.MarcaFabricaId,
+                    MarcaFaseId = vmModel?.MarcaFaseId,
+                    MarcaFinalidadeId = vmModel?.MarcaFinalidadeId,
+                    MarcaImpressoraId = vmModel?.MarcaImpressoraId,
+                    MarcaQualidadeImagemId = vmModel?.MarcaQualidadeImagemId,
+                    MarcaRaridadeId = vmModel?.MarcaRaridadeId,
+                    MarcaSubTipoId = vmModel?.MarcaSubTipoId,
+                    CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca : string.Empty,
+                    CodigoSC = !string.IsNullOrEmpty(vmModel?.CodigoSC) ? vmModel?.CodigoSC : null,
+                    ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? Path.GetFileName(vmModel?.ImgPrincipal) : string.Empty,
+                    ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? Path.GetFileName(vmModel?.ImgDetalhe) : string.Empty,
+                    Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome : string.Empty,
+                    Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao : string.Empty,
+                    Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI : null,
+                    Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI : null,
+                    Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor : null,
+                    IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? vmModel?.IncluidoPor : string.Empty,
+                    EmQuarentena = !string.IsNullOrEmpty(vmModel?.EmQuarentena?.ToString()) ? vmModel?.EmQuarentena : 0,
+                };
+
+                #endregion
+
+                _db.Marca.Add(model);
                 _db.SaveChanges();
 
-                if (newModel?.Id <= 0)
+                if (model?.Id <= 0)
                     return BadRequest(new
                     {
                         bResult = false,
                         type = "ERRO",
                         message = "Falha ao Cadastrar Marca"
                     });
+
+                vmModel?.Id = model?.Id;
 
                 #endregion
 
@@ -606,7 +654,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
-                    data = obj,
+                    data = vmModel,
                 });
             }
             catch (Exception ex)
@@ -623,97 +671,6 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
         }
 
-        [HttpPost]
-        public ActionResult Create2(FormCollection formCollection)
-        {
-            try
-            {
-                #region Marca
-
-                if (formCollection == null)
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "FormCollection inválido"
-                    });
-
-                if (formCollection.TryGetValue("txt_Nome", out var value) && !string.IsNullOrEmpty(value))
-                {
-
-                    var newModel = new Marcas
-                    {
-                        Ativo = true,
-
-                        MarcaDimensaoId = Convert.ToInt16(formCollection["cmbPop_MarcaDimensao"]),
-                        MarcaFabricaId = Convert.ToInt16(formCollection["cmbPop_MarcaFabrica"]),
-                        MarcaFaseId = Convert.ToInt16(formCollection["cmbPop_MarcaFase"]),
-                        MarcaFinalidadeId = Convert.ToInt16(formCollection["cmbPop_MarcaFinalidade"]),
-                        MarcaImpressoraId = Convert.ToInt16(formCollection["cmbPop_MarcaImpressora"]),
-                        MarcaQualidadeImagemId = Convert.ToInt16(formCollection["cmbPop_MarcaQualidadeImagem"]),
-                        //MarcaRaridadeId = Convert.ToInt16(formCollection["MarcaRaridadeId"]),
-                        MarcaSubTipoId = Convert.ToInt16(formCollection["cmbPop_MarcaSubTipo"]),
-                        CodigoAceca = formCollection["txt_Codigo"],
-                        //CodigoSC = formCollection["CodigoSC"],
-                        ImgPrincipal = formCollection["txt_ImgPrincipal"],
-                        ImgDetalhe = formCollection["txt_ImgDetalhe"],
-                        Nome = formCollection["txt_Nome"],
-                        Descricao = formCollection["txt_Descricao"],
-                        Valor1PI = formCollection["txt_Valor1PI"],
-                        Valor2PI = formCollection["txt_Valor2PI"],
-                        Valor = formCollection["txt_Valor"],
-                        IncluidoPor = formCollection["txt_IncluidoPor"],
-                        //EmQuarentena = !string.IsNullOrEmpty(formCollection["EmQuarentena"]) ? Convert.ToInt16(formCollection["EmQuarentena"]) : 0,
-                    };
-
-                    _db.Marca.Add(newModel);
-                    _db.SaveChanges();
-
-                    if (newModel?.Id <= 0)
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha ao Cadastrar Marca"
-                        });
-
-                #endregion
-
-                    return Ok(new
-                    {/*
-                            _logger.LogInformation(
-                            $"{lstModel} graus Fahrenheit = " +
-                            $"{resultado.Celsius} graus Celsius = " +
-                            $"{resultado.Kelvin} graus Kelvin");
-                        return resultado;
-                            */
-                        bResult = true,
-                        type = "OK",
-                        message = "SUCESSO ::: ",
-                        data = newModel,
-                    });
-                }
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "Nome deve ser preenchido"
-                });
-            }
-            catch (Exception ex)
-            {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
-            }
-        }
         public async Task<string?> SaveFile(IFormFile? file)
         {
             if (file == null || file.Length == 0) return null;
@@ -741,67 +698,83 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             return new string(chars);
         }
 
-        public async Task<IActionResult> UploadImg(object objFile, JObject jObj)
+        public async Task<IActionResult> UploadImg(VMMarca vmModel, IFormFile iFileImg, bool bIsImgPrincipal)
         {
-            var objFileImg = new
-            {
-                lastModified = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["File"]?["lastModified"].ToObject<string>() : String.Empty,
-                lastModifiedDate = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["File"]?["lastModifiedDate"]?.ToObject<string>() : String.Empty,
-                name = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["File"]?["name"]?.ToObject<string>() : null,
-                sourceName = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["Logotipo"]?.ToObject<string>() : null,
-                size = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["File"]?["size"]?.ToObject<string>() : String.Empty,
-                type = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["File"]?["type"]?.ToObject<string>() : String.Empty,
-                Campo = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["Campo"]?.ToObject<string>() : String.Empty,
-                Pasta = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["Pasta"]?.ToObject<string>() : String.Empty,
-                SubPasta = !string.IsNullOrEmpty(objFile?.ToString()) ? jObj["SubPasta"]?.ToObject<string>() : String.Empty,
-            };
-
-            if (string.IsNullOrEmpty(objFileImg.name) || objFileImg.name == null || objFileImg?.name?.Length == 0)
+            if (string.IsNullOrEmpty(iFileImg.FileName) || iFileImg?.FileName == null || iFileImg?.FileName.Length == 0)
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = "Arquivo nulo ou invalido"
+                    message = "Arquivo de Imagem Nulo ou Invalido"
                 });
 
-            string fileExtension = Path.GetExtension(objFileImg?.name?.ToString()).ToLowerInvariant();
+            string fileExtension = Path.GetExtension(iFileImg?.FileName?.ToString())?.ToLowerInvariant();
 
-            if (string.IsNullOrEmpty(fileExtension))
+            var fileExtensionValid = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+
+            if (string.IsNullOrEmpty(fileExtension) || !fileExtensionValid.Contains(fileExtension))
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = "Arquivo com extensão invalida"
+                    message = "Arquivo de Imagem com Extensão Inválida"
                 });
 
             //Gera novo nome
-            var newFileName = string.Concat(Guid.NewGuid(), "_", objFileImg?.name, !(bool)objFileImg?.name.Contains(fileExtension) ? fileExtension : String.Empty);
+            var fileSaveName = string.Concat(Guid.NewGuid(), "_", iFileImg?.FileName?.Trim()?.ToUpper(), !(bool)iFileImg?.FileName.Contains(fileExtension) ? fileExtension : String.Empty);
 
-            var fileSize = objFileImg?.size;
             var fileTempPath = Path.GetTempFileName();
 
-            //< obtém o caminho físico da pasta wwwroot >
-            var rootPath = _appEnvironment.ContentRootPath;
-
-            // monta o caminho onde vamos salvar o arquivo : 
-            // ~\wwwroot\Arquivos\Exibidor\Logo
-            var destinationPath = Path.Combine(rootPath, "Arquivos", objFileImg?.Pasta, objFileImg?.SubPasta);
+            // monta o caminho onde vamos salvar o arquivo :
+            var strFileSaveFolderPath = bIsImgPrincipal
+                ? Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", vmModel?.MarcaFaseId?.ToString())
+                : Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", "detalhes");
 
             //Verifica diretorio existe e cria se necessario 
-            if (!Directory.Exists(destinationPath))
-                Directory.CreateDirectory(destinationPath);
+            if (!Directory.Exists(strFileSaveFolderPath))
+                Directory.CreateDirectory(strFileSaveFolderPath);
+            
+            var fileDetails = new FileDetails()
+            {
+                FileName = Guid.NewGuid() + "_" + fileSaveName,
+                FileSize = iFileImg.Length / 1000,
+                FilePath = Path.Combine(strFileSaveFolderPath, fileSaveName),
+                FileType = iFileImg?.ContentType,
+            };
 
+            var fileSavePath = fileDetails.FilePath;
+
+            using (var stream = new FileStream(fileSavePath, FileMode.Create))
+            {
+                await iFileImg.CopyToAsync(stream);
+
+                stream.Flush();
+                stream.Close();
+            }
+
+            var fi = new FileInfo(fileTempPath);
+
+            // Checa se arquivo existe
+            if (!fi.Exists)
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Arquivo Temporario ::: " + fileTempPath + " inexistente",
+                    data = fileTempPath
+                });
+            /*
             //Cria Arquivo Temp e Upload
             var filePath = Path.Combine(destinationPath, newFileName);
 
-            var filePath1 = Path.Combine(destinationPath, objFileImg?.name);
+            var filePath1 = Path.Combine(destinationPath, iFileImg?.FileName);
 
             using (var stream = new FileStream(Path.Combine(destinationPath, fileTempPath), FileMode.Create))
             {
                 FormFile fileImgUpload = new FormFile(stream, 0, stream.Length, null, Path.GetFileName(stream.Name))
                 {
                     Headers = new HeaderDictionary(),
-                    ContentType = objFileImg.type
+                    ContentType = iFileImg?.ContentType
                 };
 
                 stream.Position = 0;
@@ -823,6 +796,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 stream.Close();
             }
 
+            */
             return Ok(new
             {/*
                         _logger.LogInformation(
@@ -834,7 +808,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 bResult = true,
                 type = "OK",
                 message = "SUCESSO ::: ",
-                data = newFileName,
+                data = fileSaveName,
             });
         }
     }
