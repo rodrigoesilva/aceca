@@ -53,96 +53,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             return View("~/Views/Admin/Marca/MarcaCadastro.cshtml");
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<IActionResult> ListGrid()
-        {
-            try
-            {
-                //_logger.LogInformation($"Recebida temperatura para conversao: {temperatura}");
-
-                string strUrlPath = "https://www.aceca.cox.br/midia/geral";
-
-                var lstModel = await _db.Marca
-                       .Include(x => x.MarcaFase)
-                       .Include(x => x.MarcaFabrica)
-                       .Include(x => x.MarcaSubTipo)
-                       .Include(x => x.MarcaSubTipo.MarcaTipo)
-                   .OrderBy(x => x.MarcaFaseId)
-                       .ThenBy(x => x.Nome)
-                       .ThenBy(x => x.MarcaFabricaId)
-                       .ThenBy(x => x.MarcaFabrica.Nome)
-                       .ThenBy(x => x.Descricao)
-                   .Select(x => new
-                   {
-                       x.Id,
-                       IdMarcaFase = x.MarcaFaseId,
-                       IdMarcaFinalidade = x.MarcaFinalidadeId,
-                       IdMarcaFabrica = x.MarcaFabricaId,
-                       IdMarcaDimensao = x.MarcaDimensaoId,
-                       IdMarcaTipo = x.MarcaSubTipo.MarcaTipoId,
-                       IdMarcaSubTipo = x.MarcaSubTipoId,
-                       IdMarcaImpressora = x.MarcaFabricaId,
-                       IdMarcaQualidadeImagem = x.MarcaImpressoraId,
-                       IdMrcaFinalidade = x.MarcaFinalidadeId,
-
-                       x.CodigoAceca,
-                       NomeMarca = x.Nome,
-                       NomeFase = x.MarcaFase.Descricao,
-                       NomeFabrica = x.MarcaFabrica.Nome,
-                       x.IncluidoPor,
-                       x.Descricao,
-                       x.Valor,
-                       x.Valor1PI,
-                       x.Valor2PI,
-                       x.ImgPrincipal,
-                       ImgPrincipalFull = $"<img name=\"myImg\" class=\"td-img cmyImg\" src=\"{strUrlPath}/{x.MarcaFaseId}/{x.ImgPrincipal}\" alt=\"{x.CodigoAceca}\">",
-                       x.ImgDetalhe,
-                       ImgDetalheFull = $"<img name=\"myImg\" class=\"td-img cmyImg\" src=\"{strUrlPath}/detalhes/{x.ImgDetalhe}\" alt=\"{x.CodigoAceca}\">",
-                   })
-                   .AsNoTracking()
-                   .ToListAsync();
-
-                if (lstModel.Count <= 0)
-                {
-                    return Ok(new
-                    {
-                        bResult = true,
-                        type = "ERRO - VAZIO - lstResult",
-                        message = "listagem em branco",
-                        data = lstModel
-                    });
-                }
-
-                return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = lstModel,
-                });
-            }
-            catch (Exception ex)
-            {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
-            }
-        }
-
         [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> FiltrarDados([FromBody] object obj)
         {
             if (obj != null && string.IsNullOrEmpty(obj?.ToString()))
@@ -170,7 +82,9 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     param_PesquisarDescricao = jObj["param_PesquisarDescricao"].ToObject<bool>(),
                 };
 
-                string strUrlPath = _imgBaseUrl;
+                string strUrlImgPath = _imgBaseUrl;
+
+                string strUrlImgInexistente = $"{_appBaseUrl}/assets/img/img_inexistente.jpg";
 
                 IQueryable<Marcas> query = _db.Marca;
 
@@ -205,6 +119,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     .Include(x => x.MarcaFinalidade)
                     .Include(x => x.MarcaFabrica)
                     .Include(x => x.MarcaDimensao)
+                    .Include(x => x.MarcaImpressora)
+                    .Include(x => x.MarcaRaridade)
                     .Include(x => x.MarcaSubTipo)
                     .Include(x => x.MarcaSubTipo.MarcaTipo)
                     .OrderBy(x => x.MarcaFaseId)
@@ -223,27 +139,34 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         IdMarcaSubTipo = x.MarcaSubTipoId,
                         IdMarcaImpressora = x.MarcaFabricaId,
                         IdMarcaQualidadeImagem = x.MarcaImpressoraId,
-                        IdMrcaFinalidade = x.MarcaFinalidadeId,
 
                         x.CodigoAceca,
                         NomeMarca = x.Nome,
                         NomeFase = x.MarcaFase.Descricao,
-                        NomeFabrica = x.MarcaFabrica.Nome,
-                        Dimensao = x.MarcaDimensao.Descricao,
+                        NomeFabrica = x.MarcaFabrica.Nome, //!string.IsNullOrEmpty(x.MarcaFabrica.Nome) ? x.FabricaFase.Descricao : string.Empty,
+                        //NomeFabricaFase = x.FabricaFase.Descricao,
+                        NomeDimensao = x.MarcaDimensao.Descricao,
+                        NomeFinalidade = x.MarcaFinalidade.Descricao,
+                        NomeImpressora = x.MarcaImpressora.Descricao,
+                        NomeRaridade = x.MarcaRaridade.Descricao,
+                        x.TxtFabrica,
+                        x.TxtImpressora,
                         x.IncluidoPor,
                         x.Descricao,
                         x.Valor,
                         x.Valor1PI,
                         x.Valor2PI,
                         x.ImgPrincipal,
-                        ImgPrincipalFull = $"{strUrlPath}/{x.MarcaFaseId}/{x.ImgPrincipal}\"",
+                        ImgPrincipalFull = !string.IsNullOrEmpty(x.ImgPrincipal) ? $"{strUrlImgPath}/{x.MarcaFaseId}/{x.ImgPrincipal}\"" : $"{strUrlImgInexistente}",
                         x.ImgDetalhe,
-                        ImgDetalheFull = $"{strUrlPath}/detalhes/{x.ImgDetalhe}\"",
+                        ImgDetalheFull = !string.IsNullOrEmpty(x.ImgDetalhe) ? $"{strUrlImgPath}/detalhes/{x.ImgDetalhe}\"" : $"{strUrlImgInexistente}",
                         SubTipo = x.MarcaSubTipo.Descricao,
                         Tipo = x.MarcaSubTipo.MarcaTipo.Descricao
                     })
                     .AsQueryable()
-                    .ToListAsync();
+                    .Take(10)
+                    .ToListAsync()
+                    ;
 
                 if (lstModel.Count <= 0)
                 {

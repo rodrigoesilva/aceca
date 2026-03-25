@@ -112,9 +112,11 @@ namespace Aceca.Adm.Models
         public int? Id { get; set; }
         public int? MarcaDimensaoId { get; set; }
         public int? MarcaFabricaId { get; set; }
+        [Column("fabrica_txt")] public string? TxtFabrica { get; set; } = string.Empty;
         public int? MarcaFaseId { get; set; }
         public int? MarcaFinalidadeId { get; set; }
         public int? MarcaImpressoraId { get; set; }
+        [Column("impressora")] public string? TxtImpressora { get; set; } = string.Empty;
         public int? MarcaQualidadeImagemId { get; set; }
         public int? MarcaRaridadeId { get; set; }
         public int? MarcaSubTipoId { get; set; }
@@ -137,6 +139,7 @@ namespace Aceca.Adm.Models
         public MarcaQualidadeImagem? MarcaQualidadeImagem { get; set; }
         public MarcaRaridade? MarcaRaridade { get; set; }
         public MarcaSubTipo? MarcaSubTipo { get; set; }
+        public FabricaFase? FabricaFase { get; set; }
     }
 
     [Table("marcas_filtro_dimensao")]

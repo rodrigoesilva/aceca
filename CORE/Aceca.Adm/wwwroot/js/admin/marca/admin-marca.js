@@ -75,6 +75,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Carrega Dados Combos Modal
         //fn_PopLoadCombos();
 
+        fn_Zoom();
+
     })();
 });
 
@@ -421,7 +423,7 @@ function fn_LoadFiltros() {
 
 function fn_GridListFilter(lstData) {
 
-    console.log("fn_GridListFilter lstData ::: ", lstData);
+    //console.log("fn_GridListFilter lstData ::: ", lstData);
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
@@ -435,7 +437,7 @@ function fn_GridListFilter(lstData) {
 
     if (varTbl_Obj.length) {
 
-        //console.log("fn_GridListFilter lstData ::: ", lstData);
+        console.log("fn_GridListFilter lstData ::: ", lstData);
 
         varTbl_Data = $('.datatables-basic').DataTable({
             //"processing": true,
@@ -476,15 +478,21 @@ function fn_GridListFilter(lstData) {
                     data: 'nomeFase',
                     className: "text-center"
                 },
-                // COLUNA - codigoAceca
+                // COLUNA - finalidade
                 {
                     targets: 3,
+                    data: 'nomeFinalidade',
+                    className: "text-center",
+                },                
+                // COLUNA - codigoAceca
+                {
+                    targets: 4,
                     data: 'codigoAceca',
                     className: "text-center"
                 },
                 // COLUNA - imagem
                 {
-                    targets: 4,
+                    targets: 5,
                     data: 'imgPrincipalFull',
                     className: "text-center",
                     render: function (data, type, row, meta) {
@@ -493,7 +501,7 @@ function fn_GridListFilter(lstData) {
                 },
                 // COLUNA - imagemDetalhe
                 {
-                    targets: 5,
+                    targets: 6,
                     data: 'imgDetalheFull',
                     className: "text-center",
                     render: function (data, type, row, meta) {
@@ -502,32 +510,37 @@ function fn_GridListFilter(lstData) {
                 },
                 // COLUNA - nomeMarca
                 {
-                    targets: 6,
+                    targets: 7,
                     data: 'nomeMarca',
                     className: "text-center"
                 },
                 // COLUNA - fabricaNome
                 {
-                    targets: 7,
-                    data: 'nomeFabrica',
-                    className: "text-start",
+                    targets: 8,
+                    data: 'txtFabrica',
+                    className: "text-center",
+                    render: function (data, type, full, meta) {
+                        return (data === "" || data === null) ? full.nomeFabrica : data;
+                    }
+                    
                 },
                 // COLUNA - subTipo
                 {
-                    targets: 8,
+                    targets: 9,
                     data: 'subTipo',
-                    className: "text-start",
+                    className: "text-center",
                 },
+               
                 // COLUNA - descricao
                 {
-                    targets: 9,
+                    targets: 10,
                     data: 'descricao',
                     className: "text-start",
                     searchable: false,
                 },
                 // COLUNA - incluidoPor
                 {
-                    targets: 10,
+                    targets: 11,
                     data: 'incluidoPor',
                     className: "text-center",
                     render: function (data, type, full, meta) {
@@ -788,6 +801,8 @@ function fn_GridComplete(grid) {
 
 //#region ZOOM
 function fn_Zoom() {
+    console.log("fnZoom ::: ");
+
     var modal = document.getElementById('myModal');
     //console.log("fnZoom modal ::: ", modal);
 

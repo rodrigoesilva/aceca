@@ -14,7 +14,7 @@ public partial class Program
 
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            var conn = builder.Configuration.GetConnectionString("Default");
+            var conn = builder.Configuration.GetConnectionString("MySqlConnection");
 
             // Configure DB Context with MySql
             builder.Services.AddDbContext<AppDbContext>(options =>
