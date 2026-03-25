@@ -202,7 +202,9 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 var lstModel = await query
                     .AsNoTracking()
                     .Include(x => x.MarcaFase)
+                    .Include(x => x.MarcaFinalidade)
                     .Include(x => x.MarcaFabrica)
+                    .Include(x => x.MarcaDimensao)
                     .Include(x => x.MarcaSubTipo)
                     .Include(x => x.MarcaSubTipo.MarcaTipo)
                     .OrderBy(x => x.MarcaFaseId)
@@ -227,6 +229,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         NomeMarca = x.Nome,
                         NomeFase = x.MarcaFase.Descricao,
                         NomeFabrica = x.MarcaFabrica.Nome,
+                        Dimensao = x.MarcaDimensao.Descricao,
                         x.IncluidoPor,
                         x.Descricao,
                         x.Valor,
@@ -668,21 +671,6 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     message = mensagemErro
                 });
             }
-        }
-
-        public async Task<string?> SaveFile(IFormFile? file)
-        {
-            if (file == null || file.Length == 0) return null;
-            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-            var safe = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-            if (!safe.Contains(ext)) return null;
-            var dir = Path.Combine(_appEnvironment.WebRootPath, "uploads");
-            Directory.CreateDirectory(dir);
-            var name = $"{Guid.NewGuid():N}{ext}";
-            var path = Path.Combine(dir, name);
-            await using var fs = System.IO.File.Create(path);
-            await file.CopyToAsync(fs);
-            return $"/uploads/{name}";
         }
 
         public static string ReplaceInPosition(string input, int index, char newChar)
