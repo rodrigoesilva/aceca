@@ -564,10 +564,9 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                 //Verifica se existe ImgPrincipal para upload
                 if (iFileImgPrincipal == null)
-                    vmModel.ImgPrincipal = string.Empty;
+                    vmModel.ImgPrincipal = null;
                 else
                 {
-
                     var result = await UploadImg(vmModel, iFileImgPrincipal, true);
 
                     if (result.GetType() == typeof(NotFoundObjectResult) ||
@@ -582,7 +581,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                 //Verifica se existe ImgDetalhe para upload
                 if (iFileImgDetalhe == null)
-                    vmModel.ImgDetalhe = string.Empty;
+                    vmModel.ImgDetalhe = null;
                 else
                 {
                     var result = await UploadImg(vmModel, iFileImgDetalhe, false);
@@ -721,7 +720,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 });
 
             //Gera novo nome
-            var fileSaveName = string.Concat(Guid.NewGuid(), "_", iFileImg?.FileName?.Trim()?.ToUpper(), !(bool)iFileImg?.FileName.Contains(fileExtension) ? fileExtension : String.Empty);
+            var fileSaveName = string.Concat(Guid.NewGuid(), "_", iFileImg?.FileName?.Trim()?.ToLower(), !(bool)iFileImg?.FileName.Contains(fileExtension) ? fileExtension : String.Empty);
 
             var fileTempPath = Path.GetTempFileName();
 
@@ -763,40 +762,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     message = "Arquivo Temporario ::: " + fileTempPath + " inexistente",
                     data = fileTempPath
                 });
-            /*
-            //Cria Arquivo Temp e Upload
-            var filePath = Path.Combine(destinationPath, newFileName);
 
-            var filePath1 = Path.Combine(destinationPath, iFileImg?.FileName);
-
-            using (var stream = new FileStream(Path.Combine(destinationPath, fileTempPath), FileMode.Create))
-            {
-                FormFile fileImgUpload = new FormFile(stream, 0, stream.Length, null, Path.GetFileName(stream.Name))
-                {
-                    Headers = new HeaderDictionary(),
-                    ContentType = iFileImg?.ContentType
-                };
-
-                stream.Position = 0;
-
-                await fileImgUpload.CopyToAsync(stream);
-
-                var fi = new FileInfo(fileTempPath);
-
-                // Check if the file exists
-                if (!fi.Exists)
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Arquivo Temporario ::: " + fileTempPath + " inexistente"
-                    });
-
-                stream.Flush();
-                stream.Close();
-            }
-
-            */
             return Ok(new
             {/*
                         _logger.LogInformation(
