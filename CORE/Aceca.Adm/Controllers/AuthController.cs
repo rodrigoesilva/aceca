@@ -1,5 +1,6 @@
 using Aceca.Adm.Data;
 using Aceca.Adm.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -33,10 +34,24 @@ namespace Aceca.Adm.Controllers
         {
             return View("~/Views/Pages/MiscNotAuthorized.cshtml");
         }
-        public IActionResult Access()
+        public async Task<IActionResult> Access()
         {
+            var result = await LoginPerfilAdm();
+
+            if (result.GetType() == typeof(ForbidResult))
+                AccessDenied();
+
+            if (result.GetType() == typeof(BadRequestObjectResult))
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = result?.ToString()
+                });
+
+
             //return RedirectToAction("Index", "Usuario");
-            return RedirectToAction("Inicio", "Home");
+            return (bool)((ObjectResult)result).Value ? RedirectToAction("Inicio", "Home") : RedirectToAction("Index", "Marca"); ;
         }
 
         [HttpPost]
@@ -48,31 +63,56 @@ namespace Aceca.Adm.Controllers
             var user = await _db.Usuario
                 .FirstOrDefaultAsync(s => s.Email == dto.Email.ToLower());
 
-            if (!LoginValidacao(dto.Senha, user))
-                return Unauthorized(new { msg = "Credenciais inválidas." });
+            //if (user.Email == "rodrigoesilva@gmail.com" && user.SenhaAberta == "1")
+            if (user == null)
+                return BadRequest(new { msg = "User inválido." });
 
+            if (!LoginValidacao(dto.Senha, user))
+            {
+                ViewBag.Error = "Nome de usuário ou senha inválidos";
+
+                return Unauthorized(new { msg = "Credenciais inválidas." });
+            }
 
             var socio = await _db.Socio
                 .Include(f => f.SocioPerfil)
                 .FirstOrDefaultAsync(s => s.Id == user.socioId);
-            
-            string strToken = LoginToken(user, socio);
+
+            string strToken = LoginTokenJwt(user, socio);
 
             if (string.IsNullOrEmpty(strToken))
                 return BadRequest(new { msg = "Token inválido." });
 
+            #region Token Cookie
+
+            var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, socio.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user?.Email),
+                    new Claim(ClaimTypes.Name, socio.Nome),
+                    new Claim(ClaimTypes.Role, socio?.SocioPerfil?.Descricao),
+                    //new Claim(ClaimTypes.Role, "User"),
+                    //new Claim(ClaimTypes.Role, "SuperAdmin")
+                };
+
+            var claimsIdentity = new ClaimsIdentity(claims, "cookie");
+
+            await HttpContext.SignInAsync("cookie", new ClaimsPrincipal(claimsIdentity));
+
+            #endregion
+
             return Ok(new
             {
                 token = strToken,
+                nameIdentifier = socio.Id.ToString(),
                 nome = socio.Nome,
-                email = user.Email,
+                //email = user.Email,
                 cargo = socio?.SocioPerfil?.Descricao
             });
         }
 
 
         #region Login - Validacao
-
         private bool LoginValidacao(string passSource, Usuario user)
         {
             try
@@ -97,10 +137,11 @@ namespace Aceca.Adm.Controllers
                 throw;
             }
         }
+
         #endregion
 
         #region Login - Token
-        private string LoginToken(Usuario user, Socio socio)
+        private string LoginTokenJwt(Usuario user, Socio socio)
         {
             string strTok = string.Empty;
 
@@ -167,6 +208,53 @@ namespace Aceca.Adm.Controllers
 
             return strTok;
         }
+
+        #endregion
+
+        #region Login Perfil
+        public async Task<IActionResult> LoginPerfilAdm()
+        {
+            try
+            {
+                // Check if the user is authenticated
+                if (User.Identity.IsAuthenticated)
+                {
+                    // Get all claims
+                    var allClaims = User.Claims.ToList();
+
+                    // Get a specific claim value using FindFirstValue or FindFirst
+                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                    var userName = User.Identity.Name; // Often maps to ClaimTypes.Name
+                    var email = User.FindFirstValue(ClaimTypes.Email);
+                    var role = User.FindFirstValue(ClaimTypes.Role);
+
+                    if (string.IsNullOrEmpty(role))
+                        return BadRequest(new { msg = "Role inválido." });
+
+                    return Ok(new
+                    {
+                        isPerfilAdm = role.Equals("Administração") ? true : false
+                    });
+                }
+                else
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ListGrid : {ex?.Message}";
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
         #endregion
 
         #region MD5

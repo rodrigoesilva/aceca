@@ -424,6 +424,15 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
         Sim = 1
     }
 
+    public enum EPerfil
+    {
+        Fundador = 1,
+        MembroHonra = 2,
+        InMemoria = 3,
+        Administracao = 4,
+        Socio = 5
+    }
+
     #endregion
 
 }

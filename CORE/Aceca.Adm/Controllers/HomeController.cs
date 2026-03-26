@@ -13,7 +13,7 @@ namespace Aceca.Adm.Controllers
         {
             _logger = logger;
         }
-
+        [Authorize(Roles = "Admin")]
         public IActionResult Inicio()
         {
             return View("~/Views/Home/Index.cshtml");
