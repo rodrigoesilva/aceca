@@ -132,9 +132,9 @@ public partial class Program
             {
                 endpoints.MapControllerRoute(
                 name: "default",
-               pattern: "{controller=Home}/{action=Inicio}/{Id?}");
+               //pattern: "{controller=Home}/{action=Inicio}/{Id?}");
 
-                //pattern: "{controller=Auth}/{action=Index}/{Id?}");
+                pattern: "{controller=Auth}/{action=Index}/{Id?}");
             });
 
             app.Run();
@@ -142,7 +142,7 @@ public partial class Program
         }
         catch (Exception ex)
         {
-            var mensagemErro = $"ListGrid : {ex?.Message}";
+            var mensagemErro = $"Program CS ::: {ex?.Message}";
         }
     }
 }

@@ -376,8 +376,8 @@
                                 </div>
                             </div>
                             <div class="flex-grow-1">
-                                <h6 id="tbNome" class="mb-0 small">John Doe</h6>
-                                <small id="tbCargo" class="text-muted">Admin</small>
+                                <h6 id="tbNome" class="mb-0 small">ACECA</h6>
+                                <small id="tbCargo" class="text-muted">ACECA</small>
                             </div>
                         </div>
                     </a>
@@ -385,7 +385,7 @@
                 <li>
                     <div class="dropdown-divider"></div>
                 </li>
-                <li>
+                @* <li>
                     <a class="dropdown-item" asp-page="/Pages/Profile/User">
                         <i class="ri-user-3-line ri-22px me-2"></i>
                         <span class="align-middle">Meu Perfil</span>
@@ -426,10 +426,10 @@
                         <i class="ri-global-line ri-22px me-2"></i>
                         <span class="align-middle">ACECA</span>
                     </a>
-                </li>
+                </li> *@
                 <li>
                     <div class="d-grid px-4 pt-2 pb-1">
-                        <a class="btn btn-danger d-flex" asp-controller="Auth" asp-action="LoginCover" target="_blank">
+                                <a class="btn btn-danger d-flex" onclick="fn_AuthOut(); return false;">
                             <small class="align-middle">Sair</small>
                             <i class="ri-logout-box-r-line ms-2 ri-16px"></i>
                         </a>
