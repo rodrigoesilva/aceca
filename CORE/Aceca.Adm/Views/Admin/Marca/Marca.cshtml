@@ -4,22 +4,13 @@
 
     ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
 
-    @if(Context?.Session?.Keys?.Count() > 0)
-    {
-        var userRole = Context?.Session?.GetString("UserRole");
-        Layout = $"~/Views/Shared/{(userRole == "Admin" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
-    }
-    else
-    {
-        //Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
-        Layout = "~/Views/Shared/_WithoutMenuLayout.cshtml";
-    }
+    Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
 }
 
 @section VendorStyles {
-    <link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css" />
-    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css" />
-    <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css" />
+<link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css" />
+<link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css" />
+<link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css" />
     <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
 
     <!-- Select Dropdownlist -->
@@ -31,18 +22,18 @@
 }
 
 @section VendorScripts {
-   @* <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script> *@
-            <!-- Select Dropdownlist -->
-    <script src="~/vendor/libs/select2/select2.js"></script>
-    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+@* <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script> *@
+<!-- Select Dropdownlist -->
+<script src="~/vendor/libs/select2/select2.js"></script>
+<script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
 } 
 
 @section PageScripts {
-    <script src="~/js/admin/marca/admin-marca.js"></script>
-    <!-- Select Dropdownlist -->
-    <script src="~/js/forms-selects.js"></script>
+<script src="~/js/admin/marca/admin-marca.js"></script>
+<!-- Select Dropdownlist -->
+<script src="~/js/forms-selects.js"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.js"></script>
 }
 
 @* ************** Filtros ************** *@
@@ -68,18 +59,19 @@
                     <hr class="d-none d-sm-block d-lg-none me-6">
                 </div>
 
-                <!-- Fabrica -->
+                <!-- Fabrica 
                 <div class="col-sm-6 col-lg-3">
-                    <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-                        <div>
-                            <p class="mb-1">* Fabrica</p>
-                            <select id="cmb_MarcaFabrica" class="select2 form-select form-select">
-                                <option value="-1">-- Selecionar --</option>
-                            </select>
-                        </div>
-                    </div>
-                    <hr class="d-none d-sm-block d-lg-none me-6">
+                <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
+                <div>
+                <p class="mb-1">* Fabrica</p>
+                <select id="cmb_MarcaFabrica" class="select2 form-select form-select">
+                <option value="-1">-- Selecionar --</option>
+                </select>
                 </div>
+                </div>
+                <hr class="d-none d-sm-block d-lg-none me-6">
+                </div>
+                -->
 
                 <!-- Tipo-->
                 <div class="col-sm-6 col-lg-2">
@@ -114,7 +106,7 @@
                             <div class="pt-8">
                                 <div class="form-check form-switch mb-2">
                                     <input class="form-check-input" type="checkbox"
-                                           id="chk_PesquisarDescricao">
+                                    id="chk_PesquisarDescricao">
                                     <label class="form-check-label" for="chk_PesquisarDescricao">Pesquisar na Descrição</label>
                                 </div>
                             </div>
@@ -123,27 +115,42 @@
                     <hr class="d-none d-sm-block d-lg-none me-6">
                 </div>
 
-            </div>
-
-            <!-- Botoes -->
-            <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
-               
-                <div class="d-flex justify-content-center col-sm-6 col-lg-12">
+                <!-- Botoes -->
+                <div class="col-sm-6 col-lg-3">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-
                         <div class="pt-8">
-                            <button type="button" class="btn btn-label-primary waves-effect btn-filter">
-                                <span class="tf-icons ri-filter-2-line ri-16px me-1_5"></span>Pesquisar
+                            <button type="button" class="btn btn-label-primary btn-filter waves-effect">
+                                <span class="tf-icons ri-filter-2-line ri-16px me-1_5"></span>Filtrar Dados
                             </button>
-
                             <button type="button" class="btn btn-label-secondary waves-effect btn-filter-clear">
                                 <span class="tf-icons ri-eraser-line ri-16px me-1_5"></span>Limpar Filtro
                             </button>
                         </div>
                     </div>
                 </div>
-                
             </div>
+
+            <!-- Botoes 
+            <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
+
+            <div class="d-flex justify-content-center col-sm-6 col-lg-12">
+            <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
+
+            <div class="pt-8">
+            <button type="button" class="btn btn-label-primary waves-effect btn-filter">
+            <span class="tf-icons ri-filter-2-line ri-16px me-1_5"></span>Pesquisar
+            </button>
+
+            <button type="button" class="btn btn-label-secondary waves-effect btn-filter-clear">
+            <span class="tf-icons ri-eraser-line ri-16px me-1_5"></span>Limpar Filtro
+            </button>
+            </div>
+            </div>
+            </div>
+
+            </div>
+
+            -->
         </div>
     </div>
 </div>
@@ -168,6 +175,10 @@
                     <th class="text-nowrap text-center">Inclu&iacute;do por</th>
                     <th>Inclu&iacute;do por Hide</th>
                     <th>A&ccedil;&otilde;es</th>
+                    @* @if (TempData["isPerfil"] as bool? ?? false)
+                    {
+                        
+                    } *@
                 </tr>
             </thead>
         </table>

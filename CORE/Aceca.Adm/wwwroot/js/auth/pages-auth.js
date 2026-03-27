@@ -17,7 +17,6 @@ let formValid;
 
 const submitButton = document.querySelector('.btn-entrar');
 
-
 let var_Filtrado = false,
     var_ImgAlt = "ACECA",
     urlImgModal = "../img/logo/logo.png",
@@ -56,32 +55,10 @@ $.busyLoadSetup({
 //#region CARREGAMENTO INICIAL
 
 document.addEventListener('DOMContentLoaded', function () {
-  (function () {
-      //console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
+    (function () {
+        console.log(`AUTH - Todos os recursos terminaram o carregamento!`);
 
-      fn_Limpar();
-
-      // Form validation
-      const formAuthentication = document.querySelector('#frmLogin');
-
-      fn_FormValidator(formAuthentication);
-
-      submitButton.addEventListener('click', function (e) {
-          // Prevent default button action
-          e.preventDefault();
-
-          // Validate form before submit
-          if (formValid) {
-              formValid.validate().then(function (status) {
-                  //console.log('validated!');
-
-                  if (status == 'Valid') {
-                      fn_Auth(e);                      
-                  }
-              });
-          }
-      });
-
+        fn_AuthIni();       
   })();
 });
 
@@ -90,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function () {
 function fn_Limpar() {
     document.getElementById('lEmail').value = '';
     document.getElementById('lSenha').value = '';
+
+    document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+    sessionStorage.removeItem('aceca_sessao');
 }
 
 function fn_Viewpass() {
@@ -98,13 +78,8 @@ function fn_Viewpass() {
 }
 
 function fn_FormValidator(formAuthentication) {
-    //console.log("fn_FormValidator :::", formAuthentication);
 
-    // Form validation for Add new record
     if (formAuthentication) {
-
-        //console.log("formAuthentication :::", formAuthentication);
-
         formValid = FormValidation.formValidation(formAuthentication, {
             fields: {
                 lEmail: {
@@ -140,10 +115,6 @@ function fn_FormValidator(formAuthentication) {
                 }),
 
                 autoFocus: new FormValidation.plugins.AutoFocus(),
-
-                //defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
-                //submitButton: new FormValidation.plugins.SubmitButton(),
-                //submitButton: new FormValidation.plugins.SubmitButton(),
             },
             init: instance => {
                 instance.on('plugins.message.placed', function (e) {
@@ -157,13 +128,54 @@ function fn_FormValidator(formAuthentication) {
 
 }
 
-async function fn_Auth(e) {
-    //console.log("fazerLogin - e :::", e);
+function fn_AuthIni() {
 
-    // Show loading indication
+    let userCk = fn_CkGet(_ck);
+
+    if (userCk != "") {
+
+        Swal.fire({
+            title: `Ol&aacute; ${userCk.split("|")[0]}!`,
+            html: `Seja bem-vindo novamente`,
+            imageUrl: `${urlImgModaltext}`,
+            imageWidth: 400,
+            imageAlt: `${var_ImgAlt}`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-primary waves-effect waves-light'
+            },
+        }).then((result) => {
+            window.location.href = '/Auth/Access';
+        })
+
+    } else {
+        fn_Limpar();
+
+        const formAuthentication = document.querySelector('#frmLogin');
+
+        fn_FormValidator(formAuthentication);
+
+        submitButton.addEventListener('click', function (e) {
+
+            e.preventDefault();
+
+            if (formValid) {
+                formValid.validate().then(function (status) {
+
+                    if (status == 'Valid') {
+                        fn_Auth();
+                    }
+                });
+            }
+        });
+    }
+}
+
+async function fn_Auth() {
+    
     submitButton.setAttribute('data-kt-indicator', 'on');
 
-    // Disable button to avoid multiple click
     submitButton.disabled = true;
 
     const email = document.getElementById('lEmail').value.trim().toLowerCase();
@@ -194,25 +206,21 @@ async function fn_Auth(e) {
 
             if (user) {
 
-                setTimeout(function () {
+                Swal.fire({
+                    icon: 'success',
+                    title: `Ol&aacute; ${user?.nome?.split(" ")[0]}!`,
+                    html: `Seja bem-vindo`,
+                    focusConfirm: true,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: {
+                        confirmButton: 'btn btn-label-success waves-effect'
+                    }
+                }).then((result) => {
+                    fn_CkSet(_ck, user?.nome?.split(" ")[0], 60);
+                    sessionStorage.setItem('aceca_sessao', JSON.stringify(user));
+                    window.location.href = '/Auth/Access';
+                });
 
-                    Swal.fire({
-                        icon: 'success',
-                        title: `Ol&aacute; ${user?.nome?.split(" ")[0]}!`,
-                        html: `Seja bem-vindo`,
-                        focusConfirm: true,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-success waves-effect'
-                        }
-                    }).then((result) => {
-
-                        sessionStorage.setItem('aceca_sessao', JSON.stringify(user));
-                        window.location.href = '/Auth/Access';
-                    });
-                }, 500);
-
-                // Enable button
                 submitButton.disabled = false;
 
             } else {
@@ -233,14 +241,15 @@ async function fn_Auth(e) {
                 err.textContent = '❌ E-mail ou senha incorretos. Verifique suas credenciais.';
                 err.style.display = 'block';
 
-                //console.log("fazerLogin - err :::", err);
-
                 fn_Limpar();
             }
-        }
-            
+        } else {
+            console.log(`response ::  ${await response.json()}`);
+        } 
     }
     catch (ex){
+
+        console.log(`response ex ::  ${ex}`);
 
         Swal.fire({
             title: 'Ops!!',
@@ -257,27 +266,42 @@ async function fn_Auth(e) {
     }
 }
 
-/*
-function fn() {
-    const rmCheck = document.getElementById("rememberMe"),
-        emailInput = document.getElementById("email");
-
-    if (localStorage.checkbox && localStorage.checkbox !== "") {
-        rmCheck.setAttribute("checked", "checked");
-        emailInput.value = localStorage.username;
-    } else {
-        rmCheck.removeAttribute("checked");
-        emailInput.value = "";
+function fn_CkGet(cname) {
+    
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
     }
-}
-function lsLembrarMe() {
-    if (rmCheck.checked && emailInput.value !== "") {
-        localStorage.username = emailInput.value;
-        localStorage.checkbox = rmCheck.value;
-    } else {
-        localStorage.username = "";
-        localStorage.checkbox = "";
-    }
+    return "";
 }
 
-*/
+function fn_CkSet(cname, cvalue, exmins ) {
+    const d = new Date();
+    let hash = 0;
+    let exdays = exmins * 24;
+
+    for (const char of cvalue) {
+        hash = (hash << 5) - hash + char.charCodeAt(0);
+        hash |= 0; // Constrain to 32bit integer
+    }
+
+    hash = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0,
+            v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return `${cvalue}|${v.toString(16) }${hash}`;
+    });
+
+    d.setTime(d.getTime() + (exmins * 1000));
+    let expires = `expires=${d.toUTCString()}`;
+    let ckFull = `${cname}= ${hash};${expires};path=/`;
+
+    document.cookie = ckFull;
+}

@@ -1,13 +1,18 @@
 using Aceca.Adm.Data;
 using Aceca.Adm.Models;
+using Aceca.Adm.VMModels;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using static Aceca.Adm.Helper.HelperExtensionsController;
 
 namespace Aceca.Adm.Controllers
 {
@@ -16,6 +21,7 @@ namespace Aceca.Adm.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly AppDbContext _db;
         private readonly IConfiguration _cfg;
+        private EPerfil _socioPerfil;
         public AuthController(ILogger<AuthController> logger, AppDbContext db, IConfiguration cfg)
         {
             _logger = logger;
@@ -29,91 +35,149 @@ namespace Aceca.Adm.Controllers
         {
             return View("~/Views/Auth/Login.cshtml");
         }
-        
+
         public ActionResult AccessDenied()
         {
             return View("~/Views/Pages/MiscNotAuthorized.cshtml");
         }
+
         public async Task<IActionResult> Access()
         {
-            var result = await LoginPerfilAdm();
+            try
+            {
+                if(!User.Identity.IsAuthenticated)
+                    return AccessDenied();
 
-            if (result.GetType() == typeof(ForbidResult))
-                AccessDenied();
+                var result = await LoginPerfilAdm();
 
-            if (result.GetType() == typeof(BadRequestObjectResult))
+                if (result.GetType() == typeof(ForbidResult))
+                    return AccessDenied();
+
+                if (result.GetType() == typeof(BadRequestObjectResult))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = result?.ToString()
+                    });
+
+                var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
+
+                ViewBag.PerfilAdm = (bool)jObjResult?["isPerfilAdm"];
+
+                TempData["isPerfil"] = ViewBag.PerfilAdm;
+
+                TempData["Layout"] = ViewBag.PerfilAdm ? "_HorizontalLayout" : "_WithoutMenuLayout";
+
+                if (!await LoginSetCookieAsync(jObjResult?["userEmail"]?.ToString()))
+                    BadRequest(new { msg = "SetCookie inválido." });
+
+                return ViewBag.PerfilAdm ? RedirectToAction("Inicio", "Home") : RedirectToAction("Index", "Marca");
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = result?.ToString()
+                    message = mensagemErro
                 });
-
-
-            //return RedirectToAction("Index", "Usuario");
-            return (bool)((ObjectResult)result).Value ? RedirectToAction("Inicio", "Home") : RedirectToAction("Index", "Marca"); ;
+            }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            if (HttpContext.Request.Cookies.Count > 0)
+            {
+                var siteCookies = HttpContext.Request.Cookies
+                    .Where(c => c.Key.Contains(_cfg["Cookie:Key"]?.ToString())
+                        || c.Key.Contains($"{_cfg["Cookie:Key"]?.ToString()}.ExpireDateTime")
+                        || c.Key.Contains(".AspNetCore.")
+                        || c.Key.Contains("Microsoft.Authentication"));
+                foreach (var cookie in siteCookies)
+                {
+                    Response.Cookies.Delete(cookie.Key);
+                }
+            }
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            //HttpContext.Session.Clear();
+
+            return Ok(new
+            {
+                bResult = true,
+                type = "OK",
+                message = "SUCESSO ::: ",
+            });
+        }
+
+        #region Login
 
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] LoginIn dto)
         {
-            //TODO ********* para testes passa direto
-            //return RedirectToAction("Inicio", "Home");
-
-            var user = await _db.Usuario
-                .FirstOrDefaultAsync(s => s.Email == dto.Email.ToLower());
-
-            //if (user.Email == "rodrigoesilva@gmail.com" && user.SenhaAberta == "1")
-            if (user == null)
-                return BadRequest(new { msg = "User inválido." });
-
-            if (!LoginValidacao(dto.Senha, user))
+            try
             {
-                ViewBag.Error = "Nome de usuário ou senha inválidos";
+                var user = await _db.Usuario.FirstOrDefaultAsync(s => s.Email == dto.Email.ToLower());
 
-                return Unauthorized(new { msg = "Credenciais inválidas." });
-            }
+                if (user == null)
+                    return BadRequest(new { msg = "User inválido." });
 
-            var socio = await _db.Socio
-                .Include(f => f.SocioPerfil)
-                .FirstOrDefaultAsync(s => s.Id == user.socioId);
-
-            string strToken = LoginTokenJwt(user, socio);
-
-            if (string.IsNullOrEmpty(strToken))
-                return BadRequest(new { msg = "Token inválido." });
-
-            #region Token Cookie
-
-            var claims = new List<Claim>
+                if (!LoginValidacao(dto.Senha, user))
                 {
-                    new Claim(ClaimTypes.NameIdentifier, socio.Id.ToString()),
-                    new Claim(ClaimTypes.Email, user?.Email),
-                    new Claim(ClaimTypes.Name, socio.Nome),
-                    new Claim(ClaimTypes.Role, socio?.SocioPerfil?.Descricao),
-                    //new Claim(ClaimTypes.Role, "User"),
-                    //new Claim(ClaimTypes.Role, "SuperAdmin")
-                };
+                    ViewBag.Error = "Nome de usuário ou senha inválidos";
 
-            var claimsIdentity = new ClaimsIdentity(claims, "cookie");
+                    return Unauthorized(new { msg = "Credenciais inválidas." });
+                }
 
-            await HttpContext.SignInAsync("cookie", new ClaimsPrincipal(claimsIdentity));
+                var socio = await _db.Socio
+                    .Include(f => f.SocioPerfil)
+                    .FirstOrDefaultAsync(s => s.Id == user.socioId);
 
-            #endregion
+                if (socio == null)
+                    return BadRequest(new { msg = "Sócio inválido." });
 
-            return Ok(new
+                string strToken = LoginTokenJwt(user, socio);
+
+                if (string.IsNullOrEmpty(strToken))
+                    return BadRequest(new { msg = "Token inválido." });
+
+
+                if (!await LoginSetClaimsAsync(user, socio))
+                    BadRequest(new { msg = "SetClaims inválido." });
+
+                return Ok(new
+                {
+                    token = strToken,
+                    nameIdentifier = socio.Id.ToString(),
+                    nome = socio.Nome,
+                    //email = user.Email,
+                    cargo = socio?.SocioPerfil?.Descricao
+                });
+            }
+            catch (Exception ex)
             {
-                token = strToken,
-                nameIdentifier = socio.Id.ToString(),
-                nome = socio.Nome,
-                //email = user.Email,
-                cargo = socio?.SocioPerfil?.Descricao
-            });
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
         }
 
-
         #region Login - Validacao
-        private bool LoginValidacao(string passSource, Usuario user)
+        private bool LoginValidacao(string passSource, Models.Usuario user)
         {
             try
             {
@@ -141,7 +205,7 @@ namespace Aceca.Adm.Controllers
         #endregion
 
         #region Login - Token
-        private string LoginTokenJwt(Usuario user, Socio socio)
+        private string LoginTokenJwt(Models.Usuario user, Socio socio)
         {
             string strTok = string.Empty;
 
@@ -152,7 +216,7 @@ namespace Aceca.Adm.Controllers
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_cfg["Jwt:Key"]!));
 
                 var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                
+
                 var tok = new JwtSecurityToken(
                     expires: DateTime.UtcNow.AddDays(7),
                     signingCredentials: cred,
@@ -163,41 +227,12 @@ namespace Aceca.Adm.Controllers
                         new(ClaimTypes.Role,  socio?.SocioPerfil?.Descricao),
                     ]);
 
-                /*
-                 * 
-                 *  var key = Encoding.ASCII.GetBytes(_cfg["Jwt:Key"]!);
-                 *  
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(new Claim[]
-                    {
-                        new Claim(ClaimTypes.NameIdentifier, socio.Id.ToString()),
-                        new Claim(ClaimTypes.Email, user.Email),
-                        new Claim(ClaimTypes.Name,  socio.Nome),
-                        new Claim(ClaimTypes.Role,  socio?.SocioPerfil?.Descricao),
-                    }),
-
-
-                    Issuer = "......",
-                    Audience ="......",
-                    NotBefore = DateTime.Now,
-                    Expires = DateTime.UtcNow.AddDays(7),
-                    //Expires = DateTime.UtcNow.AddHours(2),
-                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                    //SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                };
-                
-
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                strTok = tokenHandler.WriteToken(token);
-                */
-
                 strTok = new JwtSecurityTokenHandler().WriteToken(tok);
 
                 user.Token = strTok;
 
-               // remove password before returning
-               user.Senha = null;
+                // remove password before returning
+                user.Senha = null;
 
                 //strTok = new JwtSecurityTokenHandler().WriteToken(tok);
             }
@@ -207,6 +242,126 @@ namespace Aceca.Adm.Controllers
             }
 
             return strTok;
+        }
+
+        #endregion
+
+        #region Login - Claims
+        private async Task<bool> LoginSetClaimsAsync(Models.Usuario user, Socio socio)
+        {
+            string strTok = string.Empty;
+
+            try
+            {
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.NameIdentifier, socio.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user?.Email),
+                    new Claim(ClaimTypes.Name, socio.Nome),
+                    new Claim(ClaimTypes.Role, socio?.SocioPerfil?.Descricao),
+
+                    new Claim(ClaimTypes.Expiration, DateTime.Now.AddMinutes(60).ToString()),
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+            }
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
+
+            return true;
+        }
+        #endregion
+
+        #region Login - Cookie
+        private async Task<bool> LoginSetCookieAsync(string strUserEmail)
+        {
+            try
+            {
+                var options = new CookieOptions
+                {
+                    Expires = DateTime.UtcNow.AddMinutes(60),
+                    HttpOnly = true,
+                    IsEssential = true
+                };
+
+                /*
+                // Set the main cookie
+                HttpContext.Response.Cookies.Append(
+                    _cfg["Cookie:Key"]?.ToString()
+                    , GenerateGuidFromString(strUserEmail).ToString()
+                    , options);
+                */
+
+                // Set a separate cookie to store the expiration date
+                HttpContext.Response.Cookies.Append(
+                     $"{_cfg["Cookie:Key"]?.ToString()}.ExpireDateTime"
+                    , options.Expires.ToString()
+                    , new CookieOptions { Expires = options.Expires }
+                    );
+
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return false;
+            }
+
+            return true;
+        }
+              
+        public async Task<IActionResult> GetCookieExpirationAsync()
+        {
+            try
+            {
+
+                var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (authenticateResult.Succeeded)
+                {
+                    var expiresUtc = authenticateResult.Properties.ExpiresUtc;
+                    if (expiresUtc.HasValue)
+                    {
+                        Console.WriteLine($"Authentication cookie expires at: {expiresUtc.Value}");
+                    }
+                }
+
+                string expirationDateString = HttpContext.Request.Cookies[$"{_cfg["Cookie:Key"]?.ToString()}.ExpireDateTime"];
+
+                if (expirationDateString != null && DateTimeOffset.TryParse(expirationDateString, out DateTimeOffset expirationDate))
+                {
+                    // Use the expirationDate (e.g., display it in the view)
+                    ViewBag.CookieExpiration = expirationDate.LocalDateTime;
+                }
+                else
+                {
+                    ViewBag.CookieExpiration = "Expiration date not found or invalid.";
+                }
+
+                return Ok(new
+                {
+                    cookieExpiration = ViewBag.CookieExpiration
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
         }
 
         #endregion
@@ -224,16 +379,21 @@ namespace Aceca.Adm.Controllers
 
                     // Get a specific claim value using FindFirstValue or FindFirst
                     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                    var userName = User.Identity.Name; // Often maps to ClaimTypes.Name
+                    var userName = User.Identity.Name;
                     var email = User.FindFirstValue(ClaimTypes.Email);
                     var role = User.FindFirstValue(ClaimTypes.Role);
 
                     if (string.IsNullOrEmpty(role))
                         return BadRequest(new { msg = "Role inválido." });
 
+                    _socioPerfil = Enum.TryParse<EPerfil>(role, out _socioPerfil) ? _socioPerfil : EPerfil.Nenhum;
+
+                    var isPerfilAdm = _socioPerfil.Equals(EPerfil.Administracao) ? true : false;
+
                     return Ok(new
                     {
-                        isPerfilAdm = role.Equals("Administração") ? true : false
+                        isPerfilAdm = isPerfilAdm,
+                        userEmail = email,
                     });
                 }
                 else
@@ -243,7 +403,8 @@ namespace Aceca.Adm.Controllers
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -269,7 +430,7 @@ namespace Aceca.Adm.Controllers
             }
             return sBuilder.ToString();
         }
-        public bool VerifyMd5HashWithMySecurityAlgo(MD5 md5Hash, string input, string hash)
+        private bool VerifyMd5HashWithMySecurityAlgo(MD5 md5Hash, string input, string hash)
         {
             // Hash the input.  
             string hashOfInput = GetMd5Hash(md5Hash, input);
@@ -284,6 +445,17 @@ namespace Aceca.Adm.Controllers
                 return false;
             }
         }
+
+        private static Guid GenerateGuidFromString(string input)
+        {
+            using (MD5 md5 = MD5.Create()) // MD5 produces a 16-byte hash
+            {
+                byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+                return new Guid(hashBytes);
+            }
+        }
+        #endregion
 
         #endregion
     }

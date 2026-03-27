@@ -55,12 +55,9 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
 
-        //fn_Auth();
-
         fn_Limpar();
 
         // Filtros
-        //fn_LoadFiltros();
         fn_PopLoadCombos();
         fn_ChangeFiltros();
 
@@ -219,8 +216,7 @@ function fn_FiltrarDados(objFiltro) {
         contentType: varAjax_TypeContent,
         data: JSON.stringify(objFiltro),
         success: function (result) {
-            console.log("fn_FiltrarDados result ::: ", result);
-
+        
             if (result.bResult === false) {
                 //console.log("busyLoadFull ::: hide");
                 $.busyLoadFull("hide");
@@ -436,8 +432,6 @@ function fn_GridListFilter(lstData) {
         varItems_Id = 0;
 
     if (varTbl_Obj.length) {
-
-        console.log("fn_GridListFilter lstData ::: ", lstData);
 
         varTbl_Data = $('.datatables-basic').DataTable({
             //"processing": true,
@@ -681,7 +675,6 @@ function fn_GridListFilter(lstData) {
                         }
                     ]
                 },
-
                 {
                     text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
                     className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
@@ -689,7 +682,7 @@ function fn_GridListFilter(lstData) {
                         //console.log("BTN NEW ::: ", dt);
                         fn_Pop(null, 'Create');
                     }
-                }
+                }               
             ],
             // For responsive popup
             responsive: {
@@ -758,22 +751,11 @@ function fn_GridComplete(grid) {
 
         fn_Zoom();
 
-        //console.log("fn_GridComplete var_Filtrado ::: ", var_Filtrado);
-
-        if (countRows <= 0) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Carregado!',
-                html: `Dados carregados com sucesso.`,
-                focusConfirm: true,
-                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                customClass: {
-                    confirmButton: 'btn btn-label-success waves-effect'
-                }
-            }).then((result) => {
-
-            });
+        if (document.getElementById('hdIsPerfil').value.toLowerCase() === "false") {
+            varTbl_Data.column(-1).visible(false);
+            document.querySelector('.btnAddNew').style.setProperty('display', 'none', 'important');
         }
+
     } else {
         Swal.fire({
             title: 'SEM DADOS!!',
@@ -801,35 +783,21 @@ function fn_GridComplete(grid) {
 
 //#region ZOOM
 function fn_Zoom() {
-    console.log("fnZoom ::: ");
 
     var modal = document.getElementById('myModal');
-    //console.log("fnZoom modal ::: ", modal);
 
-    // Get the image and insert it inside the modal - use its "alt" text as a caption
-    var img = document.querySelectorAll(".cmyImg"); //document.getElementById('myImg');
+    var img = document.querySelectorAll(".cmyImg");
     var modalImg = document.getElementById("img01");
     var captionText = document.getElementById("caption");
 
-    //console.log("fnZoom img ::: ", img);
-    //console.log("fnZoom modalImg ::: ", modalImg);
-    //console.log("fnZoom captionText ::: ", captionText);
-
     $(".cmyImg").click(function () {
-        //console.log("fnZoom cmyImg ::: ", $(this));
-        //console.log("fnZoom cmyImg  modal ::: ", modal);
-        //console.log("fnZoom cmyImg  modalImg ::: ", modalImg);
-
         modal.style.display = "block";
         modalImg.src = this.src;
         modalImg.alt = this.alt;
         captionText.innerHTML = this.alt;
     });
 
-    // When the user clicks on <span> (x), close the modal
     $("#myModal").click(function () {
-        console.log("fnZoom myModal::: ", img);
-
         img01.className += " out";
         setTimeout(function () {
             modal.style.display = "none";
@@ -840,8 +808,6 @@ function fn_Zoom() {
 }
 
 document.addEventListener('hidden.bs.modal', function (event) {
-    console.log("addEventListener hidden::: ", event);
-    console.log("addEventListener activeElement::: ", document.activeElement);
     if (document.activeElement) {
         document.activeElement.blur();
     }

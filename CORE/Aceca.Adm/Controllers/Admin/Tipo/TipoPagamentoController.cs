@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
+using System.Reflection;
 
 namespace Aceca.Adm.Controllers.Admin.Tipo
 {
@@ -76,7 +77,8 @@ namespace Aceca.Adm.Controllers.Admin.Tipo
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new

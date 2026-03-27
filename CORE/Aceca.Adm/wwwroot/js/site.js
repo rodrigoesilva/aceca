@@ -7,6 +7,7 @@
 //#region Declare
 
 let sessionData;
+const _ck = "aceca_cookie";
 
 //#endregion
 
@@ -23,7 +24,15 @@ document.addEventListener('DOMContentLoaded', function () {
             fn_UpdateClock();
             setInterval(fn_UpdateClock, 1000); // Updates every 1000 milliseconds
         }
-        
+
+        $('.btn-logout').on('click', function () {
+            fn_AuthOut();
+        });
+
+        $('.btn-voltar-home').on('click', function () {
+            window.location.href = 'https://www.aceca.com.br/';
+        });
+
     })();
 });
 
@@ -31,12 +40,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //#region CLOCK DATE
 function fn_UpdateClock() {
-    const now = new Date();
-    // Format the date and time for display
-    const timeString = now.toLocaleTimeString();
-    const dateString = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+   
+    const timeString = new Date().toLocaleTimeString();
+    const dateString = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    document.getElementById('date-time').textContent = `${dateString} - ${timeString}`;
+    if(document.getElementById('date-time') !== null)
+        document.getElementById('date-time').textContent = `${dateString} - ${timeString}`;
 
     //AUTH
     typeof Storage !== "undefined" ? fn_AuthSession() : window.location.href = 'https://www.aceca.com.br/';
@@ -48,34 +57,66 @@ function fn_UpdateClock() {
 
 function fn_AuthOut() {
 
-    setTimeout(function () {
-        Swal.fire({
-            icon: 'success',
-            title: `At&eacute mais ${sessionData?.nome?.split(" ")[0]}!`,
-            html: `Nos vemos em breve`,
-            focusConfirm: true,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-success waves-effect'
-            }
-        }).then((result) => {
-            sessionStorage.removeItem('aceca_sessao');
-            window.location.href = 'https://www.aceca.com.br/';
-        });
-    }, 500);
+    try {
+
+        $.busyLoadFull("show");
+
+        $.ajax(
+            {
+                url: '/Auth/Logout',
+                type: 'POST',
+                success: function (result) {
+
+                    fn_CleanUser();
+
+                    $.busyLoadFull("hide");
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: `At&eacute mais ${sessionData?.nome?.split(" ")[0]}!`,
+                        html: `Nos vemos em breve`,
+                        focusConfirm: true,
+                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                        customClass: {
+                            confirmButton: 'btn btn-label-success waves-effect'
+                        }
+                    }).then((resultBye) => {
+                        
+                    });
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+
+                    $.busyLoadFull("hide");
+
+                    return false;
+                }
+            });
+    }
+    catch (ex) {
+    }
 }
 
 function fn_AuthSession() {
-   sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
-    //console.log("sessionData ::: ", sessionData.nome);
-    if (sessionData !== null) {
-        document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
-        document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
-    } else {
-        sessionStorage.removeItem('aceca_sessao');
-        window.location.href = 'https://www.aceca.com.br/';
-    }
-   
+    if (sessionStorage?.getItem("aceca_sessao") !== null) {
+        sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+        
+        if (sessionData !== null) {
+            document.getElementById('hdId').value = `${sessionData?.nameIdentifier}`;
+            document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
+            document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
+        } else {
+            fn_CleanUser();
+        }
+    }else {
+        fn_CleanUser();
+    }  
 }
-
+function fn_CleanUser() {
+    document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+    sessionStorage.removeItem('aceca_sessao');
+    window.location.href = 'https://www.aceca.com.br/';
+}
+function fn_CkRemove(_ck) {
+    document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+}
 //#endregion

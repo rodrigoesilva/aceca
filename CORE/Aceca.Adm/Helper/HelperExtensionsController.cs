@@ -426,6 +426,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
     public enum EPerfil
     {
+        Nenhum = 0,
         Fundador = 1,
         MembroHonra = 2,
         InMemoria = 3,

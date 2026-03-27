@@ -1,4 +1,5 @@
 using Aceca.Adm.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Build.Framework;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -87,14 +88,20 @@ public partial class Program
             #endregion
 
             #region Configure Cookie authentication
+            string strCookieName = builder.Configuration["Cookie:Key"];
 
-            builder.Services.AddAuthentication("cookie")
-                .AddCookie("cookie", options =>
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
                 {
-                    options.Cookie.Name = "AcecaLgCk";
-                    options.LoginPath = "/Auth/Login";
+                    options.Cookie.Name = strCookieName;
+                    //o.Cookie.Domain = options.CookieDomain;
+                    options.SlidingExpiration = true;
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+                    //o.TicketDataFormat = ticketFormat;
+                    //o.CookieManager = new CustomChunkingCookieManager();
+                    options.LoginPath = "/Auth/AccessDenied";  //"/Auth/Index";
                     options.LogoutPath = "/Auth/Logout";
-                    options.AccessDeniedPath = "/Login/AccessDenied";
+                    options.AccessDeniedPath = "/Auth/AccessDenied";
                 });
 
             #endregion
@@ -107,6 +114,9 @@ public partial class Program
                 app.UseDeveloperExceptionPage();
 
                 app.UseHsts();
+
+                // Re-executes the pipeline for any non-success status code (like 404)
+                app.UseStatusCodePagesWithReExecute("/Error/{0}");
             }
 
             app.UseHttpsRedirection();

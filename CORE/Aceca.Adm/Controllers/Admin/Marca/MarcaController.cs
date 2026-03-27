@@ -2,18 +2,15 @@ using Aceca.Adm.Data;
 using Aceca.Adm.Models;
 using Aceca.Adm.VMModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using static System.Collections.Specialized.BitVector32;
-using static System.Net.Mime.MediaTypeNames;
+using System.Reflection;
 
 namespace Aceca.Adm.Controllers.Admin.Marca
 {
+    [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
     public class MarcaController : Controller
     {
         #region variaveis
@@ -25,6 +22,9 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
         private readonly string _imgBaseUrl = string.Empty;
         private readonly string _appBaseUrl = string.Empty;
+
+        private string _strControllerName = string.Empty;
+        private string _strActionName = string.Empty;
         //
 
         #endregion
@@ -40,21 +40,38 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             _appBaseUrl = _appConfiguration["App:Url"]!;
         }
 
-        [AllowAnonymous]
+        //[Authorize(Roles = "Fundador")]
+         //[Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        // [Authorize]
         public ActionResult Index()
         {
             // return Redirect("https://www.google.com");
             return View("~/Views/Admin/Marca/Marca.cshtml");
         }
 
-        [AllowAnonymous]
+        [Authorize(Roles = "Administracao")]
+        public IActionResult AdminDashboard()
+        {
+            // Only users with the "Admin" role can access this action.
+            return View();
+        }
+
+        public IActionResult Welcome()
+        {
+            if (User.IsInRole("SuperUser"))
+            {
+                ViewBag.Message = "You are a Super User.";
+            }
+            return View();
+        }
+
+        [Authorize(Roles = "Administracao")]
         public ActionResult Cadastro()
         {
             return View("~/Views/Admin/Marca/MarcaCadastro.cshtml");
         }
 
         [HttpPost]
-        [AllowAnonymous]
         public async Task<IActionResult> FiltrarDados([FromBody] object obj)
         {
             if (obj != null && string.IsNullOrEmpty(obj?.ToString()))
@@ -195,7 +212,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -208,7 +226,6 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         }
 
         [HttpPost]
-        [AllowAnonymous]
         public async Task<IActionResult> GetFullByIdFase(int id, string nome, bool bvariante)
         {
             string strNovoCodigoAceca = string.Empty;
@@ -305,7 +322,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -318,7 +336,6 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         }
 
         [HttpPost]
-        [AllowAnonymous]
         public async Task<IActionResult> GetNovoCodigoAceca(int idFase, string strTermoBusca, bool bvariante)
         {
             string strNovoCodigoAceca = string.Empty;
@@ -448,7 +465,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -461,6 +479,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administracao")]
         public async Task<IActionResult> Create(string strObjModel, IFormFile iFileImgPrincipal, IFormFile iFileImgDetalhe)
         {
             try
@@ -584,7 +603,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -608,6 +628,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             return new string(chars);
         }
 
+        [Authorize(Roles = "Administracao")]
         public async Task<IActionResult> UploadImg(VMMarca vmModel, IFormFile iFileImg, bool bIsImgPrincipal)
         {
             if (string.IsNullOrEmpty(iFileImg.FileName) || iFileImg?.FileName == null || iFileImg?.FileName.Length == 0)
@@ -688,5 +709,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 data = fileSaveName,
             });
         }
+
+
     }
 }

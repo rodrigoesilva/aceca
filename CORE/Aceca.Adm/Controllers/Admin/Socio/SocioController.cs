@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mail;
+using System.Reflection;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
@@ -98,7 +99,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -170,7 +172,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -316,7 +319,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -370,7 +374,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -427,7 +432,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -484,7 +490,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -532,7 +539,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
@@ -575,7 +583,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ListGrid : {ex?.Message}";
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new
