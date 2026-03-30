@@ -157,6 +157,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         IdMarcaImpressora = x.MarcaFabricaId,
                         IdMarcaQualidadeImagem = x.MarcaImpressoraId,
 
+                        fin = x.MarcaFinalidade,
                         x.CodigoAceca,
                         NomeMarca = x.Nome,
                         NomeFase = x.MarcaFase.Descricao,

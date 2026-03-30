@@ -244,10 +244,32 @@ async function fn_Auth() {
                 fn_Limpar();
             }
         } else {
-            console.log(`response ::  ${await response.json()}`);
+
+            btn.disabled = false;
+            btn.textContent = 'Entrar';
+
+            let err = await response.json();
+
+            console.log(`response err ::  ${err}`);
+
+            Swal.fire({
+                title: 'Ops!!',
+                icon: 'error',
+                html: `<b>N&atilde;o foi possível realizar o acesso!!!</b>`,
+                focusConfirm: false,
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: {
+                    confirmButton: 'btn btn-label-danger waves-effect'
+                }
+            }).then((result) => {
+                fn_Limpar();
+            });
         } 
     }
     catch (ex){
+
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
 
         console.log(`response ex ::  ${ex}`);
 

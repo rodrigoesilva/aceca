@@ -2,6 +2,7 @@ using Aceca.Adm.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Build.Framework;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Text;
 
 public partial class Program
@@ -15,7 +16,8 @@ public partial class Program
 
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            var conn = builder.Configuration.GetConnectionString("MySqlConnection");
+            var conn = builder.Configuration.GetConnectionString("MySqlConnection") 
+                ?? throw new InvalidOperationException("Connection string não localizada");
 
             // Configure DB Context with MySql
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -28,7 +30,8 @@ public partial class Program
                             errorNumbersToAdd: null
                         );
                     })
-                .LogTo(Console.WriteLine, LogLevel.Error) // Quick logging configuration
+                .LogTo(Console.WriteLine, LogLevel.Error)
+                // Quick logging configuration
             );
 
             builder.Services.AddControllersWithViews();

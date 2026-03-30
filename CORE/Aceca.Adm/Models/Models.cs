@@ -142,14 +142,14 @@ namespace Aceca.Adm.Models
         public FabricaFase? FabricaFase { get; set; }
     }
 
-    [Table("marcas_filtro_dimensao")]
+    [Table("marcas_dimensao")]
     public class MarcaDimensao : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
-    [Table("marcas_filtro_fabricas")]
+    [Table("marcas_fabricas")]
     public class MarcaFabrica : BaseModel
     {
         [Key] public int? Id { get; set; }
@@ -157,7 +157,7 @@ namespace Aceca.Adm.Models
         [MaxLength(255)] public string? Descricao { get; set; }
     }
 
-    [Table("marcas_filtro_fases")]
+    [Table("marcas_fases")]
     public class MarcaFase : BaseModel
     {
         [Key] public int? Id { get; set; }
@@ -167,21 +167,21 @@ namespace Aceca.Adm.Models
         [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
     }
 
-    [Table("marcas_filtro_finalidade")]
+    [Table("marcas_finalidade")]
     public class MarcaFinalidade : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
-    [Table("marcas_filtro_impressora")]
+    [Table("marcas_impressora")]
     public class MarcaImpressora : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(50)] public string? Descricao { get; set; } = string.Empty;
     }
 
-    [Table("marcas_filtro_qualidade_imagem")]
+    [Table("marcas_qualidade_imagem")]
     public class MarcaQualidadeImagem : BaseModel
     {
         [Key] public int? Id { get; set; }
@@ -189,7 +189,7 @@ namespace Aceca.Adm.Models
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
     }
 
-    [Table("marcas_filtro_raridade")]
+    [Table("marcas_raridade")]
     public class MarcaRaridade : BaseModel
     {
         [Key] public int? Id { get; set; }
@@ -197,7 +197,7 @@ namespace Aceca.Adm.Models
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
     }
 
-    [Table("marcas_filtro_subtipos")]
+    [Table("marcas_subtipos")]
     public class MarcaSubTipo : BaseModel
     {
         [Key] public int? Id { get; set; }
@@ -207,7 +207,7 @@ namespace Aceca.Adm.Models
         public MarcaTipo? MarcaTipo { get; set; }
     }
 
-    [Table("marcas_filtro_tipos")]
+    [Table("marcas_tipos")]
     public class MarcaTipo : BaseModel
     {
         [Key] public int? Id { get; set; }

@@ -440,6 +440,7 @@ if (document.getElementById('layout-menu')) {
   }
 })();
 
+/*
 // ! Removed following code if you do't wish to use jQuery. Remember that navbar search functionality will stop working on removal.
 if (typeof $ !== 'undefined') {
   $(function () {
@@ -696,3 +697,5 @@ if (typeof $ !== 'undefined') {
     }
   });
 }
+
+*/

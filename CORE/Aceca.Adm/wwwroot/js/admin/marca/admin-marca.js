@@ -381,11 +381,12 @@ function fn_ChangeFiltros() {
     });
 
     $('#chk_PesquisarDescricao').change(function () {
+
         // 1. Get the checked status (boolean: true if checked, false otherwise)
         const isChecked = $(this).is(':checked');
         const checkboxValue = $(this).val();
 
-        let colDesc = varTbl_Data.settings()[0].aoColumns[8];
+        let colDesc = varTbl_Data.settings()[0].aoColumns[10];
 
         colDesc.bSearchable = isChecked;
 
@@ -419,7 +420,7 @@ function fn_LoadFiltros() {
 
 function fn_GridListFilter(lstData) {
 
-    //console.log("fn_GridListFilter lstData ::: ", lstData);
+    console.log("fn_GridListFilter lstData ::: ", lstData);
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
@@ -551,7 +552,7 @@ function fn_GridListFilter(lstData) {
 
                                 for (let i = 0; i < data.split("/").length; i++) {
                                     htmlContent +=
-                                        `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top" data-popup="tooltip-custom" data-incluido="${data.split("/")[i]}" title="${data.split("/")[i]}">
+                                        `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top" data-popup="tooltip-custom" data-incluido="${data.split("/")[i]}" title="${data.split("/")[i]}" style="z-index: 1;">
                                         <img src="../img/avatars/${i}.png" alt="Avatar" class="rounded-circle">
                                     </li >`;
                                 }
@@ -680,7 +681,7 @@ function fn_GridListFilter(lstData) {
                     className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
                     action: function (e, dt, node, config) {
                         //console.log("BTN NEW ::: ", dt);
-                        fn_Pop(null, 'Create');
+                        window.location.href = '/Marca/Cadastro';
                     }
                 }               
             ],
@@ -751,11 +752,12 @@ function fn_GridComplete(grid) {
 
         fn_Zoom();
 
+        /*
         if (document.getElementById('hdIsPerfil').value.toLowerCase() === "false") {
             varTbl_Data.column(-1).visible(false);
             document.querySelector('.btnAddNew').style.setProperty('display', 'none', 'important');
         }
-
+        */
     } else {
         Swal.fire({
             title: 'SEM DADOS!!',
