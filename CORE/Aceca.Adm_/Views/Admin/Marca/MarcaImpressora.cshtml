@@ -1,0 +1,89 @@
+﻿@{
+    var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
+    var pageTipo = string.Empty; //" - Listagem - ";
+
+    ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
+    Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
+}
+
+@section VendorStyles {
+    <link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css">
+    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css">
+    <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
+    <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css">
+    <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css"/>
+    <!-- Row Group CSS -->
+    <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
+    <!-- Form Validation -->
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
+}
+
+@section VendorScripts {
+    <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script>
+    <!-- Flat Picker -->
+    <script src="~/vendor/libs/moment/moment.js"></script>
+    <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
+    <!-- Form Validation -->
+    <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+}
+
+@section PageScripts {
+    <script src="~/js/admin/marca/admin-marca-impressora.js"></script>
+}
+
+@* ************** Content ************** *@
+<div class="card">
+    <div class="card-datatable table-responsive pt-0">
+        <table class="datatables-basic table table-bordered">
+            <thead>
+            <tr>
+                <th></th>
+                <th>id</th>
+                <th>Descri&ccedil;&atilde;o</th>
+                <th>Status</th>
+                <th>A&ccedil;&otilde;es</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Add new Item -->
+<div class="offcanvas offcanvas-end" id="pop-add-new-item">
+    <div class="offcanvas-header border-bottom">
+        <input type="hidden" id="hdId" name="hdId" value="0"/>
+        <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body flex-grow-1">
+        <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_01" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01"
+                               placeholder="descricao" aria-label="Descricao" aria-describedby="line_item_01" />
+                        <label for="pop_line_item_01">Descri&ccedil;&atilde;o</label>
+                    </div>
+                </div>
+            </div>            
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" id="pop_line_item_05" class="form-check-input dt-line-05"
+                               name="pop_line_item_05" placeholder="Status" aria-label="Status"
+                               aria-describedby="line_item_03"/>
+                        <label class="form-check-label" for="pop_line_item_05">Status</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
+                <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>
+            </div>
+        </form>
+
+    </div>
+</div>

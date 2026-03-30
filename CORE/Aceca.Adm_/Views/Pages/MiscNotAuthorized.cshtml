@@ -1,0 +1,29 @@
+@{
+  Layout = "_BlankLayout";
+  ViewData["Title"] = "Not Authorized - Pages";
+}
+
+@section PageStyles {
+  <link rel="stylesheet" href="~/vendor/css/pages/page-misc.css">
+}
+
+@* ************** Content ************** *@
+<!-- Not Authorized -->
+<div class="misc-wrapper">
+  <h1 class="mb-12 mx-2" style="font-size: 6rem;line-height: 6rem">Na Na Ni Na Não</h1>
+  <h4 class="mb-10">Você quer acessar algo que não está autorizado! 🔐</h4>
+  <p class="mb-10 mx-2">Pois é...Você não tem permissão para acessar esta página.</p>
+  <p class="mb-10 mx-2">Melhor falar com a <strong>Administração!</strong></p>
+  <div class="d-flex justify-content-center mt-5">
+    <img src="~/img/illustrations/tree-3.png" alt="misc-tree" class="img-fluid misc-object d-none d-lg-inline-block">
+    <img src="~/img/illustrations/tree.png" alt="misc-tree" class="img-fluid misc-object-right d-none d-lg-inline-block">
+    <img src="~/img/illustrations/misc-mask-light.png" alt="misc-error" class="scaleX-n1-rtl misc-bg d-none d-lg-inline-block" height="172" data-app-light-img="illustrations/misc-mask-light.png" data-app-dark-img="illustrations/misc-mask-dark.png">
+    <div class="d-flex flex-column align-items-center">
+      <img src="~/img/illustrations/403.png" alt="misc-error" class="misc-model img-fluid z-1" width="780">
+      <div>
+        <a href="#" class="btn btn-primary btn-voltar-home text-center my-6">Voltar</a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /Not Authorized -->
