@@ -9,6 +9,7 @@
 let sessionData;
 const _ck = "aceca_cookie";
 
+
 //#endregion
 
 //#region CARREGAMENTO INICIAL
@@ -47,8 +48,13 @@ function fn_UpdateClock() {
     if(document.getElementById('date-time') !== null)
         document.getElementById('date-time').textContent = `${dateString} - ${timeString}`;
 
+    const _el = document.getElementById("template-customizer");
+    if (_el) {
+        _el.setAttribute("style", "display: none !important");
+    } 
+
     //AUTH
-    typeof Storage !== "undefined" ? fn_AuthSession() : window.location.href = 'https://www.aceca.com.br/';
+    typeof Storage !== "undefined" ? fn_AuthSession() : window.location.href = 'https://www.aceca.com.br/';    
 }
 
 //#endregion

@@ -520,7 +520,8 @@ class TemplateCustomizer {
 
     // Open btn
     //
-    const openBtn = this.container.querySelector('.template-customizer-open-btn')
+      const openBtn = this.container.querySelector('.template-customizer-open-btn')
+       
     const openBtnCb = () => {
       this.container.classList.add('template-customizer-open')
       this.update()

@@ -3,8 +3,10 @@
 {
   <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-6">
   <a asp-controller="Home" asp-action="Index" class="app-brand-link gap-2">
-    <span class="app-brand-logo demo">@await Html.PartialAsync("../_Partials/_Macros")</span>
-      <span class="app-brand-text demo menu-text fw-semibold ms-1">@TempData.Peek("appName")</span>
+    @* <span class="app-brand-logo demo">@await Html.PartialAsync("../_Partials/_Macros")</span>
+      <span class="app-brand-text demo menu-text fw-semibold ms-1">@TempData.Peek("appName")</span> *@
+            <span class="app-brand-text demo menu-text fw-semibold ms-1" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">A.C.E.C.A</span>
+            <span class="d-none d-md-inline-block text-muted ms-1_5" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">- &Aacute;rea do S&oacute;cio</span>
     </a>
 
     @* ! Display menu close icon only for horizontal-menu with navbar-full *@
@@ -83,7 +85,7 @@
     <!-- / Style Switcher-->
 
     <!-- User -->
-        <li class="nav-item navbar-dropdown dropdown-user dropdown">
+    <li class="nav-item navbar-dropdown dropdown-user dropdown">
             <input type="hidden" id="hdSocioId" name="hdSocioId" value="0" />
             <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
                 <div class="avatar avatar-online">
@@ -119,7 +121,7 @@
                         </li>
                     </ul>
                 </li>
-                <!--/ User -->
+    <!--/ User -->
 
   </ul>
 </div>
