@@ -31,35 +31,11 @@
 
 <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
 
-  <!-- Search -->
-    @if (Convert.ToBoolean(0))
-  {
-    <div class="navbar-nav align-items-center">
-      <div class="nav-item navbar-search-wrapper mb-0">
-        <a class="nav-item nav-link search-toggler fw-normal px-0" href="javascript:void(0);">
-          <i class="ri-search-line ri-22px scaleX-n1-rtl me-1_5"></i>
-          <span class="d-none d-md-inline-block text-muted ms-1_5">Search (Ctrl+/)</span>
-        </a>
-      </div>
-    </div>
-  }
-  <!-- /Search -->
-
+    @await Html.PartialAsync("Sections/Menu/_HorizontalMenu")
 
   <ul class="navbar-nav flex-row align-items-center ms-auto">
 
-    <!-- Search -->
-    @if (Convert.ToBoolean(0))
-    {
-      <li class="nav-item navbar-search-wrapper me-1 me-xl-0">
-        <a class="nav-link search-toggler" href="javascript:void(0);">
-          <i class="ri-search-line ri-22px scaleX-n1-rtl me-2"></i>
-        </a>
-      </li>
-    }
-    <!-- /Search -->
-
-    <!-- Style Switcher -->
+    <!-- Style -->
     <li class="nav-item dropdown-style-switcher dropdown">
       <a class="nav-link btn btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
         <i class='ri-22px'></i>
@@ -82,7 +58,7 @@
         </li>
       </ul>
     </li>
-    <!-- / Style Switcher-->
+    <!-- / Style -->
 
     <!-- User -->
     <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -124,10 +100,4 @@
     <!--/ User -->
 
   </ul>
-</div>
-
-<!-- Search Small Screens -->
-<div class='navbar-search-wrapper search-input-wrapper @((Convert.ToBoolean(@TempData.Peek("menuHorizontal")).ToString() == "True") ? @ViewData["containerNav"] : "") d-none'>
-  <input type="text" class='form-control search-input @((Convert.ToBoolean(@TempData.Peek("menuHorizontal")).ToString() == "True") ? "" : @ViewData["containerNav"]) border-0' placeholder="Search..." aria-label="Search...">
-  <i class="ri-close-fill search-toggler cursor-pointer"></i>
 </div>
