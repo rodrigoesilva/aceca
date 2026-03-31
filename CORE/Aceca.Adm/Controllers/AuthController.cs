@@ -44,7 +44,7 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
-                if(!User.Identity.IsAuthenticated)
+                if (!User.Identity.IsAuthenticated)
                     return AccessDenied();
 
                 var result = await LoginPerfilAdm();
@@ -315,7 +315,7 @@ namespace Aceca.Adm.Controllers
 
             return true;
         }
-              
+
         public async Task<IActionResult> GetCookieExpirationAsync()
         {
             try

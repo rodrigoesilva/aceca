@@ -49,8 +49,13 @@ function fn_UpdateClock() {
         document.getElementById('date-time').textContent = `${dateString} - ${timeString}`;
 
     const _el = document.getElementById("template-customizer");
+    const _elbt = document.querySelector(".template-customizer-open-btn");
+    //console.log(_elbt);
     if (_el) {
         _el.setAttribute("style", "display: none !important");
+    } 
+    if (_elbt) {
+        _elbt.setAttribute("style", "display: none !important");
     } 
 
     //AUTH

@@ -60,7 +60,7 @@ namespace Aceca.Adm.Models
         public string? Data { get; set; }
         [MaxLength(255)] public string? Titulo { get; set; } = string.Empty;
         [MaxLength(255)] public string? SubTitulo { get; set; } = string.Empty;
-       
+
         public string? BreveDesc { get; set; }
         public string? Descricao { get; set; }
         [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
@@ -239,7 +239,7 @@ namespace Aceca.Adm.Models
     {
         [Key] public int? Id { get; set; }
         public int? CodigoId { get; set; }
-        [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;        
+        [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
     }
 
     #endregion
@@ -250,7 +250,7 @@ namespace Aceca.Adm.Models
     public class Socio : BaseModel
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] 
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int? Id { get; set; }
         public int? SocioPerfilId { get; set; }
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;

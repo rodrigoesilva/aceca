@@ -1,8 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using AspnetCoreMvcFull.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Aceca.Adm.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -134,7 +132,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{Id?}")
+    pattern: "{controller=Auth}/{action=Index}/{Id?}")
     .WithStaticAssets();
 
 app.Run();

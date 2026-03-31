@@ -1,9 +1,7 @@
 ﻿using Aceca.Adm.Data;
-using Aceca.Adm.Helper;
 using Aceca.Adm.Models;
 using Aceca.Adm.VMModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mail;
 using System.Reflection;
@@ -463,8 +461,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 var newModel = new SocioContato
                 {
                     SocioId = model.Id,
-                    DDI =  model.DDI > 0 ? model.DDI : 55,
-                    DDD =  !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt16(model.Telefone.Split(")")[0].Replace("(", string.Empty)) : null,
+                    DDI = model.DDI > 0 ? model.DDI : 55,
+                    DDD = !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt16(model.Telefone.Split(")")[0].Replace("(", string.Empty)) : null,
                     Telefone = !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt32(model.Telefone.Split(")")[1].Replace("-", string.Empty)) : null,
                     Email = model?.Email?.Trim()?.ToLower(),
                 };

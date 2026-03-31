@@ -1,5 +1,3 @@
-
-using Aceca.Adm.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -61,7 +59,7 @@ namespace Aceca.Adm.VMModels
         public string? Data { get; set; }
         [MaxLength(255)] public string? Titulo { get; set; } = string.Empty;
         [MaxLength(255)] public string? SubTitulo { get; set; } = string.Empty;
-       
+
         public string? BreveDesc { get; set; }
         public string? Descricao { get; set; }
         [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
@@ -120,7 +118,7 @@ namespace Aceca.Adm.VMModels
 
         public string? CodigoAceca { get; set; }
         public string? CodigoVariante { get; set; }
-        public string? CodigoSC { get; set; }        
+        public string? CodigoSC { get; set; }
         public string? ImgPrincipal { get; set; }
         public string? ImgDetalhe { get; set; }
         public IFormFile? FileImgPrincipal { get; set; }
@@ -233,7 +231,7 @@ namespace Aceca.Adm.VMModels
     {
         [Key] public int? Id { get; set; }
         public int? CodigoId { get; set; }
-        [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;        
+        [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
     }
 
     #endregion

@@ -1,12 +1,11 @@
 using Aceca.Adm.Models;
-using AspnetCoreMvcFull.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Aceca.Adm.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext (DbContextOptions<AppDbContext> options)
+        public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
         }
@@ -64,6 +63,5 @@ namespace Aceca.Adm.Data
 
         #endregion
 
-        public DbSet<Transactions> Transactions { get; set; } = default!;
     }
 }
