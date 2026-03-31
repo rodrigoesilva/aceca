@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var pgLogin = document.querySelector(".pg-login");
 
         if (pgLogin === null) {
-            fn_UpdateClock();
-            setInterval(fn_UpdateClock, 1000); // Updates every 1000 milliseconds
+           fn_UpdateClock();
+           setInterval(fn_UpdateClock, 1000); // Updates every 1000 milliseconds
         }
 
         $('.btn-logout').on('click', function () {
@@ -101,7 +101,7 @@ function fn_AuthSession() {
         sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
         
         if (sessionData !== null) {
-            document.getElementById('hdId').value = `${sessionData?.nameIdentifier}`;
+            document.getElementById('hdSocioId').value = `${sessionData?.nameIdentifier}`;
             document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
             document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
         } else {
@@ -114,7 +114,7 @@ function fn_AuthSession() {
 function fn_CleanUser() {
     document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
     sessionStorage.removeItem('aceca_sessao');
-    window.location.href = 'https://www.aceca.com.br/';
+    //window.location.href = 'https://www.aceca.com.br/';
 }
 function fn_CkRemove(_ck) {
     document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
