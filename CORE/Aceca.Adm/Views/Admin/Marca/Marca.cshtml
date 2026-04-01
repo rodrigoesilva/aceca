@@ -1,17 +1,29 @@
 @{
+    var pageApp = "ACECA";
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
     var pageTipo = string.Empty; //" - Listagem - ";
 
-    ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
+    ViewData["Title"] = string.Format("{0} | {1} | {2}", pageApp, pageName, pageTipo);
 
     Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
 }
 
 @section VendorStyles {
-<link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css" />
-<link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css" />
-<link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css" />
+    <link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css" />
+    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css" />
+    <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css" />
     <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
+    <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
+    <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css">
+    <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css"/>
+    <!-- Row Group CSS -->
+    <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
+    <!-- Form Validation -->
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
+
+
+    <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/busy-load/app.min.css" />
 
     <!-- Select Dropdownlist -->
     <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
@@ -22,18 +34,29 @@
 }
 
 @section VendorScripts {
-@* <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script> *@
-<!-- Select Dropdownlist -->
-<script src="~/vendor/libs/select2/select2.js"></script>
-<script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+    <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script>
+    <!-- Flat Picker -->
+    <script src="~/vendor/libs/moment/moment.js"></script>
+    <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
+    <!-- Form Validation -->
+    <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+
+
+    <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
+    <script src="~/vendor/libs/busy-load/app.min.js"></script>
+
+    <!-- Select Dropdownlist -->
+    <script src="~/vendor/libs/select2/select2.js"></script>
+    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+
 } 
 
 @section PageScripts {
-<script src="~/js/admin/marca/admin-marca.js"></script>
-<!-- Select Dropdownlist -->
-<script src="~/js/forms-selects.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.js"></script>
+    <script src="~/js/admin/marca/admin-marca.js"></script>
+    <!-- Select Dropdownlist -->
+    <script src="~/js/forms-selects.js"></script>
 }
 
 @* ************** Filtros ************** *@
@@ -158,7 +181,7 @@
 @* ************** Content List Table ************** *@
 <div class="card">
     <div class="card-datatable table-responsive pt-0">
-        <table class="datatables-basic table table-hover">
+        <table class="datatables-basic table table-hover" style="width:90%">
             <thead>
                 <tr>
                     <th></th>
