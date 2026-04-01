@@ -1,6 +1,9 @@
 ﻿using Aceca.Adm.Data;
+using Aceca.Adm.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using System.Reflection;
 
 namespace Aceca.Adm.Controllers.Admin.Agenda
@@ -43,7 +46,7 @@ namespace Aceca.Adm.Controllers.Admin.Agenda
             {
 
                 var lstModel = await _db.AgendaImagem
-                    .Include(x => x.Agenda)
+                    .Include(x=> x.Agenda)
                     .OrderBy(x => x.Agenda.Data)
                     .AsNoTracking()
                     .ToListAsync();

@@ -1,0 +1,161 @@
+@* ! Brand demo (display only for navbar-full and hide on below xl) *@
+@if (ViewData["navbarFull"] != null)
+{
+  <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-6">
+        <a asp-controller="Home" asp-action="Inicio" class="app-brand-link gap-2">
+    <span class="app-brand-logo demo">@await Html.PartialAsync("../_Partials/_Macros")</span>
+            <span class="app-brand-text demo menu-text fw-semibold ms-1">@TempData.Peek("appName")</span>
+           @*  <span class="app-brand-text demo menu-text fw-semibold ms-1">PRESHOW</span> *@
+    </a>
+
+    @* ! Display menu close icon only for horizontal-menu with navbar-full *@
+    @if (Convert.ToBoolean(@TempData.Peek("menuHorizontal")).ToString() == "True")
+    {
+      <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-xl-none">
+        <i class="ri-close-fill align-middle"></i>
+      </a>
+    }
+  </div>
+}
+
+@* ! Not required for layout-without-menu *@
+@if (ViewData["navbarHideToggle"] == null)
+{
+  <div class='layout-menu-toggle navbar-nav align-items-xl-center me-4 me-xl-0  @((Convert.ToBoolean(@TempData.Peek("menuHorizontal")).ToString() == "True") ? "" : "d-xl-none") @((@ViewData["contentNavbar"] != null && Convert.ToBoolean(@ViewData["contentNavbar"])) ? "" : "d-xl-none")'>
+  <a class="nav-item nav-link px-0 me-xl-6" href="javascript:void(0)">
+    <i class="ri-menu-fill ri-24px"></i>
+  </a>
+</div>
+}
+
+<div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
+
+    @await Html.PartialAsync("Sections/Menu/_HorizontalMenu")
+
+
+  <ul class="navbar-nav flex-row align-items-center ms-auto">
+
+        <!-- Pesquisar -->
+    @if (Convert.ToBoolean(TempData.Peek("menuHorizontal")).ToString() == "False")
+    {
+      <li class="nav-item navbar-search-wrapper me-1 me-xl-0">
+        <a class="nav-link search-toggler" href="javascript:void(0);">
+          <i class="ri-search-line ri-22px scaleX-n1-rtl me-2"></i>
+        </a>
+      </li>
+    }
+        <!-- /Pesquisar -->
+
+    <!-- Style Cores -->
+    <li class="nav-item dropdown-style-switcher dropdown">
+      <a class="nav-link btn btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
+        <i class='ri-22px'></i>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end dropdown-styles">
+        <li>
+          <a class="dropdown-item" href="javascript:void(0);" data-theme="light">
+            <span class="align-middle"><i class='ri-sun-line ri-22px me-3'></i>Claro</span>
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="javascript:void(0);" data-theme="dark">
+            <span class="align-middle"><i class="ri-moon-clear-line ri-22px me-3"></i>Escuro</span>
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="javascript:void(0);" data-theme="system">
+            <span class="align-middle"><i class="ri-computer-line ri-22px me-3"></i>Sistema</span>
+          </a>
+        </li>
+      </ul>
+    </li>
+        <!-- / Style Cores-->
+        <!-- User -->
+        <li class="nav-item navbar-dropdown dropdown-user dropdown">
+            <input type="hidden" id="hdSocioId" name="hdSocioId" value="0" />
+            <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
+                <div class="avatar avatar-online">
+                    <img src="~/img/avatars/1.png" alt class="w-px-40 h-auto rounded-circle">
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end mt-3 py-2">
+                    <li>
+                        <a class="dropdown-item" asp-controller="Pages" asp-action="AccountSettings">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-2">
+                                    <div class="avatar avatar-online">
+                                        <img id="tbAvatar" src="~/img/avatars/1.png" alt class="w-px-40 h-auto rounded-circle">
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 id="tbNome" class="mb-0 small">ACECA</h6>
+                                        <small id="tbCargo" class="text-muted">ACECA</small>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <div class="dropdown-divider"></div>
+                        </li>
+                        @* <li>
+                    <a class="dropdown-item" asp-page="/Pages/Profile/User">
+                        <i class="ri-user-3-line ri-22px me-2"></i>
+                        <span class="align-middle">Meu Perfil</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Pages" asp-action="AccountSettings">
+                        <i class="ri-settings-4-line ri-22px me-2"></i>
+                        <span class="align-middle">Ajustes</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Pages" asp-action="AccountSettingsBilling">
+                        <span class="d-flex align-items-center align-middle">
+                            <i class="flex-shrink-0 ri-file-text-line ri-22px me-3"></i>
+                            <span class="flex-grow-1 align-middle"> Meu Financeiro</span>
+                            <span class="flex-shrink-0 badge badge-center rounded-pill bg-danger h-px-20 d-flex align-items-center justify-content-center">4</span>
+                        </span>
+                    </a>
+                </li>
+                <li>
+                    <div class="dropdown-divider"></div>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Pages" asp-action="Pricing">
+                        <i class="ri-money-dollar-circle-line ri-22px me-2"></i>
+                        <span class="align-middle">Preços</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Pages" asp-action="Faq">
+                        <i class="ri-question-line ri-22px me-2"></i>
+                        <span class="align-middle">Dúvidas</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-controller="Pages" asp-action="Faq">
+                        <i class="ri-global-line ri-22px me-2"></i>
+                        <span class="align-middle">ACECA</span>
+                    </a>
+                </li> *@
+                        <li>
+                            <div class="d-grid px-4 pt-2 pb-1">
+                                <a class="btn btn-danger btn-logout d-flex waves-effect waves-light" href="#">
+                                    <small class="align-middle">Sair</small>
+                                    <i class="icon-base ri ri-logout-box-r-line ms-2 icon-16px"></i>
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                <!--/ User -->
+
+  </ul>
+</div>
+
+<!-- Busca Small Screens -->
+<div class='navbar-search-wrapper search-input-wrapper @((Convert.ToBoolean(@TempData.Peek("menuHorizontal")).ToString() == "True") ? @ViewData["containerNav"] : "") d-none'>
+    <input type="text" class='form-control search-input @((Convert.ToBoolean(@TempData.Peek("menuHorizontal")).ToString() == "True") ? "" : @ViewData["containerNav"]) border-0' placeholder="Pesquisar..." aria-label="Pesquisar...">
+  <i class="ri-close-fill search-toggler cursor-pointer"></i>
+</div>

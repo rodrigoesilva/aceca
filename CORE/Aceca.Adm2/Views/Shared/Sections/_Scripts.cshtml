@@ -1,0 +1,45 @@
+<environment include="Development">
+  <script src="~/vendor/libs/jquery/jquery.js"></script>
+  <script src="~/vendor/libs/popper/popper.js"></script>
+  <script src="~/vendor/js/bootstrap.js"></script>
+  <!-- `perfect-scrollbar` library required by SideNav plugin -->
+  <script src="~/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+  <script src="~/vendor/libs/node-waves/node-waves.js"></script>
+  <!-- `hammer` required for swipe guesture -->
+  <script src="~/vendor/libs/hammer/hammer.js"></script>
+  <!-- `i18n` required for translation -->
+  <script src="~/vendor/libs/i18n/i18n.js"></script>
+  <!-- `typeahead` required for search fn -->
+  <script src="~/vendor/libs/typeahead-js/typeahead.js"></script>
+  <!-- `typeahead` required for sideNav -->
+  <script src="~/vendor/js/menu.js"></script>
+  <script src="~/js/site.js"></script>
+
+    <!--General -->
+    <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
+    <script src="~/vendor/libs/busy-load/app.min.js"></script>
+
+    <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script>
+    <!-- Moment -->
+    <script src="~/vendor/libs/moment/moment.js"></script>
+    <!-- DatePicker -->
+    <script src="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.js"></script>
+    <script src="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker-globalize.js"></script>
+    <script src="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.pt-BR.min.js"></script>
+
+    <script type="text/javascript" src="https://unpkg.com/default-passive-events"></script>
+
+</environment>
+
+<environment exclude="Development">
+  <script src="~/vendor/libs/jquery/jquery.js" asp-append-version="true"></script>
+  <script src="~/vendor/libs/popper/popper.js" asp-append-version="true"></script>
+  <script src="~/vendor/js/bootstrap.js" asp-append-version="true"></script>
+  <script src="~/vendor/libs/perfect-scrollbar/perfect-scrollbar.js" asp-append-version="true"></script>
+  <script src="~/vendor/libs/node-waves/node-waves.js" asp-append-version="true"></script>
+  <script src="~/vendor/libs/hammer/hammer.js" asp-append-version="true"></script>
+  <script src="~/vendor/libs/i18n/i18n.js" asp-append-version="true"></script>
+  <script src="~/vendor/libs/typeahead-js/typeahead.js" asp-append-version="true"></script>
+  <script src="~/vendor/js/menu.js" asp-append-version="true"></script>
+ @*  <script src="~/js/site.js" asp-append-version="true"></script> *@
+</environment>

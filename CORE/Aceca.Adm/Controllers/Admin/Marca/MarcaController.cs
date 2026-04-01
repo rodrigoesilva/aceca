@@ -41,7 +41,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         }
 
         //[Authorize(Roles = "Fundador")]
-        //[Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+         //[Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
         // [Authorize]
         public ActionResult Index()
         {
@@ -370,18 +370,18 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         || (idFase >= 39 && idFase <= 41) //39-Clandestinas, 40-Exterior, 41-M&C
                     )
                 {
-                    query = query.Where(x => x.CodigoAceca != null
-                                        && (bvariante
-                                            ? x.CodigoAceca.StartsWith(strTermoBusca.Trim().ToString())
-                                            : x.Nome.StartsWith(strTermoBusca.Trim().ToString())
+                        query = query.Where(x => x.CodigoAceca != null 
+                                            && (bvariante 
+                                                ? x.CodigoAceca.StartsWith(strTermoBusca.Trim().ToString()) 
+                                                : x.Nome.StartsWith(strTermoBusca.Trim().ToString())
+                                                )
                                             )
-                                        )
 
 
-               //query = query.Where(x => x.CodigoAceca != null && x.Nome.Contains(nome.Trim().ToString()))
-               //query = query.Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(nome.Trim()[0].ToString()))
+                   //query = query.Where(x => x.CodigoAceca != null && x.Nome.Contains(nome.Trim().ToString()))
+                   //query = query.Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(nome.Trim()[0].ToString()))
 
-               .OrderByDescending(x => x.CodigoAceca);
+                   .OrderByDescending(x => x.CodigoAceca);
 
                     var lstmodel = await query
                         .AsNoTracking()
@@ -425,7 +425,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         strNovoCodigoAceca = strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString());
 
                         if (Char.IsLetter(strNovoCodigoAceca[^1]))
-                            strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1])
+                            strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1]) 
                                 ? strNovoCodigoAceca.Remove(strNovoCodigoAceca.Length - 1)
                                 : string.Concat(strNovoCodigoAceca, strUltimaLetraCodigoAceca);
                     }
@@ -665,7 +665,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             //Verifica diretorio existe e cria se necessario 
             if (!Directory.Exists(strFileSaveFolderPath))
                 Directory.CreateDirectory(strFileSaveFolderPath);
-
+            
             var fileDetails = new FileDetails()
             {
                 FileName = Guid.NewGuid() + "_" + fileSaveName,

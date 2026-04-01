@@ -6,8 +6,15 @@ using System.ComponentModel;
 
 namespace Aceca.Adm.Helper;
 
-public class HelperExtensionsController(AppDbContext db) : Controller
+public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env) : Controller
 {
+
+    #region variaveis
+
+    private readonly ILogger<HelperExtensionsController> _logger;
+
+    #endregion
+
     #region Combos Marcas
 
     public async Task<IEnumerable<SelectListItem>> AsyncCmb_Variante()
@@ -370,7 +377,7 @@ public class HelperExtensionsController(AppDbContext db) : Controller
 
         try
         {
-            var lstModel = await db?.SocioPerfil
+            var lstModel = await db.SocioPerfil
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -398,7 +405,7 @@ public class HelperExtensionsController(AppDbContext db) : Controller
     {
         var fi = value.GetType().GetField(value.ToString());
 
-        var attributes = fi?.GetCustomAttributes(typeof(DescriptionAttribute), false) as DescriptionAttribute[];
+        var attributes = fi.GetCustomAttributes(typeof(DescriptionAttribute), false) as DescriptionAttribute[];
 
         if (attributes != null && attributes.Any())
         {
