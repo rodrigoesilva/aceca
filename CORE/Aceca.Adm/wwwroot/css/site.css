@@ -1,1 +1,10 @@
 /* Custom styles goes here */
+@font-face {
+    font-family: 'AcecaFont';
+    src: url('fonts/acecafontfile.ttf') format('truetype');
+}
+
+.custom_text {
+    font-family: 'AcecaFont', Arial, sans-serif;
+}
+		
