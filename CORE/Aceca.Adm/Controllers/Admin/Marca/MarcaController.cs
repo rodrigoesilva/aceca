@@ -182,7 +182,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         Tipo = x.MarcaSubTipo.MarcaTipo.Descricao
                     })
                     .AsQueryable()
-                    .Take(10)
+                    //.Take(10)
                     .ToListAsync()
                     ;
 
