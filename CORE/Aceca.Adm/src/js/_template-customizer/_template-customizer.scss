@@ -99,7 +99,7 @@ $open-customizer-primary-color: var(--bs-primary);
     top: $open-btn-top;
     left: 0;
     z-index: -1;
-    display: block;
+    display: none;
     width: $open-btn-size;
     height: $open-btn-size;
     border-top-left-radius: $open-btn-border-radius;

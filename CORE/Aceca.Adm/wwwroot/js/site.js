@@ -101,7 +101,7 @@ function fn_AuthSession() {
         sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
         
         if (sessionData !== null) {
-            document.getElementById('hdId').value = `${sessionData?.nameIdentifier}`;
+            document.getElementById('hdSocioId').value = `${sessionData?.nameIdentifier}`;
             document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
             document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
         } else {
