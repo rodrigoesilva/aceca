@@ -216,7 +216,9 @@ function fn_FiltrarDados(objFiltro) {
         contentType: varAjax_TypeContent,
         data: JSON.stringify(objFiltro),
         success: function (result) {
-        
+
+            console.log("fn_FiltrarDados result ::: ", result);
+
             if (result.bResult === false) {
                 //console.log("busyLoadFull ::: hide");
                 $.busyLoadFull("hide");
@@ -304,7 +306,7 @@ function fn_ChangeFiltros() {
                         }
                     });
                 } else {
-
+                    fn_Filtrar();
                     //fn_ModalConfirmarFiltros();
                 }
             } else {
@@ -324,7 +326,7 @@ function fn_ChangeFiltros() {
             //fn_Limpar();
         } else {
             if (!var_Filtrado) {
-                fn_ModalConfirmarFiltros();
+                //fn_ModalConfirmarFiltros();
             } else {
                 fn_Filtrar();
             }
@@ -336,7 +338,7 @@ function fn_ChangeFiltros() {
         let idMarcaTipo = $(this).find('option:selected').val();
 
         console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
-        console.log("cmb_MarcaTipo change var_Filtrado ::: ", var_Filtrado);
+        //console.log("cmb_MarcaTipo change var_Filtrado ::: ", var_Filtrado);
 
         if (idMarcaTipo <= 0) {
             //fn_Limpar();
@@ -344,6 +346,8 @@ function fn_ChangeFiltros() {
             if (!var_Filtrado) {
                 fn_ModalConfirmarFiltros();
             } else {
+                fn_Filtrar();
+                /*
                 Swal.fire({
                     title: 'Tipo Selecionado !!!',
                     html: `Para realizar o filtro por Tipo, <br><br> selecione o Sub-Tipo.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
@@ -358,6 +362,7 @@ function fn_ChangeFiltros() {
                 }).then((result) => {
                     //console.log("cmb_MarcaFase change result ::: ", result);
                 })
+                */
             }
         }
     });
@@ -367,7 +372,7 @@ function fn_ChangeFiltros() {
         let idMarcaSubTipo = $(this).find('option:selected').val();
 
         console.log("cmb_MarcaSubTipo change idMarcaSubTipo ::: ", idMarcaSubTipo);
-        console.log("cmb_MarcaSubTipo change var_Filtrado ::: ", var_Filtrado);
+        //console.log("cmb_MarcaSubTipo change var_Filtrado ::: ", var_Filtrado);
 
         if (idMarcaSubTipo <= 0) {
             //fn_Limpar();
@@ -427,7 +432,7 @@ function fn_GridListFilter(lstData) {
         varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9],
         varCol_Ordenacao = [2, 'asc'], //set any columns order asc/desc
 
-        varItems_QtdPorPage = 5,
+        varItems_QtdPorPage = 10,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
         varItems_Row = null,
         varItems_Id = 0;
@@ -438,6 +443,8 @@ function fn_GridListFilter(lstData) {
             //"processing": true,
             //"deferRender": true,
             data: lstData,
+            ordering: true,
+            destroy: true,
 
             columns: [
                 // COLUNA - Responsive

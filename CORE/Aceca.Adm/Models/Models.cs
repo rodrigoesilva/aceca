@@ -139,7 +139,7 @@ namespace Aceca.Adm.Models
         public MarcaQualidadeImagem? MarcaQualidadeImagem { get; set; }
         public MarcaRaridade? MarcaRaridade { get; set; }
         public MarcaSubTipo? MarcaSubTipo { get; set; }
-        public FabricaFase? FabricaFase { get; set; }
+        //public FabricaFase? FabricaFase { get; set; }
     }
 
     [Table("marcas_dimensao")]
@@ -201,7 +201,7 @@ namespace Aceca.Adm.Models
     public class MarcaSubTipo : BaseModel
     {
         [Key] public int? Id { get; set; }
-        public int? MarcaTipoId { get; set; }
+        public int MarcaTipoId { get; set; }
         [MaxLength(10)] public string? Sigla { get; set; } = string.Empty;
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
         public MarcaTipo? MarcaTipo { get; set; }

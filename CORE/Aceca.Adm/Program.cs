@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using AspnetCoreMvcFull.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Aceca.Adm.Data;
 

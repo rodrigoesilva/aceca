@@ -123,8 +123,8 @@ namespace Aceca.Adm.VMModels
         public string? CodigoSC { get; set; }        
         public string? ImgPrincipal { get; set; }
         public string? ImgDetalhe { get; set; }
-        public IFormFile? FileImgPrincipal { get; set; }
-        public IFormFile? FileImgDetalhe { get; set; }
+        [NotMapped] public IFormFile? FileImgPrincipal { get; set; }
+        [NotMapped] public IFormFile? FileImgDetalhe { get; set; }
         public string? Nome { get; set; }
 
         //[Required(ErrorMessage = "Descrição deve ser preenchida")]
@@ -134,6 +134,51 @@ namespace Aceca.Adm.VMModels
         public string? Valor { get; set; }
         public string? IncluidoPor { get; set; }
         public int? EmQuarentena { get; set; }
+
+        public VMMarcaDimensao? MarcaDimensao { get; set; }
+        public VMMarcaFabrica? MarcaFabrica { get; set; }
+        public VMMarcaFase? MarcaFase { get; set; }
+        public VMMarcaFinalidade? MarcaFinalidade { get; set; }
+        public VMMarcaImpressora? MarcaImpressora { get; set; }
+        public VMMarcaQualidadeImagem? MarcaQualidadeImagem { get; set; }
+        public VMMarcaRaridade? MarcaRaridade { get; set; }
+        public VMMarcaSubTipo? MarcaSubTipo { get; set; }
+    }
+
+    public class VMMarcaList
+    {
+        public int? Id { get; set; }
+        public int? IdMarcaFase { get; set; }
+        public int? IdMarcaFinalidade { get; set; }
+        public int? IdMarcaFabrica { get; set; }
+        public int? IdMarcaDimensao { get; set; }
+        public int? IdMarcaTipo { get; set; }
+        public int? IdMarcaSubTipo { get; set; }
+        public int? IdMarcaImpressora { get; set; }
+        public int? IdMarcaRaridade { get; set; }
+        public int? IdQualidadeImagem { get; set; }
+
+        public string? CodigoAceca { get; set; }
+        public string? NomeMarca { get; set; }
+        public string? NomeFase { get; set; }
+        public string? NomeFabrica { get; set; }
+        public string? NomeDimensao { get; set; }
+        public string? NomeFinalidade { get; set; }
+        public string? NomeImpressora { get; set; }
+        public string? NomeRaridade { get; set; }
+        public string? SubTipo { get; set; }
+        public string? Tipo { get; set; }
+        public string? TxtFabrica { get; set; }
+        public string? TxtImpressora { get; set; }
+        public string? IncluidoPor { get; set; }
+        public string? Descricao { get; set; }
+        public string? Valor { get; set; }
+        public string? Valor1PI { get; set; }
+        public string? Valor2PI { get; set; }
+        public string? ImgPrincipal { get; set; }
+        public string? ImgPrincipalFull { get; set; }
+        public string? ImgDetalhe { get; set; }
+        public string? ImgDetalheFull { get; set; }
     }
 
     [Table("marcas_filtro_dimensao")]

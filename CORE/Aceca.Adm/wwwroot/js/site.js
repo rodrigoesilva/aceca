@@ -66,7 +66,7 @@ function fn_AuthOut() {
                 url: '/Auth/Logout',
                 type: 'POST',
                 success: function (result) {
-
+                    console.log(`result ::  ${result}`);
                     fn_CleanUser();
 
                     $.busyLoadFull("hide");
@@ -81,11 +81,11 @@ function fn_AuthOut() {
                             confirmButton: 'btn btn-label-success waves-effect'
                         }
                     }).then((resultBye) => {
-                        
+                        window.location.href = 'https://www.aceca.com.br/';
                     });
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
-
+                    console.log(`response XMLHttpRequest ::  ${XMLHttpRequest}`);
                     $.busyLoadFull("hide");
 
                     return false;
@@ -93,6 +93,7 @@ function fn_AuthOut() {
             });
     }
     catch (ex) {
+        console.log(`response ex ::  ${ex}`);
     }
 }
 
