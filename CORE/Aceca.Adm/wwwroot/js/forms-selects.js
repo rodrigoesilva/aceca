@@ -25,8 +25,8 @@ $(function () {
       var $this = $(this);
       select2Focus($this);
       $this.wrap('<div class="position-relative"></div>').select2({
-          placeholder: '-- Selecionar --',
-          dropdownParent: $this.parent(),
+        placeholder: 'Select value',
+        dropdownParent: $this.parent()
       });
     });
   }

@@ -217,7 +217,7 @@ function fn_FiltrarDados(objFiltro) {
         data: JSON.stringify(objFiltro),
         success: function (result) {
 
-            console.log("fn_FiltrarDados result ::: ", result);
+            //console.log("fn_FiltrarDados result ::: ", result);
 
             if (result.bResult === false) {
                 //console.log("busyLoadFull ::: hide");
@@ -337,7 +337,7 @@ function fn_ChangeFiltros() {
 
         let idMarcaTipo = $(this).find('option:selected').val();
 
-        console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
+        //console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
         //console.log("cmb_MarcaTipo change var_Filtrado ::: ", var_Filtrado);
 
         if (idMarcaTipo <= 0) {
@@ -371,7 +371,7 @@ function fn_ChangeFiltros() {
 
         let idMarcaSubTipo = $(this).find('option:selected').val();
 
-        console.log("cmb_MarcaSubTipo change idMarcaSubTipo ::: ", idMarcaSubTipo);
+        //console.log("cmb_MarcaSubTipo change idMarcaSubTipo ::: ", idMarcaSubTipo);
         //console.log("cmb_MarcaSubTipo change var_Filtrado ::: ", var_Filtrado);
 
         if (idMarcaSubTipo <= 0) {
@@ -425,7 +425,7 @@ function fn_LoadFiltros() {
 
 function fn_GridListFilter(lstData) {
 
-    console.log("fn_GridListFilter lstData ::: ", lstData);
+    //console.log("fn_GridListFilter lstData ::: ", lstData);
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 

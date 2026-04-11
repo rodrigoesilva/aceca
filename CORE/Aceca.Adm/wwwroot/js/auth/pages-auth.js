@@ -15,6 +15,7 @@ let var_Nome = 'Auth',
 
 let formValid;
 
+const _cka = "aceca_cookie";
 const submitButton = document.querySelector('.btn-entrar');
 
 let var_Filtrado = false,
@@ -68,7 +69,7 @@ function fn_Limpar() {
     document.getElementById('lEmail').value = '';
     document.getElementById('lSenha').value = '';
 
-    document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+    document.cookie = `${_cka}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
     sessionStorage.removeItem('aceca_sessao');
 }
 
@@ -130,7 +131,7 @@ function fn_FormValidator(formAuthentication) {
 
 function fn_AuthIni() {
 
-    let userCk = fn_CkGet(_ck);
+    let userCk = fn_CkGet(_cka);
 
     if (userCk != "") {
 
@@ -216,7 +217,7 @@ async function fn_Auth() {
                         confirmButton: 'btn btn-label-success waves-effect'
                     }
                 }).then((result) => {
-                    fn_CkSet(_ck, user?.nome?.split(" ")[0], 60);
+                    fn_CkSet(_cka, user?.nome?.split(" ")[0], 60);
                     sessionStorage.setItem('aceca_sessao', JSON.stringify(user));
                     window.location.href = '/Auth/Access';
                 });
