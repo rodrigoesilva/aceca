@@ -440,184 +440,103 @@ function fn_GridListFilter(lstData) {
     if (varTbl_Obj.length) {
 
         varTbl_Data = $('.datatables-basic').DataTable({
-            responsive: {
-                details: false
-            },
-            //"processing": true,
-            //"deferRender": true,
+
             data: lstData,
             ordering: true,
             destroy: true,
 
             columns: [
-                // COLUNA - Responsive
+                // COLUNA - Responsive (control)
                 {
-                    visible: false,
                     data: 'id',
                     className: 'control',
-                    searchable: false,
                     orderable: false,
-                    responsivePriority: 2,
+                    searchable: false,
+                    responsivePriority: 1,
                     targets: 0,
-                    render: function (data, type, full, meta) {
-                        return '';
-                    }
+                    render: function () { return ''; }
                 },
-                // COLUNA - ID checkbox
+                // COLUNA - Checkbox
                 {
                     visible: false,
                     data: 'id',
                     targets: 1,
                     searchable: false,
                     orderable: false,
-                    checkboxes: {
-                        selectAllRender: '<input type="checkbox" class="form-check-input">'
-                    },
+                    responsivePriority: 99,
+                    render: function () { return ''; }
+                    /*
                     render: function () {
-                        return '<input type="checkbox" class="dt-checkboxes form-check-input" >';
-                    },
+                        return '<input type="checkbox" class="dt-checkboxes form-check-input">';
+                    }
+                    */
                 },
                 // COLUNA - nomeFase
-                {
-                    targets: 2,
-                    data: 'nomeFase',
-                    className: "text-center"
-                },
+                { targets: 2, data: 'nomeFase', className: 'text-center', responsivePriority: 3 },
                 // COLUNA - finalidade
-                {
-                    targets: 3,
-                    data: 'nomeFinalidade',
-                    className: "text-center",
-                },                
+                { targets: 3, data: 'nomeFinalidade', className: 'text-center', responsivePriority: 4 },
                 // COLUNA - codigoAceca
-                {
-                    targets: 4,
-                    data: 'codigoAceca',
-                    className: "text-center"
-                },
+                { targets: 4, data: 'codigoAceca', className: 'text-center', responsivePriority: 2 },
                 // COLUNA - imagem
                 {
-                    targets: 5,
-                    data: 'imgPrincipalFull',
-                    className: "text-center",
-                    render: function (data, type, row, meta) {
+                    targets: 5, data: 'imgPrincipalFull', className: 'text-center', responsivePriority: 5,
+                    render: function (data, type, row) {
                         return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
                 },
                 // COLUNA - imagemDetalhe
                 {
-                    targets: 6,
-                    data: 'imgDetalheFull',
-                    className: "text-center",
-                    render: function (data, type, row, meta) {
+                    targets: 6, data: 'imgDetalheFull', className: 'text-center', responsivePriority: 6,
+                    render: function (data, type, row) {
                         return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
                 },
                 // COLUNA - nomeMarca
-                {
-                    targets: 7,
-                    data: 'nomeMarca',
-                    className: "text-center"
-                },
+                { targets: 7, data: 'nomeMarca', className: 'text-center', responsivePriority: 7 },
                 // COLUNA - fabricaNome
                 {
-                    targets: 8,
-                    data: 'txtFabrica',
-                    className: "text-center",
-                    render: function (data, type, full, meta) {
-                        return (data === "" || data === null) ? full.nomeFabrica : data;
+                    targets: 8, data: 'txtFabrica', className: 'text-center', responsivePriority: 8,
+                    render: function (data, type, full) {
+                        return (data === '' || data === null) ? full.nomeFabrica : data;
                     }
-                    
                 },
                 // COLUNA - subTipo
-                {
-                    targets: 9,
-                    data: 'subTipo',
-                    className: "text-center",
-                },
-               
+                { targets: 9, data: 'subTipo', className: 'text-center', responsivePriority: 9 },
                 // COLUNA - descricao
+                { targets: 10, data: 'descricao', className: 'text-start', searchable: false, responsivePriority: 10 },
+                // COLUNA - incluidoPor (avatar)
                 {
-                    targets: 10,
-                    data: 'descricao',
-                    className: "text-start",
-                    searchable: false,
-                },
-                // COLUNA - incluidoPor
-                {
-                    targets: 11,
-                    data: 'incluidoPor',
-                    className: "text-center",
-                    render: function (data, type, full, meta) {
-                        let id = full.id;
-
-                        if (data !== undefined && data !== null) {
-                            if (id !== 0 && type === 'display') {
-
-                                let bQuebraLinha = data.includes("/");
-                                //console.log("incluidoPor bQuebraLinha :::: ",bQuebraLinha );                               
-
-                                let ulIn = `<ul class=" m-0 avatar-group d-flex align-items-center" style="list-style: none;">`;
-                                let htmlContent = '';
-
-                                for (let i = 0; i < data.split("/").length; i++) {
-                                    htmlContent +=
-                                        `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top" data-popup="tooltip-custom" data-incluido="${data.split("/")[i]}" title="${data.split("/")[i]}" style="z-index: 1;">
+                    targets: 11, data: 'incluidoPor', className: 'text-center', responsivePriority: 11,
+                    render: function (data, type, full) {
+                        if (!data || full.id === 0 || type !== 'display') return '';
+                        var ul = `<ul class="m-0 avatar-group d-flex align-items-center" style="list-style:none;">`;
+                        var items = data.split('/').map(function (p, i) {
+                            return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
+                                        title="${p}" style="z-index:1;">
                                         <img src="../img/avatars/${i}.png" alt="Avatar" class="rounded-circle">
-                                    </li >`;
-                                }
-
-                                let dataImg = ulIn + htmlContent + "</ul>";
-
-                                //console.log("incluidoPor for :::: ", dataImg); 
-
-                                return dataImg; // data.replaceAll("/", "<br><br>");
-                            } else {
-                                return '';
-                            }
-                        } else {
-                            return '';
-                        }
-                    },
-                    filter: function (data, type) {
-                        return data; // Use the text for filtering
+                                    </li>`;
+                        }).join('');
+                        return ul + items + '</ul>';
                     }
                 },
-                // COLUNA - incluidoPor Hide
+                // COLUNA - incluidoPor hidden (filtro)
+                { targets: -2, data: 'incluidoPor', visible: false, responsivePriority: 99 },
+                // COLUNA - Ações
                 {
-                    targets: -2,
-                    data: 'incluidoPor',
-                    visible: false,
-                },
-                // COLUNA - Botoes Acoes
-                {
-                    //visible: false,
-                    data: 'id',
-                    targets: -1,
-                    searchable: false,
-                    orderable: false,
-                    render: function (data, type, full, meta) {
-
-                        let btns = '';
-
-                        //console.log("Acao data ::: ", data);
-                        //console.log("Acao lstData ::: ", lstData);
-                        //console.log("Acao full ::: ", full);
-                        //console.log("Acao meta ::: ", meta);
-                        if (type === 'display') {
-                            let itemId = data;
-                            let itemObjJson = encodeURIComponent(JSON.stringify(full));
-
-                            btns =
-                                '<div class="d-inline-block text-nowrap">' +
-                                '<a href="javascript:fn_Modal(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
-                                '</div>'
-                        }
-
-                        return (btns);
+                    data: 'id', targets: -1, searchable: false, orderable: false, responsivePriority: 2,
+                    render: function (data, type, full) {
+                        if (type !== 'display') return '';
+                        var itemObjJson = encodeURIComponent(JSON.stringify(full));
+                        return `<div class="d-inline-block text-nowrap">
+                    <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
+                        class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
+                        <i class="ri-edit-box-line ri-22px"></i>
+                    </a>
+                </div>`;
                     }
-                },
+                }
             ],
+
             order: varCol_Ordenacao,
             dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
             displayLength: varItems_QtdPorPage,
@@ -693,47 +612,130 @@ function fn_GridListFilter(lstData) {
                         //console.log("BTN NEW ::: ", dt);
                         window.location.href = '/Marca/Cadastro';
                     }
-                }               
+                }
             ],
-            // For responsive popup
+
             responsive: {
                 details: {
-                    display: $.fn.dataTable.Responsive.display.modal({
-                        header: function (row) {
-                            var data = row.data();
-                            return 'Details of ' + data['product_name'];
-                        }
-                    }),
                     type: 'column',
+                    target: 'tr',
                     renderer: function (api, rowIdx, columns) {
-                        var data = $.map(columns, function (col, i) {
-                            return col.title !== '' // ? Do not show row in modal popup if title is blank (for check box)
-                                ? '<tr data-dt-row="' +
-                                col.rowIndex +
-                                '" data-dt-column="' +
-                                col.columnIndex +
-                                '">' +
-                                '<td>' +
-                                col.title +
-                                ':' +
-                                '</td> ' +
-                                '<td>' +
-                                col.data +
-                                '</td>' +
-                                '</tr>'
-                                : '';
-                        }).join('');
+                        var row = api.row(rowIdx).data();
 
-                        return data ? $('<table class="table"/><tbody />').append(data) : false;
+                        // Imagens
+                        var imgPrincipal = row.imgPrincipalFull
+                            ? `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${row.imgPrincipalFull}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:0.5px solid #ddd;">`
+                            : `<div style="width:54px;height:54px;background:#f4f4f4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;">sem img</div>`;
+
+                        var imgDetalhe = row.imgDetalheFull
+                            ? `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${row.imgDetalheFull}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:0.5px solid #ddd;">`
+                            : `<div style="width:54px;height:54px;background:#f4f4f4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#aaa;">sem detalhe</div>`;
+
+                        // Fábrica
+                        var fabrica = (row.txtFabrica === "" || row.txtFabrica === null)
+                            ? row.nomeFabrica
+                            : row.txtFabrica;
+
+                        // Avatares incluídoPor
+                        var avatarHtml = '';
+                        if (row.incluidoPor) {
+                            var pessoas = row.incluidoPor.split("/");
+                            avatarHtml = pessoas.map(function (p, i) {
+                                return `<img src="../img/avatars/${i}.png" alt="${p}" title="${p}"
+                                        style="width:28px;height:28px;border-radius:50%;border:1.5px solid #fff;margin-right:2px;">`;
+                            }).join('');
+                        }
+
+                        // ✅ incluidoPor como TEXTO PURO no card mobile
+                        var incluidoPorTexto = '';
+                        if (row.incluidoPor) {
+                            // Substitui "/" por separador legível
+                            incluidoPorTexto = row.incluidoPor.split('/').join(', ');
+                        }
+
+                        // Botão editar
+                        var itemObjJson = encodeURIComponent(JSON.stringify(row));
+                        var btnEditar = `<a href="javascript:fn_Modal(${itemObjJson},'Edit');"
+                                            class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body">
+                                            <i class="ri-edit-box-line ri-22px"></i>
+                                        </a>`;
+
+                        var card = `<div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1rem;margin:6px 0;">
+
+                                        <!-- ✅ MUDANÇA 1 — Primeira linha: SOMENTE as duas imagens, centralizadas -->
+                                        <div style="display:flex;justify-content:center;gap:100px;padding-bottom:12px;border-bottom:0.5px solid #eee;margin-bottom:12px;">
+                                            <div>
+                                                <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Imagem</div>
+                                                <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">${row.codigoAceca || ''}</div>
+                                                <div>${imgPrincipal || ''}</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:200;">Detalhe</div>
+                                                <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">${row.codigoAceca || ''}</div>
+                                                <div>${imgDetalhe || ''}</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Grid de campos -->
+                                        <!-- ✅label em negrito (font-weight:600), valor em normal (font-weight:400) -->
+                                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;">
+                                            <div>
+                                                <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Fase</div>
+                                                <div style="font-size:11px;color:#aaa;font-weight:400;">${row.nomeFase || ''}</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Código ACECA</div>
+                                                <div style="font-size:13px;color:#aaa;font-weight:400;">${row.codigoAceca || ''}</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Finalidade</div>
+                                                <div style="font-size:13px;color:#aaa;font-weight:400;">${row.nomeFinalidade || ''}</div>
+                                            </div>                                            
+                                            <div>
+                                                <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">SubTipo</div>
+                                                <div style="font-size:13px;color:#aaa;font-weight:400;">${row.subTipo || ''}</div>
+                                            </div>
+                                            <!--
+                                            <div>
+                                                <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Marca</div>
+                                                <div style="font-size:13px;color:#aaa;font-weight:400;">${row.nomeMarca || ''}</div>
+                                            </div>
+                                            -->
+                                            <div>
+                                                <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Fábrica</div>
+                                                <div style="font-size:13px;color:#aaa;font-weight:400;">${fabrica || ''}</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Incluído por</div>
+                                                <div style="font-size:13px;color:#aaa;font-weight:400;">${incluidoPorTexto || ''}</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Footer: incluidoPor em texto + botão editar -->
+                                        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:0.5px solid #eee;">
+                                            <div>
+                                                <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Marca</div>
+                                                <div style="font-size:13px;color:#aaa;">${row.nomeMarca}</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Descrição -->
+                                        <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid #eee;">
+                                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;margin-bottom:4px;">Descrição</div>
+                                            <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.descricao || ''}</div>
+                                        </div>
+
+
+                                        
+                                    </div>`;
+
+                        return $(card);
                     }
                 }
             },
+
             initComplete: function () {
-                //console.log("initComplete settings ::: ", settings);
-                //console.log( "initComplete json ::: ", json);
-
-                $.busyLoadFull("hide");
-
+                $.busyLoadFull('hide');
                 fn_GridComplete(this);
             }
         });
