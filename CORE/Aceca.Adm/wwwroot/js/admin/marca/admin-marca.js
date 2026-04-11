@@ -440,6 +440,9 @@ function fn_GridListFilter(lstData) {
     if (varTbl_Obj.length) {
 
         varTbl_Data = $('.datatables-basic').DataTable({
+            responsive: {
+                details: false
+            },
             //"processing": true,
             //"deferRender": true,
             data: lstData,

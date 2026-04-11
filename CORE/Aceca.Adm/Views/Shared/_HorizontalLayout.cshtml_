@@ -10,15 +10,18 @@
   ViewData["isFlex"] = (ViewData["isFlex"] ??= false);
   ViewData["isFooter"] = (ViewData["isFooter"] ??= true);
 
-  @* HTML Classes *@
-  ViewData["menuFixed"] = (ViewData["menuFixed"] ?? "layout-menu-fixed");
-  ViewData["navbarFixed"] = (ViewData["navbarFixed"] ?? "layout-navbar-fixed");
-  @* ViewData["footerFixed"] = (ViewData["footerFixed"] ?? "layout-footer-fixed"); *@
+    @* HTML Classes *@
+    ViewData["menuFixed"] = (ViewData["menuFixed"] ?? "layout-menu-fixed");
+    ViewData["navbarFixed"] = (ViewData["navbarFixed"] ?? "layout-navbar-fixed");
+    @* ViewData["footerFixed"] = (ViewData["footerFixed"] ?? "layout-footer-fixed"); *@
 
-  @*Content classes *@
-  ViewData["container"] = (ViewData["container"] ?? "container-xxl");
-  ViewData["containerNav"] = (ViewData["containerNav"] ?? "container-xxl");
-  TempData.Keep();
+    @*Content classes *@
+    //ViewData["container"] = (ViewData["container"] ?? "container-xxl");
+    //ViewData["containerNav"] = (ViewData["containerNav"] ?? "container-xxl");
+  
+    ViewData["container"] = (ViewData["container"] ?? "container-fluid");
+    ViewData["containerNav"] = (ViewData["containerNav"] ?? "container-fluid");
+    TempData.Keep();
 }
 
 
@@ -48,7 +51,7 @@
 
         @if (Convert.ToBoolean(@ViewData["isMenu"]))
         {
-          @await Html.PartialAsync("Sections/Menu/_HorizontalMenu")
+          @* @await Html.PartialAsync("Sections/Menu/_HorizontalMenu") *@
         }
         <!-- Content -->
         <div class='@ViewData["container"] @((Convert.ToBoolean(@ViewData["isFlex"])) ? "d-flex align-items-stretch flex-grow-1 p-0" : "flex-grow-1 container-p-y")'>

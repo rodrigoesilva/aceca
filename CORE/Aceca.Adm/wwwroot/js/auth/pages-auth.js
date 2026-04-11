@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`AUTH - Todos os recursos terminaram o carregamento!`);
 
-        fn_AuthIni();       
+        fn_AuthIni();
   })();
 });
 

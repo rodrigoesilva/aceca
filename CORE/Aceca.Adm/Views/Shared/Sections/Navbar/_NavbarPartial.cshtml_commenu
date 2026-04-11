@@ -31,7 +31,7 @@
 
 <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
 
-  @*  @await Html.PartialAsync("Sections/Menu/_HorizontalMenu") *@
+    @await Html.PartialAsync("Sections/Menu/_HorizontalMenu")
 
   <ul class="navbar-nav flex-row align-items-center ms-auto">
 
@@ -43,17 +43,17 @@
       <ul class="dropdown-menu dropdown-menu-end dropdown-styles">
         <li>
           <a class="dropdown-item" href="javascript:void(0);" data-theme="light">
-            <span class="align-middle"><i class='ri-sun-line ri-22px me-3'></i>Claro</span>
+            <span class="align-middle"><i class='ri-sun-line ri-22px me-3'></i>Light</span>
           </a>
         </li>
         <li>
           <a class="dropdown-item" href="javascript:void(0);" data-theme="dark">
-            <span class="align-middle"><i class="ri-moon-clear-line ri-22px me-3"></i>Escuro</span>
+            <span class="align-middle"><i class="ri-moon-clear-line ri-22px me-3"></i>Dark</span>
           </a>
         </li>
         <li>
           <a class="dropdown-item" href="javascript:void(0);" data-theme="system">
-            <span class="align-middle"><i class="ri-computer-line ri-22px me-3"></i>Sistema</span>
+            <span class="align-middle"><i class="ri-computer-line ri-22px me-3"></i>System</span>
           </a>
         </li>
       </ul>
