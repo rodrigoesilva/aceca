@@ -2,7 +2,7 @@
 @if (ViewData["navbarFull"] != null)
 {
   <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-6">
-  <a asp-controller="Home" asp-action="Index" class="app-brand-link gap-2">
+    <a href="@(Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True" ? Url.Action("Index", "Home") : Url.Action("Index", "Marca"))" class="app-brand-link gap-2">
     @* <span class="app-brand-logo demo">@await Html.PartialAsync("../_Partials/_Macros")</span>
       <span class="app-brand-text demo menu-text fw-semibold ms-1">@TempData.Peek("appName")</span> *@
             <span class="app-brand-text demo menu-text fw-semibold ms-1 custom_text" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">A.C.E.C.A</span>

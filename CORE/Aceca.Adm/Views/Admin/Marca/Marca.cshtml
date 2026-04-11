@@ -33,7 +33,8 @@
     <link rel="stylesheet" href="~/css/zoom.css">
     <link rel="stylesheet" href="~/css/marcas.css">
 
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.8/css/responsive.dataTables.min.css">
+    <!--  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.8/css/responsive.dataTables.min.css">-->
+    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css" />
 }
 
 @section VendorScripts {
@@ -54,21 +55,14 @@
     <script src="~/vendor/libs/select2/select2.js"></script>
     <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
 
-    <script src="https://cdn.datatables.net/responsive/2.1.0/js/dataTables.responsive.js"></script>
+    <!--<script src="https://cdn.datatables.net/responsive/2.1.0/js/dataTables.responsive.js"></script>-->
+    <script src="~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js"></script>
 } 
 
 @section PageScripts {
     <script src="~/js/admin/marca/admin-marca.js"></script>
     <!-- Select Dropdownlist -->
     <script src="~/js/forms-selects.js"></script>
-
-
-    
-    
-                            
-
-    @* <link href="https://nightly.datatables.net/responsive/css/responsive.dataTables.css?_=0733d80df58ca2854b640850303e9ae6.css" rel="stylesheet" type="text/css" />
-    <script src="https://nightly.datatables.net/responsive/js/dataTables.responsive.js?_=0733d80df58ca2854b640850303e9ae6"></script> *@
 }
 
 @* ************** Filtros ************** *@
@@ -193,8 +187,7 @@
 @*************** Content List Table ************** *@
 <div class="card">
     <div class="card-datatable table-responsive pt-0">
-        @* <table class="datatables-basic table table-hover" style="width:90%"> *@
-            <table class="datatables-basic table table-hover display responsive" width="100%">
+        <table class="datatables-basic table table-hover display responsive" width="100%">
             <thead>
                 <tr>
                     <th></th>

@@ -250,8 +250,11 @@ async function fn_Auth() {
             btn.textContent = 'Entrar';
 
             let err = await response.json();
-
             console.log(`response err ::  ${err}`);
+
+            const errObject = JSON.parse(err);
+
+            console.log(`response errObject ::  ${errObject}`);
 
             Swal.fire({
                 title: 'Ops!!',

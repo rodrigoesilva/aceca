@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fn_Zoom();
 
+        fn_AuthSession();
+
     })();
 });
 
@@ -528,11 +530,11 @@ function fn_GridListFilter(lstData) {
                         if (type !== 'display') return '';
                         var itemObjJson = encodeURIComponent(JSON.stringify(full));
                         return `<div class="d-inline-block text-nowrap">
-                    <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
-                        class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
-                        <i class="ri-edit-box-line ri-22px"></i>
-                    </a>
-                </div>`;
+                                    <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
+                                        class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
+                                        <i class="ri-edit-box-line ri-22px"></i>
+                                    </a>
+                                </div>`;
                     }
                 }
             ],
@@ -648,6 +650,7 @@ function fn_GridListFilter(lstData) {
 
                         // ✅ incluidoPor como TEXTO PURO no card mobile
                         var incluidoPorTexto = '';
+
                         if (row.incluidoPor) {
                             // Substitui "/" por separador legível
                             incluidoPorTexto = row.incluidoPor.split('/').join(', ');
@@ -659,7 +662,6 @@ function fn_GridListFilter(lstData) {
                                             class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body">
                                             <i class="ri-edit-box-line ri-22px"></i>
                                         </a>`;
-
                         var card = `<div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1rem;margin:6px 0;">
 
                                         <!-- ✅ MUDANÇA 1 — Primeira linha: SOMENTE as duas imagens, centralizadas -->
@@ -734,7 +736,11 @@ function fn_GridListFilter(lstData) {
                 }
             },
 
-            initComplete: function () {
+            initComplete: function (settings, json) {
+                var api = this.api();
+                //console.log("settings ::: ", settings);
+                //console.log("json ::: ", json);
+
                 $.busyLoadFull('hide');
                 fn_GridComplete(this);
             }
@@ -760,6 +766,17 @@ function fn_GridComplete(grid) {
     $(".card-datatable").show();
 
     if (countRows > 0) {
+
+        if (document.getElementById('tbCargo').textContent !== 'Administracao') {
+            //console.log("api ::: ", thisApi.column(13));
+            thisApi.column(0).visible(false);
+            thisApi.column(1).visible(false);
+            thisApi.column(13).visible(false);
+
+            // Hides the 4th column (index 3)
+            $(".create-new").attr('style', 'display: none !important');
+        }
+
         $.busyLoadFull("hide");
 
         fn_Zoom();
@@ -1446,6 +1463,33 @@ function fnItem_Edit_CarregarDados(obj, action) {
                 },
             });
     }
+}
+
+//#endregion
+
+//#region Auth
+
+function fn_AuthSession() {
+    let sessionData;
+
+    if (sessionStorage?.getItem("aceca_sessao") !== null) {
+        sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+
+        if (sessionData !== null) {
+            document.getElementById('hdSocioId').value = `${sessionData?.nameIdentifier}`;
+            document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
+            document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
+        } else {
+            fn_CleanUser();
+        }
+    } else {
+        fn_CleanUser();
+    }
+}
+function fn_CleanUser() {
+    document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+    sessionStorage.removeItem('aceca_sessao');
+    window.location.href = 'https://www.aceca.com.br/';
 }
 
 //#endregion

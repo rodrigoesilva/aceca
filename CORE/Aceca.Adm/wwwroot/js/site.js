@@ -100,7 +100,7 @@ function fn_AuthOut() {
 function fn_AuthSession() {
     if (sessionStorage?.getItem("aceca_sessao") !== null) {
         sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
-        
+
         if (sessionData !== null) {
             document.getElementById('hdSocioId').value = `${sessionData?.nameIdentifier}`;
             document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
