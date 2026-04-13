@@ -157,7 +157,8 @@ namespace Aceca.Adm.Controllers
                     nameIdentifier = socio.Id.ToString(),
                     nome = socio.Nome,
                     //email = user.Email,
-                    cargo = socio?.SocioPerfil?.Descricao
+                    cargo = socio?.SocioPerfil?.Descricao,
+                    isPerfil = Convert.ToBoolean(socio?.SocioPerfil?.Descricao?.Equals("Administracao")) ? true : false,
                 });
             }
             catch (Exception ex)

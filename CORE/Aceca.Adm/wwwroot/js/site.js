@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         $('.btn-logout').on('click', function () {
+            console.log("cclick logout ::: ");
             fn_AuthOut();
         });
 
@@ -56,7 +57,7 @@ function fn_UpdateClock() {
 //#region AUTH
 
 function fn_AuthOut() {
-
+    console.log(`fn_AuthOut ::`);
     try {
 
         $.busyLoadFull("show");
@@ -103,6 +104,7 @@ function fn_AuthSession() {
 
         if (sessionData !== null) {
             document.getElementById('hdSocioId').value = `${sessionData?.nameIdentifier}`;
+            document.getElementById('hdIsPerfil').value = `${sessionData?.isPerfil}`;
             document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
             document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
         } else {
