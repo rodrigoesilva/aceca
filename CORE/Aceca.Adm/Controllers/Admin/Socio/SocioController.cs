@@ -335,37 +335,141 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         [HttpPost]
         public async Task<IActionResult> Edit(VMSocio model)
         {
-
             try
             {
                 if (ModelState.IsValid)
                 {
+                    #region Socio
+
                     if (string.IsNullOrEmpty(model.Nome))
-                    {
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
                             message = "Nome deve ser preenchido"
                         });
-                    }
 
-                    //model = await _db.Socio.FindAsync(id);
+                    var newModel = new Models.Socio
+                    {
+                        //public class Socio : BaseModel
+                        Id = model.Id,
+                        SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
+                        Nome = model.Nome,
+                        MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
+                        Ativo = model.Ativo,
+                    };
 
-                    // Mark the entity state as modified
-                    _db.Entry(model).State = EntityState.Modified;
+                    _db.Entry(newModel).State = EntityState.Modified;
                     _db.SaveChanges();
+
+                    model.Id = newModel?.Id;
+
+                    if (newModel?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar Socio"
+                        });
+
+                    #endregion
+
+                    #region SocioContato
+
+                    if (string.IsNullOrEmpty(model?.Email))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Email deve ser preenchido"
+
+                        });
+
+                    var newModelSocioContato = new Models.SocioContato
+                    {
+                        Id = model.SocioContatoId,
+                        SocioId = model.Id,
+                        DDI = model.DDI != null ? model.DDI : 55,
+                        DDD = !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt16(model.Telefone.Split(")")[0].Trim().Replace("(", string.Empty)) : null,
+                        Telefone = !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt64(model.Telefone.Split(")")[1].Trim()) : null,
+                        Email = model.Email,
+                    };
+
+                    _db.Entry(newModelSocioContato).State = EntityState.Modified;
+                    _db.SaveChanges();
+
+                    model.SocioContatoId = newModelSocioContato?.Id;
+
+                    if (newModelSocioContato?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar SocioContato"
+                        });
+
+                    #endregion
+
+                    #region SocioEndereco
+
+                    var newModelSocioEndereco = new Models.SocioEndereco
+                    {
+                        Id = model.SocioEnderecoId,
+                        SocioId = model.Id,
+                        Endereco = model.Endereco,
+                        Numero = model.Numero,
+                        Complemento = model.Complemento,
+                        Bairro = model.Bairro,
+                        Cidade = model.Cidade,
+                        Estado = model.Estado,
+                        CEP = !string.IsNullOrEmpty(model.CEP) ? model.CEP.Replace("-", string.Empty) : string.Empty,
+                    };
+
+                    _db.Entry(newModelSocioEndereco).State = EntityState.Modified;
+                    _db.SaveChanges();
+
+                    model.SocioEnderecoId = newModelSocioEndereco?.Id;
+
+                    if (newModelSocioEndereco?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar SocioEndereco"
+                        });
+
+                    #endregion
+
+                    #region SocioAniversario
+
+                    var newModelSocioAniversario = new Models.SocioAniversario
+                    {
+                        Id = model.SocioAniversarioId,
+                        SocioId = model.Id,
+                        Dia = !string.IsNullOrEmpty(model.DataAniversario) ? Convert.ToInt32(model.DataAniversario.Split("/")[0]) : null,
+                        Mes = !string.IsNullOrEmpty(model.DataAniversario) ? Convert.ToInt32(model.DataAniversario.Split("/")[1]) : null,
+                    };
+
+                    _db.Entry(newModelSocioAniversario).State = EntityState.Modified;
+                    _db.SaveChanges();
+
+                    model.SocioAniversarioId = newModelSocioAniversario?.Id;
+
+                    if (newModelSocioAniversario?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar SocioAniversario"
+                        });
+
+                    #endregion
+
                     return RedirectToAction("Index");
                 }
 
                 return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
+                {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",

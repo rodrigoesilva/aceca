@@ -7,16 +7,7 @@
 
     ViewData["Title"] = string.Format("{0} | {1}", pageName, pageTipo);
 
-    @if (Context?.Session?.Keys?.Count() > 0)
-    {
-        var userRole = Context?.Session?.GetString("UserRole");
-        Layout = $"~/Views/Shared/{(userRole == "Admin" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
-    }
-    else
-    {
-        Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
-        //Layout = "~/Views/Shared/_WithoutMenuLayout.cshtml";
-    }
+    Layout = $"~/Views/Shared/{(Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
 }
 
 @section VendorStyles {

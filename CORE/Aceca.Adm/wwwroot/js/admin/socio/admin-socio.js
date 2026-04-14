@@ -120,7 +120,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -413,7 +413,7 @@ function fn_GridList(formValid) {
 
         if (action === 'Alterar') {
             var objFormData = fn_PopGetObj();
-            //console.log("objFormData ::: ", objFormData);
+            console.log("objFormData ::: ", objFormData);
 
             fnItem_Edit(objFormData)
         } else {
@@ -605,11 +605,11 @@ function fn_Pop(obj, action) {
 
         $("#cmb_SocioEstado").val(obj.socioEndereco.estado).change();
 
-        console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
+        //console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
     }
 
 
-    console.log("fn_Pop popAddNewItem ::: ", popAddNewItem);
+    //console.log("fn_Pop popAddNewItem ::: ", popAddNewItem);
 
     // Open Pop
     popAddNewItemEl.show();
@@ -634,9 +634,13 @@ function fn_PopGetObj() {
         MostrarSite: $('.form-add-new-item .dt-line-13').is(':checked'),
         
         SocioEstadoId: $('#cmb_SocioEstado').val(),
+        SocioContatoId: $('#hdSocioContatoId').val(),
+        SocioEnderecoId: $('#hdSocioEnderecoId').val(),
+        SocioAniversarioId: $('#hdSocioAniversarioId').val(),
+        SocioPerfilId: $('#hdSocioPerfilId').val(),
     };
 
-    console.log("fn_PopGetObj !", objFormData);
+    //console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
 }
@@ -681,7 +685,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.Id;
+    var varItems_Id = varItems_Row.socio.id;
 
     //console.log("DELETE ID ::: ", varItems_Id);
 
@@ -768,7 +772,7 @@ function fnItem_Delete(varItems_Row) {
 }
 
 function fnItem_Edit(varItems_Row) {
-    console.log("fnItem_Edit varItems_Row ::: ", varItems_Row);
+    //console.log("fnItem_Edit varItems_Row ::: ", varItems_Row);
     //var varPop_BtnAction = 'Edit';
 
     //fn_Pop(varItems_Row, varPop_BtnAction);
