@@ -137,7 +137,7 @@ namespace Aceca.Adm.Controllers
 
                 var socio = await _db.Socio
                     .Include(f => f.SocioPerfil)
-                    .FirstOrDefaultAsync(s => s.Id == user.socioId);
+                    .FirstOrDefaultAsync(s => s.Id == user.SocioId);
 
                 if (socio == null)
                     return BadRequest(new { msg = "Sócio inválido." });

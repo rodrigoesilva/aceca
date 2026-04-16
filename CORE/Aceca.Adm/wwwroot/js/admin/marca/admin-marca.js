@@ -26,14 +26,18 @@ var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 const swalWithBootstrapButtons = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-label-secondary waves-effect",
+        confirmButtonText: "Yes, deleteee it!",
         cancelButton: "btn btn-label-primary waves-effect",
+        cancelButtonText: "No, cancelaaa!",
         // Apply a margin or flex gap via custom classes if needed
-        actions: 'd-flex justify-content-center align-content-center flex-wrap gap-4 pt-8' 
+        actions: 'd-flex justify-content-center align-content-center flex-wrap gap-4 pt-8'
     },
     buttonsStyling: false
 });
 
 let borderColor, bodyBg, headingColor;
+
+let idMarcaFase;
 
 if (isDarkStyle) {
     borderColor = config.colors_dark.borderColor;
@@ -62,12 +66,15 @@ document.addEventListener('DOMContentLoaded', function () {
         fn_Limpar();
 
         // Filtros
+        fn_FiltrosHide();
         fn_PopLoadCombos();
-        fn_ChangeFiltros();
+        fn_FiltrosChange();
 
+        /*
         $('.btn-filter').on('click', function () {
             fn_Filtrar();
         });
+        */
 
         $('.btn-filter-clear').on('click', function () {
             fn_Limpar();
@@ -157,6 +164,10 @@ function fn_Filtrar() {
                     confirmButtonText: "Sim, vou aguardar!",
                     cancelButtonText: "Não, vou escolher uma fase!",
                 }).then((result) => {
+                    //console.log("fn_Filtrar result ::: ", result);
+
+                    /*
+                    
                     if (result.isConfirmed) {
                         if (var_Filtrado) {
                             Swal.fire({
@@ -175,6 +186,31 @@ function fn_Filtrar() {
                         $('#cmb_MarcaFase').prop('selectedIndex', 0).change();
                     }
                 });
+
+                    */
+
+
+                    if (result.isConfirmed) {
+                        swalWithBootstrapButtons.fire({
+                            title: "Carregando!",
+                            text: "Aguarde o carregamento das informações.",
+                            icon: "success",
+                            confirmButtonText: "Ok, vamos aguardar!",
+                            cancelButtonText: "Não, vou escolher uma fase!",
+                        }).then((result) => {
+                            fn_FiltrarDados(objFiltro);
+                        });
+                    }
+                    else if (result.dismiss === Swal.DismissReason.cancel) {
+                        swalWithBootstrapButtons.fire({
+                            title: "Cancelado!",
+                            text: "Realize a escolha de uma fase.",
+                            icon: "info",
+                        }).then((result) => {
+                            $('#cmb_MarcaFase').prop('selectedIndex', 0).change();
+                        });
+                    }
+                });
             } else {
                 fn_FiltrarDados(objFiltro);
             }
@@ -188,7 +224,7 @@ function fn_Limpar() {
     $.busyLoadFull("show");
 
     $('#cmb_MarcaFase').prop('selectedIndex', 0).change();
-    $('#cmb_MarcaFabrica').prop('selectedIndex', 0).change();
+    //$('#cmb_MarcaFabrica').prop('selectedIndex', 0).change();
     $('#cmb_MarcaTipo').prop('selectedIndex', 0).change();
     $('#cmb_MarcaSubTipo').prop('selectedIndex', 0).change();
     $('#chk_PesquisarDescricao')[0].checked = false;
@@ -268,19 +304,38 @@ function fn_FiltrarDados(objFiltro) {
 
 //#region Filtros
 
-function fn_ChangeFiltros() {
+function fn_FiltrosHide() {
+    $('.div_MarcaTipo').attr('style', 'display: none !important');
+    $('.div_MarcaSubTipo').attr('style', 'display: none !important');
+    $('.div_PesquisarDescricao').attr('style', 'display: none !important');
+    $('.div_Botoes').attr('style', 'display: none !important');
+}
+
+function fn_FiltrosShow() {
+    $('.div_MarcaTipo').attr('style', 'display: block !important');
+    $('.div_MarcaSubTipo').attr('style', 'display: block !important');
+    $('.div_PesquisarDescricao').attr('style', 'display: block !important');
+    $('.div_Botoes').attr('style', 'display: block !important');
+}
+
+function fn_FiltrosChange() {
 
     $('#cmb_MarcaFase').on('change', function () {
 
-        let idMarcaFase = $(this).find('option:selected').val();
+        idMarcaFase = $(this).find('option:selected').val();
 
         //console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
         //console.log("cmb_MarcaFase change var_Filtrado ::: ", var_Filtrado);
 
-        if (idMarcaFase < 0) {
-            //fn_Limpar();
+        if (idMarcaFase === undefined || idMarcaFase < 0) {
+            fn_FiltrosHide();
         } else {
+            fn_FiltrosShow();
+
             if (!var_Filtrado) {
+
+                //console.log("cmb_MarcaFase change ::: ");
+
                 if (idMarcaFase == 0) {
 
                     swalWithBootstrapButtons.fire({
@@ -293,6 +348,9 @@ function fn_ChangeFiltros() {
                         confirmButtonText: "Sim, vou aguardar!",
                         cancelButtonText: "Não, vou escolher uma fase!",
                     }).then((result) => {
+
+                        console.log("cmb_MarcaFase result ::: ", result);
+
                         if (result.isConfirmed) {
                             if (var_Filtrado) {
                                 Swal.fire({
@@ -300,7 +358,7 @@ function fn_ChangeFiltros() {
                                     text: "Aguarde o carregamento das informações.",
                                     icon: "success"
                                 }).then((result) => {
-                                    fn_FiltrarDados(objFiltro);
+                                    fn_Filtrar();
                                 });
                             } else {
                                 fn_ModalConfirmarFiltros();
@@ -312,28 +370,27 @@ function fn_ChangeFiltros() {
                         }
                     });
                 } else {
+
+                    //console.log("cmb_MarcaFase change ::: ");
+
+                    $('#chk_PesquisarDescricao')[0].checked = false;
+
+                    // Clear the search and redraw the table
+                    var table = $('.datatables-basic').DataTable();
+                    table.search('').draw();
+
                     fn_Filtrar();
                     //fn_ModalConfirmarFiltros();
                 }
             } else {
-                fn_Filtrar();
-            }
-        }
-    });
 
-    $('#cmb_MarcaFabrica').on('change', function () {
+                //console.log("cmb_MarcaFase change ::: ");
 
-        let idMarcaFabrica = $(this).find('option:selected').val();
+                $('#chk_PesquisarDescricao')[0].checked = false;
+                // Clear the search and redraw the table
+                var table = $('.datatables-basic').DataTable();
+                table.search('').draw();
 
-        //console.log("cmb_MarcaFabrica change idMarcaFabrica ::: ", idMarcaFabrica);
-        //console.log("cmb_MarcaFabrica change var_Filtrado ::: ", var_Filtrado);
-
-        if (idMarcaFabrica <= 0) {
-            //fn_Limpar();
-        } else {
-            if (!var_Filtrado) {
-                //fn_ModalConfirmarFiltros();
-            } else {
                 fn_Filtrar();
             }
         }
@@ -344,31 +401,37 @@ function fn_ChangeFiltros() {
         let idMarcaTipo = $(this).find('option:selected').val();
 
         //console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
+        //console.log("cmb_MarcaTipo change idMarcaFase ::: ", idMarcaFase);
         //console.log("cmb_MarcaTipo change var_Filtrado ::: ", var_Filtrado);
 
-        if (idMarcaTipo <= 0) {
-            //fn_Limpar();
+        if (idMarcaFase === undefined || idMarcaFase < 0) {
+            fn_ModalSelecionarFase();
         } else {
-            if (!var_Filtrado) {
-                fn_ModalConfirmarFiltros();
+
+            if (idMarcaTipo <= 0) {
+                //fn_Limpar();
             } else {
-                fn_Filtrar();
-                /*
-                Swal.fire({
-                    title: 'Tipo Selecionado !!!',
-                    html: `Para realizar o filtro por Tipo, <br><br> selecione o Sub-Tipo.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
-                    imageUrl: `${urlImgModaltext}`,
-                    imageWidth: 400,
-                    imageAlt: `${var_ImgAlt}`,
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-primary waves-effect waves-light'
-                    },
-                }).then((result) => {
-                    //console.log("cmb_MarcaFase change result ::: ", result);
-                })
-                */
+                if (!var_Filtrado) {
+                    fn_ModalConfirmarFiltros();
+                } else {
+                    fn_Filtrar();
+                    /*
+                    Swal.fire({
+                        title: 'Tipo Selecionado !!!',
+                        html: `Para realizar o filtro por Tipo, <br><br> selecione o Sub-Tipo.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
+                        imageUrl: `${urlImgModaltext}`,
+                        imageWidth: 400,
+                        imageAlt: `${var_ImgAlt}`,
+                        focusConfirm: false,
+                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                        customClass: {
+                            confirmButton: 'btn btn-primary waves-effect waves-light'
+                        },
+                    }).then((result) => {
+                        //console.log("cmb_MarcaFase change result ::: ", result);
+                    })
+                    */
+                }
             }
         }
     });
@@ -379,14 +442,17 @@ function fn_ChangeFiltros() {
 
         //console.log("cmb_MarcaSubTipo change idMarcaSubTipo ::: ", idMarcaSubTipo);
         //console.log("cmb_MarcaSubTipo change var_Filtrado ::: ", var_Filtrado);
-
-        if (idMarcaSubTipo <= 0) {
-            //fn_Limpar();
+        if (idMarcaFase === undefined || idMarcaFase < 0) {
+            fn_ModalSelecionarFase();
         } else {
-            if (!var_Filtrado) {
-                fn_ModalConfirmarFiltros();
+            if (idMarcaSubTipo <= 0) {
+                //fn_Limpar();
             } else {
-                fn_Filtrar();
+                if (!var_Filtrado) {
+                    fn_ModalConfirmarFiltros();
+                } else {
+                    fn_Filtrar();
+                }
             }
         }
     });
@@ -396,6 +462,8 @@ function fn_ChangeFiltros() {
         // 1. Get the checked status (boolean: true if checked, false otherwise)
         const isChecked = $(this).is(':checked');
         const checkboxValue = $(this).val();
+
+        //console.log("chk_PesquisarDescricao change ::: ", isChecked);
 
         let colDesc = varTbl_Data.settings()[0].aoColumns[10];
 
@@ -407,7 +475,7 @@ function fn_ChangeFiltros() {
     });
 }
 
-function fn_LoadFiltros() {
+function fn_FiltrosLoad() {
     //console.log("fnItemLoadFiltros  ::: ");
 
     $.busyLoadFull("show");
@@ -454,62 +522,67 @@ function fn_GridListFilter(lstData) {
             columns: [
                 // COLUNA - Responsive (control)
                 {
+                    // For Responsive 
                     data: 'id',
                     className: 'control',
-                    orderable: false,
                     searchable: false,
+                    orderable: false,
                     responsivePriority: 1,
                     targets: 0,
-                    render: function () { return ''; }
+                    render: function (data, type, full, meta) {
+                        return '';
+                    }
                 },
                 // COLUNA - Checkbox
                 {
+                    // For Checkboxes
                     visible: false,
                     data: 'id',
                     targets: 1,
-                    searchable: false,
                     orderable: false,
-                    responsivePriority: 99,
-                    render: function () { return ''; }
-                    /*
+                    checkboxes: {
+                        selectAllRender: '<input type="checkbox" class="form-check-input">'
+                    },
                     render: function () {
-                        return '<input type="checkbox" class="dt-checkboxes form-check-input">';
-                    }
-                    */
+                        return '<input type="checkbox" class="dt-checkboxes form-check-input" >';
+                    },
+                    searchable: false
                 },
-                // COLUNA - nomeFase
-                { targets: 2, data: 'nomeFase', className: 'text-center', responsivePriority: 3 },
-                // COLUNA - finalidade
-                { targets: 3, data: 'nomeFinalidade', className: 'text-center', responsivePriority: 4 },
                 // COLUNA - codigoAceca
-                { targets: 4, data: 'codigoAceca', className: 'text-center', responsivePriority: 2 },
+                { targets: 2, data: 'codigoAceca', className: 'text-center', responsivePriority: 2 },
+                // COLUNA - nomeMarca
+                { targets: 3, data: 'nomeMarca', className: 'text-center', responsivePriority: 3 },
+
                 // COLUNA - imagem
                 {
-                    targets: 5, data: 'imgPrincipalFull', className: 'text-center', responsivePriority: 5,
+                    targets: 4, data: 'imgPrincipalFull', className: 'text-center', responsivePriority: 4,
                     render: function (data, type, row) {
                         return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
                 },
                 // COLUNA - imagemDetalhe
                 {
-                    targets: 6, data: 'imgDetalheFull', className: 'text-center', responsivePriority: 6,
+                    targets: 5, data: 'imgDetalheFull', className: 'text-center', responsivePriority: 5,
                     render: function (data, type, row) {
                         return `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
                     }
                 },
-                // COLUNA - nomeMarca
-                { targets: 7, data: 'nomeMarca', className: 'text-center', responsivePriority: 7 },
+
+                // COLUNA - descricao
+                { targets: 6, data: 'descricao', className: 'text-start', searchable: false, responsivePriority: 6 },
                 // COLUNA - fabricaNome
                 {
-                    targets: 8, data: 'txtFabrica', className: 'text-center', responsivePriority: 8,
+                    targets: 7, data: 'txtFabrica', className: 'text-center', responsivePriority: 7,
                     render: function (data, type, full) {
                         return (data === '' || data === null) ? full.nomeFabrica : data;
                     }
                 },
                 // COLUNA - subTipo
-                { targets: 9, data: 'subTipo', className: 'text-center', responsivePriority: 9 },
-                // COLUNA - descricao
-                { targets: 10, data: 'descricao', className: 'text-start', searchable: false, responsivePriority: 10 },
+                { targets: 8, data: 'subTipo', className: 'text-center', responsivePriority: 8 },
+                // COLUNA - finalidade
+                { targets: 9, data: 'nomeFinalidade', className: 'text-center', responsivePriority: 9 },
+                // COLUNA - nomeFase
+                { targets: 10, data: 'nomeFase', className: 'text-center', responsivePriority: 10 },
                 // COLUNA - incluidoPor (avatar)
                 {
                     targets: 11, data: 'incluidoPor', className: 'text-center', responsivePriority: 11,
@@ -669,11 +742,31 @@ function fn_GridListFilter(lstData) {
             },
             */
 
-            
+            // For responsive grid phone icon
+            /*
             responsive: {
                 details: {
-                    type: 'column',
-                    target: 'tr',
+                    renderer: function (api, rowIdx, columns) {
+                        var data = $.map(columns, function (col, i) {
+                            return col.hidden ?
+                                '<div class="col-6 mb-2">' +
+                                '<strong>' + col.title + ':</strong> ' + col.data +
+                                '</div>' :
+                                '';
+                        }).join('');
+
+                        return data ? $('<div class="row p-3"/>').append(data) : false;
+                    }
+                }
+            },
+            */
+
+            // For responsive grid phone
+
+            responsive: {
+                details: {
+                    //type: 'column',
+                    //target: 'tr',
                     renderer: function (api, rowIdx, columns) {
                         var row = api.row(rowIdx).data();
 
@@ -838,11 +931,9 @@ function fn_GridListFilter(lstData) {
             },
 
             initComplete: function (settings, json) {
-                var api = this.api();
                 //console.log("settings ::: ", settings);
                 //console.log("json ::: ", json);
 
-                $.busyLoadFull('hide');
                 fn_GridComplete(this);
             }
         });
@@ -858,7 +949,6 @@ function fn_GridComplete(grid) {
     var countRows = grid.api().rows().count();
     //console.log("countRows ::: ", countRows);
 
-
     $('.card-header').after('<hr class="my-0">');
 
     //Titulo Tabela
@@ -869,21 +959,22 @@ function fn_GridComplete(grid) {
     if (countRows > 0) {
 
         if (isPerfil === "false") {
-            thisApi.column(13).visible(false);
+            thisApi.column(13).visible(false); // coluna acoes
             $(".create-new").attr('style', 'display: none !important');
         }
 
-        $.busyLoadFull("hide");
+        if (idMarcaFase > 0) {
+            thisApi.column(10).visible(false); // coluna fase
+        }
 
         fn_Zoom();
 
-        /*
-        if (document.getElementById('hdIsPerfil').value.toLowerCase() === "false") {
-            varTbl_Data.column(-1).visible(false);
-            document.querySelector('.btnAddNew').style.setProperty('display', 'none', 'important');
-        }
-        */
+        $.busyLoadFull("hide");
+
     } else {
+
+        $.busyLoadFull("hide");
+
         Swal.fire({
             title: 'SEM DADOS!!',
             icon: 'info',
@@ -902,8 +993,6 @@ function fn_GridComplete(grid) {
             $(".card-datatable").show();
         });
     }
-
-
 }
 
 //#endregion
@@ -1284,6 +1373,23 @@ function fn_ModalConfirmarFiltros() {
         },
     }).then((result) => {
         //console.log("cmb_MarcaFase change result ::: ", result);
+    })
+}
+
+function fn_ModalSelecionarFase() {
+    Swal.fire({
+        title: 'Aten&ccedil;&atilde;o !!!',
+        html: `Para utilizar essa op&ccedil;&atilde;o, <br><br> é necessário selecionar uma Fase!`,
+        imageUrl: `${urlImgModaltext}`,
+        imageWidth: 400,
+        imageAlt: `${var_ImgAlt}`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-primary waves-effect waves-light'
+        },
+    }).then((result) => {
+
     })
 }
 

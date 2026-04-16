@@ -1,4 +1,5 @@
-﻿@{
+﻿
+@{
     var pageApp = "ACECA";
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
     var pageTipo = string.Empty; //" - Listagem - ";
@@ -20,7 +21,10 @@
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
     <!-- Form Validation -->
     <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
-
+    <!-- Form Editor -->
+    <link rel="stylesheet" href="~/vendor/libs/quill/typography.css">
+    <link rel="stylesheet" href="~/vendor/libs/quill/katex.css">
+    <link rel="stylesheet" href="~/vendor/libs/quill/editor.css">
 
     <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
     <link rel="stylesheet" href="~/vendor/libs/busy-load/app.min.css" />
@@ -39,7 +43,9 @@
     <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
-
+    <!-- Form Editor -->
+    <script src="~/vendor/libs/quill/katex.js"></script>
+    <script src="~/vendor/libs/quill/quill.js"></script>
 
     <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
     <script src="~/vendor/libs/busy-load/app.min.js"></script>
@@ -76,65 +82,119 @@
 </div>
 
 <!-- Modal Add new Item -->
-<div class="offcanvas offcanvas-end" id="pop-add-new-item">
+<div class="offcanvas offcanvas-end" id="pop-add-new-item" style="width: 50%;">
     <div class="offcanvas-header border-bottom">
         <input type="hidden" id="hdId" name="hdId" value="0"/>
-        <input type="hidden" id="hdSocioId" name="hdSocioId" value="0" />
+        <input type="hidden" id="hdAgendaImagemId" name="hdAgendaImagemId" value="0" />
         <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body flex-grow-1">
         <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
+
+            <!-- Imagem -->
             <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <span id="line_item_01" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
-                    <div class="form-floating form-floating-outline">
-                        <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01"
-                               placeholder="Nome" aria-label="Nome" aria-describedby="line_item_01"/>
-                        <label for="pop_line_item_01">Nome</label>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <span id="line_item_02" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
-                    <div class="form-floating form-floating-outline">
-                        <input type="text" id="pop_line_item_02" class="form-control dt-line-02" name="pop_line_item_02"
-                               placeholder="Login" aria-label="Login" aria-describedby="line_item_02"/>
-                        <label for="pop_line_item_02">Login</label>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <span id="line_item_03" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
-                    <div class="form-floating form-floating-outline">
-                        <input type="text" id="pop_line_item_03" class="form-control dt-line-03" name="pop_line_item_03"
-                               placeholder="E-mail" aria-label="E-mail" aria-describedby="line_item_03"/>
-                        <label for="pop_line_item_03">E-mail</label>
-                    </div>
-                </div>
-            </div>
-            <div id="pop_div_line_item_04" name="Exibidor" class="col-sm-12">
                 <div class="form-floating form-floating-outline">
-                    <select id="cmb_SocioPerfil" name="cmb_UsuarioPerfil"
-                            class="form-select select2 dt-line-04"
+                    <select id="cmb_AgendaImagem" name="cmb_AgendaImagem"
+                            class="form-select select2 dt-line-01"
                             data-allow-clear="true">
                         <option value="-1">-- Selecionar --</option>
                     </select>
-                    <label for="cmb_SocioPerfil">Perfil</label>
+                    <label for="cmb_AgendaImagem">Imagem</label>
                 </div>
             </div>
+           <!-- Data -->
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
-                    <div class="form-check form-switch mb-2">
-                        <input type="checkbox" id="pop_line_item_05" class="form-check-input dt-line-05"
-                               name="pop_line_item_05" placeholder="Status" aria-label="Status"
-                               aria-describedby="line_item_03"/>
-                        <label class="form-check-label" for="pop_line_item_05">Status</label>
+                    <span id="line_item_02" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_02" class="form-control dt-calendar dt-line-02" name="pop_line_item_02"
+                               placeholder="DD/MM/YYYY" aria-label="Data" aria-describedby="line_item_02"/>
+                        <label for="pop_line_item_02">Data</label>
                     </div>
                 </div>
             </div>
+            <!-- Titulo -->
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_03" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_03" class="form-control dt-line-03" name="pop_line_item_03"
+                               placeholder="Titulo" aria-label="Titulo" aria-describedby="line_item_03"/>
+                        <label for="pop_line_item_03">Titulo</label>
+                    </div>
+                </div>
+            </div>
+            <!-- Sub Titulo -->
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_04" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_04" class="form-control dt-line-04" name="pop_line_item_04"
+                               placeholder="Sub-Titulo" aria-label="Sub-Titulo" aria-describedby="line_item_04"/>
+                        <label for="pop_line_item_04">Sub-Titulo</label>
+                    </div>
+                </div>
+            </div>
+            <!-- Breve Decs -->
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_05" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                        <textarea class="form-control h-px-100 dt-line-05" id="pop_line_item_05" name="pop_line_item_05" placeholder="Breve Descrição..."></textarea>
+                        <label for="pop_line_item_05">Breve Descri&ccedil;&atilde;o</label>
+                    </div>
+                </div>
+            </div>
+            <!-- Descricao -->
+            <div class="col-sm-12 mt-2 mb-4">
+                <label for="pop_line_item_06">Descri&ccedil;&atilde;o</label>
+                <div class="input-group input-group-merge">
+                    <div class="form-control p-0 pt-1">
+                        <div class="descricao-editor border-0 dt-line-06" id="pop_line_item_06" name="pop_line_item_06">
+                        </div>
+                        <div class="descricao-toolbar border-0 rounded">
+                          <span class="ql-formats">
+                            <select class="ql-font"></select>
+                            <select class="ql-size"></select>
+                          </span>
+                          <span class="ql-formats">
+                            <button class="ql-bold"></button>
+                            <button class="ql-italic"></button>
+                            <button class="ql-underline"></button>
+                            <button class="ql-strike"></button>
+                          </span>
+                          <span class="ql-formats">
+                            <select class="ql-color"></select>
+                            <select class="ql-background"></select>
+                          </span>
+                          <span class="ql-formats">
+                            <button class="ql-script" value="sub"></button>
+                            <button class="ql-script" value="super"></button>
+                          </span>
+                          <span class="ql-formats">
+                            <button class="ql-header" value="1"></button>
+                            <button class="ql-header" value="2"></button>
+                            <button class="ql-blockquote"></button>
+                            <button class="ql-code-block"></button>
+                          </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Status -->
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" id="pop_line_item_07" class="form-check-input dt-line-07"
+                               name="pop_line_item_07" placeholder="Ativo" aria-label="Ativo"
+                               aria-describedby="line_item_07"/>
+                        <label class="form-check-label" for="pop_line_item_07">Ativo</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botoes -->
             <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
                 <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>
@@ -142,4 +202,10 @@
         </form>
 
     </div>
+</div>
+
+<!-- Modal Zoom -->
+<div id="myModal" class="modal">
+    <span id="caption">img</span>
+    <img class="modal-content" id="img01">
 </div>

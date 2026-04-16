@@ -287,6 +287,34 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
     #endregion
 
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_AgendaImagem()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.AgendaImagem
+                   ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+
     public async Task<IEnumerable<SelectListItem>> AsyncCmb_FabricaFase()
     {
         var lst = new List<SelectListItem>();
@@ -399,6 +427,33 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
         return lst;
     }
 
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_SocioTipoPagamento()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await db.TipoPagamento
+                   ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
 
     #region Enums Functions
     public static string GetEnumDescription(Enum value)

@@ -252,6 +252,7 @@ function fn_GridList(formValid) {
                     className: "text-center",
                     orderable: false,
                     searchable: false,
+                    visible: false,
                     render: function (data, type, full, meta) {
 
                         let btns = '';
@@ -343,7 +344,7 @@ function fn_GridList(formValid) {
                         }
                     ]
                 },
-
+                /*
                 {
                     text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
                     className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
@@ -352,6 +353,7 @@ function fn_GridList(formValid) {
                         fn_Pop(null, 'Create');
                     }
                 }
+                */
             ],
             responsive: {
                 details: {
@@ -542,7 +544,7 @@ function fn_CheckVerAtivos() {
 }
 
 function fn_LoadCmb_SocioPerfil() {
-    console.log("fn_LoadCmb_SocioPerfil ::: ");
+    //console.log("fn_LoadCmb_SocioPerfil ::: ");
 
     if ($('#cmb_SocioPerfil').length <= 1) {
         $.ajax(
@@ -599,7 +601,7 @@ function fn_Pop(obj, action) {
 
         $("#cmb_SocioPerfil").val(obj.socio.socioPerfilId).change();
 
-        console.log("fn_Pop ex val ::: ", $("#cmb_SocioPerfil").val());
+        //console.log("fn_Pop ex val ::: ", $("#cmb_SocioPerfil").val());
     }
 
     // Open Pop
@@ -610,11 +612,12 @@ function fn_PopGetObj() {
 
     const objFormData = {
         Id: $('#hdId').val(),
-        Nome: $('.form-add-new-item .dt-line-01').val(),
-        Login: $('.form-add-new-item .dt-line-02').val(),
+        SocioId: $('#hdSocioId').val(),
         Email: $('.form-add-new-item .dt-line-03').val(),
+        Nome: $('.form-add-new-item .dt-line-01').val(),
+        NomeUsuario: $('.form-add-new-item .dt-line-02').val(),        
         SocioPerfilId: $('#cmb_SocioPerfil').val(),
-        Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
+        Ativo: $('.form-add-new-item .dt-line-05').is(':checked'),
     };
 
     console.log("fn_PopGetObj !", objFormData);
@@ -661,9 +664,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.Id;
-
-    //console.log("DELETE ID ::: ", varItems_Id);
+    var varItems_Id = varItems_Row.id;
 
     var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
         varAjax_TypeAction = 'DELETE',
@@ -762,7 +763,7 @@ function fnItem_Delete(varItems_Row) {
 }
 
 function fnItem_Edit(varItems_Row) {
-    //console.log("EDIT CLICK ::: ", varItems_Row);
+    console.log("EDIT CLICK ::: ", varItems_Row);
     //var varPop_BtnAction = 'Edit';
 
     //fn_Pop(varItems_Row, varPop_BtnAction);

@@ -17,6 +17,10 @@ let var_Nome = 'Agenda',
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
+
+let strUrlImgPath = "https://www.aceca.com.br/midia/agenda/capa/",
+    strUrlImgInexistente = "https://www.aceca.com.br/midia/geral/assets/img/img_inexistente.jpg";
+
 const swalWithBootstrapButtons = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-label-secondary waves-effect",
@@ -24,6 +28,18 @@ const swalWithBootstrapButtons = Swal.mixin({
     },
     buttonsStyling: false
 });
+
+const descricaoEditor = document.querySelector('.descricao-editor');
+if (descricaoEditor) {
+    var quill = new Quill(descricaoEditor, {
+        modules: {
+            formula: true,
+            toolbar: '.descricao-toolbar'
+        },
+        placeholder: 'Descrição...',
+        theme: 'snow'
+    });
+}
 
 let borderColor, bodyBg, headingColor;
 
@@ -36,6 +52,7 @@ if (isDarkStyle) {
     bodyBg = config.colors.bodyBg;
     headingColor = config.colors.headingColor;
 };
+
 
 $.busyLoadSetup({
     animation: "slide",
@@ -50,7 +67,9 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
 
-        //fn_LoadCmb_SocioPerfil();
+        fn_Zoom();
+
+        fn_LoadCmb_AgendaImagem();
 
         // Form validation
         const formAddNewItem = document.getElementById('form-pop-add-new-item');
@@ -100,7 +119,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -130,8 +149,17 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - imagem
                 {
-                    data: 'imagem',
+                    data: 'agendaImagem.imagem',
                     targets: 2,
+                    render: function (data, type, row) {
+                        //console.log("data ::: ", data);
+                        //console.log("row ::: ", row);
+
+                        let dataFormat = `${strUrlImgPath}${data}`;
+                        //console.log("dataFormat ::: ", dataFormat);
+
+                        return `<img name="myImg" class="td-img cmyImg" alt="${row.titulo}" src="${dataFormat}">`;
+                    }
                 },
                 // COLUNA - Data
                 {
@@ -289,7 +317,7 @@ function fn_GridList(formValid) {
                         }
                     ]
                 },
-
+                /*
                 {
                     text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
                     className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
@@ -298,6 +326,7 @@ function fn_GridList(formValid) {
                         fn_Pop(null, 'Create');
                     }
                 }
+                */
             ],
             responsive: {
                 details: {
@@ -385,7 +414,10 @@ function fn_GridComplete(grid) {
     $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome}</h5>`);
 
     if (countRows > 0) {
+
         $.busyLoadFull("hide");
+
+        fn_Zoom();
 
         Swal.fire({
                 icon: 'success',
@@ -487,22 +519,22 @@ function fn_CheckVerAtivos() {
     }
 }
 
-function fn_LoadCmb_SocioPerfil() {
-    console.log("fn_LoadCmb_SocioPerfil ::: ");
+function fn_LoadCmb_AgendaImagem() {
+    //console.log("fn_LoadCmb_AgendaImagem ::: ");
 
-    if ($('#cmb_SocioPerfil').length <= 1) {
+    if ($('#cmb_AgendaImagem').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_SocioPerfil`,
+                url: `${var_ControllerCmb}/AsyncCmb_AgendaImagem`,
                 type: 'GET',
                 success: function (data) {
-                    //console.log("fn_LoadCmb_SocioPerfil  data ::: ", data);
+                    //console.log("fn_LoadCmb_AgendaImagem  data ::: ", data);
 
                     $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_SocioPerfil  result id ::: ", id);
-                        //console.log("fn_LoadCmb_SocioPerfil  result ::: ", result);
-                        $("#cmb_SocioPerfil").append($("<option></option>").val(result.value).html(result.text));
+                        //console.log("fn_LoadCmb_AgendaImagem  result id ::: ", id);
+                        //console.log("fn_LoadCmb_AgendaImagem  result ::: ", result);
+                        $("#cmb_AgendaImagem").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
@@ -518,7 +550,7 @@ function fn_LoadCmb_SocioPerfil() {
 //#region POP
 
 function fn_Pop(obj, action) {
-    console.log("fn_Pop varItems_Row !", obj);
+    //console.log("fn_Pop varItems_Row !", obj);
     //console.log("fn_Pop action !", action);
 
     const popAddNewItem = document.querySelector('#pop-add-new-item');
@@ -526,15 +558,18 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
-        (popAddNewItem.querySelector('#hdSocioId').value = (obj === null ? 0 : obj.socioId)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
+        (popAddNewItem.querySelector('#hdAgendaImagemId').value = (obj === null ? 0 : obj.agendaImagemId)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.nomeUsuario)),
-        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.email)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.socio.socioPerfilId));
-        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
+        //(popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.imagem)),
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '-1' : ((obj.agendaImagemId === null || obj.agendaImagemId === 0) ? '-1' : obj.agendaImagemId)));
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.data)),
+        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.titulo)),
+        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : obj.subTitulo)),
+        (popAddNewItem.querySelector('.dt-line-05').value = (obj === null ? '' : obj.breveDesc)),
+        //(popAddNewItem.querySelector('.dt-line-06').value = (obj === null ? '' : obj.descricao)),
+        (popAddNewItem.querySelector('.dt-line-07').checked = (obj === null ? false : obj.ativo));
 
 
     // Pop Action
@@ -543,9 +578,14 @@ function fn_Pop(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmb_SocioPerfil").val(obj.socio.socioPerfilId).change();
+        (obj.agendaImagemId === null || obj.agendaImagemId === 0) ? $("#cmb_AgendaImagem").val('-1').change() : $("#cmb_AgendaImagem").val(obj.agendaImagemId).change();
 
-        console.log("fn_Pop ex val ::: ", $("#cmb_SocioPerfil").val());
+        //
+        if (descricaoEditor) {
+            quill.clipboard.dangerouslyPasteHTML(obj.descricao);
+        }
+
+        //console.log("fn_Pop ex val ::: ", $("#cmb_AgendaImagem").val());
     }
 
     // Open Pop
@@ -556,14 +596,16 @@ function fn_PopGetObj() {
 
     const objFormData = {
         Id: $('#hdId').val(),
-        Nome: $('.form-add-new-item .dt-line-01').val(),
-        Login: $('.form-add-new-item .dt-line-02').val(),
-        Email: $('.form-add-new-item .dt-line-03').val(),
-        SocioPerfilId: $('#cmb_SocioPerfil').val(),
-        Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
+        AgendaImagemId: $('#hdAgendaImagemId').val(), //cmb - dt-line-01
+        Data: $('.form-add-new-item .dt-line-02').val(),
+        Titulo: $('.form-add-new-item .dt-line-03').val(),
+        SubTitulo: $('.form-add-new-item .dt-line-04').val(),
+        BreveDesc: $('.form-add-new-item .dt-line-05').val(),
+        Descricao: quill.root.innerHTML, //$('.form-add-new-item .dt-line-06').val(),
+        Ativo: $('.form-add-new-item .dt-line-07').is(':checked')
     };
 
-    console.log("fn_PopGetObj !", objFormData);
+    //console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
 }
@@ -607,7 +649,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.Id;
+    var varItems_Id = varItems_Row.id;
 
     //console.log("DELETE ID ::: ", varItems_Id);
 
@@ -921,6 +963,41 @@ function fnItem_Add(varTbl_Obj) {
 
 //#endregion
 
+//#region ZOOM
+function fn_Zoom() {
+    //console.log("fn_Zoom ::: ");
+    var modal = document.getElementById('myModal');
+
+    var img = document.querySelectorAll(".cmyImg");
+    var modalImg = document.getElementById("img01");
+    var captionText = document.getElementById("caption");
+
+    $(".cmyImg").click(function () {
+        //console.log("cmyImg ::: ", modalImg);
+        modal.style.display = "block";
+        modalImg.src = this.src;
+        modalImg.alt = this.alt;
+        captionText.innerHTML = this.alt;
+    });
+
+    $("#myModal").click(function () {
+        //console.log("myModal ::: ", img01);
+        img01.className += " out";
+        setTimeout(function () {
+            modal.style.display = "none";
+            img01.className = "modal-content";
+        }, 400);
+
+    });
+}
+
+document.addEventListener('hidden.bs.modal', function (event) {
+    if (document.activeElement) {
+        document.activeElement.blur();
+    }
+});
+
+//#endregion
 
 //#region MODAL
 function fn_ModalErro(xhr, textStatus, errorThrown) {

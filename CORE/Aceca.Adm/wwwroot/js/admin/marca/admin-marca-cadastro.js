@@ -569,10 +569,10 @@ function fn_LoadCmb_MarcaVariante() {
                 url: `${var_ControllerCmb}/AsyncCmb_Variante`,
                 type: 'GET',
                 success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFase  data ::: ", data);
+                    //console.log("fn_LoadCmb_MarcaVariante  data ::: ", data);
                     $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFase  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFase  result ::: ", result);
+                        //console.log("fn_LoadCmb_MarcaVariante  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaVariante  result ::: ", result);
                         $("#cmbPop_MarcaVariante").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
@@ -870,7 +870,7 @@ function fn_GetCodigoAceca() {
                 bvariante: bNovaVariante
             },
             success: function (result) {
-                console.log("fn_GetCodigoAceca  result ::: ", result);
+                //console.log("fn_GetCodigoAceca  result ::: ", result);
 
                 if (result.bResult) {
                     $('#txt_Codigo').css('color', '#8c57ff');

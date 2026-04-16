@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -43,9 +42,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             _appBaseUrl = _appConfiguration["App:Url"]!;
         }
 
-        //[Authorize(Roles = "Fundador")]
-         //[Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        // [Authorize]
+        #region Index
         public ActionResult Index()
         {
             // return Redirect("https://www.google.com");
@@ -59,20 +56,15 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             return View();
         }
 
-        public IActionResult Welcome()
-        {
-            if (User.IsInRole("SuperUser"))
-            {
-                ViewBag.Message = "You are a Super User.";
-            }
-            return View();
-        }
-
         [Authorize(Roles = "Administracao")]
         public ActionResult Cadastro()
         {
             return View("~/Views/Admin/Marca/MarcaCadastro.cshtml");
         }
+
+        #endregion
+
+        #region Filtros
 
         [HttpPost]
         public async Task<IActionResult> FiltrarDados([FromBody] object obj)
@@ -155,7 +147,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 sb.Append(" WHERE");
                 sb.Append(" 1 = 1");
 
-                if (dynObj?.param_MarcaFaseId >= 0)
+                if (dynObj?.param_MarcaFaseId > 0)
                     sb.Append(" AND m.MarcaFaseId = " + dynObj?.param_MarcaFaseId);
 
                 if (dynObj?.param_MarcaFabricaId >= 0)
@@ -353,6 +345,10 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 });
             }
         }
+
+        #endregion
+
+        #region Cadastro
 
         [HttpPost]
         public async Task<IActionResult> GetNovoCodigoAceca(int idFase, string strTermoBusca, bool bvariante)
@@ -635,6 +631,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
         }
 
+        #region Funcoes
         public static string ReplaceInPosition(string input, int index, char newChar)
         {
             if (string.IsNullOrEmpty(input) || index < 0 || index >= input.Length)
@@ -646,6 +643,10 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             chars[index] = newChar;
             return new string(chars);
         }
+
+        #endregion
+
+        #region Upload Img
 
         [Authorize(Roles = "Administracao")]
         public async Task<IActionResult> UploadImg(VMMarca vmModel, IFormFile iFileImg, bool bIsImgPrincipal)
@@ -728,7 +729,6 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 data = fileSaveName,
             });
         }
-
-
+        #endregion
     }
 }

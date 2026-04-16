@@ -57,24 +57,24 @@ namespace Aceca.Adm.Models
     public class Agenda : BaseModel
     {
         [Key] public int? Id { get; set; }
+
+        public int? AgendaImagemId { get; set; }
         public string? Data { get; set; }
         [MaxLength(255)] public string? Titulo { get; set; } = string.Empty;
         [MaxLength(255)] public string? SubTitulo { get; set; } = string.Empty;
-       
         public string? BreveDesc { get; set; }
         public string? Descricao { get; set; }
-        [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
         [MaxLength(255)] public string? Video { get; set; } = string.Empty;
+
+        public AgendaImagem? AgendaImagem { get; set; }
     }
 
     [Table("agenda_img")]
-    public class AgendaImg
+    public class AgendaImagem : BaseModel
     {
-        [Key] public int? Id { get; set; }
-        public int? AgendaId { get; set; }
+        [Key] public int? Id { get; set; }        
         [MaxLength(255)] public string? Imagem { get; set; } = string.Empty;
-
-        public Agenda? Agenda { get; set; }
+        public string? Descricao { get; set; }
     }
 
     #endregion
@@ -353,7 +353,7 @@ namespace Aceca.Adm.Models
     {
         [Key] public int? Id { get; set; }
 
-        public int? socioId { get; set; }
+        public int? SocioId { get; set; }
         [MaxLength(180)] public string? Email { get; set; } = string.Empty;
         [MaxLength(255)] public string? Senha { get; set; } = string.Empty;
         [MaxLength(255)][Column("senha_aberta")] public string? SenhaAberta { get; set; }

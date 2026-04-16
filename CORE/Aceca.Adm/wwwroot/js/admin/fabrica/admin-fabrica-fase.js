@@ -98,7 +98,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -465,7 +465,7 @@ function fn_CheckVerAtivos() {
 //#region POP
 
 function fn_Pop(obj, action) {
-    console.log("fn_Pop varItems_Row !", obj);
+    //console.log("fn_Pop varItems_Row !", obj);
     //console.log("fn_Pop action !", action);
 
     const popAddNewItem = document.querySelector('#pop-add-new-item');
@@ -541,9 +541,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.Id;
-
-    //console.log("DELETE ID ::: ", varItems_Id);
+    var varItems_Id = varItems_Row.id;
 
     var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
         varAjax_TypeAction = 'DELETE',

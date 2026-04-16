@@ -413,7 +413,7 @@ function fn_GridList(formValid) {
 
         if (action === 'Alterar') {
             var objFormData = fn_PopGetObj();
-            console.log("objFormData ::: ", objFormData);
+            //console.log("objFormData ::: ", objFormData);
 
             fnItem_Edit(objFormData)
         } else {
@@ -566,7 +566,7 @@ function fn_MaskCEP(input) {
 //#region POP
 
 function fn_Pop(obj, action) {
-    console.log("fn_Pop varItems_Row !", obj);
+    //console.log("fn_Pop varItems_Row !", obj);
     //console.log("fn_Pop action !", action);
 
     const popAddNewItem = document.querySelector('#pop-add-new-item');
@@ -685,9 +685,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.socio.id;
-
-    //console.log("DELETE ID ::: ", varItems_Id);
+    var varItems_Id = varItems_Row.id;
 
     var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
         varAjax_TypeAction = 'DELETE',
@@ -726,11 +724,11 @@ function fnItem_Delete(varItems_Row) {
 
                         var varTbl;
 
+                        $.busyLoadFull("hide");
+
                         if ($.fn.dataTable.isDataTable('.datatables-basic')) {
                             //console.log("YES :: ");
                             varTbl = varTbl_Obj.DataTable();
-
-                            $.busyLoadFull("hide");
 
                             Swal.fire({
                                 title: 'Deletado!',
@@ -757,6 +755,9 @@ function fnItem_Delete(varItems_Row) {
                 });
 
         } else if (result.dismiss === Swal.DismissReason.cancel) {
+
+            $.busyLoadFull("hide");
+
             swalWithBootstrapButtons.fire({
                 title: "Cancelado",
                 icon: "info",
@@ -806,7 +807,7 @@ function fnItem_Edit(varItems_Row) {
                 // contentType: varAjax_TypeContent,
                 success: function (result) {
 
-                    console.log("result  :: ", result);
+                    //console.log("result  :: ", result);
                     //console.log("result bResult :: ", result.bResult);
 
                     if (result.bResult) {

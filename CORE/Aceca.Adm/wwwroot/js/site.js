@@ -67,7 +67,7 @@ function fn_AuthOut() {
                 url: '/Auth/Logout',
                 type: 'POST',
                 success: function (result) {
-                    console.log(`result ::  ${result}`);
+                    //console.log(`result ::  ${result}`);
                     fn_CleanUser();
 
                     $.busyLoadFull("hide");

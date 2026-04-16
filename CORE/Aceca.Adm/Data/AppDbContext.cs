@@ -17,7 +17,7 @@ namespace Aceca.Adm.Data
 
         #region Agenda
         public DbSet<Agenda> Agenda { get; set; }
-        public DbSet<AgendaImg> AgendaImagem { get; set; }
+        public DbSet<AgendaImagem> AgendaImagem { get; set; }
         #endregion
 
         #region Fabrica        

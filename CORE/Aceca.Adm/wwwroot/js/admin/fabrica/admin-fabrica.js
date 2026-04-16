@@ -100,7 +100,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -140,50 +140,8 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Fabrica fase
                 {
-                    data: 'fabricaFaseId',
+                    data: 'fabricaFase.descricao',
                     targets: 4,
-                    className: "text-center",
-                    render: function (data, type, full) {
-                        let id = full.id;
-
-                        if (id != 0 && data !== undefined && data !== null) {
-
-                            let statusClass,
-                                statusLayout,
-                                statusDescricao = full.socioPerfil.descricao,
-                                socioPerfilId = data;
-
-                            switch (socioPerfilId) {
-                                case 1: //'Nivel 1'
-                                    statusClass = 'bg-label-warning';
-                                    break;
-                                case 2: //'Nivel 2'
-                                    statusClass = 'bg-label-info';
-                                    break;
-                                case 3: //'Nivel 3'
-                                    statusClass = 'bg-label-secondary';
-                                    break;
-                                case 4: //'Nivel 4'
-                                    statusClass = 'bg-label-secondary';
-                                    break;
-                                case 5: //'Aprovada'
-                                    statusClass = 'bg-label-success';
-                                    break;
-                                case 6: //'Cancelada'
-                                    statusClass = 'bg-label-danger';
-                                    break;
-                            }
-
-                            statusLayout = '<span class="badge rounded-pill ' + statusClass + '"> ' + statusDescricao + '</span> ';
-
-                            //console.log("Status statusLayout ::: ", statusLayout);
-
-                            return statusLayout;
-
-                        } else {
-                            return '';
-                        }
-                    }
                 },
                 // COLUNA - Status                    
                 {
@@ -515,7 +473,7 @@ function fn_CheckVerAtivos() {
 }
 
 function fn_LoadCmb_FabricaFase() {
-    console.log("fn_LoadCmb_FabricaFase ::: ");
+    //console.log("fn_LoadCmb_FabricaFase ::: ");
 
     if ($('#cmb_FabricaFase').length <= 1) {
         $.ajax(
@@ -545,7 +503,7 @@ function fn_LoadCmb_FabricaFase() {
 //#region POP
 
 function fn_Pop(obj, action) {
-    console.log("fn_Pop varItems_Row !", obj);
+    //console.log("fn_Pop varItems_Row !", obj);
     //console.log("fn_Pop action !", action);
 
     const popAddNewItem = document.querySelector('#pop-add-new-item');
@@ -553,25 +511,25 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
-        (popAddNewItem.querySelector('#hdFabricaFaseId').value = (obj === null ? 0 : obj.socioId)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
+        (popAddNewItem.querySelector('#hdFabricaFaseId').value = (obj === null ? 0 : obj.fabricaFaseId)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.nome)),
         (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.descricao)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.socio.socioPerfilId));
-        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
+        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-1' : (obj.fabricaFaseId === null ? '-1' : obj.fabricaFaseId))),
+            (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo)),
 
 
-    // Pop Action
-    (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
-    (popAddNewItem.querySelector('.data-submit').textContent = (action === 'Edit') ? 'Alterar' : 'Adicionar');
+            // Pop Action
+            (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro'),
+            (popAddNewItem.querySelector('.data-submit').textContent = (action === 'Edit') ? 'Alterar' : 'Adicionar');
 
     if (obj !== null) {
 
-        $("#cmb_FabricaFase").val(obj.socio.socioPerfilId).change();
+        obj.fabricaFaseId === null ? $("#cmb_FabricaFase").val('-1').change() : $("#cmb_FabricaFase").val(obj.fabricaFaseId).change();
 
-        console.log("fn_Pop ex val ::: ", $("#cmb_FabricaFase").val());
+        //console.log("fn_Pop ex val ::: ", $("#cmb_FabricaFase").val());
     }
 
     // Open Pop
@@ -588,7 +546,7 @@ function fn_PopGetObj() {
         Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
-    console.log("fn_PopGetObj !", objFormData);
+    //console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
 }
@@ -632,9 +590,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.Id;
-
-    //console.log("DELETE ID ::: ", varItems_Id);
+    var varItems_Id = varItems_Row.id;
 
     var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
         varAjax_TypeAction = 'DELETE',
@@ -945,7 +901,6 @@ function fnItem_Add(varTbl_Obj) {
 }
 
 //#endregion
-
 
 //#region MODAL
 function fn_ModalErro(xhr, textStatus, errorThrown) {

@@ -1,9 +1,6 @@
 ﻿using Aceca.Adm.Data;
-using Aceca.Adm.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
 using System.Reflection;
 
 namespace Aceca.Adm.Controllers.Admin.Tipo
@@ -32,12 +29,16 @@ namespace Aceca.Adm.Controllers.Admin.Tipo
             _appBaseUrl = _appConfiguration["App:Url"]!;
         }
 
-        #region CRUD JS
+        #region Index
 
         public ActionResult Index()
         {
             return View("~/Views/Admin/Tipo/TipoPagamento.cshtml");
         }
+
+        #endregion
+
+        #region GRID
 
         [HttpGet]
         public async Task<IActionResult> ListGrid()
@@ -90,164 +91,186 @@ namespace Aceca.Adm.Controllers.Admin.Tipo
             }
         }
 
-        /*
+        #endregion
+
+        #region CRUD JS
+
         [HttpPost]
-        public ActionResult Create(Socio data)
+        public async Task<IActionResult> Create(Models.TipoPagamento model)
         {
             try
             {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Nome))
+                if (ModelState.IsValid)
                 {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Nome deve ser preenchido"
-                    });
-                }
-
-                try
-                {
-                    var result = AsyncActionAPI(data, "Create");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
+                    if (string.IsNullOrEmpty(model.Descricao))
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = result?.ToString()
+                            message = "Descricao deve ser preenchido"
                         });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
+
+                    var newModel = new Models.TipoPagamento
                     {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
+                        Descricao = !string.IsNullOrEmpty(model.Descricao) ? model.Descricao : null,
+                        Ativo = model.Ativo
+                    };
+
+                    _db.TipoPagamento.Add(newModel);
+                    _db.SaveChanges();
+
+                    model.Id = newModel?.Id;
+
+                    if (model?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar"
+                        });
+
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
                     });
                 }
 
-                return Ok(new
+                return BadRequest(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: "
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Model Inválida",
+                    data = model,
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
             }
         }
 
         [HttpPost]
-        public ActionResult Edit(Socio data)
+        public async Task<IActionResult> Edit(Models.TipoPagamento model)
         {
             try
             {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Nome))
+                if (ModelState.IsValid)
                 {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Nome deve ser preenchido"
-                    });
-                }
-
-                try
-                {
-                    var result = AsyncActionAPI(data, "Edit");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
+                    if (string.IsNullOrEmpty(model.Descricao))
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = result?.ToString()
+                            message = "Descricao deve ser preenchido"
                         });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
+
+                    _db.Entry(model).State = EntityState.Modified;
+                    _db.SaveChanges();
+
+                    if (model?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar"
+                        });
+
+                    return Ok(new
                     {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
                     });
                 }
 
-                return Ok(new
+                return BadRequest(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: "
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Model Inválida",
+                    data = model,
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
             }
         }
 
         [HttpDelete]
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            dynamic response = new { bResult = false, message = string.Empty };
-
-            if (id < 1)
-            {
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "Id deve ser maior que 0"
-                });
-            }
-
-            var model = new List<Socio>();
-
             try
             {
-                var result = AsyncDeleteById(id);
-
-                if (result.GetType() == typeof(NotFoundObjectResult) ||
-                     result.GetType() == typeof(BadRequestObjectResult))
+                if (id < 1)
+                {
                     return BadRequest(new
                     {
                         bResult = false,
                         type = "ERRO",
-                        message = result?.ToString()
+                        message = "Id deve ser maior que 0"
                     });
+                }
+
+                var model = await _db.TipoPagamento.FindAsync(id);
+
+                if (model == null)
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "ERRO - ID nao localizado",
+                        message = "ID nao localizado",
+                        data = id
+                    });
+
+                _db.TipoPagamento.Remove(model);
+                _db.SaveChanges();
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
+                });
             }
             catch (Exception ex)
             {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = ex?.Message?.ToString()
+                    message = mensagemErro
                 });
             }
-
-            return Ok(new
-            {
-                bResult = true,
-                type = "OK",
-                message = "SUCESSO ::: "
-            });
-
-            //return View();
         }
 
-        */
         #endregion
     }
 }

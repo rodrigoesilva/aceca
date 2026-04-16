@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
 
-        //fn_LoadCmb_SocioPerfil();
+        fn_LoadCmb_MarcaTipo();
 
         // Form validation
         const formAddNewItem = document.getElementById('form-pop-add-new-item');
@@ -100,7 +100,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -510,22 +510,22 @@ function fn_CheckVerAtivos() {
     }
 }
 
-function fn_LoadCmb_SocioPerfil() {
-    console.log("fn_LoadCmb_SocioPerfil ::: ");
+function fn_LoadCmb_MarcaTipo() {
+    //console.log("fn_LoadCmb_MarcaTipo ::: ");
 
-    if ($('#cmb_SocioPerfil').length <= 1) {
+    if ($('#cmb_MarcaTipo').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_SocioPerfil`,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
                 type: 'GET',
                 success: function (data) {
-                    //console.log("fn_LoadCmb_SocioPerfil  data ::: ", data);
+                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
 
                     $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_SocioPerfil  result id ::: ", id);
-                        //console.log("fn_LoadCmb_SocioPerfil  result ::: ", result);
-                        $("#cmb_SocioPerfil").append($("<option></option>").val(result.value).html(result.text));
+                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
+                        $("#cmb_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
@@ -541,7 +541,7 @@ function fn_LoadCmb_SocioPerfil() {
 //#region POP
 
 function fn_Pop(obj, action) {
-    console.log("fn_Pop varItems_Row !", obj);
+    //console.log("fn_Pop varItems_Row !", obj);
     //console.log("fn_Pop action !", action);
 
     const popAddNewItem = document.querySelector('#pop-add-new-item');
@@ -550,13 +550,12 @@ function fn_Pop(obj, action) {
 
     // Pop ID
     (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
-        (popAddNewItem.querySelector('#hdSocioId').value = (obj === null ? 0 : obj.socioId)),
+        (popAddNewItem.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.marcaTipoId)),
 
-        // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.nomeUsuario)),
-        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.email)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.socio.socioPerfilId));
+    // Pop Dados
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '-1' : (obj.marcaTipoId === null ? '-1' : obj.marcaTipoId)));
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.sigla)),
+        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.descricao)),
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
 
 
@@ -566,9 +565,9 @@ function fn_Pop(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmb_SocioPerfil").val(obj.socio.socioPerfilId).change();
+        obj.marcaTipoId === null ? $("#cmb_MarcaTipo").val('-1').change() : $("#cmb_MarcaTipo").val(obj.marcaTipoId).change();
 
-        console.log("fn_Pop ex val ::: ", $("#cmb_SocioPerfil").val());
+        //console.log("fn_Pop ex val ::: ", $("#cmb_MarcaTipo").val());
     }
 
     // Open Pop
@@ -579,14 +578,14 @@ function fn_PopGetObj() {
 
     const objFormData = {
         Id: $('#hdId').val(),
-        Nome: $('.form-add-new-item .dt-line-01').val(),
-        Login: $('.form-add-new-item .dt-line-02').val(),
-        Email: $('.form-add-new-item .dt-line-03').val(),
-        SocioPerfilId: $('#cmb_SocioPerfil').val(),
+        MarcaTipoId: $('#cmb_MarcaTipo').val(),
+        Sigla: $('.form-add-new-item .dt-line-02').val(),
+        Descricao: $('.form-add-new-item .dt-line-03').val(),
+        
         Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
-    console.log("fn_PopGetObj !", objFormData);
+    //console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
 }
@@ -630,9 +629,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.Id;
-
-    //console.log("DELETE ID ::: ", varItems_Id);
+    var varItems_Id = varItems_Row.id;
 
     var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
         varAjax_TypeAction = 'DELETE',

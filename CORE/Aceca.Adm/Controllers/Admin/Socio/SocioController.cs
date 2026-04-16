@@ -465,7 +465,6 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     #endregion
 
-                    return RedirectToAction("Index");
                 }
 
                 return Ok(new

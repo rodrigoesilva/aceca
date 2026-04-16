@@ -90,118 +90,156 @@ namespace Aceca.Adm.Controllers.Admin.Usuario
             }
         }
 
-        /*
+        
         [HttpPost]
-        public ActionResult Create(Usuario data)
+        public async Task<IActionResult> Create(Models.Usuario model)
         {
             try
             {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Nome))
+                if (ModelState.IsValid)
                 {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Nome deve ser preenchido"
+                    return Ok(new
+                    {/*
+                        _logger.LogInformation(
+                        $"{lstModel} graus Fahrenheit = " +
+                        $"{resultado.Celsius} graus Celsius = " +
+                        $"{resultado.Kelvin} graus Kelvin");
+                    return resultado;
+                        */
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
                     });
                 }
 
-                try
+                return BadRequest(new
                 {
-                    var result = AsyncActionAPI(data, "Create");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = result?.ToString()
-                        });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
-                    });
-                }
-
-                return Ok(new
-                {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: "
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Model Inválida",
+                    data = model,
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
             }
         }
 
         [HttpPost]
-        public ActionResult Edit(Usuario data)
+        public async Task<IActionResult> Edit(Models.Usuario model)
         {
             try
             {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Nome))
+                if (ModelState.IsValid)
                 {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Nome deve ser preenchido"
-                    });
-                }
+                    #region Usuario
 
-                try
-                {
-                    var result = AsyncActionAPI(data, "Edit");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
+                    if (string.IsNullOrEmpty(model?.Email))
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = result?.ToString()
+                            message = "Email deve ser preenchido"
+
                         });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
+
+                    _db.Entry(model).State = EntityState.Modified;
+                    _db.SaveChanges();
+
+                    model?.Id = model?.Id;
+
+                    if (model?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar Socio"
+                        });
+
+                    #endregion
+
+                    #region Socio
+
+                    if (model.SocioId < 1)
                     {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Id deve ser maior que 0"
+                        });
+                    }
+
+                    var newModelSocio = new Models.Socio
+                    {
+                        Id = model?.Socio?.Id,
+                        SocioPerfilId = model?.Socio?.SocioPerfilId = model?.Socio?.SocioPerfilId > 0 ? model?.Socio?.SocioPerfilId : 5, //socio
+                        Nome = model?.Socio?.Nome,
+                        MostrarSite = model?.Socio?.MostrarSite != null ? model?.Socio?.MostrarSite : true,
+                        Ativo = model?.Ativo,
+                    };
+
+                    _db.Entry(newModelSocio).State = EntityState.Modified;
+                    _db.SaveChanges();
+
+                    model?.SocioId = newModelSocio?.Id;
+
+                    if (newModelSocio?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar Socio"
+                        });
+
+                    #endregion
+
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
                     });
                 }
 
-                return Ok(new
+                return BadRequest(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: "
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Model Inválida",
+                    data = model,
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
             }
         }
 
         [HttpDelete]
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            dynamic response = new { bResult = false, message = string.Empty };
-
             if (id < 1)
             {
                 return BadRequest(new
@@ -212,42 +250,45 @@ namespace Aceca.Adm.Controllers.Admin.Usuario
                 });
             }
 
-            var model = new List<Usuario>();
-
             try
             {
-                var result = AsyncDeleteById(id);
+                var model = await _db.Usuario.FindAsync(id);
 
-                if (result.GetType() == typeof(NotFoundObjectResult) ||
-                     result.GetType() == typeof(BadRequestObjectResult))
-                    return BadRequest(new
+                if (model == null)
+                    return Ok(new
                     {
-                        bResult = false,
-                        type = "ERRO",
-                        message = result?.ToString()
+                        bResult = true,
+                        type = "ERRO - ID nao localizado",
+                        message = "ID nao localizado",
+                        data = id
                     });
+
+                _db.Usuario.Remove(model);
+                _db.SaveChanges();
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
+                });
             }
             catch (Exception ex)
             {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = ex?.Message?.ToString()
+                    message = mensagemErro
                 });
             }
-
-            return Ok(new
-            {
-                bResult = true,
-                type = "OK",
-                message = "SUCESSO ::: "
-            });
-
-            //return View();
         }
 
-        */
         #endregion
     }
 }

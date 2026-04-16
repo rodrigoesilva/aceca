@@ -74,7 +74,6 @@
 <div class="offcanvas offcanvas-end" id="pop-add-new-item">
     <div class="offcanvas-header border-bottom">
         <input type="hidden" id="hdId" name="hdId" value="0"/>
-        <input type="hidden" id="hdSocioId" name="hdSocioId" value="0" />
         <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
@@ -82,51 +81,21 @@
         <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
-                    <span id="line_item_01" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
+                    <span id="line_item_01" class="input-group-text"></span>
                     <div class="form-floating form-floating-outline">
                         <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01"
-                               placeholder="Nome" aria-label="Nome" aria-describedby="line_item_01"/>
-                        <label for="pop_line_item_01">Nome</label>
+                               placeholder="descricao" aria-label="Descricao" aria-describedby="line_item_01" />
+                        <label for="pop_line_item_01">Descri&ccedil;&atilde;o</label>
                     </div>
                 </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <span id="line_item_02" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
-                    <div class="form-floating form-floating-outline">
-                        <input type="text" id="pop_line_item_02" class="form-control dt-line-02" name="pop_line_item_02"
-                               placeholder="Login" aria-label="Login" aria-describedby="line_item_02"/>
-                        <label for="pop_line_item_02">Login</label>
-                    </div>
-                </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <span id="line_item_03" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
-                    <div class="form-floating form-floating-outline">
-                        <input type="text" id="pop_line_item_03" class="form-control dt-line-03" name="pop_line_item_03"
-                               placeholder="E-mail" aria-label="E-mail" aria-describedby="line_item_03"/>
-                        <label for="pop_line_item_03">E-mail</label>
-                    </div>
-                </div>
-            </div>
-            <div id="pop_div_line_item_04" name="Exibidor" class="col-sm-12">
-                <div class="form-floating form-floating-outline">
-                    <select id="cmb_SocioPerfil" name="cmb_UsuarioPerfil"
-                            class="form-select select2 dt-line-04"
-                            data-allow-clear="true">
-                        <option value="-1">-- Selecionar --</option>
-                    </select>
-                    <label for="cmb_SocioPerfil">Perfil</label>
-                </div>
-            </div>
+            </div>            
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
                     <div class="form-check form-switch mb-2">
                         <input type="checkbox" id="pop_line_item_05" class="form-check-input dt-line-05"
-                               name="pop_line_item_05" placeholder="Status" aria-label="Status"
+                               name="pop_line_item_05" placeholder="Ativo" aria-label="Ativo"
                                aria-describedby="line_item_03"/>
-                        <label class="form-check-label" for="pop_line_item_05">Status</label>
+                        <label class="form-check-label" for="pop_line_item_05">Ativo</label>
                     </div>
                 </div>
             </div>

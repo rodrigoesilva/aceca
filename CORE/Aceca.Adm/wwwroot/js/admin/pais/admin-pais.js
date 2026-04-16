@@ -100,7 +100,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -509,7 +509,7 @@ function fn_CheckVerAtivos() {
 }
 
 function fn_LoadCmb_PaisCategoria() {
-    console.log("fn_LoadCmb_PaisCategoria ::: ");
+    //console.log("fn_LoadCmb_PaisCategoria ::: ");
 
     if ($('#cmb_PaisCategoria').length <= 1) {
         $.ajax(
@@ -539,7 +539,7 @@ function fn_LoadCmb_PaisCategoria() {
 //#region POP
 
 function fn_Pop(obj, action) {
-    console.log("fn_Pop varItems_Row !", obj);
+    //console.log("fn_Pop varItems_Row !", obj);
     //console.log("fn_Pop action !", action);
 
     const popAddNewItem = document.querySelector('#pop-add-new-item');
@@ -551,9 +551,9 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('#hdPaisCategoriaId').value = (obj === null ? 0 : obj.paisCategoriaId)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.nome)),
         (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.descricao)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.paisCategoriaId));
+        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-1' : ((obj.paisCategoriaId === null || obj.paisCategoriaId === 0) ? '-1' : obj.paisCategoriaId)));
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
 
 
@@ -563,9 +563,9 @@ function fn_Pop(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmb_PaisCategoria").val(obj.paisCategoriaId).change();
+        (obj.paisCategoriaId === null || obj.paisCategoriaId === 0) ? $("#cmb_PaisCategoria").val('-1').change() : $("#cmb_PaisCategoria").val(obj.paisCategoriaId).change();
 
-        console.log("fn_Pop ex val ::: ", $("#cmb_PaisCategoria").val());
+        //console.log("fn_Pop ex val ::: ", $("#cmb_PaisCategoria").val());
     }
 
     // Open Pop
@@ -582,7 +582,7 @@ function fn_PopGetObj() {
         Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
-    console.log("fn_PopGetObj !", objFormData);
+    //console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
 }
@@ -626,9 +626,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.Id;
-
-    //console.log("DELETE ID ::: ", varItems_Id);
+    var varItems_Id = varItems_Row.id;
 
     var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
         varAjax_TypeAction = 'DELETE',

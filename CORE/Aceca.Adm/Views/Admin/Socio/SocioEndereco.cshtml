@@ -90,51 +90,120 @@
         <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
-                    <span id="line_item_01" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
+                    <span id="line_item_01" class="input-group-text"></span>
                     <div class="form-floating form-floating-outline">
                         <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01"
-                               placeholder="Nome" aria-label="Nome" aria-describedby="line_item_01"/>
+                               placeholder="Nome" aria-label="Nome" aria-describedby="line_item_01" disabled/>
                         <label for="pop_line_item_01">Nome</label>
                     </div>
                 </div>
             </div>
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
-                    <span id="line_item_02" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
+                    <span id="line_item_02" class="input-group-text"></span>
                     <div class="form-floating form-floating-outline">
-                        <input type="text" id="pop_line_item_02" class="form-control dt-line-02" name="pop_line_item_02"
-                               placeholder="Login" aria-label="Login" aria-describedby="line_item_02"/>
-                        <label for="pop_line_item_02">Login</label>
+                        <input type="text" id="pop_line_item_02" class="form-control dt-line-02" 
+                            name="pop_line_item_02" placeholder="00000-999" aria-label="00000-999" 
+                            pattern="[0-9]{9}" maxlength="9" oninput="fn_MaskCEP(this)"/>
+                        <label for="pop_line_item_02">CEP</label>
                     </div>
                 </div>
             </div>
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
-                    <span id="line_item_03" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
+                    <span id="line_item_03" class="input-group-text"></span>
                     <div class="form-floating form-floating-outline">
-                        <input type="text" id="pop_line_item_03" class="form-control dt-line-03" name="pop_line_item_03"
-                               placeholder="E-mail" aria-label="E-mail" aria-describedby="line_item_03"/>
-                        <label for="pop_line_item_03">E-mail</label>
+                       <input type="text" id="pop_line_item_03" class="form-control dt-line-03" 
+                       name="pop_line_item_03" placeholder="45 Roker Terrace" aria-label="45 Roker Terrace"/>
+                    <label for="pop_line_item_03">Endere&ccedil;o</label>
                     </div>
                 </div>
             </div>
-            <div id="pop_div_line_item_04" name="Exibidor" class="col-sm-12">
-                <div class="form-floating form-floating-outline">
-                    <select id="cmb_SocioPerfil" name="cmb_UsuarioPerfil"
-                            class="form-select select2 dt-line-04"
-                            data-allow-clear="true">
-                        <option value="-1">-- Selecionar --</option>
-                    </select>
-                    <label for="cmb_SocioPerfil">Perfil</label>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_04" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                       <input type="text" id="pop_line_item_04" class="form-control dt-line-04" 
+                       name="pop_line_item_04" placeholder="99999999" aria-label="99999999" pattern="[0-9]{8}" maxlength="8"/>
+                    <label for="pop_line_item_04">N&uacute;mero</label>
+                    </div>
                 </div>
             </div>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_05" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                       <input type="text" id="pop_line_item_05" class="form-control dt-line-05" 
+                       name="pop_line_item_05" placeholder="Complemento" aria-label="Complemento"/>
+                    <label for="pop_line_item_05">Complemento</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_06" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                       <input type="text" id="pop_line_item_06" class="form-control dt-line-06" 
+                       name="pop_line_item_06" placeholder="Bairro" aria-label="Bairro"/>
+                    <label for="pop_line_item_06">Bairro</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pop_div_line_item_07" name="Estado" class="col-sm-12">
+                <div class="form-floating form-floating-outline">
+                    <select id="cmb_SocioEstado" class="select2 form-select form-select dt-line-09">
+                                <option value="">-- Selecionar --</option>
+                                <option value="AC">Acre</option>
+                                <option value="AL">Alagoas</option>
+                                <option value="AP">Amap&aacute;</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="BA">Bahia</option>
+                                <option value="CE">Cear&aacute;</option>
+                                <option value="DF">Distrito Federal</option>
+                                <option value="ES">Espirito Santo</option>
+                                <option value="GO">Goi&aacute;s</option>
+                                <option value="MA">Maranh&atilde;o</option>
+                                <option value="MS">Mato Grosso do Sul</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="PA">Par&aacute;</option>
+                                <option value="PB">Para&iacute;ba</option>
+                                <option value="PR">Paran&aacute;</option>
+                                <option value="PE">Pernambuco</option>
+                                <option value="PI">Piau&iacute;</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="RN">Rio Grande do Norte</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="RO">Rond&ocirc;nia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="SC">Santa Catarina</option>
+                                <option value="SP">S&atilde;o Paulo</option>
+                                <option value="SE">Sergipe</option>
+                                <option value="TO">Tocantins</option>
+                        </select>
+                        <label for="cmb_SocioEstado">Estado</label>
+                </div>
+            </div>
+
+             <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_08" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                       <input type="text" id="pop_line_item_08" class="form-control dt-line-08" 
+                       name="pop_line_item_08" placeholder="Cidade" aria-label="Cidade"/>
+                    <label for="pop_line_item_08">Cidade</label>
+                    </div>
+                </div>
+            </div>
+
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
                     <div class="form-check form-switch mb-2">
-                        <input type="checkbox" id="pop_line_item_05" class="form-check-input dt-line-05"
-                               name="pop_line_item_05" placeholder="Status" aria-label="Status"
-                               aria-describedby="line_item_03"/>
-                        <label class="form-check-label" for="pop_line_item_05">Status</label>
+                        <input type="checkbox" id="pop_line_item_09" class="form-check-input dt-line-09"
+                               name="pop_line_item_09" placeholder="Ativo" aria-label="Ativo"
+                               aria-describedby="line_item_09"/>
+                        <label class="form-check-label" for="pop_line_item_09">Ativo</label>
                     </div>
                 </div>
             </div>

@@ -183,19 +183,19 @@ if (document.getElementById('layout-menu')) {
     if (storedStyle === 'light') {
       styleSwitcherIcon.classList.add('ri-sun-line');
       new bootstrap.Tooltip(styleSwitcherIcon, {
-        title: 'Light Mode',
+        title: 'Modo Claro',//'Light Mode',
         fallbackPlacements: ['bottom']
       });
     } else if (storedStyle === 'dark') {
       styleSwitcherIcon.classList.add('ri-moon-clear-line');
       new bootstrap.Tooltip(styleSwitcherIcon, {
-        title: 'Dark Mode',
+          title: 'Modo Escuro',//'Dark Mode',
         fallbackPlacements: ['bottom']
       });
     } else {
       styleSwitcherIcon.classList.add('ri-computer-line');
       new bootstrap.Tooltip(styleSwitcherIcon, {
-        title: 'System Mode',
+          title: 'Modo Sistema',//'System Mode',
         fallbackPlacements: ['bottom']
       });
     }

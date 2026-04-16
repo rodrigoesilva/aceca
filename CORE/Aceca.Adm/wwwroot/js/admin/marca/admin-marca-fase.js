@@ -98,7 +98,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -130,6 +130,7 @@ function fn_GridList(formValid) {
                 {
                     data: 'imagem',
                     targets: 2,
+                    visible: false,
                     render: function (data, type, row, meta) {
                         return data; //`<img name="myImg" class="td-img cmyImg" alt="${row.descricao}" src="${data}">`;
                     }
@@ -470,32 +471,6 @@ function fn_CheckVerAtivos() {
     }
 }
 
-function fn_LoadCmb_SocioPerfil() {
-    console.log("fn_LoadCmb_SocioPerfil ::: ");
-
-    if ($('#cmb_SocioPerfil').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_SocioPerfil`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_SocioPerfil  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_SocioPerfil  result id ::: ", id);
-                        //console.log("fn_LoadCmb_SocioPerfil  result ::: ", result);
-                        $("#cmb_SocioPerfil").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
 //#endregion
 
 //#region POP
@@ -513,6 +488,7 @@ function fn_Pop(obj, action) {
 
         // Pop Dados
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.descricao)),
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.ordem)),
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
 
 
@@ -577,9 +553,7 @@ function fnItem_Delete(varItems_Row) {
 
     //console.log("DELETE OBJ ::: ", varItems_Row);
 
-    var varItems_Id = varItems_Row.Id;
-
-    //console.log("DELETE ID ::: ", varItems_Id);
+    var varItems_Id = varItems_Row.id;
 
     var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
         varAjax_TypeAction = 'DELETE',
