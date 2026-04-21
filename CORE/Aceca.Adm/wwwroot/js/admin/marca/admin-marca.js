@@ -13,7 +13,8 @@ let var_Nome = 'Marcas',
     var_ControllerCmb = '/HelperExtensions',
 
     varTbl_Obj = $('.datatables-basic'),
-    varTbl_Data;
+    varTbl_Data,
+    objFiltro;
 
 let var_Filtrado = false,
     var_ImgAlt = "ACECA",
@@ -26,14 +27,14 @@ var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 const swalWithBootstrapButtons = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-label-secondary waves-effect",
-        confirmButtonText: "Yes, deleteee it!",
         cancelButton: "btn btn-label-primary waves-effect",
-        cancelButtonText: "No, cancelaaa!",
         // Apply a margin or flex gap via custom classes if needed
         actions: 'd-flex justify-content-center align-content-center flex-wrap gap-4 pt-8'
     },
     buttonsStyling: false
 });
+
+let modalMarca = document.getElementById('modalAddNovaMarca');
 
 let borderColor, bodyBg, headingColor;
 
@@ -80,6 +81,25 @@ document.addEventListener('DOMContentLoaded', function () {
             fn_Limpar();
         });
 
+        //click salvar modal
+        $("#btn-submit-modal").click(function (e) {
+            //console.log(`btn-formadd-submit`);
+            var action = document.querySelector('.data-submit').textContent;
+            //console.log("action ::: ", action);
+
+            if (action === 'Alterar') {
+                var objFormData = fn_ModalGetObj();
+                //console.log("objFormData ::: ", objFormData);
+
+                //const formData = new FormData(document.forms['form-modal-full-edit']);
+                //console.log("fn_ModalSalvar formData ::: ", formData);
+
+                fnItem_Edit(objFormData)
+            } else {
+                fnItem_Add(varTbl_Obj)
+            }
+        });
+
         // Carrega Dados Combos Modal
         //fn_PopLoadCombos();
 
@@ -99,7 +119,7 @@ function fn_Filtrar() {
     //console.log("fn_Filtrar ::: ");
     //console.log("fn_Filtrar var_Filtrado ::: ", var_Filtrado);
 
-    let objFiltro = {
+    objFiltro = {
         param_MarcaFaseId: $('#cmb_MarcaFase').find('option:selected').val(),
         param_MarcaFabricaId: $('#cmb_MarcaFabrica').find('option:selected').val(),
         param_MarcaFabricaNome: $('#cmb_MarcaFabrica').find('option:selected').text(),
@@ -108,6 +128,7 @@ function fn_Filtrar() {
         param_IncluidoPor: $('#txt_IncluidoPor').val(),
         param_CodigoAceca: $('#txt_CodigoAceca').val(),
         param_NomeMarca: $('#txt_NomeMarca').val(),
+        param_PesquisarSemVariante: $('#chk_PesquisarSemVariante')[0].checked,
         param_PesquisarDescricao: $('#chk_PesquisarDescricao')[0].checked,
     };
 
@@ -227,6 +248,7 @@ function fn_Limpar() {
     //$('#cmb_MarcaFabrica').prop('selectedIndex', 0).change();
     $('#cmb_MarcaTipo').prop('selectedIndex', 0).change();
     $('#cmb_MarcaSubTipo').prop('selectedIndex', 0).change();
+    $('#chk_PesquisarSemVariante')[0].checked = false;
     $('#chk_PesquisarDescricao')[0].checked = false;
 
     $(".card-datatable").hide();
@@ -308,13 +330,15 @@ function fn_FiltrosHide() {
     $('.div_MarcaTipo').attr('style', 'display: none !important');
     $('.div_MarcaSubTipo').attr('style', 'display: none !important');
     $('.div_PesquisarDescricao').attr('style', 'display: none !important');
+    $('.div_PesquisarSemVariante').attr('style', 'display: none !important');
     $('.div_Botoes').attr('style', 'display: none !important');
 }
 
 function fn_FiltrosShow() {
     $('.div_MarcaTipo').attr('style', 'display: block !important');
-    $('.div_MarcaSubTipo').attr('style', 'display: block !important');
+    //$('.div_MarcaSubTipo').attr('style', 'display: block !important');
     $('.div_PesquisarDescricao').attr('style', 'display: block !important');
+    $('.div_PesquisarSemVariante').attr('style', 'display: block !important');
     $('.div_Botoes').attr('style', 'display: block !important');
 }
 
@@ -330,6 +354,7 @@ function fn_FiltrosChange() {
         if (idMarcaFase === undefined || idMarcaFase < 0) {
             fn_FiltrosHide();
         } else {
+            fn_LoadCmb_MarcaTipoByFase();
             fn_FiltrosShow();
 
             if (!var_Filtrado) {
@@ -409,8 +434,11 @@ function fn_FiltrosChange() {
         } else {
 
             if (idMarcaTipo <= 0) {
-                //fn_Limpar();
+                $('.div_MarcaSubTipo').attr('style', 'display: none !important');
+                fn_Filtrar();
             } else {
+                $('.div_MarcaSubTipo').attr('style', 'display: block !important');
+
                 if (!var_Filtrado) {
                     fn_ModalConfirmarFiltros();
                 } else {
@@ -446,7 +474,7 @@ function fn_FiltrosChange() {
             fn_ModalSelecionarFase();
         } else {
             if (idMarcaSubTipo <= 0) {
-                //fn_Limpar();
+                fn_Filtrar();
             } else {
                 if (!var_Filtrado) {
                     fn_ModalConfirmarFiltros();
@@ -457,6 +485,17 @@ function fn_FiltrosChange() {
         }
     });
 
+    $('#chk_PesquisarSemVariante').change(function () {
+
+        // 1. Get the checked status (boolean: true if checked, false otherwise)
+        const isChecked = $(this).is(':checked');
+        const checkboxValue = $(this).val();
+
+        //console.log("chk_PesquisarSemVariante change ::: ", isChecked);
+
+        fn_Filtrar();
+    });
+
     $('#chk_PesquisarDescricao').change(function () {
 
         // 1. Get the checked status (boolean: true if checked, false otherwise)
@@ -465,7 +504,7 @@ function fn_FiltrosChange() {
 
         //console.log("chk_PesquisarDescricao change ::: ", isChecked);
 
-        let colDesc = varTbl_Data.settings()[0].aoColumns[10];
+        let colDesc = varTbl_Data.settings()[0].aoColumns[6];
 
         colDesc.bSearchable = isChecked;
 
@@ -572,9 +611,12 @@ function fn_GridListFilter(lstData) {
                 { targets: 6, data: 'descricao', className: 'text-start', searchable: false, responsivePriority: 6 },
                 // COLUNA - fabricaNome
                 {
-                    targets: 7, data: 'txtFabrica', className: 'text-center', responsivePriority: 7,
+                    targets: 7,
+                    data: 'nomeFabrica',
+                    className: 'text-center',
+                    responsivePriority: 7,
                     render: function (data, type, full) {
-                        return (data === '' || data === null) ? full.nomeFabrica : data;
+                        return (data === '' || data === null) ? full.txtFabrica : data;
                     }
                 },
                 // COLUNA - subTipo
@@ -616,7 +658,7 @@ function fn_GridListFilter(lstData) {
                 }
             ],
 
-            order: varCol_Ordenacao,
+            //order: varCol_Ordenacao,
             dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
             displayLength: varItems_QtdPorPage,
             lengthMenu: varItems_DivPage,
@@ -684,6 +726,7 @@ function fn_GridListFilter(lstData) {
                         }
                     ]
                 },
+
                 {
                     text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
                     className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
@@ -958,8 +1001,16 @@ function fn_GridComplete(grid) {
 
     if (countRows > 0) {
 
+        isPerfil = document.getElementById('hdIsPerfil').value;
+
+        var columnNames = thisApi.columns().header().toArray().map(header => $(header).text());
+        //console.log("columnNames ::: ", columnNames);
+
+        //console.log("isPerfil ::: ", isPerfil);
+
         if (isPerfil === "false") {
             thisApi.column(13).visible(false); // coluna acoes
+
             $(".create-new").attr('style', 'display: none !important');
         }
 
@@ -1199,11 +1250,80 @@ function fn_LoadCmb_MarcaTipo() {
     //console.log("fn_LoadCmb_MarcaTipo ::: ");
 
     if ($('#cmb_MarcaTipo').length <= 1) {
+
+        //console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
+        console.log("cmb_MarcaTipo change idMarcaFase ::: ", idMarcaFase);
+        //console.log("cmb_MarcaTipo change var_Filtrado ::: ", var_Filtrado);
+
+        idMarcaFase = $(this).find('option:selected').val();
+
+        //console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
+        //console.log("cmb_MarcaFase change var_Filtrado ::: ", var_Filtrado);
+
+        if (idMarcaFase > 0) {
+
+            $.ajax(
+                {
+                    crossDomain: true,
+                    //url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
+                    url: `${var_ControllerCmb}/AsyncCmb_MarcaTipoByFase`,
+                    type: 'GET',
+                    success: function (data) {
+                        //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
+
+                        $.each(data, function (id, result) {
+                            //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
+                            //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
+                            $("#cmb_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
+                        });
+                    },
+                    error: function (xhr, textStatus, errorThrown) {
+                        fn_ModalErro(xhr, textStatus, errorThrown);
+                    },
+                }
+            );
+        }
+    }
+
+    if ($('#cmbPop_MarcaTipo').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
                 url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
                 type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
+                        $("#cmbPop_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+function fn_LoadCmb_MarcaTipoByFase() {
+    //console.log("fn_LoadCmb_MarcaTipo ::: ");
+
+    if ($('#cmb_MarcaTipo').length <= 1) {
+
+        //console.log("cmb_MarcaTipo change idMarcaFase ::: ", idMarcaFase);
+        //console.log("cmb_MarcaTipo change var_Filtrado ::: ", var_Filtrado);
+
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaTipoByFase`,
+                type: 'GET',
+                data: {
+                    id: idMarcaFase,
+                },
                 success: function (data) {
                     //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
 
@@ -1420,7 +1540,7 @@ function fn_ModalErro(xhr, textStatus, errorThrown) {
 }
 
 function fn_Modal(obj, action) {
-    console.log("fn_Modal obj::: ", obj);
+    //console.log("fn_Modal obj::: ", obj);
     //console.log("fn_Modal action::: ", action);
 
     //let resultLoad = fnItem_Edit_CarregarDados(obj, action)
@@ -1440,17 +1560,17 @@ function fn_Modal(obj, action) {
         (popAddNewItem.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.idMarcaQualidadeImagem)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFase));
-    (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '-- Selecionar --' : obj.codigoAceca));
-    (popAddNewItem.querySelector('#txt_Nome').checked = (obj === null ? false : obj.nomeMarca));
+        (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-1' : ((obj.idMarcaFase === undefined || obj.idMarcaFase === null || obj.idMarcaFase <= 0) ? '-1' : obj.idMarcaFase)));
+    (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '' : obj.codigoAceca));
+    (popAddNewItem.querySelector('#txt_Nome').value = (obj === null ? false : obj.nomeMarca));
     (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
-        (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFinalidade));
-    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFabrica));
-    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-- Selecionar --' : obj.idMarcaDimensao));
-    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-- Selecionar --' : obj.idMarcaTipo));
-    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-- Selecionar --' : obj.idMarcaSubTipo));
-    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-- Selecionar --' : obj.idMarcaImpressora));
-    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-- Selecionar --' : obj.idMarcaQualidadeImagem));
+    (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-1' : ((obj.idMarcaFinalidade === undefined || obj.idMarcaFinalidade === null || obj.idMarcaFinalidade <= 0) ? '-1' : obj.idMarcaFinalidade)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-1' : ((obj.idMarcaFabrica === undefined || obj.idMarcaFabrica === null || obj.idMarcaFabrica <= 0) ? '-1' : obj.idMarcaFabrica)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-1' : ((obj.idMarcaDimensao === undefined || obj.idMarcaDimensao === null || obj.idMarcaDimensao <= 0) ? '-1' : obj.idMarcaDimensao)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-1' : ((obj.idMarcaTipo === undefined || obj.idMarcaTipo === null || obj.idMarcaTipo <= 0) ? '-1' : obj.idMarcaTipo)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-1' : ((obj.idMarcaSubTipo === undefined || obj.idMarcaSubTipo === null || obj.idMarcaSubTipo <= 0) ? '-1' : obj.idMarcaSubTipo)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-1' : ((obj.idMarcaImpressora === undefined || obj.idMarcaImpressora === null || obj.idMarcaImpressora <= 0) ? '-1' : obj.idMarcaImpressora)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-1' : ((obj.idQualidadeImagem === undefined || obj.idQualidadeImagem === null || obj.idQualidadeImagem <= 0) ? '-1' : obj.idQualidadeImagem)));
     (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.descricao));
 
     (popAddNewItem.querySelector('#txt_Valor').value = (obj === null ? '' : obj.valor));
@@ -1470,14 +1590,16 @@ function fn_Modal(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmbPop_MarcaFase").val(obj.idMarcaFase).change();
-        $("#cmbPop_MarcaFinalidade").val(obj.idMarcaFinalidade).change();
-        $("#cmbPop_MarcaFabrica").val(obj.idMarcaFabrica).change();
-        $("#cmbPop_MarcaDimensao").val(obj.idMarcaDimensao).change();
-        $("#cmbPop_MarcaTipo").val(obj.idMarcaTipo).change();
-        $("#cmbPop_MarcaSubTipo").val(obj.idMarcaSubTipo).change();
-        $("#cmbPop_MarcaImpressora").val(obj.idMarcaImpressora).change();
-        $("#cmbPop_MarcaQualidadeImagem").val(obj.idMarcaQualidadeImagem).change();
+        //console.log("fn_Modal obj::: ", obj);
+
+        $("#cmbPop_MarcaFase").val(((obj.idMarcaFase === undefined || obj.idMarcaFase === null || obj.idMarcaFase <= 0) ? '-1' : obj.idMarcaFase)).change();
+        $("#cmbPop_MarcaFinalidade").val(((obj.idMarcaFinalidade === undefined || obj.idMarcaFinalidade === null || obj.idMarcaFinalidade <= 0) ? '-1' : obj.idMarcaFinalidade)).change();
+        $("#cmbPop_MarcaFabrica").val(((obj.idMarcaFabrica === undefined || obj.idMarcaFabrica === null || obj.idMarcaFabrica <= 0) ? '-1' : obj.idMarcaFabrica)).change();
+        $("#cmbPop_MarcaDimensao").val(((obj.idMarcaDimensao === undefined || obj.idMarcaDimensao === null || obj.idMarcaDimensao <= 0) ? '-1' : obj.idMarcaDimensao)).change();
+        $("#cmbPop_MarcaTipo").val(((obj.idMarcaTipo === undefined || obj.idMarcaTipo === null || obj.idMarcaTipo <= 0) ? '-1' : obj.idMarcaTipo)).change();
+        $("#cmbPop_MarcaSubTipo").val(((obj.idMarcaSubTipo === undefined || obj.idMarcaSubTipo === null || obj.idMarcaSubTipo <= 0) ? '-1' : obj.idMarcaSubTipo)).change();
+        $("#cmbPop_MarcaImpressora").val(((obj.idMarcaImpressora === undefined || obj.idMarcaImpressora === null || obj.idMarcaImpressora <= 0) ? '-1' : obj.idMarcaImpressora)).change();
+        $("#cmbPop_MarcaQualidadeImagem").val(((obj.idQualidadeImagem === undefined || obj.idQualidadeImagem === null || obj.idQualidadeImagem <= 0) ? '-1' : obj.idQualidadeImagem)).change();
 
         (obj.valor !== null || obj.valor1PI !== null || obj.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
     }
@@ -1554,16 +1676,8 @@ function fnItem_PopImgDetalhe(obj) {
     }
 }
 
-function fn_ModalSalvar(e) {
-    const formData = new FormData(document.forms['form-modal-full-edit']);
-    //console.log("fn_ModalSalvar formData ::: ", formData);
-    //console.log("fn_ModalSalvar formEle GET ::: ", formData.get('cinema_Nome'));
-
-    fn_ModalGetObj(formData, 'Save')
-}
-
 function fn_ModalGetObj(data, action) {
-    console.log("fn_ModalGetObj data ::: ", data);
+    //console.log("fn_ModalGetObj data ::: ", data);
     //console.log("fn_ModalGetObj action ::: ", action);
 
     var loadCmbs = fn_PopLoadCombos();
@@ -1600,9 +1714,104 @@ function fn_ModalGetObj(data, action) {
         ImgDetalhe: $('#txt_ImgDetalhe').val(),
     };
 
-    console.log("fn_ModalGetObj !", objFormData);
+    //console.log("fn_ModalGetObj !", objFormData);
 
     return objFormData;
+}
+
+function fnItem_Edit(varItems_Row) {
+    //console.log("fnItem_Edit CLICK ::: ", varItems_Row);
+    //var varPop_BtnAction = 'Edit';
+
+    var varAjax_UrlController = `${var_Controller}/Edit`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeData = 'JSON',
+        varAjax_TypeContent = 'application/json; charset=utf-8';
+
+    if (varItems_Row.Id === 0) {
+        Swal.fire({
+            title: 'OPS!!',
+            icon: 'error',
+            html: `Dados n&atilde;o identificados !!`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-label-danger waves-effect'
+            },
+        });
+    } else {
+
+        $.busyLoadFull("show");
+
+        $.ajax(
+            {
+                url: varAjax_UrlController,
+                type: varAjax_TypeAction,
+                dataType: varAjax_TypeData,
+                data: varItems_Row,
+                // contentType: varAjax_TypeContent,
+                success: function (result) {
+
+                    //console.log("fnItem_Edit result  :: ", result);
+
+                    if (result.bResult) {
+
+                        $.busyLoadFull("hide");
+
+                        var varTbl;
+
+                        if ($.fn.dataTable.isDataTable('.datatables-basic')) {
+                            //console.log("YES :: ");
+                            varTbl = varTbl_Obj.DataTable();
+
+                            $.busyLoadFull("hide");
+
+                            Swal.fire({
+                                title: 'Dados Salvos!',
+                                icon: 'success',
+                                text: 'Item alterado com sucesso.',
+                                customClass: {
+                                    confirmButton: 'btn btn-success waves-effect waves-light'
+                                }
+                            }).then((result) => {
+
+                                //console.log("RESULTADO  :: ", result);
+                                //varTbl.ajax.reload(lstData, false);
+
+                                fn_FiltrarDados(objFiltro);
+
+                                $('#modalAddNovaMarca').modal('hide');
+                            });
+                        } else {
+                            console.log("NO :: ");
+                        }
+                    } else {
+                        console.log("result  :: ", result);
+
+                        $.busyLoadFull("hide");
+
+                        Swal.fire({
+                            title: 'OPS!!',
+                            icon: 'error',
+                            html: `<b> fn_Salvar - Erro ocorrido <br><br>` + result + `</b>`,
+                            focusConfirm: false,
+                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                            customClass: {
+                                confirmButton: 'btn btn-label-danger waves-effect'
+                            }
+                        });
+
+                        return false;
+                    }
+                },
+                error: function (xhr, textStatus, errorThrown) {
+
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+
+                    return false;
+                },
+            });
+    }
 }
 
 function fnItem_Edit_CarregarDados(obj, action) {

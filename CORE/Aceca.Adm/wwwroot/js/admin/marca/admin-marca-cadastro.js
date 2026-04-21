@@ -25,6 +25,8 @@ const swalWithBootstrapButtons = Swal.mixin({
     buttonsStyling: false
 });
 
+let objVariante;
+
 let borderColor, bodyBg, headingColor;
 
 if (isDarkStyle) {
@@ -68,11 +70,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (txtNome !== null && txtNome !== undefined && txtNome !== '') {
 
                 $('.div_codigo').hide();
+                
                 $('.div_dados').hide();
                 $('.div_imagem').hide();
                 $('.div_botoes').hide();
                 $('.div_variante').hide();
                 $('.div_variante_codigo').hide();
+                $('.div_original_variante').hide();
 
                 $('#cmbPop_MarcaFase').prop('selectedIndex', 0).change();
                 $('#cmbPop_MarcaVariante').prop('selectedIndex', 0).change();
@@ -146,6 +150,8 @@ function fn_Limpar() {
     $('.div_variante').hide();
     $('.div_fase').hide();
     $('.div_variante_codigo').hide();
+    $('.div_original_variante').hide();
+
     $('.div_codigo').hide();
     
     $('.div_dados').hide();
@@ -174,7 +180,7 @@ function fn_ModalOpcaoInvalida() {
         },
     }).then((result) => {
         //fn_Limpar();
-        console.log("fn_ModalOpcaoInvalida result ::: ", result);
+        //console.log("fn_ModalOpcaoInvalida result ::: ", result);
     })
 }
 
@@ -224,17 +230,17 @@ function fn_Modal(obj, action) {
             (popAddNewItem.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.idMarcaQualidadeImagem)),
 
     // Pop Dados
-            (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFase));
-        (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '-- Selecionar --' : obj.codigoAceca));
+            (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-1' : obj.idMarcaFase));
+        (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '-1' : obj.codigoAceca));
     (popAddNewItem.querySelector('#txt_Nome').checked = (obj === null ? false : obj.nomeMarca));
         (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
-            (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFinalidade));
-    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-- Selecionar --' : obj.idMarcaFabrica));
-    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-- Selecionar --' : obj.idMarcaDimensao));
-    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-- Selecionar --' : obj.idMarcaTipo));
-    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-- Selecionar --' : obj.idMarcaSubTipo));
-    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-- Selecionar --' : obj.idMarcaImpressora));
-    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-- Selecionar --' : obj.idMarcaQualidadeImagem));
+            (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-1' : obj.idMarcaFinalidade));
+    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-1' : obj.idMarcaFabrica));
+    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-1' : obj.idMarcaDimensao));
+    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-1' : obj.idMarcaTipo));
+    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-1' : obj.idMarcaSubTipo));
+    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-1' : obj.idMarcaImpressora));
+    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-1' : obj.idMarcaQualidadeImagem));
         (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.descricao));
 
         (popAddNewItem.querySelector('#txt_Valor').value = (obj === null ? '' : obj.valor));
@@ -254,14 +260,14 @@ function fn_Modal(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmbPop_MarcaFase").val(obj.idMarcaFase).change();
-        $("#cmbPop_MarcaFinalidade").val(obj.idMarcaFinalidade).change();
-        $("#cmbPop_MarcaFabrica").val(obj.idMarcaFabrica).change();
-        $("#cmbPop_MarcaDimensao").val(obj.idMarcaDimensao).change();
-        $("#cmbPop_MarcaTipo").val(obj.idMarcaTipo).change();
-        $("#cmbPop_MarcaSubTipo").val(obj.idMarcaSubTipo).change();
-        $("#cmbPop_MarcaImpressora").val(obj.idMarcaImpressora).change();
-        $("#cmbPop_MarcaQualidadeImagem").val(obj.idMarcaQualidadeImagem).change();
+        $("#cmbPop_MarcaFase").val(((obj.idMarcaFase === undefined || obj.idMarcaFase === null || obj.idMarcaFase <= 0) ? '-1' : obj.idMarcaFase)).change();
+        $("#cmbPop_MarcaFinalidade").val(((obj.idMarcaFinalidade === undefined || obj.idMarcaFinalidade === null || obj.idMarcaFinalidade <= 0) ? '-1' : obj.idMarcaFinalidade)).change();
+        $("#cmbPop_MarcaFabrica").val(((obj.idMarcaFabrica === undefined || obj.idMarcaFabrica === null || obj.idMarcaFabrica <= 0) ? '-1' : obj.idMarcaFabrica)).change();
+        $("#cmbPop_MarcaDimensao").val(((obj.idMarcaDimensao === undefined || obj.idMarcaDimensao === null || obj.idMarcaDimensao <= 0) ? '-1' : obj.idMarcaDimensao)).change();
+        $("#cmbPop_MarcaTipo").val(((obj.idMarcaTipo === undefined || obj.idMarcaTipo === null || obj.idMarcaTipo <= 0) ? '-1' : obj.idMarcaTipo)).change();
+        $("#cmbPop_MarcaSubTipo").val(((obj.idMarcaSubTipo === undefined || obj.idMarcaSubTipo === null || obj.idMarcaSubTipo <= 0) ? '-1' : obj.idMarcaSubTipo)).change();
+        $("#cmbPop_MarcaImpressora").val(((obj.idMarcaImpressora === undefined || obj.idMarcaImpressora === null || obj.idMarcaImpressora <= 0) ? '-1' : obj.idMarcaImpressora)).change();
+        $("#cmbPop_MarcaQualidadeImagem").val(((obj.idQualidadeImagem === undefined || obj.idQualidadeImagem === null || obj.idQualidadeImagem <= 0) ? '-1' : obj.idQualidadeImagem)).change();
 
         (obj.valor !== null || obj.valor1PI !== null || obj.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
     }
@@ -453,17 +459,25 @@ function fn_ChangeCombos() {
 
     $('#cmbPop_MarcaFase').on('change', function () {
 
-        let idMarcaFase = $(this).find('option:selected').val();
+        let strTermoBusca = document.querySelector('#txt_Nome');
+        let idMarcaFase = Number($(this).find('option:selected').val());
 
         //console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
+        //console.log("cmb_MarcaFase change strTermoBusca ::: ", strTermoBusca);
 
         if (idMarcaFase > 0) {
-            $('.div_variante').show();            
-        }
-        else {
-            $('#txt_Codigo').val('');
 
-            //fn_ModalOpcaoInvalida();
+            switch (true) {
+                case idMarcaFase === 14: // SA
+                case (idMarcaFase >= 27 && idMarcaFase <= 29): //27-Palheiros , 28 Fumos, 29 Exportacao
+                case (idMarcaFase >= 32 && idMarcaFase <= 34): //32-Cortadas, 33-Outros, 34-Quarentena
+                case (idMarcaFase === 36): // Comemorativas
+                case (idMarcaFase >= 39 && idMarcaFase <= 41): //39-Clandestinas, 40-Exterior, 41-M&C
+                    fn_ShowCampos();
+                    break;
+                default:
+                    fn_ChecaInicioNumero(strTermoBusca);
+            }
         }
     });
 
@@ -502,31 +516,56 @@ function fn_ChangeCombos() {
         let idMarcaFabrica = $(this).find('option:selected').val();
         //console.log("cmb_MarcaFabrica change idMarcaFabrica ::: ", idMarcaFabrica);
 
-        if (idMarcaFabrica <= 0) {
+        let bNovaVariante = $('#cmbPop_MarcaVariante').val() > 0 ? true : false;
+        //console.log("cmb_MarcaTipo change bNovaVariante ::: ", bNovaVariante);
+
+        if (idMarcaFabrica <= 0 && bNovaVariante === false) {
             fn_ModalOpcaoInvalida();
         }
     });
 
     $('#cmbPop_MarcaTipo').on('change', function () {
-
         let idMarcaTipo = $(this).find('option:selected').val();
         //console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
 
-        if (idMarcaTipo <= 0) {
+        let bNovaVariante = $('#cmbPop_MarcaVariante').val() > 0 ? true : false;
+        //console.log("cmb_MarcaTipo change bNovaVariante ::: ", bNovaVariante);
+
+        //Limpar Combo
+        document.querySelectorAll('#cmbPop_MarcaSubTipo option').forEach(option => option.remove());
+
+        $("#cmbPop_MarcaSubTipo").append($("<option></option>").val(0).html("-- Selecionar --"));
+
+        if ($(this).length <= 1 && idMarcaTipo > 0) {
+            fn_LoadCmb_MarcaSubTipo(idMarcaTipo);
+        }
+
+        if (idMarcaTipo <= 0 && bNovaVariante === false) {
             fn_ModalOpcaoInvalida();
+        } else {
+            //console.log("cmb_MarcaTipo change objVariante ::: ", objVariante);
+            
+            let marcaSubTipoId = ((objVariante.marcaSubTipoId === undefined || objVariante.marcaSubTipoId === null || objVariante.marcaSubTipoId <= 0) ? '-1' : objVariante.marcaSubTipoId);
+            //console.log("cmb_MarcaTipo change marcaSubTipoId ::: ", marcaSubTipoId);
+            //$("#cmbPop_MarcaSubTipo").val(Number(marcaSubTipoId)).change();
+            /**/
         }
     });
 
+   /*
     $('#cmbPop_MarcaSubTipo').on('change', function () {
 
         let idMarcaSubTipo = $(this).find('option:selected').val();
+       console.log("cmb_MarcaSubTipo change idMarcaSubTipo ::: ", idMarcaSubTipo);
 
-       // console.log("cmb_MarcaSubTipo change idMarcaSubTipo ::: ", idMarcaSubTipo);
+        let bNovaVariante = $('#cmbPop_MarcaVariante').val() > 0 ? true : false;
+        //console.log("cmb_MarcaTipo change bNovaVariante ::: ", bNovaVariante);
 
-        if (idMarcaSubTipo <= 0) {
-            fn_ModalOpcaoInvalida();
+        if (idMarcaSubTipo <= 0 && bNovaVariante === false) {
+            //fn_ModalOpcaoInvalida();
         }
     });
+     */
 }
 
 function fn_PopLoadCombos() {
@@ -542,21 +581,6 @@ function fn_PopLoadCombos() {
     fn_LoadCmb_MarcaSubTipo(0);
     fn_LoadCmb_MarcaImpressora();
     fn_LoadCmb_MarcaQualidadeImagem();
-
-    $('#cmbPop_MarcaTipo').on('change', function () {
-        let idMarcaTipo = $(this).find('option:selected').val();
-
-        //console.log("cmb_MarcaTipo change  idMarcaTipo ::: ", idMarcaTipo);
-
-        //Limpar Combo cinema
-        document.querySelectorAll('#cmbPop_MarcaSubTipo option').forEach(option => option.remove());
-
-        $("#cmbPop_MarcaSubTipo").append($("<option></option>").val(0).html("-- Selecionar --"));
-
-        if ($(this).length <= 1 && idMarcaTipo > 0) {
-            fn_LoadCmb_MarcaSubTipo(idMarcaTipo);
-        }
-    });
 }
 
 function fn_LoadCmb_MarcaVariante() {
@@ -850,6 +874,99 @@ function fn_LoadCmb_MarcaQualidadeImagem() {
 
 //#region FUNCOES
 
+function fn_ShowCampos() {
+    if ($('#txt_Codigo').val() !== '') {
+
+        $('#cmbPop_MarcaVariante').prop('selectedIndex', 0).change();
+
+
+        $('#txt_Codigo').val('');
+        $('#txt_CodigoVariante').val('');
+
+        /*
+        $('#cmbPop_MarcaFinalidade').prop('selectedIndex', 0).change();
+        $('#cmbPop_MarcaFabrica').prop('selectedIndex', 0).change();
+        $('#cmbPop_MarcaDimensao').prop('selectedIndex', 0).change();
+        $('#cmbPop_MarcaTipo').prop('selectedIndex', 0).change();
+        $('#cmbPop_MarcaSubTipo').prop('selectedIndex', 0).change();
+        $('#cmbPop_MarcaImpressora').prop('selectedIndex', 0).change();
+        $('#cmbPop_MarcaQualidadeImagem').prop('selectedIndex', 0).change();
+        */
+        $('#txt_Descricao').val('');
+        $('#txt_Valor').val('');
+        $('#txt_Valor1PI').val('');
+        $('#txt_Valor2PI').val('');
+
+        $('#txt_ImgPrincipal').val('');
+        $('#txt_ImgDetalhe').val('');
+
+        //$('.div_variante').hide();
+        //$('.div_fase').hide();
+        //$('.div_variante_codigo').hide();
+        $('.div_codigo').hide();
+
+        $('.div_dados').hide();
+        $('.div_adicional').hide();
+        $('.div_imagem').hide();
+        $('.div_botoes').hide();
+
+    } else {
+        //
+        $('.div_variante').show();
+    }
+}
+
+function fn_ChecaInicioNumero(strTermoBusca) {
+    //console.log("default strTermoBusca match ::: ", strTermoBusca.value.match(/^\d/));
+
+    //verifica se iniciada com numero
+    if (strTermoBusca.value.match(/^\d/) !== null) {
+        // console.log("Fases que as marcas iniciam com Numeros");
+
+        const swalWithBootstrapButtons = Swal.mixin({
+            customClass: {
+                confirmButton: "btn btn-label-success waves-effect",
+                cancelButton: "btn btn-label-danger waves-effect"
+            },
+            buttonsStyling: false
+        });
+
+        swalWithBootstrapButtons.fire({
+            title: "Tem certeza?",
+            icon: "warning",
+            html: `<b> Essa fase n&atilde;o possui marcas iniciadas com letras. </b> <br><br> Deseja continuar continuar?`,
+            showCancelButton: true,
+            confirmButtonText: `<i class="ri-chat-delete-line"></i> &nbsp; Sim, confirmar!`,
+            cancelButtonText: `<i class="ri-check-double-line"></i> &nbsp; N&atilde;o, cancelar!`,
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                fn_ShowCampos();
+
+            } else if (result.dismiss === Swal.DismissReason.cancel) {
+                swalWithBootstrapButtons.fire({
+                    title: "Cancelado",
+                    icon: "info",
+                    html: "Nenhuma a&ccedil;&atilde;o foi realizada !!",
+                    focusConfirm: true,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: {
+                        confirmButton: 'btn btn-label-secondary waves-effect'
+                    }
+                }).then((result) => {
+                    $('#txt_Nome').val();
+
+                    $(this).prop('selectedIndex', 0).change();
+                });
+            }
+        });
+
+    } else {
+        fn_ShowCampos();
+    }
+}
+
 function fn_GetCodigoAceca() {
     //console.log("fn_GetCodigoAceca idMarcaFase ::: ", idMarcaFase);
 
@@ -873,18 +990,43 @@ function fn_GetCodigoAceca() {
                 //console.log("fn_GetCodigoAceca  result ::: ", result);
 
                 if (result.bResult) {
+
+                    //console.log("fn_GetCodigoAceca bNovaVariante ::: ", bNovaVariante);
+
+                    if (bNovaVariante) { 
+                        objVariante = result.data;
+                        fn_GetDataVariante(objVariante);
+                    }
+
+                    //
                     $('#txt_Codigo').css('color', '#8c57ff');
                     $('#txt_Codigo').css('background-color', '#ede4ff');
                     $('#txt_Codigo').css('text-align', 'center');
                     $('#txt_Codigo').css("font-weight", "500");
                     $('#txt_Codigo').css("font-size", "0.9375rem");
-                    $('#txt_Codigo').val(result.data)
+                    $('#txt_Codigo').val(result.dataNovoCodigo)
 
-
-                    $('.div_codigo').show();                   
+                    $('.div_codigo').show();
                     $('.div_dados').show();
                     $('.div_imagem').show();
                     $('.div_botoes').show();
+                } else {
+                    //console.log("fn_GetCodigoAceca  result ::: ", result);
+                    Swal.fire({
+                        title: 'OPS!!',
+                        icon: 'error',
+                        html: `C&oacute;digo de Variante Inexistente !!<br><br> ERRO::: <b>` + result.data + `</b>`,
+                        focusConfirm: false,
+                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                        customClass: {
+                            confirmButton: 'btn btn-label-danger waves-effect'
+                        }
+                    }).then((resultFalha) => {
+                        //console.log("resultFalha  :: ", resultFalha);
+                        fn_Limpar()
+                    });
+
+                    return false;
                 }
             },
             error: function (xhr, textStatus, errorThrown) {
@@ -894,9 +1036,60 @@ function fn_GetCodigoAceca() {
     );
 }
 
+function fn_GetDataVariante(obj) {
+    //console.log("fn_GetDataVariante obj::: ", obj);
+
+    // Pop ID
+    (document.querySelector('#hdId').value = (obj === null ? 0 : obj.id));
+    (document.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.marcaFaseId));
+    (document.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.marcaFinalidadeId));
+    (document.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.marcaFabricaId));
+    (document.querySelector('#hdMarcaDimensaoId').value = (obj === null ? 0 : obj.marcaDimensaoId));
+    (document.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.marcaTipoId));
+    (document.querySelector('#hdMarcaSubTipoId').value = (obj === null ? 0 : obj.marcaSubTipoId));
+    (document.querySelector('#hdMarcaImpressoraId').value = (obj === null ? 0 : obj.marcaImpressoraId));
+    (document.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.marcaQualidadeImagemId));
+
+        // Pop Variante
+        const divVariante = document.getElementById("div_NomePaiVariante");
+        $('#div_NomePaiVariante').css('color', '#FFFFFF');
+        $('#div_NomePaiVariante').css('background-color', '#47007b');
+        $('#div_NomePaiVariante').css('text-align', 'center');
+        $('#div_NomePaiVariante').css("font-weight", "500");
+        $('#div_NomePaiVariante').css("font-size", "0.9375rem");
+        divVariante.style.padding = "20px";
+        (document.getElementById("div_NomePaiVariante").innerHTML = (obj === null ? '' : `${obj.nome}<br><br>${obj.descricao}`));
+        $('.div_original_variante').show();
+
+        // Pop Dados
+        (document.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
+
+        $("#cmbPop_MarcaFinalidade").val(((obj.marcaFinalidadeId === undefined || obj.marcaFinalidadeId === null || obj.marcaFinalidadeId <= 0) ? '-1' : obj.marcaFinalidadeId)).change(); 
+        $("#cmbPop_MarcaFabrica").val(((obj.marcaFabricaId === undefined || obj.marcaFabricaId === null || obj.marcaFabricaId <= 0) ? '-1' : obj.marcaFabricaId)).change();
+        $("#cmbPop_MarcaDimensao").val(((obj.marcaDimensaoId === undefined || obj.marcaDimensaoId === null || obj.marcaDimensaoId <= 0) ? '-1' : obj.marcaDimensaoId)).change();
+        $("#cmbPop_MarcaTipo").val(((obj.marcaSubTipo.marcaTipoId === undefined || obj.marcaSubTipo.marcaTipoId === null || obj.marcaSubTipo.marcaTipoId <= 0) ? '-1' : obj.marcaSubTipo.marcaTipoId)).change();
+        //$("#cmbPop_MarcaSubTipo").val(((obj.marcaSubTipoId === undefined || obj.marcaSubTipoId === null || obj.marcaSubTipoId <= 0) ? '-1' : obj.marcaSubTipoId)).change();
+        $("#cmbPop_MarcaImpressora").val(((obj.marcaImpressoraId === undefined || obj.marcaImpressoraId === null || obj.marcaImpressoraId <= 0) ? '-1' : obj.marcaImpressoraId)).change();
+        $("#cmbPop_MarcaQualidadeImagem").val(((obj.marcaQualidadeImagemId === undefined || obj.marcaQualidadeImagemId === null || obj.marcaQualidadeImagemId <= 0) ? '-1' : obj.marcaQualidadeImagemId)).change();
+
+        (document.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.descricao));
+
+        //Pop Valores
+        (obj.valor !== null || obj.valor1PI !== null || obj.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
+        (document.querySelector('#txt_Valor').value = (obj === null ? '' : obj.valor));
+        (document.querySelector('#txt_Valor1PI').value = (obj === null ? '' : obj.valor1PI));
+        (document.querySelector('#txt_Valor2PI').value = (obj === null ? '' : obj.valor2PI));
+
+        //Pop Arquivos
+        (document.querySelector('#txt_ImgPrincipal').value = '')
+        (document.querySelector('#txt_ImgDetalhe').value = '')
+        //(obj === null || obj?.imgPrincipal === null) ? (document.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
+        //(obj === null || obj?.imgDetalhe === null) ? (document.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
+}
+
 //#endregion
 
-//#region FUNCOES FORM
+//#region CRUD
 
 function fn_ModalSalvar(e) {
     //console.log("fn_FomSendData form ::", form);
@@ -987,6 +1180,7 @@ function fn_ModalSalvar(e) {
                             confirmButton: 'btn btn-success waves-effect waves-light'
                         }
                     }).then((resultSucesso) => {
+                        window.location.reload();
                         //console.log("resultSucesso  :: ", resultSucesso);
                     });
 
@@ -1004,7 +1198,7 @@ function fn_ModalSalvar(e) {
                             confirmButton: 'btn btn-label-danger waves-effect'
                         }
                     }).then((resultFalha) => {
-                        //console.log("resultFalha  :: ", resultFalha);
+                        console.log("resultFalha  :: ", resultFalha);
                     });
 
                     return false;

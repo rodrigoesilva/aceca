@@ -1,6 +1,29 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
-    Layout = "~/Views/Shared/_HorizontalLayout.cshtml";
+    var pageApp = "ACECA";
+    var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
+    var pageTipo = string.Empty;
+
+    var isPerfil = Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True";
+
+    ViewData["Title"] = string.Format("{0} | {1} | {2}", pageApp, pageName, pageTipo);
+
+    Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
+}
+
+@section VendorStyles {
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+
+    <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/busy-load/app.min.css" />
+}
+
+@section VendorScripts {
+    <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+
+    <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
+    <script src="~/vendor/libs/busy-load/app.min.js"></script>
 }
 
 @section PageStyles {
@@ -8,10 +31,17 @@
     @* <link rel="stylesheet" href="~/css/style.css"> *@
 }
 
+@section PageScripts {
+    <!-- Select Dropdownlist -->
+    <script src="~/js/forms-selects.js"></script>
+
+    <script src="~/js/site.js"></script>
+}
+
 @* ************** Content ************** *@
 <div class="text-center">
     <h2 class="mb-2 mx-2 custom_text" style="font-size: 3rem;line-height: 6rem;">A.C.E.C.A</h2>
-    <h4 class="mb-12">Bem Vindo ao Ambiente de ADMINISTRA&Ccedil;&Atilde;O 🚀</h4>
+    <h4 class="mb-12">Bem Vindo ao Ambiente de @(isPerfil ? "ADMINISTRAÇÃO" : "SÓCIO") 🚀</h4>
     <div class="d-flex justify-content-center mt-5">
         <img src="~/img/illustrations/tree-3.png" alt="ACECA" class="img-fluid misc-object d-none d-lg-inline-block">
         <img src="~/img/illustrations/tree.png" alt="ACECA" class="img-fluid misc-object-right d-none d-lg-inline-block">

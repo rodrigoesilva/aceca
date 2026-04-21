@@ -2,6 +2,7 @@ using Aceca.Adm.Data;
 using Aceca.Adm.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -30,6 +31,8 @@ namespace Aceca.Adm.Controllers
 
         public record LoginIn(string Email, string Senha);
 
+        public record LoginUpdt(string Username, string Email, string Senha, string ConfirmSenha, bool ChkTermo);
+
         public ActionResult Index()
         {
             return View("~/Views/Auth/Login.cshtml");
@@ -39,7 +42,11 @@ namespace Aceca.Adm.Controllers
         {
             return View("~/Views/Pages/MiscNotAuthorized.cshtml");
         }
-
+        
+        public ActionResult UpdatePass()
+        {
+            return View("~/Views/Auth/RegisterUpdate.cshtml");
+        }
         public async Task<IActionResult> Access()
         {
             try
@@ -72,6 +79,7 @@ namespace Aceca.Adm.Controllers
                     BadRequest(new { msg = "SetCookie inválido." });
 
                 return ViewBag.PerfilAdm ? RedirectToAction("Inicio", "Home") : RedirectToAction("Index", "Marca");
+                //return RedirectToAction("Inicio", "Home");
             }
             catch (Exception ex)
             {
@@ -88,10 +96,10 @@ namespace Aceca.Adm.Controllers
             }
         }
 
-        [HttpPost]
+        //[HttpPost]
         public async Task<IActionResult> Logout()
         {
-            if (HttpContext.Request.Cookies.Count > 0)
+            if (HttpContext?.Request?.Cookies?.Count > 0)
             {
                 var siteCookies = HttpContext.Request.Cookies
                     .Where(c => c.Key.Contains(_cfg["Cookie:Key"]?.ToString())
@@ -100,14 +108,16 @@ namespace Aceca.Adm.Controllers
                         || c.Key.Contains("Microsoft.Authentication"));
                 foreach (var cookie in siteCookies)
                 {
-                    Response.Cookies.Delete(cookie.Key);
+                    Response?.Cookies.Delete(cookie.Key);
                 }
             }
 
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext?.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             //HttpContext.Session.Clear();
 
+            //return Redirect("https://www.aceca.com.br");
+            
             return Ok(new
             {
                 bResult = true,
@@ -126,13 +136,23 @@ namespace Aceca.Adm.Controllers
                 var user = await _db.Usuario.FirstOrDefaultAsync(s => s.Email == dto.Email.ToLower());
 
                 if (user == null)
-                    return BadRequest(new { msg = "User inválido." });
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "User Inválido"
+                    });
 
                 if (!LoginValidacao(dto.Senha, user))
                 {
                     ViewBag.Error = "Nome de usuário ou senha inválidos";
 
-                    return Unauthorized(new { msg = "Credenciais inválidas." });
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Credenciais Inválidas"
+                    });
                 }
 
                 var socio = await _db.Socio
@@ -140,25 +160,41 @@ namespace Aceca.Adm.Controllers
                     .FirstOrDefaultAsync(s => s.Id == user.SocioId);
 
                 if (socio == null)
-                    return BadRequest(new { msg = "Sócio inválido." });
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Sócio Inválido"
+                    });
 
                 string strToken = LoginTokenJwt(user, socio);
 
                 if (string.IsNullOrEmpty(strToken))
-                    return BadRequest(new { msg = "Token inválido." });
-
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Token Inválido"
+                    });
 
                 if (!await LoginSetClaimsAsync(user, socio))
-                    BadRequest(new { msg = "SetClaims inválido." });
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "SetClaims Inválido"
+                    });
 
                 return Ok(new
                 {
+                    bResult = true,
                     token = strToken,
                     nameIdentifier = socio.Id.ToString(),
                     nome = socio.Nome,
                     //email = user.Email,
                     cargo = socio?.SocioPerfil?.Descricao,
                     isPerfil = Convert.ToBoolean(socio?.SocioPerfil?.Descricao?.Equals("Administracao")) ? true : false,
+                    pswuptd = user.SenhaAtualizada
                 });
             }
             catch (Exception ex)
@@ -418,6 +454,10 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
+        #endregion
+
+        #region Funcoes
+
         #region MD5
         static string GetMd5Hash(MD5 md5Hash, string input)
         {
@@ -456,6 +496,94 @@ namespace Aceca.Adm.Controllers
             }
         }
         #endregion
+
+        #endregion
+
+        #region Update Data
+
+        [HttpPost]
+        public async Task<IActionResult> LoginUpdate([FromBody] LoginUpdt model)
+        {
+            try
+            {
+                var newModel = new Models.Usuario();
+             
+                var user = await _db.Usuario.AsNoTracking().FirstOrDefaultAsync(s => s.Email == model.Email.ToLower());
+
+                if (user == null)
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "User Inválido"
+                    });
+
+                var socio = await _db.Socio
+                    .Include(f => f.SocioPerfil)
+                    .FirstOrDefaultAsync(s => s.Id == user.SocioId);                
+
+                if (socio == null)
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Sócio Inválido"
+                    });
+
+                using (MD5 md5Hash = MD5.Create())
+                {
+                    string hash = GetMd5Hash(md5Hash, model.Senha);
+
+                    newModel = new Models.Usuario
+                    {
+                        Id = user.Id,
+                        SocioId = socio.Id,
+                        Email = model.Email,
+                        Senha = hash,
+                        SenhaAberta = model.Senha,
+                        SenhaAtualizada = true,
+                        NomeUsuario = model.Username,
+                        UltimoLogin = DateTime.UtcNow,
+                    };
+                
+
+                    _db.Entry(newModel).State = EntityState.Modified;
+                    _db.SaveChanges();
+                }
+                // user.Id = newModel?.Id;
+
+                if (newModel?.Id <= 0)
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Falha ao Atualizar Socio"
+                    });
+
+                return Ok(new
+                {
+                    bResult = true,
+                    nameIdentifier = socio.Id.ToString(),
+                    nome = socio.Nome,
+                    cargo = socio?.SocioPerfil?.Descricao,
+                    isPerfil = Convert.ToBoolean(socio?.SocioPerfil?.Descricao?.Equals("Administracao")) ? true : false,
+                    pswuptd = true
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
 
         #endregion
     }

@@ -469,7 +469,7 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
 
         // Pop Dados
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.descricao)),
@@ -493,7 +493,7 @@ function fn_PopGetObj() {
         Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
-    console.log("fn_PopGetObj !", objFormData);
+    //console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
 }

@@ -21,12 +21,14 @@ document.addEventListener('DOMContentLoaded', function () {
         var pgLogin = document.querySelector(".pg-login");
 
         if (pgLogin === null) {
-            fn_UpdateClock();
-            setInterval(fn_UpdateClock, 1000); // Updates every 1000 milliseconds
+            const intervalId = setInterval(() => {
+                //console.log("Executando a cada 2 segundos");
+                fn_UpdateClock();
+            }, 1000);
         }
 
         $('.btn-logout').on('click', function () {
-            console.log("cclick logout ::: ");
+            //console.log("cclick logout ::: ");
             fn_AuthOut();
         });
 
@@ -41,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //#region CLOCK DATE
 function fn_UpdateClock() {
-   
+    console.log(`::`);
     const timeString = new Date().toLocaleTimeString();
     const dateString = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -60,17 +62,17 @@ function fn_AuthOut() {
     console.log(`fn_AuthOut ::`);
     try {
 
-        $.busyLoadFull("show");
+       // $.busyLoadFull("show");
 
         $.ajax(
             {
                 url: '/Auth/Logout',
-                type: 'POST',
+                type: 'GET',
                 success: function (result) {
                     //console.log(`result ::  ${result}`);
                     fn_CleanUser();
 
-                    $.busyLoadFull("hide");
+                    //$.busyLoadFull("hide");
 
                     Swal.fire({
                         icon: 'success',
@@ -82,12 +84,13 @@ function fn_AuthOut() {
                             confirmButton: 'btn btn-label-success waves-effect'
                         }
                     }).then((resultBye) => {
+                        //console.log(`resultBye ::  ${resultBye}`);
                         window.location.href = 'https://www.aceca.com.br/';
                     });
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
                     console.log(`response XMLHttpRequest ::  ${XMLHttpRequest}`);
-                    $.busyLoadFull("hide");
+                    //$.busyLoadFull("hide");
 
                     return false;
                 }
@@ -99,8 +102,13 @@ function fn_AuthOut() {
 }
 
 function fn_AuthSession() {
+
+    //console.log(`fn_AuthSession sessionStorage ::`, sessionStorage);
+
     if (sessionStorage?.getItem("aceca_sessao") !== null) {
         sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+
+        //console.log(`fn_AuthSession sessionData ::`, sessionData);
 
         if (sessionData !== null) {
             document.getElementById('hdSocioId').value = `${sessionData?.nameIdentifier}`;

@@ -1,12 +1,14 @@
 @* ! Brand demo (display only for navbar-full and hide on below xl) *@
+
 @if (ViewData["navbarFull"] != null)
 {
+    var isPerfil = Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True";
+
   <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-6">
-    <a href="@(Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True" ? Url.Action("Index", "Home") : Url.Action("Index", "Marca"))" class="app-brand-link gap-2">
-    @* <span class="app-brand-logo demo">@await Html.PartialAsync("../_Partials/_Macros")</span>
-      <span class="app-brand-text demo menu-text fw-semibold ms-1">@TempData.Peek("appName")</span> *@
+        @*<a href="@(Url.Action("Index", "Home"))" class="app-brand-link gap-2">*@
+        <a href="@(isPerfil ? Url.Action("Index", "Home") : Url.Action("Index", "Marca"))" class="app-brand-link gap-2">
             <span class="app-brand-text demo menu-text fw-semibold ms-1 custom_text" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">A.C.E.C.A</span>
-            <span class="d-none d-md-inline-block text-muted ms-1_5" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">- &Aacute;rea do S&oacute;cio</span>
+            <span class="d-none d-md-inline-block text-muted ms-1_5" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">- Ambiente de @(isPerfil ? "Administração" : "Sócio")</span>
     </a>
 
     @* ! Display menu close icon only for horizontal-menu with navbar-full *@
@@ -69,9 +71,7 @@
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end mt-3 py-2">
-                    <li>
-                        <a class="dropdown-item" asp-controller="Pages" asp-action="AccountSettings">
-                            <div class="d-flex align-items-center">
+                    <li><div class="d-flex align-items-center">
                                 <div class="flex-shrink-0 me-2">
                                     <div class="avatar avatar-online">
                                         <img id="tbAvatar" src="~/img/avatars/1.png" alt="User" class="w-px-40 h-auto rounded-circle">
@@ -82,18 +82,24 @@
                                         <small id="tbCargo" class="text-muted">ACECA</small>
                                     </div>
                                 </div>
-                            </a>
                         </li>
                         <li>
                             <div class="dropdown-divider"></div>
                         </li>
                         <li>
                             <div class="d-grid px-4 pt-2 pb-1">
-                                <a class="btn btn-danger btn-logout d-flex waves-effect waves-light" href="#">
+                                <button type="button" class="btn btn-danger btn-logout d-flex waves-effect waves-light">
+                                    <span class="icon-base ri ri-logout-box-r-line ms-2 icon-16px"></span>Sair
+                                </button>
+                            </div>
+                    <!--
+                            <div class="d-grid px-4 pt-2 pb-1">
+                                <a class="btn btn-danger btn-logout d-flex waves-effect waves-light" asp-controller="Auth" asp-action="Logout">
                                     <small class="align-middle">Sair</small>
                                     <i class="icon-base ri ri-logout-box-r-line ms-2 icon-16px"></i>
                                 </a>
                             </div>
+                    -->
                         </li>
                     </ul>
                 </li>

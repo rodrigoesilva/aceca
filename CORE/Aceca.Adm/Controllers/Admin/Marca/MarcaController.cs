@@ -95,6 +95,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     param_IncluidoPor = jObj["param_IncluidoPor"]?.ToObject<string>(),
                     param_CodigoAceca = jObj["param_CodigoAceca"]?.ToObject<string>(),
                     param_NomeMarca = jObj["param_NomeMarca"]?.ToObject<string>(),
+                    param_PesquisarSemVariante = jObj["param_PesquisarSemVariante"].ToObject<bool>(),
                     param_PesquisarDescricao = jObj["param_PesquisarDescricao"].ToObject<bool>(),
                 };
 
@@ -115,7 +116,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 sb.Append(" ,m.CodigoAceca");
                 sb.Append(" ,m.Nome AS NomeMarca");
                 sb.Append(" ,mf.Descricao AS NomeFase");
-                sb.Append(" ,mfa.Descricao AS NomeFabrica");
+                sb.Append(" ,mfa.Nome AS NomeFabrica");
                 sb.Append(" ,md.Descricao AS NomeDimensao");
                 sb.Append(" ,mfi.Descricao AS NomeFinalidade");
                 sb.Append(" ,mi.Descricao AS NomeImpressora");
@@ -165,6 +166,9 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 if (!string.IsNullOrEmpty(dynObj?.param_CodigoAceca))
                     sb.Append(" AND m.CodigoAceca like '%" + dynObj?.param_CodigoAceca.Trim() + "%'");
 
+                if (dynObj.param_PesquisarSemVariante)
+                    sb.Append(" AND SUBSTRING(m.codigoAceca, -1) REGEXP '[0-9]'");
+
                 if (!string.IsNullOrEmpty(dynObj?.param_NomeMarca))
                 {
                     if (dynObj.param_PesquisarDescricao)
@@ -174,7 +178,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 }
 
                 sb.Append(" ORDER BY");
-                sb.Append(" m.MarcaFaseId, m.Nome, m.MarcaFabricaId, mf.Descricao, m.Descricao;");
+                sb.Append(" m.marcaFaseId, m.nome, m.descricao, mst.marcaTipoId, m.marcaSubTipoId, m.codigoAceca ;");
 
                 string query = sb.ToString();
 
@@ -265,13 +269,13 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                    .OrderByDescending(x => x.CodigoAceca);
 
-                var lstmodel = await query
+                var lstModel = await query
                     .AsNoTracking()
                     .AsQueryable()
                     //.ToListAsync()
                     .FirstOrDefaultAsync();
 
-                if (lstmodel == null)
+                if (lstModel == null)
                 {
                     return BadRequest(new
                     {
@@ -283,7 +287,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 }
 
                 //var strCodigoAceca = lstmodel?.OrderByDescending(c => c.CodigoAceca)?.FirstOrDefault()?.CodigoAceca?.ToString();
-                var strCodigoAceca = lstmodel?.CodigoAceca?.ToString();
+                var strCodigoAceca = lstModel?.CodigoAceca?.ToString();
 
                 string strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
 
@@ -346,126 +350,38 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
         }
 
-        #endregion
-
-        #region Cadastro
-
         [HttpPost]
-        public async Task<IActionResult> GetNovoCodigoAceca(int idFase, string strTermoBusca, bool bvariante)
+        public async Task<IActionResult> GetTipoByIdFase(int id)
         {
-            string strNovoCodigoAceca = string.Empty;
+            var msgErroData = $"idMarcaFase :: {id}";
 
-            if (idFase < 1 || string.IsNullOrEmpty(strTermoBusca))
+            if (id < 1)
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = "GetCodigoAceca - Id deve ser maior que 0",
-                    data = idFase
+                    message = "GetTipoByIdFase - Id deve ser maior que 0",
+                    data = id
                 });
 
             try
             {
-                var msgErroData = $"idMarcaFase :: {idFase} , strTermoBusca :: {strTermoBusca}";
+                var lstModel = await _db.Marca
+                    .DistinctBy(x => x.MarcaSubTipo.MarcaTipoId)
+                    .Where(x => x.MarcaFaseId.Equals(id))
+                    .Include(x => x.MarcaSubTipo)
+                    .Include(x => x.MarcaSubTipo.MarcaTipo)
+                    .OrderBy(x => x.MarcaSubTipo.MarcaTipoId)
+                    .AsNoTracking()
+                    .ToListAsync();
 
-                var strCodigoAceca = string.Empty;
-
-                var strLetraInicial = strTermoBusca.Trim()[0].ToString();
-
-                var query = _db.Marca.Where(x => x.MarcaFaseId.Equals(idFase));
-
-                //
-                ///Fases que as marcas iniciam com letras
-                ///
-                if (idFase.Equals(14) // SA
-                        || (idFase >= 27 && idFase <= 29) //27-Palheiros , 28 Fumos, 29 Exportacao
-                        || (idFase >= 32 && idFase <= 34) //32-Cortadas, 33-Outros, 34-Quarentena
-                        || idFase.Equals(36) // Comemorativas
-                        || (idFase >= 39 && idFase <= 41) //39-Clandestinas, 40-Exterior, 41-M&C
-                    )
-                {
-                        query = query.Where(x => x.CodigoAceca != null 
-                                            && (bvariante 
-                                                ? x.CodigoAceca.StartsWith(strTermoBusca.Trim().ToString()) 
-                                                : x.Nome.StartsWith(strTermoBusca.Trim().ToString())
-                                                )
-                                            )
-
-
-                   //query = query.Where(x => x.CodigoAceca != null && x.Nome.Contains(nome.Trim().ToString()))
-                   //query = query.Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(nome.Trim()[0].ToString()))
-
-                   .OrderByDescending(x => x.CodigoAceca);
-
-                    var lstmodel = await query
-                        .AsNoTracking()
-                        .AsQueryable()
-                        //.ToListAsync()
-                        .FirstOrDefaultAsync()
-                        ;
-
-                    if (lstmodel == null)
-                    {
-                        return BadRequest(new
-                        {
-                            bResult = true,
-                            type = "ERRO - GetCodigoAceca - lstModel",
-                            message = "listagem Nula",
-                            data = msgErroData
-                        });
-                    }
-
-                    strCodigoAceca = lstmodel?.CodigoAceca?.ToString()?.Trim();
-                }
-
-                string strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
-
-                if (string.IsNullOrEmpty(strNumCodigoAceca))
-                {
-                    return BadRequest(new
-                    {
-                        bResult = true,
-                        type = "ERRO - GetCodigoAceca - lstModel",
-                        message = "strNumCodigoAceca Nula",
-                        data = msgErroData
-                    });
-                }
-
-                var strUltimaLetraCodigoAceca = 'A';
-
-                if (int.TryParse(strNumCodigoAceca, out int intNumCodigoAceca))
-                    if (!bvariante)
-                    {
-                        strNovoCodigoAceca = strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString());
-
-                        if (Char.IsLetter(strNovoCodigoAceca[^1]))
-                            strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1]) 
-                                ? strNovoCodigoAceca.Remove(strNovoCodigoAceca.Length - 1)
-                                : string.Concat(strNovoCodigoAceca, strUltimaLetraCodigoAceca);
-                    }
-                    else
-                    {
-                        if (Char.IsLetter(strCodigoAceca[^1]))
-                        {
-                            strUltimaLetraCodigoAceca = strCodigoAceca[^1];
-
-                            char charProximaLetraCodigoAceca = (char)(strUltimaLetraCodigoAceca + 1);
-
-                            strNovoCodigoAceca = ReplaceInPosition(strCodigoAceca.ToString(), strCodigoAceca.Length - 1, charProximaLetraCodigoAceca);
-                        }
-                        else
-                        {
-                            strNovoCodigoAceca = string.Concat(strCodigoAceca, strUltimaLetraCodigoAceca);
-                        }
-                    }
-
-                if (string.IsNullOrEmpty(strNovoCodigoAceca))
+                if (lstModel == null)
                 {
                     return BadRequest(new
                     {
                         bResult = true,
                         type = "ERRO - GetFullByIdFase - lstModel",
-                        message = "strNovoCodigoAceca Nula",
+                        message = "listagem Nula",
                         data = msgErroData
                     });
                 }
@@ -475,7 +391,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
-                    data = strNovoCodigoAceca
+                    data = lstModel,
                 });
             }
             catch (Exception ex)
@@ -492,6 +408,10 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 });
             }
         }
+
+        #endregion
+
+        #region CRUD JS
 
         [HttpPost]
         [Authorize(Roles = "Administracao")]
@@ -527,16 +447,23 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     vmModel.ImgPrincipal = null;
                 else
                 {
-                    var result = await UploadImg(vmModel, iFileImgPrincipal, true);
+                    if (!vmModel.ImgPrincipal.Equals("C:\\fakepath\\."))
+                    {
+                        var result = await UploadImg(vmModel, iFileImgPrincipal, true);
 
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = result?.ToString()
-                        });
+                        if (result.GetType() == typeof(NotFoundObjectResult) ||
+                             result.GetType() == typeof(BadRequestObjectResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = result?.ToString()
+                            });
+                    }
+                    else
+                    {
+                        vmModel?.ImgPrincipal = string.Empty;
+                    }
                 }
 
                 //Verifica se existe ImgDetalhe para upload
@@ -544,16 +471,22 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     vmModel.ImgDetalhe = null;
                 else
                 {
-                    var result = await UploadImg(vmModel, iFileImgDetalhe, false);
+                    if(!vmModel.ImgDetalhe.Equals("C:\\fakepath\\.")){
+                        var result = await UploadImg(vmModel, iFileImgDetalhe, false);
 
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = result?.ToString()
-                        });
+                        if (result.GetType() == typeof(NotFoundObjectResult) ||
+                             result.GetType() == typeof(BadRequestObjectResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = result?.ToString()
+                            });
+                    }
+                    else
+                    {
+                        vmModel?.ImgDetalhe = string.Empty;
+                    }
                 }
 
                 #endregion
@@ -564,14 +497,15 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 {
                     Ativo = true,
 
-                    MarcaDimensaoId = vmModel?.MarcaDimensaoId,
-                    MarcaFabricaId = vmModel?.MarcaFabricaId,
-                    MarcaFaseId = vmModel?.MarcaFaseId,
-                    MarcaFinalidadeId = vmModel?.MarcaFinalidadeId,
-                    MarcaImpressoraId = vmModel?.MarcaImpressoraId,
-                    MarcaQualidadeImagemId = vmModel?.MarcaQualidadeImagemId,
-                    MarcaRaridadeId = vmModel?.MarcaRaridadeId,
-                    MarcaSubTipoId = vmModel?.MarcaSubTipoId,
+                    MarcaDimensaoId = (vmModel?.MarcaDimensaoId < 0 || vmModel?.MarcaDimensaoId == null) ? 0 : vmModel?.MarcaDimensaoId,
+                    MarcaFabricaId = (vmModel?.MarcaFabricaId < 0 || vmModel?.MarcaFabricaId == null) ? 0 : vmModel?.MarcaFabricaId,
+                    MarcaFaseId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? 0 : vmModel?.MarcaFaseId,
+                    MarcaFinalidadeId = (vmModel?.MarcaFinalidadeId < 0 || vmModel?.MarcaFinalidadeId == null) ? 0 : vmModel?.MarcaFinalidadeId,
+                    MarcaImpressoraId = (vmModel?.MarcaImpressoraId < 0 || vmModel?.MarcaImpressoraId == null) ? 0 : vmModel?.MarcaImpressoraId,
+                    MarcaQualidadeImagemId = (vmModel?.MarcaQualidadeImagemId < 0 || vmModel?.MarcaQualidadeImagemId == null) ? 0 : vmModel?.MarcaQualidadeImagemId,
+                    MarcaRaridadeId = (vmModel?.MarcaRaridadeId < 0 || vmModel?.MarcaRaridadeId == null) ? 0 : vmModel?.MarcaRaridadeId,
+                    MarcaSubTipoId = (vmModel?.MarcaSubTipoId < 0 || vmModel?.MarcaSubTipoId == null) ? 5 : vmModel?.MarcaSubTipoId,
+
                     CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca : string.Empty,
                     CodigoSC = !string.IsNullOrEmpty(vmModel?.CodigoSC) ? vmModel?.CodigoSC : null,
                     ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? Path.GetFileName(vmModel?.ImgPrincipal) : string.Empty,
@@ -631,7 +565,351 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             }
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Edit(Models.Marcas model)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    #region Marca
+
+                    if (model.Id < 1)
+                    {
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Id deve ser maior que 0"
+                        });
+                    }
+
+                    if (string.IsNullOrEmpty(model.Nome))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Nome deve ser preenchido"
+                        });
+
+                    #region IDS
+
+                    model?.MarcaDimensaoId = (model?.MarcaDimensaoId < 0 || model?.MarcaDimensaoId == null) ? 0 : model?.MarcaDimensaoId;
+                    model?.MarcaFabricaId = (model?.MarcaFabricaId < 0 || model?.MarcaFabricaId == null) ? 0 : model?.MarcaFabricaId;
+                    model?.MarcaFaseId = (model?.MarcaFaseId < 0 || model?.MarcaFaseId == null) ? 0 : model?.MarcaFaseId;
+                    model?.MarcaFinalidadeId = (model?.MarcaFinalidadeId < 0 || model?.MarcaFinalidadeId == null) ? 0 : model?.MarcaFinalidadeId;
+                    model?.MarcaImpressoraId = (model?.MarcaImpressoraId < 0 || model?.MarcaImpressoraId == null) ? 0 : model?.MarcaImpressoraId;
+                    model?.MarcaQualidadeImagemId = (model?.MarcaQualidadeImagemId < 0 || model?.MarcaQualidadeImagemId == null) ? 0 : model?.MarcaQualidadeImagemId;
+                    model?.MarcaRaridadeId = (model?.MarcaRaridadeId < 0 || model?.MarcaRaridadeId == null) ? 0 : model?.MarcaRaridadeId;
+                    model?.MarcaSubTipoId = (model?.MarcaSubTipoId < 0 || model?.MarcaSubTipoId == null) ? 5 : model?.MarcaSubTipoId;
+
+                    #endregion
+
+                    #region Upload Imagem
+
+                    model?.ImgPrincipal = Path.GetFileName(model?.ImgPrincipal);
+                    model?.ImgDetalhe = Path.GetFileName(model?.ImgDetalhe);
+                    /*
+                    //Verifica se existe ImgPrincipal para upload
+                    if (iFileImgPrincipal == null)
+                        vmModel.ImgPrincipal = null;
+                    else
+                    {
+                        var result = await UploadImg(vmModel, iFileImgPrincipal, true);
+
+                        if (result.GetType() == typeof(NotFoundObjectResult) ||
+                             result.GetType() == typeof(BadRequestObjectResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = result?.ToString()
+                            });
+                    }
+
+                    //Verifica se existe ImgDetalhe para upload
+                    if (iFileImgDetalhe == null)
+                        vmModel.ImgDetalhe = null;
+                    else
+                    {
+                        var result = await UploadImg(vmModel, iFileImgDetalhe, false);
+
+                        if (result.GetType() == typeof(NotFoundObjectResult) ||
+                             result.GetType() == typeof(BadRequestObjectResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = result?.ToString()
+                            });
+                    }
+                    */
+                    #endregion
+
+                    _db.Entry(model).State = EntityState.Modified;
+                    _db.SaveChanges();
+
+                    if (model?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar"
+                        });
+
+                    #endregion
+
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Model Inválida",
+                    data = model,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                if (id < 1)
+                {
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Id deve ser maior que 0"
+                    });
+                }
+
+                var model = await _db.Marca.FindAsync(id);
+
+                if (model == null)
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "ERRO - ID nao localizado",
+                        message = "ID nao localizado",
+                        data = id
+                    });
+
+                _db.Marca.Remove(model);
+                _db.SaveChanges();
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
+        #endregion
+
         #region Funcoes
+
+        [HttpPost]
+        public async Task<IActionResult> GetNovoCodigoAceca(int idFase, string strTermoBusca, bool bvariante)
+        {
+            string strNovoCodigoAceca = string.Empty;
+
+            if (idFase < 1 || string.IsNullOrEmpty(strTermoBusca))
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "GetCodigoAceca - Id deve ser maior que 0",
+                    data = idFase
+                });
+
+            try
+            {
+                var msgErroData = $"idMarcaFase :: {idFase} , strTermoBusca :: {strTermoBusca}";
+
+                var strCodigoAceca = string.Empty;
+
+                var strLetraInicial = strTermoBusca?.Trim()[0].ToString();
+
+                var query = _db.Marca
+                    .Include(x => x.MarcaSubTipo.MarcaTipo)
+                    .Where(x => x.MarcaFaseId.Equals(idFase));
+
+
+                //
+                ///Fases que as marcas iniciam com letras
+                ///
+                if (idFase.Equals(14) // SA
+                        || (idFase >= 27 && idFase <= 29) //27-Palheiros , 28 Fumos, 29 Exportacao
+                        || (idFase >= 32 && idFase <= 34) //32-Cortadas, 33-Outros, 34-Quarentena
+                        || idFase.Equals(36) // Comemorativas
+                        || (idFase >= 39 && idFase <= 41) //39-Clandestinas, 40-Exterior, 41-M&C
+                    )
+                {
+
+                    query = query.Where(x => x.CodigoAceca != null
+                                            && (bvariante
+                                                ? x.CodigoAceca.StartsWith(strTermoBusca.Trim().ToString())
+                                                : (x.CodigoAceca.StartsWith(strLetraInicial) && x.MarcaFaseId.Equals(idFase))
+                                                )
+                                            )
+                        .OrderByDescending(x => x.CodigoAceca);
+                }
+                else
+                {
+                    query = query.Where(x => x.CodigoAceca != null
+                                            && (bvariante
+                                                ? x.CodigoAceca.StartsWith(strTermoBusca.Trim().ToString())
+                                                : (x.MarcaFaseId.Equals(idFase))
+                                                )
+                                            )
+                        .OrderByDescending(x => x.CodigoAceca)
+                        .Take(5);
+                }
+
+                var lstmodel = await query
+                            .AsNoTracking()
+                            .AsQueryable()
+                            .FirstOrDefaultAsync();
+
+                if (bvariante && lstmodel == null)
+                {
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO - Variante Pai Inexistente - lstModel",
+                        message = "listagem Nula",
+                        data = strTermoBusca
+                    });
+                }
+
+                if (lstmodel == null)
+                {
+                    return BadRequest(new
+                    {
+                        bResult = true,
+                        type = "ERRO - GetCodigoAceca - lstModel",
+                        message = "listagem Nula",
+                        data = msgErroData
+                    });
+                }
+
+                strCodigoAceca = lstmodel?.CodigoAceca?.ToString()?.Trim();
+
+                string strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
+
+                if (string.IsNullOrEmpty(strNumCodigoAceca))
+                {
+                    return BadRequest(new
+                    {
+                        bResult = true,
+                        type = "ERRO - GetCodigoAceca - lstModel",
+                        message = "strNumCodigoAceca Nula",
+                        data = msgErroData
+                    });
+                }
+
+                var strUltimaLetraCodigoAceca = 'B';
+
+                if (int.TryParse(strNumCodigoAceca, out int intNumCodigoAceca))
+                    if (!bvariante)
+                    {
+                        strNovoCodigoAceca = strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString());
+
+                        if (Char.IsLetter(strNovoCodigoAceca[^1]))
+                            strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1])
+                                ? strNovoCodigoAceca.Remove(strNovoCodigoAceca.Length - 1)
+                                : string.Concat(strNovoCodigoAceca, strUltimaLetraCodigoAceca);
+                    }
+                    else
+                    {
+                        if (Char.IsLetter(strCodigoAceca[^1]))
+                        {
+                            strUltimaLetraCodigoAceca = strCodigoAceca[^1];
+
+                            char charProximaLetraCodigoAceca = (char)(strUltimaLetraCodigoAceca + 1);
+
+                            strNovoCodigoAceca = ReplaceInPosition(strCodigoAceca.ToString(), strCodigoAceca.Length - 1, charProximaLetraCodigoAceca);
+                        }
+                        else
+                        {
+                            strNovoCodigoAceca = string.Concat(strCodigoAceca, strUltimaLetraCodigoAceca);
+                        }
+                    }
+
+                if (string.IsNullOrEmpty(strNovoCodigoAceca))
+                {
+                    return BadRequest(new
+                    {
+                        bResult = true,
+                        type = "ERRO - GetFullByIdFase - lstModel",
+                        message = "strNovoCodigoAceca Nula",
+                        data = msgErroData
+                    });
+                }
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = lstmodel,
+                    dataNovoCodigo = strNovoCodigoAceca
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
         public static string ReplaceInPosition(string input, int index, char newChar)
         {
             if (string.IsNullOrEmpty(input) || index < 0 || index >= input.Length)

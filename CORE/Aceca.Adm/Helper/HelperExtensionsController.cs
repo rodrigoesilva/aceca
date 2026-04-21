@@ -1,4 +1,5 @@
 using Aceca.Adm.Data;
+using Aceca.Adm.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +7,7 @@ using System.ComponentModel;
 
 namespace Aceca.Adm.Helper;
 
-public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env) : Controller
+public class HelperExtensionsController(AppDbContext _db, IWebHostEnvironment env) : Controller
 {
 
     #region variaveis
@@ -47,7 +48,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaFase
+            var lstModel = await _db.MarcaFase
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Ordem)
                    .AsNoTracking()
@@ -74,7 +75,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaFinalidade
+            var lstModel = await _db.MarcaFinalidade
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -101,7 +102,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaFabrica
+            var lstModel = await _db.MarcaFabrica
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Nome)
                    .AsNoTracking()
@@ -128,7 +129,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaDimensao
+            var lstModel = await _db.MarcaDimensao
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -155,11 +156,42 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaTipo
+            var lstModel = await _db.MarcaTipo
                   ?.Where(s => s.Ativo == true)
                   .OrderBy(m => m.Descricao)
                   .AsNoTracking()
                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaTipoByFase(int id)
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModelOrd = await _db.Marca
+                .AsNoTracking()
+                .Where(x => x.MarcaFaseId.Equals(id) && x.MarcaSubTipo.MarcaTipo != null)
+                .Select(x => x.MarcaSubTipo.MarcaTipo)
+                .Distinct()
+                .ToListAsync();
+
+            var lstModel = lstModelOrd.OrderBy(x => x.Id);
 
             foreach (var element in lstModel)
                 lst.Add(new SelectListItem
@@ -182,7 +214,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaSubTipo
+            var lstModel = await _db.MarcaSubTipo
                   ?.Where(s => s.Ativo == true)
                   .OrderBy(m => m.Descricao)
                   .AsNoTracking()
@@ -209,7 +241,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaSubTipo
+            var lstModel = await _db.MarcaSubTipo
                   ?.Where(s => s.MarcaTipoId.Equals(id))
                   .OrderBy(m => m.Descricao)
                   .AsNoTracking()
@@ -236,7 +268,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaImpressora
+            var lstModel = await _db.MarcaImpressora
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -263,7 +295,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.MarcaQualidadeImagem
+            var lstModel = await _db.MarcaQualidadeImagem
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -293,7 +325,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.AgendaImagem
+            var lstModel = await _db.AgendaImagem
                    ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -321,7 +353,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.FabricaFase
+            var lstModel = await _db.FabricaFase
                    ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -349,7 +381,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.PaisCategoria
+            var lstModel = await _db.PaisCategoria
                    ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -377,7 +409,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.Socio
+            var lstModel = await _db.Socio
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Nome)
                    .AsNoTracking()
@@ -405,7 +437,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.SocioPerfil
+            var lstModel = await _db.SocioPerfil
                     ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()
@@ -433,7 +465,7 @@ public class HelperExtensionsController(AppDbContext db, IWebHostEnvironment env
 
         try
         {
-            var lstModel = await db.TipoPagamento
+            var lstModel = await _db.TipoPagamento
                    ?.Where(s => s.Ativo == true)
                    .OrderBy(m => m.Descricao)
                    .AsNoTracking()

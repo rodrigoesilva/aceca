@@ -1,0 +1,156 @@
+@{
+    var pageApp = "ACECA";
+    var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
+    var pageTipo = string.Empty;
+
+    ViewData["Title"] = string.Format("{0} | {1} | {2}", pageApp, pageName, pageTipo);
+
+    Layout = $"~/Views/Shared/_BlankLayout.cshtml";
+}
+
+@section VendorStyles {
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+
+    <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/busy-load/app.min.css" />
+}
+
+@section VendorScripts {
+    <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
+    <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+
+    <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
+    <script src="~/vendor/libs/busy-load/app.min.js"></script>
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/vendor/css/pages/page-auth.css">
+}
+
+@section PageScripts {
+    <script src="~/js/auth/pages-auth-update.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+}
+
+@* ************** Content ************** *@
+
+<div class="position-relative">
+  <div class="authentication-wrapper authentication-basic container-p-y">
+    <div class="authentication-inner py-6 mx-4">
+
+      <!-- Register Card -->
+      <div class="card p-7">
+
+         <!-- Logo -->
+        <div class="app-brand justify-content-center mt-5">
+            <input type="hidden" id="hdSocioId" name="hdSocioId" value="0" />
+            <input type="hidden" id="hdIsPerfil" name="hdIsPerfil" value="false" />
+            <input type="hidden" id="tbNome" name="tbNome" value="ACECA" />
+            <input type="hidden" id="tbCargo" name="tbCargo" value="ACECA" />
+          <a href="/" class="app-brand-link gap-3">
+            <span class="app-brand-text demo menu-text fw-semibold ms-1 custom_text" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">A.C.E.C.A</span>
+          </a>
+        </div>
+        <!-- /Logo -->
+
+        <div class="card-body mt-1">
+          <h4 class="mb-1">Redefinir senha 🔒</h4>
+          <p class="mb-5">Sua nova senha deve ser diferente das senhas usadas anteriormente e conter 8 ou mais caracteres, incluindo pelo menos um número...</p>
+          
+            <form id="frmRegisterUpdate" class="mb-5" action="#" autocomplete="off">
+            
+                <div class="mb-5 form-username-cpf">
+                    <div class="input-group">
+                        <div class="form-floating form-floating-outline">
+                            <input type="text" class="form-control cpf-mask" id="userNameCPF" name="userNameCPF" placeholder="Entre com seu CPF (000.000.000-00)" required autofocus>
+                            <label for="userNameCPF">CPF</label>
+                        </div>
+                    </div>
+                    <div id="regUpdtUserErr" class="regupd-err" style="display:none; background:#fff0f0;border:1px solid #f5aaaa;color:#b00;padding:10px 13px;border-radius:7px;font-size:.82rem;margin-bottom:14px"></div>
+
+                </div>
+
+                <div class="mb-5 form-email">
+                      <div class="input-group">
+                        <div class="form-floating form-floating-outline">
+                          <input type="text" class="form-control" id="email" name="email" placeholder="Entre com seu email" required>
+                          <label for="email">E-mail</label>
+                        </div>
+                     </div>
+                     <div id="regUpdtEmailErr" class="regupd-err" style="display:none; background:#fff0f0;border:1px solid #f5aaaa;color:#b00;padding:10px 13px;border-radius:7px;font-size:.82rem;margin-bottom:14px"></div>
+                </div>
+
+               <div class="mb-5 form-password-toggle">
+                      <div class="input-group input-group-merge">
+                        <div class="form-floating form-floating-outline">
+                          <input type="password" id="password" name="password" class="form-control"
+                             pattern="(?=.*\d).{8,}$"
+                             placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="password"
+                             title="A senha deve ter pelo menos 8 caracteres e pelo menos 1 número" 
+                             required>
+                          <!--<input type="password" id="password" class="form-control" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="password" required/>-->
+                          <label for="password">Nova Senha</label>
+                        </div>
+                        <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
+                      </div>
+                    <div id="regUpdtPassErr" class="regupd-err" style="display:none; background:#fff0f0;border:1px solid #f5aaaa;color:#b00;padding:10px 13px;border-radius:7px;font-size:.82rem;margin-bottom:14px"></div>
+                </div>
+
+                <div class="mb-5 form-password-toggle">
+                      <div class="input-group input-group-merge">
+                        <div class="form-floating form-floating-outline">
+                          <input type="password" id="confirmPassword" class="form-control" name="confirmPassword" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="password" required/>
+                          <label for="confirmPassword">Confirmar Senha</label>
+                        </div>
+                        <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
+                      </div>
+                    <div id="regUpdtPassConfirmErr" class="regupd-err" style="display:none; background:#fff0f0;border:1px solid #f5aaaa;color:#b00;padding:10px 13px;border-radius:7px;font-size:.82rem;margin-bottom:14px"></div>
+                </div>
+
+            <div class="mb-5 py-2">
+              <div class="form-check mb-0 input-group">
+                  <div class="form-floating-outline">
+                    <input class="form-check-input" type="checkbox" id="terms-conditions" name="terms">
+                    <label class="form-check-label" for="terms-conditions">
+                      Aceito a 
+                      <!--<button type="button" class="btn btn-text-primary" data-bs-toggle="modal" data-bs-target="#pricingModal">política de privacidade e os termos e condições</button>-->
+                       <a href="#policyModal" data-bs-toggle="modal">política de privacidade e os termos de uso</a>
+                    </label>
+                 </div>
+              </div>
+                <div id="regUpdtChkErr" class="regupd-err" style="display:none; background:#fff0f0;border:1px solid #f5aaaa;color:#b00;padding:10px 13px;border-radius:7px;font-size:.82rem;margin-bottom:14px"></div>
+            </div>
+
+            <div id="regUpdtErr" class="regupd-err" style="display:none; background:#fff0f0;border:1px solid #f5aaaa;color:#b00;padding:10px 13px;border-radius:7px;font-size:.82rem;margin-bottom:14px"></div>
+
+
+            <button type="submit" class="btn btn-primary d-grid w-100 mb-5 btn-register-update" id="btnRegisterUpdate">
+              Atualizar Dados
+            </button>
+          </form>
+
+          <p class="text-center mb-5">
+            <span>Ainda não tem uma conta?</span>
+            <a href="https://aceca.net.br/#contact">
+              <span>Seja um Sócio</span>
+            </a>
+          </p>
+
+          <div class="text-center">
+              <a href="http://aceca.tryasp.net/" class="d-flex align-items-center justify-content-center">
+                <i class="ri-arrow-left-s-line scaleX-n1-rtl ri-20px me-1_5"></i>
+               Voltar ao Login
+              </a>
+            </div>
+        </div>
+      </div>
+      <!-- Register Card -->
+      <img src="~/img/illustrations/tree-3.png" alt="auth-tree" class="authentication-image-object-left d-none d-lg-block">
+      <img src="~/img/illustrations/auth-basic-mask-light.png" class="authentication-image d-none d-lg-block scaleX-n1-rtl" height="172" alt="triangle-bg" data-app-light-img="illustrations/auth-basic-mask-light.png" data-app-dark-img="illustrations/auth-basic-mask-dark.png">
+      <img src="~/img/illustrations/tree.png" alt="auth-tree" class="authentication-image-object-right d-none d-lg-block">
+    </div>
+  </div>
+</div>
+
+@await Html.PartialAsync("../_Partials/_Modals/ModalPolicyTerms")

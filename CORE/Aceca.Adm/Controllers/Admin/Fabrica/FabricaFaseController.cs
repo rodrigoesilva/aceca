@@ -112,7 +112,7 @@ namespace Aceca.Adm.Controllers.Admin.Fabrica
 
                     var newModel = new Models.FabricaFase
                     {
-                        Codigo = model.Codigo,
+                        Codigo = 0, //model.Codigo,
                         Descricao = !string.IsNullOrEmpty(model.Descricao) ? model.Descricao : null,
                         Ativo = model.Ativo,
                     };

@@ -11,6 +11,27 @@ namespace Aceca.Adm.Models
         public DateTime? DataAtualizacao { get; init; } = DateTime.Now;
     }
 
+    #region MENU
+    public class MenuItem
+    {
+        [Key]
+        public int MenuItemId { get; set; }
+        public int? MenuPaiId { get; set; }
+        [Required]
+        public string Nome { get; set; }
+        public bool Habilitado { get; set; }
+
+        [Required]
+        public string Action { get; set; }
+        [Required]
+        public string Controller { get; set; }
+
+        [ForeignKey("MenuPaiId")]
+        public virtual MenuItem MenuPai { get; set; }
+        public virtual ICollection<MenuItem> MenusFilhos { get; set; }
+    }
+
+    #endregion
 
     #region admin
 
@@ -357,6 +378,7 @@ namespace Aceca.Adm.Models
         [MaxLength(180)] public string? Email { get; set; } = string.Empty;
         [MaxLength(255)] public string? Senha { get; set; } = string.Empty;
         [MaxLength(255)][Column("senha_aberta")] public string? SenhaAberta { get; set; }
+        public bool SenhaAtualizada { get; set; }
         [MaxLength(255)][Column("_senha")] public string? Senha1 { get; set; }
         [MaxLength(255)][Column("_usuario")] public string? NomeUsuario { get; set; }
         [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;

@@ -547,7 +547,7 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
         (popAddNewItem.querySelector('#hdPaisCategoriaId').value = (obj === null ? 0 : obj.paisCategoriaId)),
 
         // Pop Dados

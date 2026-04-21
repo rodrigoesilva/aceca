@@ -1,6 +1,6 @@
 <!-- Extra Large Modal -->
-<div class="modal fade" id="modalAddNovaMarca" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl" role="document">
+<div class="modal fade" id="modalAddNovaMarca" aria-hidden="true" aria-labelledby="modalAddNovaMarca" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-body">
                 <div class="row">
@@ -22,9 +22,10 @@
                             </div>
                             <div class="card-body">
 
-                                <form id="formValidationExamples" class="row g-4">
+                                <!--  <form class="form-modal-marca row g-4" id="form-pop-marca" autocomplete="off">-->
+                                    <div class="row g-4">
 
-                                    <!-- Dados da Marca -->
+                                    <!--  Dados da Marca -->
                                     <div class="col-12">
                                         <h6>Dados da Marca</h6>
                                         <hr class="mt-0" />
@@ -42,7 +43,7 @@
 
                                     <div class="col-md-6 div_Codigo">
                                         <div class="form-floating form-floating-outline">
-                                            <input class="form-control" type="text" id="txt_Codigo" name="txt_Codigo" placeholder="C&oacute;digo ACECA" />
+                                            <input class="form-control" type="text" id="txt_Codigo" name="txt_Codigo" placeholder="C&oacute;digo ACECA"  disabled/>
                                             <label for="formValidationEmail">C&oacute;digo ACECA</label>
                                         </div>
                                     </div>
@@ -192,10 +193,11 @@
 
                                     <!-- Botoes -->
                                     <div class="col-12 mt-8 text-center">
-                                        <button type="submit" class="btn btn-primary data-submit me-3">Enviar</button>
-                                        <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                                        <button id="btn-cancel-modal" type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                                        <button id="btn-submit-modal" type="submit" class="btn btn-primary data-submit me-3">Enviar</button>
                                     </div>
-                                </form>
+                                </div> 
+                                <!--</form>-->
                             </div>
                         </div>
                     </div>

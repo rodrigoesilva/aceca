@@ -11,28 +11,44 @@
 }
 
 @section VendorStyles {
-    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
-    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
-    <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css" />
-    <link rel="stylesheet" href="~/vendor/libs/typeahead-js/typeahead.css" />
-    <link rel="stylesheet" href="~/vendor/libs/tagify/tagify.css" />
-    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+    <link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css" />
+    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css" />
+    <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css" />
+    <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
+    <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
+    <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css">
+    <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css"/>
+    <!-- Row Group CSS -->
+    <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
+    <!-- Form Validation -->
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
+
 
     <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/busy-load/app.min.css" />
+
+    <!-- Select Dropdownlist -->
+    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
 }
 
 @section VendorScripts {
-    <script src="~/vendor/libs/select2/select2.js"></script>
-    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
+    <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script>
+    <!-- Flat Picker -->
     <script src="~/vendor/libs/moment/moment.js"></script>
     <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
-    <script src="~/vendor/libs/typeahead-js/typeahead.js"></script>
-    <script src="~/vendor/libs/tagify/tagify.js"></script>
+    <!-- Form Validation -->
     <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
 
+
     <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
+    <script src="~/vendor/libs/busy-load/app.min.js"></script>
+
+    <!-- Select Dropdownlist -->
+    <script src="~/vendor/libs/select2/select2.js"></script>
+    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
 }
 
 @section PageScripts {
@@ -102,6 +118,14 @@
                                 <input class="form-control" type="text" id="txt_CodigoVariante" name="txt_CodigoVariante" placeholder="C&oacute;digo Variante" />
                                 <label for="txt_CodigoVariante">C&oacute;digo Variante</label>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-8 text-center div_original_variante">
+                        <div class="col-md-12 mt-n1 text-center">
+                            <label>Marca Original da Variante Informada</label>
+                            <div id="div_NomePaiVariante" name="div_NomePaiVariante" contenteditable="true"></div>
+                            <!--<input class="form-control" type="text" id="txt_NomePaiVariante" name="txt_NomePaiVariante" placeholder="Nome Original Variante" />-->
                         </div>
                     </div>
 
@@ -250,7 +274,7 @@
 
                     <!-- Botoes -->
                     <div class="col-12 mt-8 div_botoes text-center">
-                        <button type="submit" class="btn btn-primary data-submit me-3">Enviar</button>
+                        <button type="submit" class="btn btn-primary data-submit me-3">Cadastrar</button>
                         <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
                     </div>
                 </form>
