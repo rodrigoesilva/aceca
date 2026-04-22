@@ -508,15 +508,19 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                     CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca : string.Empty,
                     CodigoSC = !string.IsNullOrEmpty(vmModel?.CodigoSC) ? vmModel?.CodigoSC : null,
-                    ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? Path.GetFileName(vmModel?.ImgPrincipal) : string.Empty,
-                    ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? Path.GetFileName(vmModel?.ImgDetalhe) : string.Empty,
-                    Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome : string.Empty,
-                    Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao : string.Empty,
+                    ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? Path.GetFileName(vmModel?.ImgPrincipal) : null,
+                    ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? Path.GetFileName(vmModel?.ImgDetalhe) : null,
+                    Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome : null,
+                    Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao : null,
                     Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI : null,
                     Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI : null,
                     Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor : null,
-                    IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? vmModel?.IncluidoPor : string.Empty,
+                    IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? vmModel?.IncluidoPor : null,
                     EmQuarentena = !string.IsNullOrEmpty(vmModel?.EmQuarentena?.ToString()) ? vmModel?.EmQuarentena : 0,
+                    
+                    //
+                    TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome : null,
+                    TxtImpressora = !string.IsNullOrEmpty(vmModel?.MarcaImpressora?.Descricao) ? vmModel?.MarcaImpressora?.Descricao : null,
                 };
 
                 #endregion
@@ -763,6 +767,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
             try
             {
+                var queryExistsTermo = false;
+
                 var msgErroData = $"idMarcaFase :: {idFase} , strTermoBusca :: {strTermoBusca}";
 
                 var strCodigoAceca = string.Empty;
@@ -773,6 +779,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     .Include(x => x.MarcaSubTipo.MarcaTipo)
                     .Where(x => x.MarcaFaseId.Equals(idFase));
 
+                var queryExists = query.Any();
 
                 //
                 ///Fases que as marcas iniciam com letras
@@ -792,6 +799,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                                                 )
                                             )
                         .OrderByDescending(x => x.CodigoAceca);
+
+                    queryExistsTermo = query.Any();
                 }
                 else
                 {
@@ -803,6 +812,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                                             )
                         .OrderByDescending(x => x.CodigoAceca)
                         .Take(5);
+
+                    queryExistsTermo = query.Any();
                 }
 
                 var lstmodel = await query
@@ -810,15 +821,28 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                             .AsQueryable()
                             .FirstOrDefaultAsync();
 
-                if (bvariante && lstmodel == null)
-                {
-                    return Ok(new
+                if (queryExists) {
+                    if (queryExistsTermo && bvariante && lstmodel == null)
                     {
-                        bResult = false,
-                        type = "ERRO - Variante Pai Inexistente - lstModel",
-                        message = "listagem Nula",
-                        data = strTermoBusca
-                    });
+                        return Ok(new
+                        {
+                            bResult = false,
+                            type = "ERRO - listagem Nula",
+                            message = "Variante Pai Inexistente",
+                            data = strTermoBusca
+                        });
+                    }
+
+                    if (!queryExistsTermo && lstmodel == null)
+                    {
+                        return Ok(new
+                        {
+                            bResult = false,
+                            type = "ERRO - listagem Nula",
+                            message = "Essa fase  não inicia com essa letra",
+                            data = strTermoBusca
+                        });
+                    }
                 }
 
                 if (lstmodel == null)

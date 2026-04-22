@@ -462,7 +462,7 @@ function fn_ChangeCombos() {
         let strTermoBusca = document.querySelector('#txt_Nome');
         let idMarcaFase = Number($(this).find('option:selected').val());
 
-        //console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
+        console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
         //console.log("cmb_MarcaFase change strTermoBusca ::: ", strTermoBusca);
 
         if (idMarcaFase > 0) {
@@ -485,7 +485,7 @@ function fn_ChangeCombos() {
 
         let idMarcaVariante = $(this).find('option:selected').val();
 
-        //console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
+        console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
 
         if (idMarcaVariante > 0) {
 
@@ -520,7 +520,7 @@ function fn_ChangeCombos() {
         //console.log("cmb_MarcaTipo change bNovaVariante ::: ", bNovaVariante);
 
         if (idMarcaFabrica <= 0 && bNovaVariante === false) {
-            fn_ModalOpcaoInvalida();
+            //fn_ModalOpcaoInvalida();
         }
     });
 
@@ -541,7 +541,7 @@ function fn_ChangeCombos() {
         }
 
         if (idMarcaTipo <= 0 && bNovaVariante === false) {
-            fn_ModalOpcaoInvalida();
+            //fn_ModalOpcaoInvalida();
         } else {
             //console.log("cmb_MarcaTipo change objVariante ::: ", objVariante);
             
@@ -917,10 +917,12 @@ function fn_ShowCampos() {
 }
 
 function fn_ChecaInicioNumero(strTermoBusca) {
-    //console.log("default strTermoBusca match ::: ", strTermoBusca.value.match(/^\d/));
+    console.log("default strTermoBusca match ::: ", strTermoBusca.value.match(/^\d/));
 
     //verifica se iniciada com numero
     if (strTermoBusca.value.match(/^\d/) !== null) {
+        fn_ShowCampos();
+    } else {        
         // console.log("Fases que as marcas iniciam com Numeros");
 
         const swalWithBootstrapButtons = Swal.mixin({
@@ -962,8 +964,7 @@ function fn_ChecaInicioNumero(strTermoBusca) {
             }
         });
 
-    } else {
-        fn_ShowCampos();
+    
     }
 }
 
@@ -1011,11 +1012,12 @@ function fn_GetCodigoAceca() {
                     $('.div_imagem').show();
                     $('.div_botoes').show();
                 } else {
-                    //console.log("fn_GetCodigoAceca  result ::: ", result);
+                    console.log("fn_GetCodigoAceca  result ::: ", result);
+
                     Swal.fire({
                         title: 'OPS!!',
                         icon: 'error',
-                        html: `C&oacute;digo de Variante Inexistente !!<br><br> ERRO::: <b>` + result.data + `</b>`,
+                        html: `ERRO::: ${result.message} !!<br><br> <b>${result.data}</b>`,
                         focusConfirm: false,
                         confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
                         customClass: {
@@ -1023,6 +1025,7 @@ function fn_GetCodigoAceca() {
                         }
                     }).then((resultFalha) => {
                         //console.log("resultFalha  :: ", resultFalha);
+
                         fn_Limpar()
                     });
 
