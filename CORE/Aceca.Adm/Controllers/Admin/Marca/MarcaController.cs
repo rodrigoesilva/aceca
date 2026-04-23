@@ -269,6 +269,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                                 mr.Descricao AS NomeRaridade,
                                 mst.Descricao AS SubTipo,
                                 mt.Descricao AS Tipo,
+                                m.fabrica_txt AS TxtFabrica,
+                                m.impressora AS TxtImpressora,
 
                                 m.Descricao,
                                 m.Valor,
@@ -877,6 +879,8 @@ SELECT
     mr.Descricao AS NomeRaridade,
     mst.Descricao AS SubTipo,
     mt.Descricao AS Tipo,
+    m.fabrica_txt AS TxtFabrica,
+    m.impressora AS TxtImpressora,
 
     m.Descricao,
     m.IncluidoPor,

@@ -457,7 +457,7 @@ function fn_FiltrarDados() {
             },
 
             dataSrc: function (json) {
-                //console.log("result json:: ", json);
+                console.log("result json:: ", json);
                 return json.data;
             }
         },
@@ -493,7 +493,7 @@ function fn_FiltrarDados() {
             {
                 data: 'NomeFabrica', className: 'text-center', responsivePriority: 7,
                 render: function (data, type, full) {
-                    return (data === '' || data === null) ? full.txtFabrica : data;
+                    return (data === '' || data === null) ? full.TxtFabrica : data;
                 }
             },
             // COLUNA - subTipo
@@ -941,7 +941,46 @@ function fn_PopLoadCombos() {
     });
 }
 
+let cmbMarcaFaseLoaded = false;
+
 function fn_LoadCmb_MarcaFase() {
+
+    if (cmbMarcaFaseLoaded) return;
+
+    cmbMarcaFaseLoaded = true;
+
+    const $cmb = $('#cmb_MarcaFase');
+    const $cmbPop = $('#cmbPop_MarcaFase');
+
+    // mantém o option original (-1)
+    $cmb.prop('disabled', true);
+
+    $.ajax({
+        url: `${var_ControllerCmb}/AsyncCmb_MarcaFase`,
+        type: 'GET',
+        cache: true,
+        success: function (data) {
+
+            // 🔥 mantém o option fixo
+            let options = '<option value="-1">-- Selecionar --</option>';
+
+            // opcional: "Todas"
+            options += '<option value="0">Todas</option>';
+
+            data.forEach(item => {
+                options += `<option value="${item.value}">${item.text}</option>`;
+            });
+
+            $cmb.html(options).prop('disabled', false);
+            $cmbPop.html(options);
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            cmbMarcaFaseLoaded = false;
+            fn_ModalErro(xhr, textStatus, errorThrown);
+        }
+    });
+}
+function fn_LoadCmb_MarcaFase1() {
     // console.log("fn_LoadCmb_MarcaFase ::: ");
 
     if ($('#cmb_MarcaFase').length <= 1) {

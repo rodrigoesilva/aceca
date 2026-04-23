@@ -6,7 +6,7 @@ namespace Aceca.Adm.Models
 {
     public class BaseModel
     {
-        public bool? Ativo { get; set; }
+        public bool Ativo { get; set; }
         public DateTime? DataCriacao { get; set; } = DateTime.Now;
         public DateTime? DataAtualizacao { get; init; } = DateTime.Now;
     }

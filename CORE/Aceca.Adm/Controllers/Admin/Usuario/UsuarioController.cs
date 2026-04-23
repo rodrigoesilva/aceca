@@ -187,7 +187,7 @@ namespace Aceca.Adm.Controllers.Admin.Usuario
                         SocioPerfilId = model?.Socio?.SocioPerfilId = model?.Socio?.SocioPerfilId > 0 ? model?.Socio?.SocioPerfilId : 5, //socio
                         Nome = model?.Socio?.Nome,
                         MostrarSite = model?.Socio?.MostrarSite != null ? model?.Socio?.MostrarSite : true,
-                        Ativo = model?.Ativo,
+                        Ativo = (bool)(model?.Ativo),
                     };
 
                     _db.Entry(newModelSocio).State = EntityState.Modified;

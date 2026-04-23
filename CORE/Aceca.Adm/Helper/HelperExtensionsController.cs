@@ -14,6 +14,8 @@ public class HelperExtensionsController(AppDbContext _db, IWebHostEnvironment en
 
     private readonly ILogger<HelperExtensionsController> _logger;
 
+    private static List<SelectListItem> _cacheMarcaFase;
+
     #endregion
 
     #region Combos Marcas
@@ -42,7 +44,41 @@ public class HelperExtensionsController(AppDbContext _db, IWebHostEnvironment en
 
         return enumData;
     }
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFase_ot()
+    {
+        return await _db.MarcaFase
+            .Where(x => (bool)x.Ativo)
+            .OrderBy(x => x.Ordem)
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text = x.Descricao
+            })
+            .AsNoTracking()
+            .ToListAsync();
+    }
     public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFase()
+    {
+        if (_cacheMarcaFase != null)
+            return _cacheMarcaFase;
+
+        var data = await _db.MarcaFase
+            .Where(x => x.Ativo)
+            .OrderBy(x => x.Ordem)
+            .Select(x => new SelectListItem
+            {
+                Value = x.Id.ToString(),
+                Text = x.Descricao
+            })
+            .AsNoTracking()
+            .ToListAsync();
+
+        _cacheMarcaFase = data;
+
+        return data;
+    }
+
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFase1()
     {
         var lst = new List<SelectListItem>();
 
