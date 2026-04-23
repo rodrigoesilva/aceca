@@ -55,7 +55,6 @@ $.busyLoadSetup({
     background: "rgba(71,0,123, 0.86)"
 });
 
-
 //#endregion
 
 //#region CARREGAMENTO INICIAL
@@ -74,6 +73,12 @@ document.addEventListener('DOMContentLoaded', function () {
         /*
         $('.btn-filter').on('click', function () {
             fn_Filtrar();
+        });
+
+        let timeout;
+        $('#nome').on('keyup', function () {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => table.draw(), 400);
         });
         */
 
@@ -241,69 +246,6 @@ function fn_Limpar() {
     $.busyLoadFull("hide");
 }
 
-function fn_FiltrarDados(objFiltro) {
-    //console.log("bfn_FiltrarDados ::: ", objFiltro);
-
-    $.busyLoadFull("show");
-
-    varTbl_Obj.DataTable().clear().destroy();
-
-    //console.log("fn_FiltrarDados objFiltro ::: ", objFiltro);
-
-    var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
-        varAjax_TypeAction = 'POST',
-        varAjax_TypeData = 'JSON',
-        varAjax_TypeContent = 'application/json; charset=utf-8';
-
-    $.ajax({
-        url: varAjax_UrlController,
-        type: varAjax_TypeAction,
-        dataType: varAjax_TypeData,
-        contentType: varAjax_TypeContent,
-        data: JSON.stringify(objFiltro),
-        success: function (result) {
-
-            //console.log("fn_FiltrarDados result ::: ", result);
-
-            if (result.bResult === false) {
-                //console.log("busyLoadFull ::: hide");
-                $.busyLoadFull("hide");
-
-                Swal.fire({
-                    title: 'OPS!!',
-                    icon: 'error',
-                    html: `<b> Erro ocorrido <br><br>${result.message}</b>`,
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-danger waves-effect'
-                    }
-                });
-            } else {
-
-                var_Filtrado = true;
-
-                ///console.log("busyLoadFull ::: hide");
-                $.busyLoadFull("hide");
-
-                let lstData = result.data;
-                //console.log("jObj ::: ", jObj);
-
-                fn_GridListFilter(lstData, objFiltro, "fn_FiltrarDados");
-            }
-        },
-        error: function (xhr, textStatus, errorThrown) {
-
-            console.log("XMLHttpRequest  :: ", xhr);
-            console.log("textStatus  :: ", textStatus);
-            console.log("errorThrown  :: ", errorThrown);
-            console.log("result  :: Error while posting SendResult");
-
-            fn_ModalErro(xhr, textStatus, errorThrown);
-        },
-    });
-}
-
 //#endregion
 
 //#region Filtros
@@ -432,7 +374,7 @@ function fn_FiltrosChange() {
 
         //console.log("chk_PesquisarDescricao change ::: ", isChecked);
 
-        let colDesc = varTbl_Data.settings()[0].aoColumns[6];
+        let colDesc = varTbl_Data.settings()[0].aoColumns[5]; //Descricao
 
         colDesc.bSearchable = isChecked;
 
@@ -464,9 +406,13 @@ function fn_FiltrosLoad() {
 
 //#region GRID
 
-function fn_GridListFilter(lstData) {
+function fn_FiltrarDados() {
+    //console.log("bfn_FiltrarDados ::: ");
+    var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeData = 'JSON',
+        varAjax_TypeContent = 'application/json; charset=utf-8';
 
-    //console.log("fn_GridListFilter lstData ::: ", lstData);
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
@@ -478,275 +424,203 @@ function fn_GridListFilter(lstData) {
         varItems_Row = null,
         varItems_Id = 0;
 
-    if (varTbl_Obj.length) {
+    $.busyLoadFull("show");
 
-        varTbl_Data = $('.datatables-basic').DataTable({
+    $('.datatables-basic').DataTable().clear().destroy();
 
-            data: lstData,
-            ordering: true,
-            destroy: true,
+    varTbl_Data = $('.datatables-basic').DataTable({
+        processing: true,
+        serverSide: true,
 
-            deferRender: true,
-            orderClasses: false,
+        ajax: {
+            url: varAjax_UrlController,
+            type: varAjax_TypeAction,
+            contentType: varAjax_TypeContent,
 
-            columns: [
-                // COLUNA - Responsive (control)
-                {
-                    // For Responsive 
-                    data: 'id',
-                    className: 'control',
-                    searchable: false,
-                    orderable: false,
-                    responsivePriority: 1,
-                    targets: 0,
-                    render: function (data, type, full, meta) {
-                        return '';
+            data: function (d) {
+                //console.log("param d:: ", d)
+                return JSON.stringify({
+                    draw: d.draw,
+                    start: d.start,
+                    length: d.length,
+
+                    search: d.search, // 🔥 OBRIGATÓRIO para server-side
+
+                    filtros: {
+                        marcaFaseId: $('#cmb_MarcaFase').val(),
+                        marcaTipoId: $('#cmb_MarcaTipo').val(),
+                        marcaSubTipoId: $('#cmb_MarcaSubTipo').val(),
+                        pesquisarSemVariante: $('#chk_PesquisarSemVariante')[0].checked,
+                        pesquisarDescricao: $('#chk_PesquisarDescricao')[0].checked,
                     }
-                },
-                // COLUNA - Checkbox
-                {
-                    // For Checkboxes
-                    visible: false,
-                    data: 'id',
-                    targets: 1,
-                    orderable: false,
-                    checkboxes: {
-                        selectAllRender: '<input type="checkbox" class="form-check-input">'
-                    },
-                    render: function () {
-                        return '<input type="checkbox" class="dt-checkboxes form-check-input" >';
-                    },
-                    searchable: false
-                },
-                // COLUNA - codigoAceca
-                { targets: 2, data: 'codigoAceca', className: 'text-center', responsivePriority: 2 },
-                // COLUNA - nomeMarca
-                { targets: 3, data: 'nomeMarca', className: 'text-center', responsivePriority: 3 },
+                });
+            },
 
-                // COLUNA - imagem
-                {
-                    targets: 4, data: 'imgPrincipalFull', className: 'text-center', responsivePriority: 4,
-                    render: function (data, type, row) {
-                        return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
-                    }
-                },
-                // COLUNA - imagemDetalhe
-                {
-                    targets: 5, data: 'imgDetalheFull', className: 'text-center', responsivePriority: 5,
-                    render: function (data, type, row) {
-                        return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.codigoAceca}" src="${data}">`;
-                    }
-                },
+            dataSrc: function (json) {
+                //console.log("result json:: ", json);
+                return json.data;
+            }
+        },
 
-                // COLUNA - descricao
-                { targets: 6, data: 'descricao', className: 'text-start', searchable: false, responsivePriority: 6 },
-                // COLUNA - fabricaNome
-                {
-                    targets: 7,
-                    data: 'nomeFabrica',
-                    className: 'text-center',
-                    responsivePriority: 7,
-                    render: function (data, type, full) {
-                        return (data === '' || data === null) ? full.txtFabrica : data;
-                    }
-                },
-                // COLUNA - subTipo
-                { targets: 8, data: 'subTipo', className: 'text-center', responsivePriority: 8 },
-                // COLUNA - finalidade
-                { targets: 9, data: 'nomeFinalidade', className: 'text-center', responsivePriority: 9 },
-                // COLUNA - nomeFase
-                { targets: 10, data: 'nomeFase', className: 'text-center', responsivePriority: 10 },
-                // COLUNA - incluidoPor (avatar)
-                {
-                    targets: 11, data: 'incluidoPor', className: 'text-center', responsivePriority: 11,
-                    render: function (data, type, full) {
-                        if (!data || full.id === 0 || type !== 'display') return '';
-                        var ul = `<ul class="m-0 avatar-group d-flex align-items-center" style="list-style:none;">`;
-                        var items = data.split('/').map(function (p, i) {
-                            return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
+        columns: [
+            // COLUNA - Responsive (control)
+            { data: 'Id', className: 'control', orderable: false, visible: false, responsivePriority: 1, },
+            // COLUNA - codigoAceca
+            { data: 'CodigoAceca', className: 'text-center', responsivePriority: 2 },
+            // COLUNA - nomeMarca
+            { data: 'NomeMarca', className: 'text-center', responsivePriority: 3 },
+            // COLUNA - imagem
+            {
+                data: 'ImgPrincipalFull',
+                className: 'text-center',
+                responsivePriority: 4,
+                render: function (data, type, row) {
+                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${data}">`;
+                }
+            },
+            // COLUNA - imagemDetalhe
+            {
+                data: 'ImgDetalheFull',
+                className: 'text-center',
+                responsivePriority: 5,
+                render: function (data, type, row) {
+                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row.CodigoAceca}" src="${data}">`;
+                }
+            },
+            // COLUNA - descricao
+            { data: 'Descricao', className: 'text-start', responsivePriority: 6 },
+            // COLUNA - fabricaNome
+            {
+                data: 'NomeFabrica', className: 'text-center', responsivePriority: 7,
+                render: function (data, type, full) {
+                    return (data === '' || data === null) ? full.txtFabrica : data;
+                }
+            },
+            // COLUNA - subTipo
+            { data: 'SubTipo', className: 'text-center', responsivePriority: 8 },
+            // COLUNA - finalidade
+            { data: 'NomeFinalidade', className: 'text-center', responsivePriority: 9 },
+            // COLUNA - nomeFase
+            { data: 'NomeFase', className: 'text-center', responsivePriority: 10 },
+            // COLUNA - incluidoPor (avatar)
+            {
+                data: 'IncluidoPor', className: 'text-center', responsivePriority: 11,
+                render: function (data, type, full) {
+                    //console.log("result data:: ", data);
+                    //console.log("result type:: ", type);
+                    //console.log("result full:: ", full);
+                    if (!data || full.Id === 0 || type !== 'display') return '';
+                    var ul = `<ul class="m-0 avatar-group d-flex align-items-center" style="list-style:none;">`;
+                    var items = data.split('/').map(function (p, i) {
+                        return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
                                         title="${p}" style="z-index:1;">
                                         <img src="../img/avatars/${i}.png" alt="Avatar" class="rounded-circle">
                                     </li>`;
-                        }).join('');
-                        return ul + items + '</ul>';
-                    }
-                },
-                // COLUNA - incluidoPor hidden (filtro)
-                { targets: -2, data: 'incluidoPor', visible: false, responsivePriority: 99 },
-                // COLUNA - Ações
-                {
-                    data: 'id', targets: -1, searchable: false, orderable: false, responsivePriority: 2,
-                    render: function (data, type, full) {
-                        if (type !== 'display') return '';
-                        var itemObjJson = encodeURIComponent(JSON.stringify(full));
-                        return `<div class="d-inline-block text-nowrap">
+                    }).join('');
+                    return ul + items + '</ul>';
+                }
+            },
+            // COLUNA - incluidoPor hidden (filtro)
+            { targets: -2, data: 'IncluidoPor', visible: false, responsivePriority: 99 },
+            // COLUNA - Ações
+            {
+                data: 'Id', targets: -1, searchable: false, orderable: false, responsivePriority: 2,
+                render: function (data, type, full) {
+                    if (type !== 'display') return '';
+                    var itemObjJson = encodeURIComponent(JSON.stringify(full));
+                    return `<div class="d-inline-block text-nowrap">
                                     <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
                                         class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
                                         <i class="ri-edit-box-line ri-22px"></i>
                                     </a>
                                 </div>`;
-                    }
                 }
-            ],
-
-            //order: varCol_Ordenacao,
-            dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
-            displayLength: varItems_QtdPorPage,
-            lengthMenu: varItems_DivPage,
-            language: {
-                url: varLang_UrlTranslate,
-                paginate: {
-                    next: '<i class="ri-arrow-right-s-line"></i>',
-                    previous: '<i class="ri-arrow-left-s-line"></i>'
-                }
-            },
-            buttons: [
-                {
-                    extend: 'collection',
-                    className: 'btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
-                    text: '<i class="ri-external-link-line me-sm-1"></i> <span class="d-none d-sm-inline-block">Exportar</span>',
-                    buttons: [
-                        // BOTAO CABECALHO - EXPORTAR - IMPRIMIR
-                        {
-                            extend: 'print',
-                            text: '<i class="ri-printer-line me-1" ></i>Imprimir',
-                            className: 'dropdown-item',
-                            exportOptions: {
-                                columns: varCol_Exportar,
-                            }
-                        },
-                        // BOTAO CABECALHO - EXPORTAR - CSV
-                        {
-                            extend: 'csv',
-                            text: '<i class="ri-file-text-line me-1" ></i>Csv',
-                            className: 'dropdown-item',
-                            exportOptions: {
-                                columns: varCol_Exportar,
-                            }
-                        },
-                        // BOTAO CABECALHO - EXPORTAR - EXCEL
-                        {
-                            // extend: 'excel',
-                            extend: 'excelHtml5',
-                            text: '<i class="ri-file-excel-line me-1"></i>Excel',
-                            className: 'dropdown-item',
-                            exportOptions: {
-                                columns: varCol_Exportar,
-                            }
-                        },
-                        // BOTAO CABECALHO - EXPORTAR - PDF
-                        {
-                            //extend: 'pdf',
-                            extend: "pdfHtml5",
-                            text: '<i class="ri-file-pdf-line me-1"></i>PDF',
-                            className: 'dropdown-item',
-                            orientation: 'landscape',
-                            exportOptions: {
-                                columns: varCol_Exportar,
-                            },
-                        },
-                        // BOTAO CABECALHO - EXPORTAR - COPIAR
-                        {
-                            //extend: 'copy',
-                            extend: 'copyHtml5',
-                            text: '<i class="ri-file-copy-line me-1" ></i>Copiar',
-                            className: 'dropdown-item',
-                            exportOptions: {
-                                columns: varCol_Exportar
-                            }
+            }
+        ],
+        language: {
+            url: varLang_UrlTranslate,
+            paginate: {
+                next: '<i class="ri-arrow-right-s-line"></i>',
+                previous: '<i class="ri-arrow-left-s-line"></i>'
+            }
+        },
+        buttons: [
+            {
+                extend: 'collection',
+                className: 'btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
+                text: '<i class="ri-external-link-line me-sm-1"></i> <span class="d-none d-sm-inline-block">Exportar</span>',
+                buttons: [
+                    // BOTAO CABECALHO - EXPORTAR - IMPRIMIR
+                    {
+                        extend: 'print',
+                        text: '<i class="ri-printer-line me-1" ></i>Imprimir',
+                        className: 'dropdown-item',
+                        exportOptions: {
+                            columns: varCol_Exportar,
                         }
-                    ]
-                },
-
-                {
-                    text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
-                    className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
-                    action: function (e, dt, node, config) {
-                        //console.log("BTN NEW ::: ", dt);
-                        window.location.href = '/Marca/Cadastro';
-                    }
-                }
-            ],
-
-            // For responsive popup
-            /*
-            responsive: {
-                details: {
-                    display: $.fn.dataTable.Responsive.display.modal({
-                        header: function (row) {
-                            var data = row.data();
-
-                           //console.log("data ::: ", data);
-                            //return 'Detalhes ' + data['codigoAceca'];
-
-                            return `<h2 style="text-align: center;">${data['codigoAceca']}</h2>`;
+                    },
+                    // BOTAO CABECALHO - EXPORTAR - CSV
+                    {
+                        extend: 'csv',
+                        text: '<i class="ri-file-text-line me-1" ></i>Csv',
+                        className: 'dropdown-item',
+                        exportOptions: {
+                            columns: varCol_Exportar,
                         }
-                    }),
-                    type: 'column',
-                    renderer: function (api, rowIdx, columns) {
-                        var data = $.map(columns, function (col, i) {
-                            //console.log("col ::: ", col);
-                            if (col.columnIndex !== 11 && col.columnIndex !== 13) {
-
-                                let popData = col.title !== '' // ? Do not show row in modal popup if title is blank (for check box)
-                                    ? '<tr data-dt-row="' +
-                                    col.rowIndex +
-                                    '" data-dt-column="' +
-                                    col.columnIndex +
-                                    '">' +
-                                    '<td>' +
-                                    col.title +
-                                    ':' +
-                                    '</td> ' +
-                                    '<td>' +
-                                    col.data +
-                                    '</td>' +
-                                    '</tr>'
-                                    : '';
-
-                                return popData;
-                            }
-                        }).join('');
-
-                        //console.log("data ::: ", data);
-
-                        return data ? $('<table class="table"/><tbody />').append(data) : false;
+                    },
+                    // BOTAO CABECALHO - EXPORTAR - EXCEL
+                    {
+                        // extend: 'excel',
+                        extend: 'excelHtml5',
+                        text: '<i class="ri-file-excel-line me-1"></i>Excel',
+                        className: 'dropdown-item',
+                        exportOptions: {
+                            columns: varCol_Exportar,
+                        }
+                    },
+                    // BOTAO CABECALHO - EXPORTAR - PDF
+                    {
+                        //extend: 'pdf',
+                        extend: "pdfHtml5",
+                        text: '<i class="ri-file-pdf-line me-1"></i>PDF',
+                        className: 'dropdown-item',
+                        orientation: 'landscape',
+                        exportOptions: {
+                            columns: varCol_Exportar,
+                        },
+                    },
+                    // BOTAO CABECALHO - EXPORTAR - COPIAR
+                    {
+                        //extend: 'copy',
+                        extend: 'copyHtml5',
+                        text: '<i class="ri-file-copy-line me-1" ></i>Copiar',
+                        className: 'dropdown-item',
+                        exportOptions: {
+                            columns: varCol_Exportar
+                        }
                     }
-                }
+                ]
             },
-            */
 
-            // For responsive grid phone icon
-            /*
-            responsive: {
-                details: {
-                    renderer: function (api, rowIdx, columns) {
-                        var data = $.map(columns, function (col, i) {
-                            return col.hidden ?
-                                '<div class="col-6 mb-2">' +
-                                '<strong>' + col.title + ':</strong> ' + col.data +
-                                '</div>' :
-                                '';
-                        }).join('');
-
-                        return data ? $('<div class="row p-3"/>').append(data) : false;
-                    }
+            {
+                text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
+                className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
+                action: function (e, dt, node, config) {
+                    //console.log("BTN NEW ::: ", dt);
+                    window.location.href = '/Marca/Cadastro';
                 }
-            },
-            */
+            }
+        ],
+        responsive: {
+            details: {
+                //type: 'column',
+                //target: 'tr',
+                renderer: function (api, rowIdx, columns) {
+                    var row = api.row(rowIdx).data();
 
-            // For responsive grid phone
-
-            responsive: {
-                details: {
-                    //type: 'column',
-                    //target: 'tr',
-                    renderer: function (api, rowIdx, columns) {
-                        var row = api.row(rowIdx).data();
-
-                        // ✅ Função de zoom — injeta modal no body na primeira vez
-                        if (!document.getElementById('imgZoomModal')) {
-                            $('body').append(`<div id="imgZoomModal" style="
+                    // ✅ Função de zoom — injeta modal no body na primeira vez
+                    if (!document.getElementById('imgZoomModal')) {
+                        $('body').append(`<div id="imgZoomModal" style="
                                                     display:none;position:fixed;inset:0;z-index:99999;
                                                     background:rgba(0,0,0,0.85);
                                                     align-items:center;justify-content:center;cursor:pointer;"
@@ -767,70 +641,70 @@ function fn_GridListFilter(lstData) {
                                                 </div>
                                             `);
 
-                            // Fecha com ESC
-                            $(document).on('keydown.imgZoom', function (e) {
-                                if (e.key === 'Escape') {
-                                    $('#imgZoomModal').css('display', 'none');
-                                }
-                            });
-                        }
+                        // Fecha com ESC
+                        $(document).on('keydown.imgZoom', function (e) {
+                            if (e.key === 'Escape') {
+                                $('#imgZoomModal').css('display', 'none');
+                            }
+                        });
+                    }
 
-                        // ✅ Função global de abertura do zoom
-                        window.fn_ZoomImg = function (src) {
-                            $('#imgZoomTarget').attr('src', src);
-                            $('#imgZoomModal').css('display', 'flex');
-                        };
+                    // ✅ Função global de abertura do zoom
+                    window.fn_ZoomImg = function (src) {
+                        $('#imgZoomTarget').attr('src', src);
+                        $('#imgZoomModal').css('display', 'flex');
+                    };
 
-                        // ✅ Imagens clicáveis com cursor pointer e chamada ao zoom
-                        var imgPrincipal = row.imgPrincipalFull
-                            ? `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${row.imgPrincipalFull}"
+                    // ✅ Imagens clicáveis com cursor pointer e chamada ao zoom
+                    var imgPrincipal = row.imgPrincipalFull
+                        ? `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${row.imgPrincipalFull}"
                                     onclick="fn_ZoomImg('${row.imgPrincipalFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px; 
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
-                            : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px; 
+                        : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px; 
                                     display:flex;align-items:center;justify-content:center;
                                     font-size:11px;color:#aaa;">sem img</div>`;
 
-                        var imgDetalhe = row.imgDetalheFull
-                            ? `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${row.imgDetalheFull}"
+                    var imgDetalhe = row.imgDetalheFull
+                        ? `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${row.imgDetalheFull}"
                                     onclick="fn_ZoomImg('${row.imgDetalheFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
-                            : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px;
+                        : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px;
                                     display:flex;align-items:center;justify-content:center;
                                     font-size:11px;color:#aaa;">sem detalhe</div>`;
 
-                        // Fábrica
-                        var fabrica = (row.txtFabrica === "" || row.txtFabrica === null)
-                            ? row.nomeFabrica
-                            : row.txtFabrica;
+                    // Fábrica
+                    var fabrica = (row.txtFabrica === "" || row.txtFabrica === null)
+                        ? row.nomeFabrica
+                        : row.txtFabrica;
 
-                        // Avatares incluídoPor
-                        var avatarHtml = '';
-                        if (row.incluidoPor) {
-                            var pessoas = row.incluidoPor.split("/");
-                            avatarHtml = pessoas.map(function (p, i) {
-                                return `<img src="../img/avatars/${i}.png" alt="${p}" title="${p}"
+                    // Avatares incluídoPor
+                    var avatarHtml = '';
+                    if (row.incluidoPor) {
+                        var pessoas = row.incluidoPor.split("/");
+                        avatarHtml = pessoas.map(function (p, i) {
+                            return `<img src="../img/avatars/${i}.png" alt="${p}" title="${p}"
                                         style="width:28px;height:28px;border-radius:50%;border:1.5px solid #fff;margin-right:2px;">`;
-                            }).join('');
-                        }
+                        }).join('');
+                    }
 
-                        // ✅ incluidoPor como TEXTO PURO no card mobile
-                        var incluidoPorTexto = '';
+                    // ✅ incluidoPor como TEXTO PURO no card mobile
+                    var incluidoPorTexto = '';
 
-                        if (row.incluidoPor) {
-                            // Substitui "/" por separador legível
-                            incluidoPorTexto = row.incluidoPor.split('/').join(', ');
-                        }
+                    if (row.incluidoPor) {
+                        // Substitui "/" por separador legível
+                        incluidoPorTexto = row.incluidoPor.split('/').join(', ');
+                    }
 
-                        // Botão editar
-                        var itemObjJson = encodeURIComponent(JSON.stringify(row));
-                        var btnEditar = `<a href="javascript:fn_Modal(${itemObjJson},'Edit');"
+                    // Botão editar
+                    var itemObjJson = encodeURIComponent(JSON.stringify(row));
+                    var btnEditar = `<a href="javascript:fn_Modal(${itemObjJson},'Edit');"
                                             class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body">
                                             <i class="ri-edit-box-line ri-22px"></i>
                                         </a>`;
 
-                        var card = `<div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1rem;margin:6px 0;">
+                    var card = `<div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1rem;margin:6px 0;">
 
                 <!-- ✅ MUDANÇA 1 — Primeira linha: SOMENTE as duas imagens, centralizadas -->
                 <div style="display:flex;justify-content:center;gap:100px;padding-bottom:12px;border-bottom:0.5px solid #eee;margin-bottom:12px;">
@@ -899,19 +773,22 @@ function fn_GridListFilter(lstData) {
                 
             </div>`;
 
-                        return $(card);
-                    }
+                    return $(card);
                 }
-            },
-
-            initComplete: function (settings, json) {
-                //console.log("settings ::: ", settings);
-                //console.log("json ::: ", json);
-
-                fn_GridComplete(this);
             }
-        });
-    }
+        },
+
+        drawCallback: function () {
+            fn_Zoom();
+            fn_LazyLoad();
+        },
+        initComplete: function (settings, json) {
+            //console.log("settings ::: ", settings);
+            //console.log("json ::: ", json);
+
+            fn_GridComplete(this);
+        }
+    });
 }
 
 function fn_GridComplete(grid) {
@@ -942,13 +819,13 @@ function fn_GridComplete(grid) {
         //console.log("isPerfil ::: ", isPerfil);
 
         if (isPerfil === "false") {
-            thisApi.column(13).visible(false); // coluna acoes
+            thisApi.column(12).visible(false); // coluna acoes
 
             $(".create-new").attr('style', 'display: none !important');
         }
 
         if (idMarcaFase > 0) {
-            thisApi.column(10).visible(false); // coluna fase
+            thisApi.column(9).visible(false); // coluna fase
         }
 
         fn_Zoom();
@@ -981,7 +858,7 @@ function fn_GridComplete(grid) {
 
 //#endregion
 
-//#region ZOOM
+//#region IMAGENS
 function fn_Zoom() {
     //console.log("fn_Zoom ::: ");
     var modal = document.getElementById('myModal');
@@ -1015,6 +892,22 @@ document.addEventListener('hidden.bs.modal', function (event) {
     }
 });
 
+function fn_LazyLoad() {
+    const images = document.querySelectorAll('.lazy-img');
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.classList.remove('lazy-img');
+                obs.unobserve(img);
+            }
+        });
+    });
+
+    images.forEach(img => observer.observe(img));
+}
 //#endregion
 
 //#region COMBO

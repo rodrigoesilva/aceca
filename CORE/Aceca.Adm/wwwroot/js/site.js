@@ -113,6 +113,7 @@ function fn_AuthSession() {
         if (sessionData !== null) {
             document.getElementById('hdSocioId').value = `${sessionData?.nameIdentifier}`;
             document.getElementById('hdIsPerfil').value = `${sessionData?.isPerfil}`;
+            document.getElementById('tbAvatar').textContent = `${sessionData?.avatar}`;
             document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
             document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
         } else {

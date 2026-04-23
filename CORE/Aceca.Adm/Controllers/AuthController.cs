@@ -1,3 +1,4 @@
+using Aceca.Adm.Controllers.Admin.Marca;
 using Aceca.Adm.Data;
 using Aceca.Adm.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -18,15 +19,32 @@ namespace Aceca.Adm.Controllers
 {
     public class AuthController : Controller
     {
+
+        #region variaveis
+
         private readonly ILogger<AuthController> _logger;
+        private readonly IConfiguration _appConfiguration;
+        private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
-        private readonly IConfiguration _cfg;
         private EPerfil _socioPerfil;
-        public AuthController(ILogger<AuthController> logger, AppDbContext db, IConfiguration cfg)
+
+        private readonly string _imgBaseUrl = string.Empty;
+        private readonly string _appBaseUrl = string.Empty;
+
+        private string _strControllerName = string.Empty;
+        private string _strActionName = string.Empty;
+        //
+
+        #endregion
+        public AuthController(ILogger<AuthController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
         {
             _logger = logger;
             _db = db;
-            _cfg = cfg;
+            _appEnvironment = env;
+            _appConfiguration = cfg;
+
+            _imgBaseUrl = _appConfiguration["Url:Img"]!;
+            _appBaseUrl = _appConfiguration["App:Url"]!;
         }
 
         public record LoginIn(string Email, string Senha);
@@ -102,8 +120,8 @@ namespace Aceca.Adm.Controllers
             if (HttpContext?.Request?.Cookies?.Count > 0)
             {
                 var siteCookies = HttpContext.Request.Cookies
-                    .Where(c => c.Key.Contains(_cfg["Cookie:Key"]?.ToString())
-                        || c.Key.Contains($"{_cfg["Cookie:Key"]?.ToString()}.ExpireDateTime")
+                    .Where(c => c.Key.Contains(_appConfiguration["Cookie:Key"]?.ToString())
+                        || c.Key.Contains($"{_appConfiguration["Cookie:Key"]?.ToString()}.ExpireDateTime")
                         || c.Key.Contains(".AspNetCore.")
                         || c.Key.Contains("Microsoft.Authentication"));
                 foreach (var cookie in siteCookies)
@@ -185,13 +203,15 @@ namespace Aceca.Adm.Controllers
                         message = "SetClaims Inválido"
                     });
 
+                var rootPathImgAvatar = Path.Combine(_appEnvironment.WebRootPath, "img", "avatars", "socio", "imgAvatar", socio?.Id?.ToString(), ".jpg");
+
                 return Ok(new
                 {
                     bResult = true,
                     token = strToken,
                     nameIdentifier = socio.Id.ToString(),
                     nome = socio.Nome,
-                    //email = user.Email,
+                    avatar = !string.IsNullOrEmpty(socio.ImgAvatar) ? rootPathImgAvatar : rootPathImgAvatar,
                     cargo = socio?.SocioPerfil?.Descricao,
                     isPerfil = Convert.ToBoolean(socio?.SocioPerfil?.Descricao?.Equals("Administracao")) ? true : false,
                     pswuptd = user.SenhaAtualizada
@@ -249,7 +269,7 @@ namespace Aceca.Adm.Controllers
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
 
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_cfg["Jwt:Key"]!));
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appConfiguration["Jwt:Key"]!));
 
                 var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -335,7 +355,7 @@ namespace Aceca.Adm.Controllers
 
                 // Set a separate cookie to store the expiration date
                 HttpContext.Response.Cookies.Append(
-                     $"{_cfg["Cookie:Key"]?.ToString()}.ExpireDateTime"
+                     $"{_appConfiguration["Cookie:Key"]?.ToString()}.ExpireDateTime"
                     , options.Expires.ToString()
                     , new CookieOptions { Expires = options.Expires }
                     );
@@ -368,7 +388,7 @@ namespace Aceca.Adm.Controllers
                     }
                 }
 
-                string expirationDateString = HttpContext.Request.Cookies[$"{_cfg["Cookie:Key"]?.ToString()}.ExpireDateTime"];
+                string expirationDateString = HttpContext.Request.Cookies[$"{_appConfiguration["Cookie:Key"]?.ToString()}.ExpireDateTime"];
 
                 if (expirationDateString != null && DateTimeOffset.TryParse(expirationDateString, out DateTimeOffset expirationDate))
                 {

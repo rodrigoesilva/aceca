@@ -142,7 +142,7 @@ namespace Aceca.Adm.Models
         public int? MarcaRaridadeId { get; set; }
         public int? MarcaSubTipoId { get; set; }
         public string? CodigoAceca { get; set; } = string.Empty;
-        public string? CodigoSC { get; set; } = string.Empty;
+        [Column("codigoSC")] public string? CodigoFabrica { get; set; } = string.Empty;
         public string? ImgPrincipal { get; set; } = string.Empty;
         public string? ImgDetalhe { get; set; } = string.Empty;
         public string? Nome { get; set; } = string.Empty;
@@ -275,6 +275,7 @@ namespace Aceca.Adm.Models
         public int? Id { get; set; }
         public int? SocioPerfilId { get; set; }
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
+        public string? ImgAvatar { get; set; } = string.Empty;
         public bool? MostrarSite { get; set; }
 
         public SocioPerfil? SocioPerfil { get; set; }

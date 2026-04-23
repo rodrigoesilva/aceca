@@ -1,14 +1,20 @@
 using Aceca.Adm.Data;
 using Aceca.Adm.Models;
 using Aceca.Adm.VMModels;
+using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Aceca.Adm.Controllers.Admin.Marca
 {
@@ -21,6 +27,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
+        private readonly IMemoryCache _cache;
 
         private readonly string _imgBaseUrl = string.Empty;
         private readonly string _appBaseUrl = string.Empty;
@@ -31,12 +38,17 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
         #endregion
 
-        public MarcaController(ILogger<MarcaController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
+        public MarcaController(ILogger<MarcaController> logger, 
+            AppDbContext db, 
+            IWebHostEnvironment env, 
+            IConfiguration cfg,
+            IMemoryCache cache)
         {
             _logger = logger;
             _db = db;
             _appEnvironment = env;
             _appConfiguration = cfg;
+            _cache = cache;
 
             _imgBaseUrl = _appConfiguration["Url:Img"]!;
             _appBaseUrl = _appConfiguration["App:Url"]!;
@@ -67,7 +79,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         #region Filtros
 
         [HttpPost]
-        public async Task<IActionResult> FiltrarDados([FromBody] object obj)
+        public async Task<IActionResult> FiltrarDados1([FromBody] object obj)
         {
             if (obj != null && string.IsNullOrEmpty(obj?.ToString()))
                 return BadRequest(new
@@ -152,7 +164,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     sb.Append(" AND m.MarcaFaseId = " + dynObj?.param_MarcaFaseId);
 
                 if (dynObj?.param_MarcaFabricaId >= 0)
-                    sb.Append(" AND m.param_MarcaFabricaId = " + dynObj?.param_MarcaFabricaId); //.Where(p => p.MarcaFabrica.Nome.Equals(paramDynObj.param_MarcaFabricaNome)).ToList();
+                    sb.Append(" AND m.marcaFabricaId = " + dynObj?.param_MarcaFabricaId); //.Where(p => p.MarcaFabrica.Nome.Equals(paramDynObj.param_MarcaFabricaNome)).ToList();
 
                 if (dynObj?.param_MarcaTipoId >= 0)
                     sb.Append(" AND mst.marcaTipoId = " + dynObj?.param_MarcaTipoId);
@@ -172,7 +184,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 if (!string.IsNullOrEmpty(dynObj?.param_NomeMarca))
                 {
                     if (dynObj.param_PesquisarDescricao)
-                        sb.Append(" AND m.Nome like '%" + dynObj?.param_NomeMarca.Trim() + "%' OR m.Descricao like '%" + dynObj?.param_NomeMarca.Trim() + "%'");
+                        sb.Append(" AND (m.Nome like '%" + dynObj?.param_NomeMarca.Trim() + "%' OR m.Descricao like '%" + dynObj?.param_NomeMarca.Trim() + "%')");
                     else
                         sb.Append(" AND m.Nome like '%" + dynObj?.param_NomeMarca.Trim() + "%'");
                 }
@@ -182,19 +194,10 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                 string query = sb.ToString();
 
-                //var queryResult = await _db.Set<VMMarcaList>().FromSqlRaw($"{query}").ToListAsync();
-
-
-                //var result = await _db.Marca.FromSqlRaw(query).ToListAsync();
-
-                //var result = await _db.Database.ExecuteSqlRawAsync(query);
-                //var result = await _db.Database.SqlQuery<Marcas>(FormattableStringFactory.Create(query)).Take(10).ToListAsync();
-
-                var lstModel = await _db.Database.SqlQuery<VMMarcaList>(FormattableStringFactory.Create(query))
+                var lstModel = await _db.Database
+                    .SqlQuery<VMMarcaList>(FormattableStringFactory.Create(query))
                     //.Take(10)
                     .ToListAsync();
-               
-                //var lstModel = JsonConvert.DeserializeObject<List<VMMarca>>(JsonConvert.SerializeObject(result));
 
                 if (lstModel?.Count <= 0)
                 {
@@ -207,18 +210,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     });
                 }
 
-                /*
-               if (paramDynObj?.param_MarcaTipoId >= 0)
-                   lstModel = lstModel.Where(p => p.IdMarcaTipo == 1);
-               */
                 return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
+                {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
@@ -237,6 +230,695 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     type = "ERRO",
                     message = mensagemErro
                 });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> FiltrarDados2([FromBody] FiltroRequest filtro)
+        {
+            if (filtro == null)
+                return BadRequest(new { bResult = false, message = "Filtro inválido" });
+
+            try
+            {
+                var strUrlImgPath = _imgBaseUrl;
+                var strUrlImgInexistente = $"{_appBaseUrl}/assets/img/img_inexistente.jpg";
+
+                var sql = new StringBuilder();
+
+                sql.Append(@"
+                            SELECT
+                                m.id AS Id,
+                                m.marcaFaseId AS IdMarcaFase,
+                                m.marcaFinalidadeId AS IdMarcaFinalidade,
+                                m.marcaFabricaId AS IdMarcaFabrica,
+                                m.marcaDimensaoId AS IdMarcaDimensao,
+                                mst.marcaTipoId AS IdMarcaTipo,
+                                m.marcaSubTipoId AS IdMarcaSubTipo,
+                                m.marcaImpressoraId AS IdMarcaImpressora,
+                                m.marcaRaridadeId AS IdMarcaRaridade,
+                                m.marcaQualidadeImagemId AS IdQualidadeImagem,
+
+                                m.CodigoAceca,
+                                m.Nome AS NomeMarca,
+                                mf.Descricao AS NomeFase,
+                                mfa.Nome AS NomeFabrica,
+                                md.Descricao AS NomeDimensao,
+                                mfi.Descricao AS NomeFinalidade,
+                                mi.Descricao AS NomeImpressora,
+                                mr.Descricao AS NomeRaridade,
+                                mst.Descricao AS SubTipo,
+                                mt.Descricao AS Tipo,
+
+                                m.Descricao,
+                                m.Valor,
+                                m.ImgPrincipal,
+                                IF(m.ImgPrincipal IS NOT NULL,
+                                    CONCAT(@ImgBase,'/clou/',m.MarcaFaseId,'/',m.ImgPrincipal),
+                                    @ImgDefault) AS ImgPrincipalFull
+
+                            FROM marcas m
+                            LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
+                            LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
+                            LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
+                            LEFT JOIN marcas_dimensao md ON m.marcaDimensaoId = md.id
+                            LEFT JOIN marcas_impressora mi ON m.marcaImpressoraId = mi.id
+                            LEFT JOIN marcas_raridade mr ON m.marcaRaridadeId = mr.id
+                            LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
+                            LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
+
+                            WHERE 1=1
+                            ");
+
+                var parameters = new DynamicParameters();
+
+                parameters.Add("@ImgBase", strUrlImgPath);
+                parameters.Add("@ImgDefault", strUrlImgInexistente);
+
+                if (filtro.MarcaFaseId > 0)
+                {
+                    sql.Append(" AND m.marcaFaseId = @MarcaFaseId");
+                    parameters.Add("@MarcaFaseId", filtro.MarcaFaseId);
+                }
+
+                if (filtro.MarcaFabricaId > 0)
+                {
+                    sql.Append(" AND m.marcaFabricaId = @MarcaFabricaId");
+                    parameters.Add("@MarcaFabricaId", filtro.MarcaFabricaId);
+                }
+
+                if (filtro.MarcaTipoId > 0)
+                {
+                    sql.Append(" AND mst.marcaTipoId = @MarcaTipoId");
+                    parameters.Add("@MarcaTipoId", filtro.MarcaTipoId);
+                }
+
+                if (filtro.MarcaSubTipoId > 0)
+                {
+                    sql.Append(" AND m.marcaSubTipoId = @MarcaSubTipoId");
+                    parameters.Add("@MarcaSubTipoId", filtro.MarcaSubTipoId);
+                }
+
+                if (!string.IsNullOrWhiteSpace(filtro.IncluidoPor))
+                {
+                    sql.Append(" AND m.IncluidoPor LIKE @IncluidoPor");
+                    parameters.Add("@IncluidoPor", $"%{filtro.IncluidoPor}%");
+                }
+
+                if (!string.IsNullOrWhiteSpace(filtro.CodigoAceca))
+                {
+                    sql.Append(" AND m.CodigoAceca LIKE @CodigoAceca");
+                    parameters.Add("@CodigoAceca", $"%{filtro.CodigoAceca}%");
+                }
+
+                if (filtro.PesquisarSemVariante)
+                {
+                    sql.Append(" AND m.codigoAceca REGEXP '[0-9]$'");
+                }
+
+                if (!string.IsNullOrWhiteSpace(filtro.NomeMarca))
+                {
+                    if (filtro.PesquisarDescricao)
+                    {
+                        sql.Append(" AND (m.Nome LIKE @NomeMarca OR m.Descricao LIKE @NomeMarca)");
+                    }
+                    else
+                    {
+                        sql.Append(" AND m.Nome LIKE @NomeMarca");
+                    }
+
+                    parameters.Add("@NomeMarca", $"%{filtro.NomeMarca}%");
+                }
+
+                sql.Append(@"
+                            ORDER BY m.marcaFaseId, m.nome
+                            LIMIT @Limit OFFSET @Offset
+                            ");
+
+                parameters.Add("@Limit", filtro.PageSize);
+                parameters.Add("@Offset", (filtro.Page - 1) * filtro.PageSize);
+
+                using var connection = _db.Database.GetDbConnection();
+
+                var result = await connection.QueryAsync<VMMarcaList>(
+                    sql.ToString(),
+                    parameters
+                );
+
+                return Ok(new
+                {
+                    bResult = true,
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro em FiltrarDados");
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    message = ex.Message
+                });
+            }
+        }
+
+        [HttpPost]
+
+        public async Task<IActionResult> FiltrarDados_([FromBody] DataTableRequest request)
+        {
+            try
+            {
+                var filtro = request.Filtros ?? new FiltroRequest();
+
+                var imgBase = _imgBaseUrl;
+                var imgDefault = $"{_appBaseUrl}/assets/img/img_inexistente.jpg";
+
+                string cacheKey = $"marcas:{request.Start}:{request.Length}:" +
+                  $"{filtro.MarcaFaseId}:{filtro.NomeMarca}:{filtro.PesquisarDescricao}";
+
+                if (_cache.TryGetValue(cacheKey, out object cachedResult))
+                {
+                    return Ok(cachedResult);
+                }
+
+                var sqlFrom = new StringBuilder(@"
+            FROM marcas m
+            LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
+            LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
+            LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
+            LEFT JOIN marcas_dimensao md ON m.marcaDimensaoId = md.id
+            LEFT JOIN marcas_impressora mi ON m.marcaImpressoraId = mi.id
+            LEFT JOIN marcas_raridade mr ON m.marcaRaridadeId = mr.id
+            LEFT JOIN marcas_qualidade_imagem mq ON m.marcaQualidadeImagemId = mq.id
+            LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
+            LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
+            WHERE 1=1
+        ");
+
+                var parameters = new DynamicParameters();
+
+                // 🔹 parâmetros fixos (imagens)
+                parameters.Add("@ImgBase", imgBase);
+                parameters.Add("@ImgDefault", imgDefault);
+
+                // 🔍 filtros
+                if (filtro.MarcaFaseId > 0)
+                {
+                    sqlFrom.Append(" AND m.marcaFaseId = @MarcaFaseId");
+                    parameters.Add("@MarcaFaseId", filtro.MarcaFaseId);
+                }
+
+                if (filtro.MarcaFabricaId > 0)
+                {
+                    sqlFrom.Append(" AND m.marcaFabricaId = @MarcaFabricaId");
+                    parameters.Add("@MarcaFabricaId", filtro.MarcaFabricaId);
+                }
+
+                if (filtro.MarcaTipoId > 0)
+                {
+                    sqlFrom.Append(" AND mst.marcaTipoId = @MarcaTipoId");
+                    parameters.Add("@MarcaTipoId", filtro.MarcaTipoId);
+                }
+
+                if (filtro.MarcaSubTipoId > 0)
+                {
+                    sqlFrom.Append(" AND m.marcaSubTipoId = @MarcaSubTipoId");
+                    parameters.Add("@MarcaSubTipoId", filtro.MarcaSubTipoId);
+                }
+
+                if (!string.IsNullOrWhiteSpace(filtro.IncluidoPor))
+                {
+                    sqlFrom.Append(" AND m.IncluidoPor LIKE @IncluidoPor");
+                    parameters.Add("@IncluidoPor", $"%{filtro.IncluidoPor}%");
+                }
+
+                if (!string.IsNullOrWhiteSpace(filtro.CodigoAceca))
+                {
+                    sqlFrom.Append(" AND m.CodigoAceca LIKE @CodigoAceca");
+                    parameters.Add("@CodigoAceca", $"%{filtro.CodigoAceca}%");
+                }
+
+                if (filtro.PesquisarSemVariante)
+                {
+                    sqlFrom.Append(" AND m.codigoAceca REGEXP '[0-9]$'");
+                }
+
+                if (!string.IsNullOrWhiteSpace(filtro.NomeMarca))
+                {
+                    if (filtro.PesquisarDescricao)
+                        sqlFrom.Append(" AND (m.Nome LIKE @Nome OR m.Descricao LIKE @Nome)");
+                    else
+                        sqlFrom.Append(" AND m.Nome LIKE @Nome");
+
+                    parameters.Add("@Nome", $"%{filtro.NomeMarca}%");
+                }
+
+                // 🔢 total geral
+                var totalSql = "SELECT COUNT(1) FROM marcas";
+
+                // 🔢 total filtrado
+                var filteredSql = "SELECT COUNT(1) " + sqlFrom.ToString();
+
+                // 📄 SELECT completo (todas colunas)
+                var dataSql = $@"
+            SELECT
+                m.id AS Id,
+                m.marcaFaseId AS IdMarcaFase,
+                m.marcaFinalidadeId AS IdMarcaFinalidade,
+                m.marcaFabricaId AS IdMarcaFabrica,
+                m.marcaDimensaoId AS IdMarcaDimensao,
+                mst.marcaTipoId AS IdMarcaTipo,
+                m.marcaSubTipoId AS IdMarcaSubTipo,
+                m.marcaImpressoraId AS IdMarcaImpressora,
+                m.marcaRaridadeId AS IdMarcaRaridade,
+                m.marcaQualidadeImagemId AS IdQualidadeImagem,
+
+                m.CodigoAceca,
+                m.Nome AS NomeMarca,
+                mf.Descricao AS NomeFase,
+                mfa.Nome AS NomeFabrica,
+                md.Descricao AS NomeDimensao,
+                mfi.Descricao AS NomeFinalidade,
+                mi.Descricao AS NomeImpressora,
+                mr.Descricao AS NomeRaridade,
+                mst.Descricao AS SubTipo,
+                mt.Descricao AS Tipo,
+
+                m.fabrica_txt AS TxtFabrica,
+                m.impressora AS TxtImpressora,
+                m.IncluidoPor,
+                m.Descricao,
+                m.Valor,
+                m.Valor1PI,
+                m.Valor2PI,
+                m.ImgPrincipal,
+                IF(m.ImgPrincipal IS NOT NULL,
+                    CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
+                    @ImgDefault) AS ImgPrincipalFull,
+
+                m.ImgDetalhe,
+                IF(m.ImgDetalhe IS NOT NULL,
+                    CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+                    @ImgDefault) AS ImgDetalheFull
+
+            {sqlFrom}
+            ORDER BY m.marcaFaseId, m.nome
+            LIMIT @Limit OFFSET @Offset
+        ";
+
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
+                using var conn = _db.Database.GetDbConnection();
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
+
+                var response = new
+                {
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data = data
+                };
+
+                _cache.Set(cacheKey, response, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2),
+                    SlidingExpiration = TimeSpan.FromSeconds(30)
+                });
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro FiltrarDados");
+
+                return BadRequest(new
+                {
+                    error = true,
+                    message = ex.Message
+                });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> FiltrarDados2222([FromBody] DataTableRequest request)
+        {
+            try
+            {
+                _logger.LogInformation($"REQUEST: {JsonConvert.SerializeObject(request)}");
+
+                if (request == null) return BadRequest("Request inválido");
+
+                var filtro = request?.Filtros ?? new FiltroRequest();
+
+                var imgBase = _imgBaseUrl;
+                var imgDefault = $"{_appBaseUrl}/assets/img/img_inexistente.jpg";
+
+                var sqlFrom = new StringBuilder(@"
+                                                FROM marcas m
+                                                LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
+                                                LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
+                                                LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
+                                                LEFT JOIN marcas_dimensao md ON m.marcaDimensaoId = md.id
+                                                LEFT JOIN marcas_impressora mi ON m.marcaImpressoraId = mi.id
+                                                LEFT JOIN marcas_raridade mr ON m.marcaRaridadeId = mr.id
+                                                LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
+                                                LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
+                                                WHERE 1=1
+                                                ");
+
+                var parameters = new DynamicParameters();
+
+                // =========================
+                // FILTROS COMBOBOX
+                // =========================
+
+                if (filtro.MarcaFaseId > 0)
+                {
+                    sqlFrom.Append(" AND m.marcaFaseId = @MarcaFaseId");
+                    parameters.Add("@MarcaFaseId", filtro.MarcaFaseId);
+                }
+
+                if (filtro.MarcaTipoId > 0)
+                {
+                    sqlFrom.Append(" AND mst.marcaTipoId = @MarcaTipoId");
+                    parameters.Add("@MarcaTipoId", filtro.MarcaTipoId);
+                }
+
+                if (filtro.MarcaSubTipoId > 0)
+                {
+                    sqlFrom.Append(" AND m.marcaSubTipoId = @MarcaSubTipoId");
+                    parameters.Add("@MarcaSubTipoId", filtro.MarcaSubTipoId);
+                }
+
+                // =========================
+                // FULLTEXT SEARCH
+                // =========================
+
+                bool incluirDescricao = filtro.PesquisarSemVariante;
+
+                if (!string.IsNullOrWhiteSpace(request?.Search?.Value))
+                {
+                    var rawSearch = request?.Search?.Value.Trim();
+
+                    // remove caracteres problemáticos
+                    var normalized = Regex.Replace(rawSearch, @"[^\w\s]", " ");
+
+                    // monta FULLTEXT corretamente
+                    var fullTextSearch = string.Join(" ",
+                        normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(s => $"+{s}*")
+                    );
+
+                    sqlFrom.Append(@"
+                                    AND (
+                                        MATCH(m.Nome, m.Descricao, m.CodigoAceca)
+                                        AGAINST(@Search IN BOOLEAN MODE)
+
+                                        OR m.Descricao LIKE @SearchLike
+                                        OR m.CodigoAceca LIKE @SearchLike
+                                    )
+                                    ");
+
+                    parameters.Add("@Search", fullTextSearch);
+                    parameters.Add("@SearchLike", $"%{rawSearch}%");
+
+                    // 🔥 fallback para DESCRICAO (quando checkbox ativo)
+                    if (filtro.PesquisarSemVariante)
+                    {
+                        sqlFrom.Append(@"
+        OR m.Descricao LIKE @SearchLike
+        ");
+                        parameters.Add("@SearchLike", $"%{rawSearch}%");
+                    }
+
+                    sqlFrom.Append(")");
+
+                    parameters.Add("@Search", fullTextSearch);
+                }
+
+                // fallback opcional
+                else if (!string.IsNullOrWhiteSpace(filtro.NomeMarca))
+                {
+                    sqlFrom.Append(" AND m.Nome LIKE @Nome");
+                    parameters.Add("@Nome", $"%{filtro.NomeMarca}%");
+                }
+
+                if (filtro.PesquisarSemVariante)
+                {
+                    sqlFrom.Append(" AND m.codigoAceca REGEXP '[0-9]$'");
+                }
+
+                // =========================
+                // COUNTs
+                // =========================
+
+                var totalSql = "SELECT COUNT(1) FROM marcas";
+                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
+
+                // =========================
+                // DATA QUERY COMPLETA
+                // =========================
+
+                var dataSql = $@"
+SELECT
+    m.id AS Id,
+    m.CodigoAceca,
+    m.Nome AS NomeMarca,
+
+    mf.Descricao AS NomeFase,
+    mfa.Nome AS NomeFabrica,
+    md.Descricao AS NomeDimensao,
+    mfi.Descricao AS NomeFinalidade,
+    mi.Descricao AS NomeImpressora,
+    mr.Descricao AS NomeRaridade,
+    mst.Descricao AS SubTipo,
+    mt.Descricao AS Tipo,
+
+    m.Descricao,
+    m.IncluidoPor,
+
+    IF(m.ImgPrincipal IS NOT NULL,
+        CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
+        @ImgDefault) AS ImgPrincipalFull,
+
+    IF(m.ImgDetalhe IS NOT NULL,
+        CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+        @ImgDefault) AS ImgDetalheFull
+
+{sqlFrom}
+
+ORDER BY m.nome
+LIMIT @Limit OFFSET @Offset
+";
+
+                parameters.Add("@ImgBase", imgBase);
+                parameters.Add("@ImgDefault", imgDefault);
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
+                using var conn = _db.Database.GetDbConnection();
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
+                return Ok(new
+                {
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data
+                });
+
+                //return Ok(new { draw = request.Draw, recordsTotal = 0, recordsFiltered = 0, data = new List<object>() });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro FiltrarDados");
+
+                return BadRequest(new { error = true, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> FiltrarDados([FromBody] DataTableRequest request)
+        {
+            try
+            {
+                if (request == null)
+                    return BadRequest("Request inválido");
+
+                var filtro = request.Filtros ?? new FiltroRequest();
+
+                var imgBase = _imgBaseUrl;
+                var imgDefault = $"{_appBaseUrl}/assets/img/img_inexistente.jpg";
+
+                var sqlFrom = new StringBuilder(@"
+FROM marcas m
+LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
+LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
+LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
+LEFT JOIN marcas_dimensao md ON m.marcaDimensaoId = md.id
+LEFT JOIN marcas_impressora mi ON m.marcaImpressoraId = mi.id
+LEFT JOIN marcas_raridade mr ON m.marcaRaridadeId = mr.id
+LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
+LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
+WHERE 1=1
+");
+
+                var parameters = new DynamicParameters();
+
+                // =========================
+                // FILTROS
+                // =========================
+
+                if (filtro.MarcaFaseId > 0)
+                {
+                    sqlFrom.Append(" AND m.marcaFaseId = @MarcaFaseId");
+                    parameters.Add("@MarcaFaseId", filtro.MarcaFaseId);
+                }
+
+                if (filtro.MarcaTipoId > 0)
+                {
+                    sqlFrom.Append(" AND mst.marcaTipoId = @MarcaTipoId");
+                    parameters.Add("@MarcaTipoId", filtro.MarcaTipoId);
+                }
+
+                if (filtro.MarcaSubTipoId > 0)
+                {
+                    sqlFrom.Append(" AND m.marcaSubTipoId = @MarcaSubTipoId");
+                    parameters.Add("@MarcaSubTipoId", filtro.MarcaSubTipoId);
+                }
+
+                // =========================
+                // SEARCH
+                // =========================
+
+                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
+                {
+                    var rawSearch = request.Search.Value.Trim();
+
+                    var normalized = Regex.Replace(rawSearch, @"[^\w\s]", " ");
+
+                    var fullTextSearch = string.Join(" ",
+                        normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(s => $"+{s}*")
+                    );
+
+                    bool incluirDescricao = filtro.PesquisarDescricao;
+
+                    // 🔥 INÍCIO DO BLOCO
+                    sqlFrom.Append(" AND (");
+
+                    // FULLTEXT sempre igual (usa índice)
+                    sqlFrom.Append(@"
+MATCH(m.Nome, m.Descricao, m.CodigoAceca)
+AGAINST(@Search IN BOOLEAN MODE)
+");
+
+                    // LIKE para códigos sempre (resolve PN-181)
+                    sqlFrom.Append(@"
+OR m.CodigoAceca LIKE @SearchLike
+");
+
+                    // 🔥 descrição SOMENTE se checkbox TRUE
+                    if (incluirDescricao)
+                    {
+                        sqlFrom.Append(@"
+OR m.Descricao LIKE @SearchLike
+");
+                    }
+
+                    // 🔥 fechamento correto
+                    sqlFrom.Append(")");
+
+                    parameters.Add("@Search", fullTextSearch);
+                    parameters.Add("@SearchLike", $"%{rawSearch}%");
+                }
+
+                // fallback
+                else if (!string.IsNullOrWhiteSpace(filtro.NomeMarca))
+                {
+                    sqlFrom.Append(" AND m.Nome LIKE @Nome");
+                    parameters.Add("@Nome", $"%{filtro.NomeMarca}%");
+                }
+
+                if (filtro.PesquisarSemVariante)
+                {
+                    sqlFrom.Append(" AND m.codigoAceca REGEXP '[0-9]$'");
+                }
+
+                // =========================
+                // COUNT
+                // =========================
+
+                var totalSql = "SELECT COUNT(1) FROM marcas";
+                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
+
+                // =========================
+                // DATA
+                // =========================
+
+                var dataSql = $@"
+SELECT
+    m.id AS Id,
+    m.CodigoAceca,
+    m.Nome AS NomeMarca,
+
+    mf.Descricao AS NomeFase,
+    mfa.Nome AS NomeFabrica,
+    md.Descricao AS NomeDimensao,
+    mfi.Descricao AS NomeFinalidade,
+    mi.Descricao AS NomeImpressora,
+    mr.Descricao AS NomeRaridade,
+    mst.Descricao AS SubTipo,
+    mt.Descricao AS Tipo,
+
+    m.Descricao,
+    m.IncluidoPor,
+
+    IF(m.ImgPrincipal IS NOT NULL,
+        CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
+        @ImgDefault) AS ImgPrincipalFull,
+
+    IF(m.ImgDetalhe IS NOT NULL,
+        CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+        @ImgDefault) AS ImgDetalheFull
+
+{sqlFrom}
+
+ORDER BY m.nome
+LIMIT @Limit OFFSET @Offset
+";
+
+                parameters.Add("@ImgBase", imgBase);
+                parameters.Add("@ImgDefault", imgDefault);
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
+                using var conn = _db.Database.GetDbConnection();
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
+
+                return Ok(new
+                {
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro FiltrarDados");
+
+                return BadRequest(new { error = true, message = ex.Message });
             }
         }
 
@@ -493,6 +1175,9 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                 #region obj Marca
 
+                // 1. Convert to Title Case
+                TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
+
                 var model = new Marcas
                 {
                     Ativo = true,
@@ -506,21 +1191,21 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     MarcaRaridadeId = (vmModel?.MarcaRaridadeId < 0 || vmModel?.MarcaRaridadeId == null) ? 0 : vmModel?.MarcaRaridadeId,
                     MarcaSubTipoId = (vmModel?.MarcaSubTipoId < 0 || vmModel?.MarcaSubTipoId == null) ? 5 : vmModel?.MarcaSubTipoId,
 
-                    CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca : string.Empty,
-                    CodigoSC = !string.IsNullOrEmpty(vmModel?.CodigoSC) ? vmModel?.CodigoSC : null,
+                    CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca?.Trim() : null,
+                    CodigoFabrica = !string.IsNullOrEmpty(vmModel?.CodigoFabrica) ? vmModel?.CodigoFabrica?.Trim() : null,
                     ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? Path.GetFileName(vmModel?.ImgPrincipal) : null,
                     ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? Path.GetFileName(vmModel?.ImgDetalhe) : null,
-                    Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome : null,
-                    Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao : null,
-                    Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI : null,
-                    Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI : null,
-                    Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor : null,
-                    IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? vmModel?.IncluidoPor : null,
+                    Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome?.Trim() : null,
+                    Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao?.Trim() : null,
+                    Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI?.Trim() : null,
+                    Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI?.Trim() : null,
+                    Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor?.Trim() : null,
+                    IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? textInfo.ToTitleCase(vmModel?.IncluidoPor?.Trim()?.ToLower()) : null,
                     EmQuarentena = !string.IsNullOrEmpty(vmModel?.EmQuarentena?.ToString()) ? vmModel?.EmQuarentena : 0,
                     
                     //
-                    TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome : null,
-                    TxtImpressora = !string.IsNullOrEmpty(vmModel?.MarcaImpressora?.Descricao) ? vmModel?.MarcaImpressora?.Descricao : null,
+                    TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome?.Trim() : null,
+                    TxtImpressora = !string.IsNullOrEmpty(vmModel?.MarcaImpressora?.Descricao) ? vmModel?.MarcaImpressora?.Descricao?.Trim() : null,
                 };
 
                 #endregion
@@ -541,13 +1226,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 #endregion
 
                 return Ok(new
-                {/*
-                        _logger.LogInformation(
-                        $"{lstModel} graus Fahrenheit = " +
-                        $"{resultado.Celsius} graus Celsius = " +
-                        $"{resultado.Kelvin} graus Kelvin");
-                    return resultado;
-                        */
+                {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
@@ -777,6 +1456,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                 var query = _db.Marca
                     .Include(x => x.MarcaSubTipo.MarcaTipo)
+                    .Include(x => x.MarcaFabrica)
+                    .Include(x => x.MarcaImpressora)
                     .Where(x => x.MarcaFaseId.Equals(idFase));
 
                 var queryExists = query.Any();
@@ -909,6 +1590,40 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                         data = msgErroData
                     });
                 }
+
+                if (lstmodel?.MarcaImpressoraId == null || lstmodel?.MarcaImpressoraId <= 0)
+                    if (!string.IsNullOrEmpty(lstmodel?.TxtImpressora))
+                    {
+                        var objImpressora = _db.MarcaImpressora
+                            .Where(i => i.Descricao.Equals(lstmodel.TxtImpressora.Trim()))
+                            .FirstOrDefault();
+
+                        lstmodel.MarcaImpressora = new MarcaImpressora
+                        {
+                            Id = objImpressora.Id,
+                            Descricao = objImpressora.Descricao
+                        };
+
+                        lstmodel.MarcaImpressoraId = objImpressora.Id;
+                    }
+
+
+                if (lstmodel?.MarcaFabricaId == null || lstmodel?.MarcaFabricaId <= 0)
+                    if (!string.IsNullOrEmpty(lstmodel?.TxtFabrica))
+                    {
+                        var objFabrica = _db.MarcaFabrica
+                            .Where(i => i.Descricao.Equals(lstmodel.TxtFabrica.Trim()))
+                            .FirstOrDefault();
+
+                        lstmodel.MarcaFabrica = new MarcaFabrica
+                        {
+                            Id = objFabrica.Id,
+                            Nome = objFabrica.Nome,
+                            Descricao = objFabrica.Descricao
+                        };
+
+                        lstmodel.MarcaFabricaId = objFabrica.Id;
+                    }
 
                 return Ok(new
                 {

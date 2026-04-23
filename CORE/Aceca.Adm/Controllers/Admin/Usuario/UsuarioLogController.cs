@@ -46,7 +46,7 @@ namespace Aceca.Adm.Controllers.Admin.Usuario
                     .Include(x => x.Usuario)
                     .Include(x => x.Usuario.Socio)
                     .Include(x => x.Usuario.Socio.SocioPerfil)
-                    .OrderBy(x => x.Usuario.Socio.Nome)
+                    .OrderByDescending(x => x.UltimoLogin)
                     .AsNoTracking()
                     .ToListAsync();
 
@@ -62,13 +62,7 @@ namespace Aceca.Adm.Controllers.Admin.Usuario
                 }
 
                 return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
+                {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
@@ -89,165 +83,6 @@ namespace Aceca.Adm.Controllers.Admin.Usuario
                 });
             }
         }
-
-        /*
-        [HttpPost]
-        public ActionResult Create(Usuario data)
-        {
-            try
-            {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Nome))
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Nome deve ser preenchido"
-                    });
-                }
-
-                try
-                {
-                    var result = AsyncActionAPI(data, "Create");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = result?.ToString()
-                        });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
-                    });
-                }
-
-                return Ok(new
-                {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: "
-                });
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        [HttpPost]
-        public ActionResult Edit(Usuario data)
-        {
-            try
-            {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Nome))
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Nome deve ser preenchido"
-                    });
-                }
-
-                try
-                {
-                    var result = AsyncActionAPI(data, "Edit");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = result?.ToString()
-                        });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
-                    });
-                }
-
-                return Ok(new
-                {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: "
-                });
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        [HttpDelete]
-        public ActionResult Delete(int id)
-        {
-            dynamic response = new { bResult = false, message = string.Empty };
-
-            if (id < 1)
-            {
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "Id deve ser maior que 0"
-                });
-            }
-
-            var model = new List<Usuario>();
-
-            try
-            {
-                var result = AsyncDeleteById(id);
-
-                if (result.GetType() == typeof(NotFoundObjectResult) ||
-                     result.GetType() == typeof(BadRequestObjectResult))
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = result?.ToString()
-                    });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = ex?.Message?.ToString()
-                });
-            }
-
-            return Ok(new
-            {
-                bResult = true,
-                type = "OK",
-                message = "SUCESSO ::: "
-            });
-
-            //return View();
-        }
-
-        */
         #endregion
     }
 }

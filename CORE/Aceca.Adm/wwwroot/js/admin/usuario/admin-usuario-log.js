@@ -50,13 +50,6 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
 
-        //fn_LoadCmb_SocioPerfil();
-
-        // Form validation
-        const formAddNewItem = document.getElementById('form-pop-add-new-item');
-
-        formValid = fn_PopValidator(formAddNewItem);
-
         // Carrega Dados Grid
         fn_GridList(formValid);
     })();
@@ -130,8 +123,11 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'usuario.socio.nome',
+                    data: 'usuario.id',
                     targets: 2,
+                    render: function (data, type, row) {
+                        return `(${data}) - ${row.socio.nome}`;
+                    }
                 },
                 // COLUNA - Cidade
                 {
@@ -265,7 +261,7 @@ function fn_GridList(formValid) {
                     }
                 },
             ],
-            order: varCol_Ordenacao,
+            //order: varCol_Ordenacao,
             dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
             displayLength: varItems_QtdPorPage,
             lengthMenu: varItems_DivPage,
@@ -387,24 +383,6 @@ function fn_GridList(formValid) {
             }
         });
     }
-
-    // VALIDA SUBMIT POP
-    formValid.on('core.form.valid', function (e) {
-        //console.log("e ::: ", e);
-
-        var action = document.querySelector('.data-submit').textContent;
-        //console.log("action ::: ", action);
-
-        if (action === 'Alterar') {
-            var objFormData = fn_PopGetObj();
-            //console.log("objFormData ::: ", objFormData);
-
-            fnItem_Edit(objFormData)
-        } else {
-            fnItem_Add(varTbl_Obj)
-        }
-        //fnItem_Add(abc);
-    });
 }
 
 function fn_GridComplete(grid) {
@@ -575,41 +553,6 @@ function fn_PopGetObj() {
     console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
-}
-
-function fn_PopValidator(formAddNewItem) {
-    var varformValid = FormValidation.formValidation(formAddNewItem, {
-        fields: {
-            pop_line_item_01: {
-                validators: {
-                    notEmpty: {
-                        message: 'O preenchimento &eacute; obrigat&oacute;rio'
-                    }
-                }
-            }
-        },
-        plugins: {
-            trigger: new FormValidation.plugins.Trigger(),
-            bootstrap5: new FormValidation.plugins.Bootstrap5({
-                // Use this for enabling/changing valid/invalid class
-                // eleInvalidClass: '',
-                eleValidClass: '',
-                rowSelector: '.col-sm-12'
-            }),
-            submitButton: new FormValidation.plugins.SubmitButton(),
-            // defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
-            autoFocus: new FormValidation.plugins.AutoFocus()
-        },
-        init: instance => {
-            instance.on('plugins.message.placed', function (e) {
-                if (e.element.parentElement.classList.contains('input-group')) {
-                    e.element.parentElement.insertAdjacentElement('afterend', e.messageElement);
-                }
-            });
-        }
-    });
-
-    return varformValid;
 }
 
 function fnItem_Delete(varItems_Row) {

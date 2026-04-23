@@ -84,13 +84,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 }
 
                 return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
+                {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
@@ -157,13 +151,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     });
                 }
                 return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
+                {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
@@ -206,6 +194,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     {
                         SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
                         Nome = model.Nome,
+                        ImgAvatar = model.ImgAvatar,
                         MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
                         Ativo = model.Ativo,
                     };
@@ -295,13 +284,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     #endregion
 
                     return Ok(new
-                    {/*
-                        _logger.LogInformation(
-                        $"{lstModel} graus Fahrenheit = " +
-                        $"{resultado.Celsius} graus Celsius = " +
-                        $"{resultado.Kelvin} graus Kelvin");
-                    return resultado;
-                        */
+                    {
                         bResult = true,
                         type = "OK",
                         message = "SUCESSO ::: ",
@@ -355,6 +338,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         Id = model.Id,
                         SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
                         Nome = model.Nome,
+                        ImgAvatar = model.ImgAvatar,
                         MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
                         Ativo = model.Ativo,
                     };
@@ -464,7 +448,6 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         });
 
                     #endregion
-
                 }
 
                 return Ok(new

@@ -120,7 +120,7 @@ namespace Aceca.Adm.VMModels
 
         public string? CodigoAceca { get; set; }
         public string? CodigoVariante { get; set; }
-        public string? CodigoSC { get; set; }        
+        public string? CodigoFabrica { get; set; }        
         public string? ImgPrincipal { get; set; }
         public string? ImgDetalhe { get; set; }
         [NotMapped] public IFormFile? FileImgPrincipal { get; set; }
@@ -295,6 +295,7 @@ namespace Aceca.Adm.VMModels
         public int? SocioPerfilId { get; set; }
 
         [MaxLength(255)] public string? Nome { get; set; } = string.Empty;
+        public string? ImgAvatar { get; set; } = string.Empty;
         [MaxLength(255)] public string? Email { get; set; } = string.Empty;
         public int? DDI { get; set; }
         public int? DDD { get; set; }
@@ -307,6 +308,7 @@ namespace Aceca.Adm.VMModels
         [MaxLength(255)] public string? Estado { get; set; } = string.Empty;
         [MaxLength(255)] public string? CEP { get; set; } = string.Empty;
         public string? DataAniversario { get; set; } = string.Empty;
+       
         public int? Dia { get; set; }
         public int? Mes { get; set; }
         public bool? MostrarSite { get; set; }

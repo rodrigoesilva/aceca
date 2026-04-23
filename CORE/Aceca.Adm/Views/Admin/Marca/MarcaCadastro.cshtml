@@ -163,6 +163,14 @@
                             </div>
                         </div>
 
+                        <div class="col-md-3 mt-8 div_codfabrica">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="txt_CodFabrica" name="txt_CodFabrica" placeholder="Código de Fábrica" />
+                                <label for="txt_CodFabrica">C&oacute;digo F&aacute;brica</label>
+                            </div>
+                        </div>
+
+                        <!-- 03 -->
                         <div class="col-md-3 mt-8 div_dimensao">
                             <div class="form-floating form-floating-outline">
                                 <select id="cmbPop_MarcaDimensao" name="cmbPop_MarcaDimensao" class="select2 form-select form-select">
@@ -172,7 +180,6 @@
                             </div>
                         </div>
 
-                        <!-- 03 -->
                         <div class="col-md-3 mt-8 div_tipo">
                             <div class="form-floating form-floating-outline">
                                 <select id="cmbPop_MarcaTipo" name="cmbPop_MarcaTipo" class="select2 form-select form-select">
@@ -200,6 +207,8 @@
                             </div>
                         </div>
 
+                        <!-- 05 -->
+
                         <div class="col-md-3 mt-8 div_qualidade">
                             <div class="form-floating form-floating-outline">
                                 <select id="cmbPop_MarcaQualidadeImagem" name="cmbPop_MarcaQualidadeImagem" class="select2 form-select form-select">
@@ -209,7 +218,17 @@
                             </div>
                         </div>
 
-                        <!-- 05 -->
+                        <div class="col-md-6 mt-8 div_raridade">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaRaridade" name="cmbPop_MarcaRaridade" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaRaridade">Raridade da Imagem</label>
+                            </div>
+                        </div>
+                        
+
+                        <!-- 06 -->
                         <div class="col-md-12 mt-8 div_descricao">
                             <div class="form-floating form-floating-outline">
                                 <textarea class="form-control h-px-100" id="txt_Descricao" name="txt_Descricao" placeholder="Descricao" rows="3"></textarea>
@@ -274,8 +293,8 @@
 
                     <!-- Botoes -->
                     <div class="col-12 mt-8 div_botoes text-center">
-                        <button type="submit" class="btn btn-primary data-submit me-3">Cadastrar</button>
                         <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                        <button type="submit" class="btn btn-primary data-submit me-3">Cadastrar</button>
                     </div>
                 </form>
             </div>

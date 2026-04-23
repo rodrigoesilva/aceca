@@ -317,6 +317,34 @@ public class HelperExtensionsController(AppDbContext _db, IWebHostEnvironment en
         return lst;
     }
 
+    public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaRaridade()
+    {
+        var lst = new List<SelectListItem>();
+
+        try
+        {
+            var lstModel = await _db.MarcaRaridade
+                    ?.Where(s => s.Ativo == true)
+                   .OrderBy(m => m.Descricao)
+                   .AsNoTracking()
+                   .ToListAsync();
+
+            foreach (var element in lstModel)
+                lst.Add(new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                });
+        }
+        catch (Exception ex)
+        {
+            var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+            throw;
+        }
+
+        return lst;
+    }
+
     #endregion
 
     public async Task<IEnumerable<SelectListItem>> AsyncCmb_AgendaImagem()

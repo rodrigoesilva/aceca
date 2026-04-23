@@ -134,11 +134,13 @@ function fn_Limpar() {
     
     $('#cmbPop_MarcaFinalidade').prop('selectedIndex', 0).change();
     $('#cmbPop_MarcaFabrica').prop('selectedIndex', 0).change();
+    $('#txt_CodFabrica').val('');
     $('#cmbPop_MarcaDimensao').prop('selectedIndex', 0).change();
     $('#cmbPop_MarcaTipo').prop('selectedIndex', 0).change();
     $('#cmbPop_MarcaSubTipo').prop('selectedIndex', 0).change();
     $('#cmbPop_MarcaImpressora').prop('selectedIndex', 0).change();
     $('#cmbPop_MarcaQualidadeImagem').prop('selectedIndex', 0).change();
+    $('#cmbPop_Raridade').prop('selectedIndex', 0).change();
     $('#txt_Descricao').val('');
     $('#txt_Valor').val('');
     $('#txt_Valor1PI').val('');
@@ -236,11 +238,14 @@ function fn_Modal(obj, action) {
         (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
             (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-1' : obj.idMarcaFinalidade));
     (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-1' : obj.idMarcaFabrica));
+    (popAddNewItem.querySelector('#txt_CodFabrica').value = (obj === null ? '-1' : obj.codigoFabrica));
     (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-1' : obj.idMarcaDimensao));
     (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-1' : obj.idMarcaTipo));
     (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-1' : obj.idMarcaSubTipo));
     (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-1' : obj.idMarcaImpressora));
     (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-1' : obj.idMarcaQualidadeImagem));
+    (popAddNewItem.querySelector('#cmbPop_Raridade').value = (obj === null ? '-1' : obj.idRaridade));
+
         (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.descricao));
 
         (popAddNewItem.querySelector('#txt_Valor').value = (obj === null ? '' : obj.valor));
@@ -268,6 +273,7 @@ function fn_Modal(obj, action) {
         $("#cmbPop_MarcaSubTipo").val(((obj.idMarcaSubTipo === undefined || obj.idMarcaSubTipo === null || obj.idMarcaSubTipo <= 0) ? '-1' : obj.idMarcaSubTipo)).change();
         $("#cmbPop_MarcaImpressora").val(((obj.idMarcaImpressora === undefined || obj.idMarcaImpressora === null || obj.idMarcaImpressora <= 0) ? '-1' : obj.idMarcaImpressora)).change();
         $("#cmbPop_MarcaQualidadeImagem").val(((obj.idQualidadeImagem === undefined || obj.idQualidadeImagem === null || obj.idQualidadeImagem <= 0) ? '-1' : obj.idQualidadeImagem)).change();
+        $("#cmbPop_Raridade").val(((obj.idRaridade === undefined || obj.idRaridade === null || obj.idRaridade <= 0) ? '-1' : obj.idRaridade)).change();
 
         (obj.valor !== null || obj.valor1PI !== null || obj.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
     }
@@ -357,6 +363,7 @@ function fn_ModalGetObj() {
         IdMarcaSubTipo: $('#hdMarcaSubTipoId').val(),
         IdMarcaImpressora: $('#hdMarcaImpressoraId').val(),
         IdMarcaQualidadeImagem: $('#hdMarcaQualidadeImagemId').val(),
+        IdMarcaRaridade: $('#hdMarcaRaridadeId').val(),
 
         MarcaFaseId: $('#cmbPop_MarcaFase').val(),
         CodigoVariante: $('#txt_CodigoVariante').val(),
@@ -365,11 +372,13 @@ function fn_ModalGetObj() {
         IncluidoPor: $('#txt_IncluidoPor').val(),
         MarcaFinalidadeId: $('#cmbPop_MarcaFinalidade').val(),
         MarcaFabricaId: $('#cmbPop_MarcaFabrica').val(),
+        CodigoFabrica: $('#txt_CodFabrica').val(),
         MarcaDimensaoId: $('#cmbPop_MarcaDimensao').val(),
         MarcaTipoId: $('#cmbPop_MarcaTipo').val(),
         MarcaSubTipoId: $('#cmbPop_MarcaSubTipo').val(),
         MarcaImpressoraId: $('#cmbPop_MarcaImpressora').val(),
         MarcaQualidadeImagemId: $('#cmbPop_MarcaQualidadeImagem').val(),
+        MarcaRaridadeId: $('#cmbPop_Raridade').val(),
         Descricao: $('#txt_Descricao').val(),
 
         Valor: $('#txt_Valor').val(),
@@ -462,7 +471,7 @@ function fn_ChangeCombos() {
         let strTermoBusca = document.querySelector('#txt_Nome');
         let idMarcaFase = Number($(this).find('option:selected').val());
 
-        console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
+        //console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
         //console.log("cmb_MarcaFase change strTermoBusca ::: ", strTermoBusca);
 
         if (idMarcaFase > 0) {
@@ -485,7 +494,7 @@ function fn_ChangeCombos() {
 
         let idMarcaVariante = $(this).find('option:selected').val();
 
-        console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
+        //console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
 
         if (idMarcaVariante > 0) {
 
@@ -525,18 +534,20 @@ function fn_ChangeCombos() {
     });
 
     $('#cmbPop_MarcaTipo').on('change', function () {
+
         let idMarcaTipo = $(this).find('option:selected').val();
         //console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
 
         let bNovaVariante = $('#cmbPop_MarcaVariante').val() > 0 ? true : false;
         //console.log("cmb_MarcaTipo change bNovaVariante ::: ", bNovaVariante);
+        //console.log("cmbPop_MarcaSubTipo length ::: ", $('#cmbPop_MarcaSubTipo option').length);
 
-        //Limpar Combo
-        document.querySelectorAll('#cmbPop_MarcaSubTipo option').forEach(option => option.remove());
+        if ($('#cmbPop_MarcaSubTipo option').length <= 1 && idMarcaTipo > 0) {
 
-        $("#cmbPop_MarcaSubTipo").append($("<option></option>").val(0).html("-- Selecionar --"));
-
-        if ($(this).length <= 1 && idMarcaTipo > 0) {
+            //Limpar Combo MarcaSubTipo
+            document.querySelectorAll('#cmbPop_MarcaSubTipo option').forEach(option => option.remove());
+            $("#cmbPop_MarcaSubTipo").append($("<option></option>").val(0).html("-- Selecionar --"));
+            
             fn_LoadCmb_MarcaSubTipo(idMarcaTipo);
         }
 
@@ -546,26 +557,21 @@ function fn_ChangeCombos() {
             //console.log("cmb_MarcaTipo change objVariante ::: ", objVariante);
             
             let marcaSubTipoId = ((objVariante.marcaSubTipoId === undefined || objVariante.marcaSubTipoId === null || objVariante.marcaSubTipoId <= 0) ? '-1' : objVariante.marcaSubTipoId);
-            //console.log("cmb_MarcaTipo change marcaSubTipoId ::: ", marcaSubTipoId);
+            let marcaSubTipoTxt = ((objVariante.marcaSubTipoId === undefined || objVariante.marcaSubTipoId === null || objVariante.marcaSubTipoId <= 0) ? '-1' : objVariante.marcaSubTipo.descricao);
+
+            /*
+            console.log("cmb_MarcaTipo change marcaSubTipoId ::: ", marcaSubTipoId);
+            console.log("cmb_MarcaTipo change marcaSubTipoId ::: ", marcaSubTipoTxt);
+            
+            $('#cmbPop_MarcaSubTipo option').filter(function () {
+                return $(this).text() === marcaSubTipoTxt;
+            }).prop('selected', true).trigger('change');
             //$("#cmbPop_MarcaSubTipo").val(Number(marcaSubTipoId)).change();
-            /**/
+            */
+
+            $("#cmbPop_MarcaSubTipo").val(Number(marcaSubTipoId));
         }
     });
-
-   /*
-    $('#cmbPop_MarcaSubTipo').on('change', function () {
-
-        let idMarcaSubTipo = $(this).find('option:selected').val();
-       console.log("cmb_MarcaSubTipo change idMarcaSubTipo ::: ", idMarcaSubTipo);
-
-        let bNovaVariante = $('#cmbPop_MarcaVariante').val() > 0 ? true : false;
-        //console.log("cmb_MarcaTipo change bNovaVariante ::: ", bNovaVariante);
-
-        if (idMarcaSubTipo <= 0 && bNovaVariante === false) {
-            //fn_ModalOpcaoInvalida();
-        }
-    });
-     */
 }
 
 function fn_PopLoadCombos() {
@@ -581,6 +587,7 @@ function fn_PopLoadCombos() {
     fn_LoadCmb_MarcaSubTipo(0);
     fn_LoadCmb_MarcaImpressora();
     fn_LoadCmb_MarcaQualidadeImagem();
+    fn_LoadCmb_MarcaRaridade();
 }
 
 function fn_LoadCmb_MarcaVariante() {
@@ -788,7 +795,7 @@ function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
 
     //console.log("fn_LoadCmb_MarcaSubTipo  idMarcaTipo ::: ", idMarcaTipo);
 
-    let urlLoad = idMarcaTipo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaSubTipoByTipo` : `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`;
+    let urlLoad = `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`; // idMarcaTipo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaSubTipoByTipo` : `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`;
 
     if ($('#cmbPop_MarcaSubTipo').length <= 1) {
 
@@ -869,6 +876,31 @@ function fn_LoadCmb_MarcaQualidadeImagem() {
     }
 }
 
+function fn_LoadCmb_MarcaRaridade() {
+    //console.log("fn_LoadCmb_MarcaRaridade ::: ");
+
+    if ($('#cmbPop_MarcaRaridade').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaRaridade`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaRaridade  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaRaridade  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaRaridade  result ::: ", result);
+                        $("#cmbPop_MarcaRaridade").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
 
 //#endregion
 
@@ -882,6 +914,8 @@ function fn_ShowCampos() {
 
         $('#txt_Codigo').val('');
         $('#txt_CodigoVariante').val('');
+
+        $('#txt_CodFabrica').val('');
 
         /*
         $('#cmbPop_MarcaFinalidade').prop('selectedIndex', 0).change();
@@ -1000,8 +1034,9 @@ function fn_GetCodigoAceca() {
                     }
 
                     //
-                    $('#txt_Codigo').css('color', '#8c57ff');
-                    $('#txt_Codigo').css('background-color', '#ede4ff');
+                    
+                    $('#txt_Codigo').css('color', '#FFFFFF');
+                    $('#txt_Codigo').css('background-color', '#47007b');
                     $('#txt_Codigo').css('text-align', 'center');
                     $('#txt_Codigo').css("font-weight", "500");
                     $('#txt_Codigo').css("font-size", "0.9375rem");
@@ -1055,8 +1090,8 @@ function fn_GetDataVariante(obj) {
 
         // Pop Variante
         const divVariante = document.getElementById("div_NomePaiVariante");
-        $('#div_NomePaiVariante').css('color', '#FFFFFF');
-        $('#div_NomePaiVariante').css('background-color', '#47007b');
+        $('#div_NomePaiVariante').css('color', '#8c57ff');
+        $('#div_NomePaiVariante').css('background-color', '#ede4ff');
         $('#div_NomePaiVariante').css('text-align', 'center');
         $('#div_NomePaiVariante').css("font-weight", "500");
         $('#div_NomePaiVariante').css("font-size", "0.9375rem");
@@ -1069,11 +1104,13 @@ function fn_GetDataVariante(obj) {
 
         $("#cmbPop_MarcaFinalidade").val(((obj.marcaFinalidadeId === undefined || obj.marcaFinalidadeId === null || obj.marcaFinalidadeId <= 0) ? '-1' : obj.marcaFinalidadeId)).change(); 
         $("#cmbPop_MarcaFabrica").val(((obj.marcaFabricaId === undefined || obj.marcaFabricaId === null || obj.marcaFabricaId <= 0) ? '-1' : obj.marcaFabricaId)).change();
+        (document.querySelector('#txt_CodFabrica').value = (obj === null ? '' : obj.codigoFabrica));
         $("#cmbPop_MarcaDimensao").val(((obj.marcaDimensaoId === undefined || obj.marcaDimensaoId === null || obj.marcaDimensaoId <= 0) ? '-1' : obj.marcaDimensaoId)).change();
         $("#cmbPop_MarcaTipo").val(((obj.marcaSubTipo.marcaTipoId === undefined || obj.marcaSubTipo.marcaTipoId === null || obj.marcaSubTipo.marcaTipoId <= 0) ? '-1' : obj.marcaSubTipo.marcaTipoId)).change();
-        //$("#cmbPop_MarcaSubTipo").val(((obj.marcaSubTipoId === undefined || obj.marcaSubTipoId === null || obj.marcaSubTipoId <= 0) ? '-1' : obj.marcaSubTipoId)).change();
+        $("#cmbPop_MarcaSubTipo").val(((obj.marcaSubTipoId === undefined || obj.marcaSubTipoId === null || obj.marcaSubTipoId <= 0) ? '-1' : obj.marcaSubTipoId)).change();
         $("#cmbPop_MarcaImpressora").val(((obj.marcaImpressoraId === undefined || obj.marcaImpressoraId === null || obj.marcaImpressoraId <= 0) ? '-1' : obj.marcaImpressoraId)).change();
         $("#cmbPop_MarcaQualidadeImagem").val(((obj.marcaQualidadeImagemId === undefined || obj.marcaQualidadeImagemId === null || obj.marcaQualidadeImagemId <= 0) ? '-1' : obj.marcaQualidadeImagemId)).change();
+        $("#cmbPop_MarcaRaridade").val(((obj.marcaRaridadeId === undefined || obj.marcaRaridadeId === null || obj.marcaRaridadeId <= 0) ? '-1' : obj.marcaRaridadeId)).change();
 
         (document.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.descricao));
 
@@ -1084,8 +1121,8 @@ function fn_GetDataVariante(obj) {
         (document.querySelector('#txt_Valor2PI').value = (obj === null ? '' : obj.valor2PI));
 
         //Pop Arquivos
-        (document.querySelector('#txt_ImgPrincipal').value = '')
-        (document.querySelector('#txt_ImgDetalhe').value = '')
+        (document.querySelector('#txt_ImgPrincipal').value = '');
+        (document.querySelector('#txt_ImgDetalhe').value = '');
         //(obj === null || obj?.imgPrincipal === null) ? (document.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
         //(obj === null || obj?.imgDetalhe === null) ? (document.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
 }
