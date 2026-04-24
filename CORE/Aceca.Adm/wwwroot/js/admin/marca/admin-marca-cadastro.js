@@ -27,6 +27,8 @@ const swalWithBootstrapButtons = Swal.mixin({
 
 let objVariante;
 
+const combosLoaded = {};
+
 let borderColor, bodyBg, headingColor;
 
 if (isDarkStyle) {
@@ -464,6 +466,50 @@ function fnItem_Edit_CarregarDados(obj, action) {
 //#endregion
 
 //#region COMBO
+
+function loadCombo(id, url, includeTodas = true) {
+
+    if (combosLoaded[id]) return;
+
+    const $cmb = $(id);
+
+    if ($cmb.find('option').length > 1) return;
+
+    combosLoaded[id] = true;
+
+    $cmb.prop('disabled', true);
+
+    $.ajax({
+        url: url,
+        type: 'GET',
+        cache: true,
+        success: function (data) {
+
+            let options = '<option value="-1">-- Selecionar --</option>';
+
+            if (includeTodas)
+                options += '<option value="0">Todas</option>';
+
+            data.forEach(item => {
+                options += `<option value="${item.value}">${item.text}</option>`;
+            });
+
+            $cmb.html(options).prop('disabled', false);
+
+            $cmb.trigger('change.select2');
+        },
+        error: function () {
+            combosLoaded[id] = false;
+        }
+    });
+}
+
+/*
+loadCombo('#cmb_MarcaFase', `${var_ControllerCmb}/AsyncCmb_MarcaFase`);
+loadCombo('#cmb_MarcaTipo', `${var_ControllerCmb}/AsyncCmb_MarcaTipo`);
+loadCombo('#cmb_MarcaSubTipo', `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`);
+*/
+
 function fn_ChangeCombos() {    
 
     $('#cmbPop_MarcaFase').on('change', function () {

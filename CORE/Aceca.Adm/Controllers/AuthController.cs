@@ -1,9 +1,7 @@
-using Aceca.Adm.Controllers.Admin.Marca;
 using Aceca.Adm.Data;
 using Aceca.Adm.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -564,6 +562,8 @@ namespace Aceca.Adm.Controllers
                         SenhaAtualizada = true,
                         NomeUsuario = model.Username,
                         UltimoLogin = DateTime.UtcNow,
+
+                        Ativo = true,
                     };
                 
 

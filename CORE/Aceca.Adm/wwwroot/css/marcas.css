@@ -95,8 +95,40 @@ img{display:block;max-width:100%}
 }
 .tb-user-menu a:hover,.tb-user-menu button:hover{background:#f3eeff;color:var(--d)}
 
-    /* ════ DATA TABLE ════ */
-    
+/* ════ DATA TABLE ════ */
+
+/* ################################# */
+
+/* Remove completamente o estilo padrão do círculo */
+table.dataTable.dtr-column > tbody > tr > td.control::before,
+table.dataTable.dtr-column > tbody > tr > th.control::before {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    line-height: 1 !important;
+    margin-left: 0 !important;
+    /* Ícone RemixIcon */
+    content: "\ea4e" !important; /* ri-arrow-right-s-line */
+    font-family: "remixicon" !important;
+    font-size: 1.25rem !important;
+    color: #6d6ded !important;
+    display: inline-block !important;
+    transition: transform 0.2s ease !important;
+}
+
+table.dataTable.dtr-column > tbody > tr.parent > td.control::before,
+table.dataTable.dtr-column > tbody > tr.parent > th.control::before {
+    content: "\ea78" !important; /* ri-arrow-down-s-line */
+    color: #6d6ded !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+
+/* ################################# */
+
     .td-img {
         width: 60px;
         height: 60px;
@@ -117,6 +149,46 @@ img{display:block;max-width:100%}
         font-size: .75rem;
         color: var(--muted);
     }
+        
+
+.card-mobile {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 5px;
+}
+
+.card-imgs {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+    .card-imgs img {
+        width: 70px;
+        height: 70px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+.card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.card-desc {
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+.card-footer {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #666;
+}
     
 
     /* ════ MODAL ════ */

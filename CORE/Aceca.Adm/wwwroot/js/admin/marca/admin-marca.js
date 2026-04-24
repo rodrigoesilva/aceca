@@ -406,6 +406,245 @@ function fn_FiltrosLoad() {
 
 //#region GRID
 
+function fn_InitZoom() {
+
+    if (document.getElementById('imgZoomModal')) return;
+
+    $('body').append(`
+        <div id="imgZoomModal" style="
+            display:none;position:fixed;inset:0;
+            background:rgba(0,0,0,0.85);
+            z-index:99999;
+            align-items:center;
+            justify-content:center;">
+            <img id="imgZoomTarget" style="
+                max-width:95vw;
+                max-height:95vh;">
+        </div>
+    `);
+
+    $('#imgZoomModal').click(function () {
+        $(this).hide();
+    });
+}
+function fn_ZoomImg(src) {
+    $('#imgZoomTarget').attr('src', src);
+    $('#imgZoomModal').css('display', 'flex');
+}
+function fn_FiltrarDados1() {
+
+    var varAjax_UrlController = `${var_Controller}/FiltrarDados`;
+
+    var varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9];
+    var varCol_Ordenacao = [2, 'asc'];
+
+    var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json';
+
+    $.busyLoadFull("show");
+
+    // =========================
+    // INIT ZOOM GLOBAL
+    // =========================
+    fn_InitZoom();
+
+    $('.datatables-basic').DataTable().clear().destroy();
+
+    varTbl_Data = $('.datatables-basic').DataTable({
+
+        processing: true,
+        serverSide: true,
+        deferRender: true,   // 🔥 performance
+        scrollX: true,       // 🔥 mobile
+
+        ajax: {
+            url: varAjax_UrlController,
+            type: 'POST',
+            contentType: 'application/json; charset=utf-8',
+
+            data: function (d) {
+                return JSON.stringify({
+                    draw: d.draw,
+                    start: d.start,
+                    length: d.length,
+                    search: d.search,
+
+                    filtros: {
+                        marcaFaseId: $('#cmb_MarcaFase').val(),
+                        marcaTipoId: $('#cmb_MarcaTipo').val(),
+                        marcaSubTipoId: $('#cmb_MarcaSubTipo').val(),
+                        pesquisarSemVariante: $('#chk_PesquisarSemVariante')[0].checked,
+                        pesquisarDescricao: $('#chk_PesquisarDescricao')[0].checked,
+                    }
+                });
+            },
+
+            dataSrc: function (json) {
+                return json.data;
+            }
+        },
+
+        // =========================
+        // COLUNAS
+        // =========================
+        columns: [
+
+            // 🔥 CONTROL (OBRIGATÓRIO VISÍVEL)
+            {
+                data: null,
+                defaultContent: '',
+                className: 'control',
+                orderable: false,
+                responsivePriority: 1
+            },
+            // CodigoAceca
+            { data: 'CodigoAceca', className: 'text-center', responsivePriority: 2 },
+            // NomeMarca
+            { data: 'NomeMarca', className: 'text-center', responsivePriority: 3 },
+
+            // IMG PRINCIPAL
+            {
+                data: 'ImgPrincipalFull',
+                className: 'text-center',
+                responsivePriority: 4,
+                render: function (data) {
+                    return `<img loading="lazy"
+                                class="td-img"
+                                src="${data}"
+                                style="cursor:pointer"
+                                onclick="fn_ZoomImg('${data}')">`;
+                }
+            },
+
+            // IMG DETALHE
+            {
+                data: 'ImgDetalheFull',
+                className: 'text-center',
+                responsivePriority: 5,
+                render: function (data) {
+                    return `<img loading="lazy"
+                                class="td-img"
+                                src="${data}"
+                                style="cursor:pointer"
+                                onclick="fn_ZoomImg('${data}')">`;
+                }
+            },
+            // Descricao
+            { data: 'Descricao', className: 'text-start', responsivePriority: 6 },
+            // NomeFabrica
+            {
+                data: 'NomeFabrica',
+                className: 'text-center',
+                responsivePriority: 7,
+                render: function (data, type, full) {
+                    return (!data) ? full.TxtFabrica : data;
+                }
+            },
+            // Tipo
+            { data: 'SubTipo', className: 'text-center', responsivePriority: 8 },
+            // NomeFinalidade
+            { data: 'NomeFinalidade', className: 'text-center', responsivePriority: 9 },
+            // NomeFase
+            { data: 'NomeFase', className: 'text-center', responsivePriority: 10 },
+            // IncluidoPor Img
+            {
+                data: 'IncluidoPor',
+                className: 'text-center',
+                responsivePriority: 11,
+                render: function (data, type) {
+                    if (!data || type !== 'display') return '';
+
+                    return data.split('/').map((p, i) =>
+                        `<img src="../img/avatars/${i}.png"
+                              title="${p}"
+                              style="width:28px;height:28px;border-radius:50%">`
+                    ).join('');
+                }
+            },
+            // IncluidoPor nome
+            { data: 'IncluidoPor', visible: false },
+            // Acoes
+            {
+                data: 'Id',
+                orderable: false,
+                responsivePriority: 2,
+                render: function (data, type, full) {
+                    if (type !== 'display') return '';
+
+                    var itemObjJson = encodeURIComponent(JSON.stringify(full));
+
+                    return `<a href="javascript:fn_Modal(${itemObjJson},'Edit');"
+                                class="btn btn-sm btn-icon">
+                                <i class="ri-edit-box-line"></i>
+                            </a>`;
+                }
+            }
+        ],
+
+        order: [varCol_Ordenacao],
+
+        // =========================
+        // RESPONSIVE MOBILE
+        // =========================
+        responsive: {
+            details: {
+                type: 'column',
+                target: 0,
+
+                renderer: function (api, rowIdx) {
+
+                    var row = api.row(rowIdx).data();
+
+                    var fabrica = row.TxtFabrica || row.NomeFabrica;
+
+                    var incluidoPor = row.IncluidoPor
+                        ? row.IncluidoPor.split('/').join(', ')
+                        : '';
+
+                    var card = `
+                    <div class="card-mobile">
+
+                        <div class="card-imgs">
+                            <img src="${row.ImgPrincipalFull}" onclick="fn_ZoomImg('${row.ImgPrincipalFull}')">
+                            <img src="${row.ImgDetalheFull}" onclick="fn_ZoomImg('${row.ImgDetalheFull}')">
+                        </div>
+
+                        <div class="card-grid">
+                            <div><b>Código:</b> ${row.CodigoAceca}</div>
+                            <div><b>Marca:</b> ${row.NomeMarca}</div>
+                            <div><b>Fase:</b> ${row.NomeFase}</div>
+                            <div><b>Finalidade:</b> ${row.NomeFinalidade}</div>
+                            <div><b>SubTipo:</b> ${row.SubTipo}</div>
+                            <div><b>Fábrica:</b> ${fabrica}</div>
+                        </div>
+
+                        <div class="card-desc">${row.Descricao || ''}</div>
+
+                        <div class="card-footer">
+                            <div>${incluidoPor}</div>
+                        </div>
+
+                    </div>`;
+
+                    return $(card);
+                }
+            }
+        },
+
+        language: {
+            url: varLang_UrlTranslate
+        },
+
+        drawCallback: function () {
+            fn_LazyLoad();
+        },
+
+        initComplete: function () {
+            fn_GridComplete(this);
+            $.busyLoadFull("hide");
+        }
+    });
+}
+
 function fn_FiltrarDados() {
     //console.log("bfn_FiltrarDados ::: ");
     var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
@@ -432,6 +671,9 @@ function fn_FiltrarDados() {
         processing: true,
         serverSide: true,
 
+        autoWidth: false,
+        scrollX: false,
+
         ajax: {
             url: varAjax_UrlController,
             type: varAjax_TypeAction,
@@ -457,86 +699,83 @@ function fn_FiltrarDados() {
             },
 
             dataSrc: function (json) {
-                console.log("result json:: ", json);
+                //console.log("result json:: ", json);
                 return json.data;
             }
         },
 
         columns: [
-            // COLUNA - Responsive (control)
-            { data: 'Id', className: 'control', orderable: false, visible: false, responsivePriority: 1, },
-            // COLUNA - codigoAceca
-            { data: 'CodigoAceca', className: 'text-center', responsivePriority: 2 },
-            // COLUNA - nomeMarca
-            { data: 'NomeMarca', className: 'text-center', responsivePriority: 3 },
-            // COLUNA - imagem
+            // COLUNA - control (sempre visível — prioridade máxima)
+            { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
+            // COLUNA - codigoAceca (2ª a aparecer no mobile)
+            { data: 'CodigoAceca', className: 'text-center', width: '90px', responsivePriority: 2 },
+            // COLUNA - nomeMarca (3ª a aparecer no mobile)
+            { data: 'NomeMarca', className: 'text-center', width: '120px' , responsivePriority: 3 },
+            // COLUNA - imagem (some primeiro no mobile)
             {
-                data: 'ImgPrincipalFull',
-                className: 'text-center',
-                responsivePriority: 4,
+                data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004,
                 render: function (data, type, row) {
                     return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${data}">`;
                 }
             },
             // COLUNA - imagemDetalhe
             {
-                data: 'ImgDetalheFull',
-                className: 'text-center',
-                responsivePriority: 5,
+                data: 'ImgDetalheFull', className: 'text-center', responsivePriority: 10005,
                 render: function (data, type, row) {
                     return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row.CodigoAceca}" src="${data}">`;
                 }
             },
             // COLUNA - descricao
-            { data: 'Descricao', className: 'text-start', responsivePriority: 6 },
+            { data: 'Descricao', className: 'text-start', responsivePriority: 10006 },
             // COLUNA - fabricaNome
             {
-                data: 'NomeFabrica', className: 'text-center', responsivePriority: 7,
+                data: 'NomeFabrica', className: 'text-center', responsivePriority: 10007,
                 render: function (data, type, full) {
                     return (data === '' || data === null) ? full.TxtFabrica : data;
                 }
             },
             // COLUNA - subTipo
-            { data: 'SubTipo', className: 'text-center', responsivePriority: 8 },
+            { data: 'SubTipo', className: 'text-center', responsivePriority: 10008 },
             // COLUNA - finalidade
-            { data: 'NomeFinalidade', className: 'text-center', responsivePriority: 9 },
+            { data: 'NomeFinalidade', className: 'text-center', responsivePriority: 10009 },
             // COLUNA - nomeFase
-            { data: 'NomeFase', className: 'text-center', responsivePriority: 10 },
+            { data: 'NomeFase', className: 'text-center', responsivePriority: 10010 },
             // COLUNA - incluidoPor (avatar)
             {
-                data: 'IncluidoPor', className: 'text-center', responsivePriority: 11,
+                data: 'IncluidoPor', className: 'text-center', responsivePriority: 10011,
                 render: function (data, type, full) {
-                    //console.log("result data:: ", data);
-                    //console.log("result type:: ", type);
-                    //console.log("result full:: ", full);
                     if (!data || full.Id === 0 || type !== 'display') return '';
                     var ul = `<ul class="m-0 avatar-group d-flex align-items-center" style="list-style:none;">`;
                     var items = data.split('/').map(function (p, i) {
                         return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
-                                        title="${p}" style="z-index:1;">
-                                        <img src="../img/avatars/${i}.png" alt="Avatar" class="rounded-circle">
-                                    </li>`;
+                            title="${p}" style="z-index:1;">
+                            <img src="../img/avatars/${i}.png" alt="Avatar" class="rounded-circle">
+                        </li>`;
                     }).join('');
                     return ul + items + '</ul>';
                 }
             },
             // COLUNA - incluidoPor hidden (filtro)
             { targets: -2, data: 'IncluidoPor', visible: false, responsivePriority: 99 },
-            // COLUNA - Ações
+            // COLUNA - Ações (sempre visível junto com control)
             {
-                data: 'Id', targets: -1, searchable: false, orderable: false, responsivePriority: 2,
+                data: 'Id', targets: -1, searchable: false, orderable: false, responsivePriority: 4,
                 render: function (data, type, full) {
                     if (type !== 'display') return '';
                     var itemObjJson = encodeURIComponent(JSON.stringify(full));
                     return `<div class="d-inline-block text-nowrap">
-                                    <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
-                                        class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
-                                        <i class="ri-edit-box-line ri-22px"></i>
-                                    </a>
-                                </div>`;
+                        <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
+                            class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
+                            <i class="ri-edit-box-line ri-22px"></i>
+                        </a>
+                    </div>`;
                 }
             }
         ],
+
+        order: [[1, 'asc']], // garante base na coluna CodigoAceca
+        autoWidth: false,
+
         language: {
             url: varLang_UrlTranslate,
             paginate: {
@@ -613,7 +852,8 @@ function fn_FiltrarDados() {
         ],
         responsive: {
             details: {
-                //type: 'column',
+                type: 'column',
+                target: 0,
                 //target: 'tr',
                 renderer: function (api, rowIdx, columns) {
                     var row = api.row(rowIdx).data();
@@ -656,18 +896,18 @@ function fn_FiltrarDados() {
                     };
 
                     // ✅ Imagens clicáveis com cursor pointer e chamada ao zoom
-                    var imgPrincipal = row.imgPrincipalFull
-                        ? `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${row.imgPrincipalFull}"
-                                    onclick="fn_ZoomImg('${row.imgPrincipalFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px; 
+                    var imgPrincipal = row.ImgPrincipalFull
+                        ? `<img name="myImg" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${row.ImgPrincipalFull}"
+                                    onclick="fn_ZoomImg('${row.ImgPrincipalFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px; 
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
                         : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px; 
                                     display:flex;align-items:center;justify-content:center;
                                     font-size:11px;color:#aaa;">sem img</div>`;
 
-                    var imgDetalhe = row.imgDetalheFull
-                        ? `<img name="myImg" class="td-img cmyImg" alt="${row.codigoAceca}" src="${row.imgDetalheFull}"
-                                    onclick="fn_ZoomImg('${row.imgDetalheFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
+                    var imgDetalhe = row.ImgDetalheFull
+                        ? `<img name="myImg" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${row.ImgDetalheFull}"
+                                    onclick="fn_ZoomImg('${row.ImgDetalheFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
                         : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px;
@@ -675,14 +915,14 @@ function fn_FiltrarDados() {
                                     font-size:11px;color:#aaa;">sem detalhe</div>`;
 
                     // Fábrica
-                    var fabrica = (row.txtFabrica === "" || row.txtFabrica === null)
-                        ? row.nomeFabrica
-                        : row.txtFabrica;
+                    var fabrica = (row.TxtFabrica === "" || row.TxtFabrica === null)
+                        ? row.NomeFabrica
+                        : row.TxtFabrica;
 
                     // Avatares incluídoPor
                     var avatarHtml = '';
-                    if (row.incluidoPor) {
-                        var pessoas = row.incluidoPor.split("/");
+                    if (row.IncluidoPor) {
+                        var pessoas = row.IncluidoPor.split("/");
                         avatarHtml = pessoas.map(function (p, i) {
                             return `<img src="../img/avatars/${i}.png" alt="${p}" title="${p}"
                                         style="width:28px;height:28px;border-radius:50%;border:1.5px solid #fff;margin-right:2px;">`;
@@ -692,9 +932,9 @@ function fn_FiltrarDados() {
                     // ✅ incluidoPor como TEXTO PURO no card mobile
                     var incluidoPorTexto = '';
 
-                    if (row.incluidoPor) {
+                    if (row.IncluidoPor) {
                         // Substitui "/" por separador legível
-                        incluidoPorTexto = row.incluidoPor.split('/').join(', ');
+                        incluidoPorTexto = row.IncluidoPor.split('/').join(', ');
                     }
 
                     // Botão editar
@@ -706,43 +946,43 @@ function fn_FiltrarDados() {
 
                     var card = `<div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1rem;margin:6px 0;">
 
-                <!-- ✅ MUDANÇA 1 — Primeira linha: SOMENTE as duas imagens, centralizadas -->
-                <div style="display:flex;justify-content:center;gap:100px;padding-bottom:12px;border-bottom:0.5px solid #eee;margin-bottom:12px;">
-                    <div>
-                        <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Imagem</div>
-                        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">${row.codigoAceca || ''}</div>
-                        <div>${imgPrincipal || ''}</div>
-                    </div>
-                    <div>
-                        <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:200;">Detalhe</div>
-                        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">${row.codigoAceca || ''}</div>
-                        <div>${imgDetalhe || ''}</div>
-                    </div>
-                </div>
+                            <!-- ✅ MUDANÇA 1 — Primeira linha: SOMENTE as duas imagens, centralizadas -->
+                            <div style="display:flex;justify-content:center;gap:100px;padding-bottom:12px;border-bottom:0.5px solid #eee;margin-bottom:12px;">
+                                <div>
+                                    <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Imagem</div>
+                                    <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">${row.CodigoAceca || ''}</div>
+                                    <div>${imgPrincipal || ''}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:200;">Detalhe</div>
+                                    <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">${row.CodigoAceca || ''}</div>
+                                    <div>${imgDetalhe || ''}</div>
+                                </div>
+                            </div>
 
                 <!-- Grid de campos -->
                 <!-- ✅label em negrito (font-weight:600), valor em normal (font-weight:400) -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;">
                     <div>
                         <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Fase</div>
-                        <div style="font-size:11px;color:#aaa;font-weight:400;">${row.nomeFase || ''}</div>
+                        <div style="font-size:11px;color:#aaa;font-weight:400;">${row.NomeFase || ''}</div>
                     </div>
                     <div>
                         <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Código ACECA</div>
-                        <div style="font-size:13px;color:#aaa;font-weight:400;">${row.codigoAceca || ''}</div>
+                        <div style="font-size:13px;color:#aaa;font-weight:400;">${row.CodigoAceca || ''}</div>
                     </div>
                     <div>
                         <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Finalidade</div>
-                        <div style="font-size:13px;color:#aaa;font-weight:400;">${row.nomeFinalidade || ''}</div>
+                        <div style="font-size:13px;color:#aaa;font-weight:400;">${row.NomeFinalidade || ''}</div>
                     </div>                                            
                     <div>
                         <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">SubTipo</div>
-                        <div style="font-size:13px;color:#aaa;font-weight:400;">${row.subTipo || ''}</div>
+                        <div style="font-size:13px;color:#aaa;font-weight:400;">${row.SubTipo || ''}</div>
                     </div>
                     <!--
                     <div>
                         <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Marca</div>
-                        <div style="font-size:13px;color:#aaa;font-weight:400;">${row.nomeMarca || ''}</div>
+                        <div style="font-size:13px;color:#aaa;font-weight:400;">${row.NomeMarca || ''}</div>
                     </div>
                     -->
                     <div>
@@ -759,14 +999,14 @@ function fn_FiltrarDados() {
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:0.5px solid #eee;">
                     <div>
                         <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Marca</div>
-                        <div style="font-size:13px;color:#aaa;">${row.nomeMarca}</div>
+                        <div style="font-size:13px;color:#aaa;">${row.NomeMarca}</div>
                     </div>
                 </div>
 
                 <!-- Descrição -->
                 <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid #eee;">
                     <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;margin-bottom:4px;">Descrição</div>
-                    <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.descricao || ''}</div>
+                    <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.Descricao || ''}</div>
                 </div>
 
 
@@ -775,8 +1015,14 @@ function fn_FiltrarDados() {
 
                     return $(card);
                 }
-            }
+            },
+            breakpoints: [
+                { name: 'desktop', width: Infinity },
+                { name: 'tablet', width: 1024 },
+                { name: 'mobile', width: 768 }  // era 480 — aumentar dá mais espaço
+            ]
         },
+
 
         drawCallback: function () {
             fn_Zoom();

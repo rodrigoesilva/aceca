@@ -98,7 +98,7 @@ async function fn_LoginAuth() {
         if (response.ok) {
 
             let user = await response.json();
-            console.log(`AUTH - user :: `, user);
+           // console.log(`AUTH - user :: `, user);
 
             if (user.bResult) {
 
