@@ -15,6 +15,8 @@ let var_Nome = 'S&oacute;cio -> Financeiro',
 
     formValid, popAddNewItemEl;
 
+let dtUltimoPagamento = $('#pop_line_item_04').val();
+
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
 const swalWithBootstrapButtons = Swal.mixin({
@@ -59,7 +61,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Carrega Dados Grid
         fn_GridList(formValid);
+
+        //Ultimo Pagamento
+        $("#pop_line_item_04").on('changeDate', function (picker) {
+            //console.log("UltimoPagamento  picker: ", picker);
+
+            if ($('#pop_line_item_04').val()) {
+                // Get the Date object
+                var selectedDate = picker.date;
+                //console.log("Date object:", selectedDate);
+                // Get the formatted date string using the format method
+                var formattedDate = picker.format('dd/mm/yyyy');
+                //console.log("Formatted date:", formattedDate);
+
+                dtUltimoPagamento = $('#pop_line_item_04').val().replace(/\s/g, '');
+                //console.log("dtUltimoPagamento ::: ", dtUltimoPagamento);
+            }
+        });
+
+        $("#pop_line_item_04").on('hide', function (picker) {
+            //console.log("UltimoPagamento  picker: ", picker.date);
+
+            if (picker.date === undefined) {
+                $(this).val('');
+            }
+        });
     })();
+});
+
+//#endregion
+
+//#region DATA PICKERS
+
+$(function () {
+    var bsDatepickerFormat = $('.dt-calendar');
+
+    // Format
+    if (bsDatepickerFormat.length) {
+        bsDatepickerFormat.datepicker({
+            todayHighlight: true,
+            autoclose: true,
+            format: 'dd/mm/yyyy',
+            language: 'pt-BR',
+            orientation: isRtl ? 'auto right' : 'auto left'
+        });
+    }
 });
 
 //#endregion
@@ -597,7 +643,7 @@ function fn_Pop(obj, action) {
 
     // Pop ID
     (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
-    (popAddNewItem.querySelector('#hdSocioId').value = (obj === null ? 0 : obj.socioId)),
+    (popAddNewItem.querySelector('#hdSocioFinanceiroId').value = (obj === null ? 0 : obj.socioId)),
 
         // Pop Dados
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
@@ -626,15 +672,15 @@ function fn_PopGetObj() {
 
     const objFormData = {
         Id: $('#hdId').val(),
-        SocioId: $('#hdSocioId').val(),
+        SocioId: $('#hdSocioFinanceiroId').val(),
         Nome: $('.form-add-new-item .dt-line-01').val(),
         TipoPagamentoId: $('#cmb_TipoPagamento').val(),
-        PagamentoEmDia: $('.form-add-new-item .dt-line-03').is(':checked'),
-        UltimoPagamento: $('.form-add-new-item .dt-line-04').val(),
+        PagamentoEmDia: $('.form-add-new-item .dt-line-03').is(':checked') === true ? 1 : 0,
+        DataUltimoPagamento: $('.form-add-new-item .dt-line-04').val(),
         Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
-    console.log("fn_PopGetObj !", objFormData);
+    //console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
 }

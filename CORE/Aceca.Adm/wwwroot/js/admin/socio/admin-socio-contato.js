@@ -490,7 +490,7 @@ function fn_Pop(obj, action) {
 
     // Pop ID
     (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
-        (popAddNewItem.querySelector('#hdSocioId').value = (obj === null ? 0 : obj.socioId)),
+        (popAddNewItem.querySelector('#hdSocioContatoId').value = (obj === null ? 0 : obj.socioId)),
 
         // Pop Dados
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
@@ -512,7 +512,7 @@ function fn_PopGetObj() {
 
     const objFormData = {
         Id: $('#hdId').val(),
-        SocioId: $('#hdSocioId').val(),
+        SocioId: $('#hdSocioContatoId').val(),
         Nome: $('.form-add-new-item .dt-line-01').val(),
         Telefone: $('.form-add-new-item .dt-line-02').val(),
         Email: $('.form-add-new-item .dt-line-03').val(),

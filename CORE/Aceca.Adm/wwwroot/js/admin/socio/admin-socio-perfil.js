@@ -469,10 +469,10 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id));
 
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.descricao)),
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.descricao));
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
 
 

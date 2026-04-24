@@ -343,7 +343,7 @@ namespace Aceca.Adm.Models
         public int? SocioId { get; set; }
         public int? TipoPagamentoId { get; set; }
         public int? PagamentoEmDia { get; set; }
-        [Column("dtUltimoPagamento")] public DateTime? DataUltimoPagamento { get; set; } = DateTime.UtcNow;
+        [Column("dtUltimoPagamento")] public DateTime? DataUltimoPagamento { get; set; }
         public Socio? Socio { get; set; }
         public TipoPagamento? TipoPagamento { get; set; }
     }

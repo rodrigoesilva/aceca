@@ -19,7 +19,15 @@
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
     <!-- Form Validation -->
-    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+    <!-- Flat Picker - Calendar -->
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.css" />
+    <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css">
+    <!-- Select Dropdownlist -->
+    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
+    <!-- DatePicker Range -->
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css" />
 
 
     <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
@@ -39,7 +47,8 @@
     <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
-
+    <!-- DatePicker Range -->
+    <script src="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js"></script>
 
     <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
     <script src="~/vendor/libs/busy-load/app.min.js"></script>
@@ -75,7 +84,7 @@
 <div class="offcanvas offcanvas-end" id="pop-add-new-item">
     <div class="offcanvas-header border-bottom">
         <input type="hidden" id="hdId" name="hdId" value="0"/>
-        <input type="hidden" id="hdSocioId" name="hdSocioId" value="0" />
+        <input type="hidden" id="hdSocioAniversarioId" name="hdSocioAniversarioId" value="0" />
         <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>

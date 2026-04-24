@@ -1,4 +1,4 @@
-﻿/**
+﻿/*
  *  Pages
  */
 
@@ -6,7 +6,7 @@
 
 //#region Declare
 
-let sessionData;
+let _sessionData = null;
 const _ck = "aceca_cookie";
 
 //#endregion
@@ -76,7 +76,7 @@ function fn_AuthOut() {
 
                     Swal.fire({
                         icon: 'success',
-                        title: `At&eacute mais ${sessionData?.nome?.split(" ")[0]}!`,
+                        title: `At&eacute mais ${_sessionData?.nome?.split(" ")[0]}!`,
                         html: `Nos vemos em breve`,
                         focusConfirm: true,
                         confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
@@ -106,16 +106,16 @@ function fn_AuthSession() {
     //console.log(`fn_AuthSession sessionStorage ::`, sessionStorage);
 
     if (sessionStorage?.getItem("aceca_sessao") !== null) {
-        sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+        _sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
 
-        //console.log(`fn_AuthSession sessionData ::`, sessionData);
+        //console.log(`fn_AuthSession _sessionData ::`, _sessionData);
 
-        if (sessionData !== null) {
-            document.getElementById('hdSocioId').value = `${sessionData?.nameIdentifier}`;
-            document.getElementById('hdIsPerfil').value = `${sessionData?.isPerfil}`;
-            document.getElementById('tbAvatar').textContent = `${sessionData?.avatar}`;
-            document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
-            document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
+        if (_sessionData !== null) {
+            document.getElementById('hdSocioLogadoId').value = `${_sessionData?.nameIdentifier}`;
+            document.getElementById('hdIsPerfil').value = `${_sessionData?.isPerfil}`;
+            document.getElementById('tbAvatar').textContent = `${_sessionData?.avatar}`;
+            document.getElementById('tbNome').textContent = `${_sessionData?.nome}`;
+            document.getElementById('tbCargo').textContent = `${_sessionData?.cargo}`;
         } else {
             fn_CleanUser();
         }
