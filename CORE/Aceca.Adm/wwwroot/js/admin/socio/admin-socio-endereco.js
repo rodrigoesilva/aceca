@@ -519,7 +519,7 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-06').value = (obj === null ? '' : obj.bairro)),
         //(popAddNewItem.querySelector('.dt-line-07').value = (obj === null ? '-1' : ((obj.estrado === null || obj.estrado === 0) ? '-1' : obj.estrado)));
         (popAddNewItem.querySelector('.dt-line-08').value = (obj === null ? '' : obj.cidade)),
-        (popAddNewItem.querySelector('.dt-line-09').checked = (obj === null ? false : obj.socio.ativo));
+       // (popAddNewItem.querySelector('.dt-line-09').checked = (obj === null ? false : obj.socio.ativo));
 
 
     // Pop Action
@@ -550,7 +550,7 @@ function fn_PopGetObj() {
         Bairro: $('.form-add-new-item .dt-line-06').val(),
         Estado: $('#cmb_SocioEstado').val(),
         Cidade: $('.form-add-new-item .dt-line-08').val(),
-        Ativo: $('.form-add-new-item .dt-line-09').is(':checked')
+       // Ativo: $('.form-add-new-item .dt-line-09').is(':checked')
     };
 
     console.log("fn_PopGetObj !", objFormData);
@@ -723,7 +723,7 @@ function fnItem_Edit(varItems_Row) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: varItems_Row,
@@ -823,7 +823,7 @@ function fnItem_Add(varTbl_Obj) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: formData_newItem,

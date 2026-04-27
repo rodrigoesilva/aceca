@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 $('.div_imagem').hide();
                 $('.div_botoes').hide();
                 $('.div_variante').hide();
+                $('.div_tem_pais_destino').hide();
                 $('.div_variante_codigo').hide();
                 $('.div_original_variante').hide();
 
@@ -149,8 +150,10 @@ function fn_Limpar() {
     $('#txt_Valor2PI').val('');
 
     $('#txt_ImgPrincipal').val('');
-    $('#txt_ImgDetalhe').val('');  
-    
+    $('#txt_ImgDetalhe').val('');
+
+    $('.div_tem_pais_destino').hide();
+
     $('.div_variante').hide();
     $('.div_fase').hide();
     $('.div_variante_codigo').hide();
@@ -536,6 +539,19 @@ function fn_ChangeCombos() {
         }
     });
 
+    $('#cmbPop_MarcaExTemPaisDestino').on('change', function () {
+
+        let idExPaisDestino = $(this).find('option:selected').val();
+
+        //console.log("cmbPop_MarcaExTemPaisDestino change idExPaisDestino ::: ", idExPaisDestino);
+
+        if (idExPaisDestino >= 0) {
+
+            fn_GetCodigoAceca();
+        }
+       
+    });
+
     $('#cmbPop_MarcaVariante').on('change', function () {
 
         let idMarcaVariante = $(this).find('option:selected').val();
@@ -556,7 +572,7 @@ function fn_ChangeCombos() {
                 $('.div_variante_codigo').hide();
                 $('#txt_CodigoVariante').val('');
 
-                fn_GetCodigoAceca()
+                fn_GetCodigoAceca();
             } else {
                 $('.div_variante_codigo').hide();
                 $('#txt_CodigoVariante').val('');
@@ -624,6 +640,7 @@ function fn_PopLoadCombos() {
 
     //console.log("fn_PopLoadCombos  ::: ");
 
+    fn_LoadCmb_MarcaExPaisDestino();
     fn_LoadCmb_MarcaVariante();
     fn_LoadCmb_MarcaFase();
     fn_LoadCmb_MarcaFinalidade();
@@ -634,6 +651,31 @@ function fn_PopLoadCombos() {
     fn_LoadCmb_MarcaImpressora();
     fn_LoadCmb_MarcaQualidadeImagem();
     fn_LoadCmb_MarcaRaridade();
+}
+
+function fn_LoadCmb_MarcaExPaisDestino() {
+    //console.log("fn_LoadCmb_MarcaExPaisDestino ::: ");
+
+    if ($('#cmbPop_MarcaExTemPaisDestino').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_Variante`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaExPaisDestino  data ::: ", data);
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaExPaisDestino  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaExPaisDestino  result ::: ", result);
+                        $("#cmbPop_MarcaExTemPaisDestino").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
 }
 
 function fn_LoadCmb_MarcaVariante() {
@@ -953,10 +995,20 @@ function fn_LoadCmb_MarcaRaridade() {
 //#region FUNCOES
 
 function fn_ShowCampos() {
+    //console.log("fn_ShowCampos txt_Codigo ::: ", $('#txt_Codigo').val());    
+
+    let idMarcaFase = $('#cmbPop_MarcaFase').find('option:selected').val();
+   
+
     if ($('#txt_Codigo').val() !== '') {
+        //console.log("fn_ShowCampos idMarcaFase ::: ", idMarcaFase);
 
-        $('#cmbPop_MarcaVariante').prop('selectedIndex', 0).change();
-
+        if (idMarcaFase === 29) {
+            // 29 Exportacao
+            $('#cmbPop_MarcaExTemPaisDestino').prop('selectedIndex', 0).change();
+        } else {
+            $('#cmbPop_MarcaVariante').prop('selectedIndex', 0).change();
+        }
 
         $('#txt_Codigo').val('');
         $('#txt_CodigoVariante').val('');
@@ -991,8 +1043,15 @@ function fn_ShowCampos() {
         $('.div_botoes').hide();
 
     } else {
-        //
-        $('.div_variante').show();
+        //console.log("fn_ShowCampos idMarcaFase ::: ", idMarcaFase);
+        
+        if (idMarcaFase != 29) {// 29 Exportacao
+            $('.div_variante').show();
+            $('.div_tem_pais_destino').hide();
+        } else {
+            $('.div_variante').hide();
+            $('.div_tem_pais_destino').show();
+        }
     }
 }
 
@@ -1056,6 +1115,7 @@ function fn_GetCodigoAceca() {
     let txtNome = $('#txt_Nome').val();
     let txtCodigoVariante = $('#txt_CodigoVariante').val();
     let bNovaVariante = $('#cmbPop_MarcaVariante').val() > 0 ? true : false;
+    let bExTemPaisDestino = $('#cmbPop_MarcaExTemPaisDestino').val() > 0 ? true : false;
 
     $.ajax(
         {
@@ -1065,7 +1125,8 @@ function fn_GetCodigoAceca() {
             data: {
                 idFase: idMarcaFase,
                 strTermoBusca: bNovaVariante ? txtCodigoVariante : txtNome,
-                bvariante: bNovaVariante
+                bvariante: bNovaVariante,
+                bExTemPaisDestino: bExTemPaisDestino
             },
             success: function (result) {
                 //console.log("fn_GetCodigoAceca  result ::: ", result);
@@ -1074,9 +1135,9 @@ function fn_GetCodigoAceca() {
 
                     //console.log("fn_GetCodigoAceca bNovaVariante ::: ", bNovaVariante);
 
-                    if (bNovaVariante) { 
+                    if (bNovaVariante || idMarcaFase == 29) { 
                         objVariante = result.data;
-                        fn_GetDataVariante(objVariante);
+                        fn_PreencheDadosExistentes(objVariante);
                     }
 
                     //
@@ -1120,8 +1181,8 @@ function fn_GetCodigoAceca() {
     );
 }
 
-function fn_GetDataVariante(obj) {
-    //console.log("fn_GetDataVariante obj::: ", obj);
+function fn_PreencheDadosExistentes(obj) {
+    //console.log("fn_PreencheDadosExistentes obj::: ", obj);
 
     // Pop ID
     (document.querySelector('#hdId').value = (obj === null ? 0 : obj.id));

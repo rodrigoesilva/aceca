@@ -763,7 +763,7 @@ function fnItem_Add(varTbl_Obj) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: formData_newItem,

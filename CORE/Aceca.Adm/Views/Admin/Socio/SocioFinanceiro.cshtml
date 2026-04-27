@@ -20,14 +20,22 @@
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
     <!-- Form Validation -->
     <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
-    <!-- Flat Picker - Calendar -->
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+
+    <!-- DatePicker
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css" />
+     -->
     <link rel="stylesheet" href="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.css" />
+    <!-- DatePicker RANGE
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.0.5/daterangepicker.css" />
+     -->
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css" />
+
+    <!-- Flat Picker - Calendar -->
     <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css">
     <!-- Select Dropdownlist -->
     <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
     <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
-    <!-- DatePicker Range -->
-    <link rel="stylesheet" href="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css" />
 
     <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
     <link rel="stylesheet" href="~/vendor/libs/busy-load/app.min.css" />
@@ -39,15 +47,23 @@
 
 @section VendorScripts {
     <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script>
-    <!-- Flat Picker -->
+    <!-- Moment -->
     <script src="~/vendor/libs/moment/moment.js"></script>
+    <!-- Flat Picker -->
     <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
     <!-- Form Validation -->
     <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
-    <!-- DatePicker Range -->
+
+    <!-- DatePicker
+    <script src="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
+
+    <!-- DatePicker Range
     <script src="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js"></script>
+     -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.0.5/daterangepicker.min.js"></script>
 
     <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
     <script src="~/vendor/libs/busy-load/app.min.js"></script>
@@ -70,10 +86,10 @@
                     <th></th>
                     <th>id</th>
                     <th>Nome</th>
-                    <th>Tipo Pagamento</th>
-                    <th>Status Pagamento</th>
+                    <th>Status S&oacute;cio</th>
+                    <th>Tipo Pagamento</th>                   
                     <th>&Uacute;ltimo Pagamento</th>
-                    <th>Status</th>
+                    <th>Status Pagamento</th>
                     <th>A&ccedil;&otilde;es</th>
                 </tr>
             </thead>
@@ -135,7 +151,7 @@
                     </div>
                 </div>
             </div>
-
+            <!--
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
                     <div class="form-check form-switch mb-2">
@@ -146,6 +162,7 @@
                     </div>
                 </div>
             </div>
+            -->
             <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
                 <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>

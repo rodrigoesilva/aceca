@@ -109,9 +109,20 @@
                                 <select id="cmbPop_MarcaVariante" name="cmbPop_MarcaVariante" class="select2 form-select form-select">
                                     <option value="-1">-- Selecionar --</option>
                                 </select>
-                                <label for="cmbPop_MarcaVariante">&Eacute; uma variante</label>
+                                <label for="cmbPop_MarcaVariante">&Eacute; uma variante ?</label>
                             </div>
                         </div>
+
+                        <!--Especifico para quando a fase é EXPORT -->
+                        <div class="col-md-3 div_tem_pais_destino">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaExTemPaisDestino" name="cmbPop_MarcaExTemPaisDestino" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaExTemPaisDestino">Tem Pa&iacute;s de destino ?</label>
+                            </div>
+                        </div>
+                        <!--Especifico para quando a fase é EXPORT -->
 
                         <div class="col-md-3 div_variante_codigo">
                             <div class="form-floating form-floating-outline">
@@ -125,7 +136,7 @@
                         <div class="col-md-12 mt-n1 text-center">
                             <label>Marca Original da Variante Informada</label>
                             <div id="div_NomePaiVariante" name="div_NomePaiVariante" contenteditable="true"></div>
-                            <!--<input class="form-control" type="text" id="txt_NomePaiVariante" name="txt_NomePaiVariante" placeholder="Nome Original Variante" />-->
+                            
                         </div>
                     </div>
 

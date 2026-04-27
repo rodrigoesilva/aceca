@@ -108,7 +108,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Data Inválida"
+                            message = "Data Inválida",
+                            data = model,
+                            modelState = ModelState
                         });
 
                     var newModel = new Models.SocioAniversario
@@ -128,7 +130,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Falha ao Atualizar"
+                            message = "Falha ao Atualizar",
+                            data = model,
+                            modelState = ModelState
                         });
 
                     return Ok(new
@@ -137,6 +141,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         type = "OK",
                         message = "SUCESSO ::: ",
                         data = model,
+                        modelState = ModelState
                     });
                 }
 
@@ -146,6 +151,12 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     type = "ERRO",
                     message = "Model Inválida",
                     data = model,
+                    modelState = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value?.Errors?.Select(e => e.ErrorMessage).ToArray()
+                        )
                 });
             }
             catch (Exception ex)
@@ -158,7 +169,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = mensagemErro
+                    message = mensagemErro,
+                    data = model,
+                    modelState = ModelState
                 });
             }
         }
@@ -212,6 +225,12 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     type = "ERRO",
                     message = "Model Inválida",
                     data = model,
+                    modelState = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value?.Errors?.Select(e => e.ErrorMessage).ToArray()
+                        )
                 });
             }
             catch (Exception ex)

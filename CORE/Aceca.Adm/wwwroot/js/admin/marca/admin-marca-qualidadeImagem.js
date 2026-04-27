@@ -670,7 +670,7 @@ function fnItem_Edit(varItems_Row) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: varItems_Row,
@@ -770,7 +770,7 @@ function fnItem_Add(varTbl_Obj) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: formData_newItem,

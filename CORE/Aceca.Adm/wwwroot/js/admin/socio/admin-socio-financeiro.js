@@ -16,6 +16,7 @@ let var_Nome = 'S&oacute;cio -> Financeiro',
     formValid, popAddNewItemEl;
 
 let dtUltimoPagamento = $('#pop_line_item_04').val();
+let bsDatepickerFormat = $('.dt-calendar');
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
@@ -94,11 +95,9 @@ document.addEventListener('DOMContentLoaded', function () {
 //#region DATA PICKERS
 
 $(function () {
-    var bsDatepickerFormat = $('.dt-calendar');
-
     // Format
-    if (bsDatepickerFormat.length) {
-        bsDatepickerFormat.datepicker({
+    if ($('#pop_line_item_04').length) {
+        $('#pop_line_item_04').datepicker({
             todayHighlight: true,
             autoclose: true,
             format: 'dd/mm/yyyy',
@@ -118,7 +117,7 @@ function fn_GridList(formValid) {
         varAjax_UrlController = `${var_Controller}/ListGrid`,
         varAjax_TypeAction = 'GET',
 
-        varCol_Exportar = [2, 3, 4, 5, 6],
+        varCol_Exportar = [0, 1, 2, 3, 4, 5, 6],
         varCol_Ordenacao = [[2, 'asc']],
 
         varItems_QtdPorPage = 50,
@@ -166,23 +165,56 @@ function fn_GridList(formValid) {
                     data: 'id',
                     targets: 1,
                     visible: false,
+                    /*
+                    
+                   
                     checkboxes: true,
-                    render: function () {
-                        return '<input type="checkbox" class="dt-checkboxes form-check-input">';
+                    render: function (data, type, full) {
+                        return `<input type="checkbox" class="dt-checkboxes form-check-input" data-socio=${data}>`;
                     },
                     checkboxes: {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
+                    */
                 },
                 // COLUNA - Nome
                 {
                     data: 'socio.nome',
                     targets: 2,
                 },
+                // COLUNA - Status Socio               
+                {
+                    targets: 3,
+                    data: 'socio.ativo',
+                    className: "text-center",
+                    render: function (data, type, full, meta) {
+
+                        //console.log("Status data ::: ", data);
+                        //console.log("Status type ::: ", type);
+                        //console.log("Status full ::: ", full);
+
+                        if (type === 'display') {
+
+                            let statusClass = '';
+                            let statusLayout = '';
+                            let statusText = '';
+
+                            statusClass = data ? 'bg-label-success' : 'bg-label-danger';
+
+                            statusText = data ? 'Ativo' : 'Inativo';
+
+                            statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '"> ' + statusText + '</span> ';
+
+                            return statusLayout
+                        }
+
+                        return data;
+                    }
+                },
                 // COLUNA - Tipo Pagamento
                 {
                     data: 'tipoPagamentoId',
-                    targets: 3,
+                    targets: 4,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.id;
@@ -226,33 +258,7 @@ function fn_GridList(formValid) {
                         }
                     }
                 },
-                // COLUNA - pagamentoEmDia
-                {
-                    data: 'pagamentoEmDia',
-                    targets: 4,
-                    className: "text-center",
-                    render: function (data, type, full) {
-                        let id = full.id;
-
-                        if (id != 0 && data !== undefined && data !== null) {
-
-                            let statusClass = '';
-                            let statusLayout = '';
-                            let statusText = '';
-
-                            statusClass = data ? 'bg-label-success' : 'bg-label-danger';
-
-                            statusText = data ? 'Em Dia' : 'Atrasado';
-
-                            statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '"> ' + statusText + '</span> ';
-
-                            return statusLayout
-
-                        } else {
-                            return '';
-                        }
-                    }
-                },
+                
                 // COLUNA - dataUltimoPagamento
                 {
                     data: 'dataUltimoPagamento',
@@ -278,18 +284,15 @@ function fn_GridList(formValid) {
                         }
                     }
                 },
-                // COLUNA - Status                    
+                // COLUNA - pagamentoEmDia
                 {
-                    targets: -2,
-                    data: 'socio.ativo',
+                    data: 'pagamentoEmDia',
+                    targets: - 2,
                     className: "text-center",
-                    render: function (data, type, full, meta) {
+                    render: function (data, type, full) {
+                        let id = full.id;
 
-                        //console.log("Status data ::: ", data);
-                        //console.log("Status type ::: ", type);
-                        //console.log("Status full ::: ", full);
-
-                        if (type === 'display') {
+                        if (id != 0 && data !== undefined && data !== null) {
 
                             let statusClass = '';
                             let statusLayout = '';
@@ -297,14 +300,15 @@ function fn_GridList(formValid) {
 
                             statusClass = data ? 'bg-label-success' : 'bg-label-danger';
 
-                            statusText = data ? 'Ativo' : 'Inativo';
+                            statusText = data ? 'Em Dia' : 'Atrasado';
 
                             statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '"> ' + statusText + '</span> ';
 
                             return statusLayout
-                        }
 
-                        return data;
+                        } else {
+                            return '';
+                        }
                     }
                 },
                 // COLUNA - Botoes Acoes
@@ -634,7 +638,7 @@ function fn_LoadCmb_SocioTipoPagamento() {
 //#region POP
 
 function fn_Pop(obj, action) {
-    //console.log("fn_Pop varItems_Row !", obj);
+   // console.log("fn_Pop varItems_Row !", obj);
    // console.log("fn_Pop action !", action);
 
     const popAddNewItem = document.querySelector('#pop-add-new-item');
@@ -642,15 +646,15 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
-    (popAddNewItem.querySelector('#hdSocioFinanceiroId').value = (obj === null ? 0 : obj.socioId)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj?.id)),
+    (popAddNewItem.querySelector('#hdSocioFinanceiroId').value = (obj === null ? 0 : obj?.socioId)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '-1' : ((obj.tipoPagamentoId === null || obj.tipoPagamentoId === 0) ? '-1' : obj.tipoPagamentoId)));
-        (popAddNewItem.querySelector('.dt-line-03').checked = (obj === null ? false : (obj.pagamentoEmDia === 0 ? false : true))),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : (obj.dataUltimoPagamento === null ? '' : moment.utc(obj.dataUltimoPagamento?.toLocaleString())?.format("DD/MM/YYYY")))),
-        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.socio.ativo));
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj?.socio.nome)),
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '-1' : ((obj?.tipoPagamentoId === null || obj?.tipoPagamentoId === 0) ? '-1' : obj?.tipoPagamentoId)));
+        (popAddNewItem.querySelector('.dt-line-03').checked = (obj === null ? false : (obj?.pagamentoEmDia === 0 ? false : true))),
+        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : (obj?.dataUltimoPagamento === null ? '' : moment.utc(obj?.dataUltimoPagamento?.toLocaleString())?.format("DD/MM/YYYY")))),
+        //(popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj?.socio.ativo));
 
 
     // Pop Action
@@ -659,7 +663,7 @@ function fn_Pop(obj, action) {
 
     if (obj !== null) {
 
-        (obj.tipoPagamentoId === null || obj.tipoPagamentoId === 0) ? $("#cmb_TipoPagamento").val('-1').change() : $("#cmb_TipoPagamento").val(obj.tipoPagamentoId).change();
+        (obj?.tipoPagamentoId === null || obj?.tipoPagamentoId === 0) ? $("#cmb_TipoPagamento").val('-1').change() : $("#cmb_TipoPagamento").val(obj?.tipoPagamentoId).change();
 
         //console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
     }
@@ -676,8 +680,8 @@ function fn_PopGetObj() {
         Nome: $('.form-add-new-item .dt-line-01').val(),
         TipoPagamentoId: $('#cmb_TipoPagamento').val(),
         PagamentoEmDia: $('.form-add-new-item .dt-line-03').is(':checked') === true ? 1 : 0,
-        DataUltimoPagamento: $('.form-add-new-item .dt-line-04').val(),
-        Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
+        DataUltimoPagamento: moment.utc($('.form-add-new-item .dt-line-04').val(), 'DD/MM/YYYY')?.format('YYYY-MM-DD'),
+        //Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
     //console.log("fn_PopGetObj !", objFormData);
@@ -850,7 +854,7 @@ function fnItem_Edit(varItems_Row) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: varItems_Row,
@@ -907,25 +911,8 @@ function fnItem_Edit(varItems_Row) {
                         });
                     }
                 },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    //console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                    //console.log("textStatus  :: ", textStatus);
-                    //console.log("errorThrown  :: ", errorThrown);
-                    //console.log("result  :: Error while posting SendResult");
-
-                    $.busyLoadFull("hide");
-
-                    Swal.fire({
-                        title: 'OPS!!',
-                        icon: 'error',
-                        html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-danger waves-effect'
-                        }
-                    });
-
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
                     return false;
                 }
             });
@@ -950,7 +937,7 @@ function fnItem_Add(varTbl_Obj) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: formData_newItem,
@@ -1036,14 +1023,13 @@ function fnItem_Add(varTbl_Obj) {
 
 //#endregion
 
-
 //#region MODAL
 function fn_ModalErro(xhr, textStatus, errorThrown) {
     const responseMessage = xhr.responseText;
     console.log("Server Response:", responseMessage);
 
     const objError = JSON.parse(xhr.responseText);
-    //console.log("Server msg:", obj.message);
+    console.log("objError ::", objError);
 
     console.log("XMLHttpRequest  :: ", xhr);
     console.log("textStatus  :: ", textStatus);
@@ -1055,7 +1041,7 @@ function fn_ModalErro(xhr, textStatus, errorThrown) {
     Swal.fire({
         title: 'OPS!!',
         icon: 'error',
-        html: `<b> Erro ocorrido <br><br>${objError.message}</b>`,
+        html: `<b> Erro ocorrido:: </b><br><br>${objError.message}<br><br>${objError.data}<br><br>${objError?.modelState}`,
         focusConfirm: false,
         confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
         customClass: {

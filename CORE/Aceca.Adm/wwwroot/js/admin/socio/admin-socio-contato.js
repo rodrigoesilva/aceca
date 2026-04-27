@@ -496,7 +496,7 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
         (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : `(${obj.ddd}) ${obj.telefone}`)),
         (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.email)),
-        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.socio.ativo));
+       // (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.socio.ativo));
 
 
     // Pop Action
@@ -516,7 +516,7 @@ function fn_PopGetObj() {
         Nome: $('.form-add-new-item .dt-line-01').val(),
         Telefone: $('.form-add-new-item .dt-line-02').val(),
         Email: $('.form-add-new-item .dt-line-03').val(),
-        Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
+        //Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
     console.log("fn_PopGetObj !", objFormData);
@@ -689,7 +689,7 @@ function fnItem_Edit(varItems_Row) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: varItems_Row,
@@ -789,7 +789,7 @@ function fnItem_Add(varTbl_Obj) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: formData_newItem,

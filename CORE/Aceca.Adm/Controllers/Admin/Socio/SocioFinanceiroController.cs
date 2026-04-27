@@ -109,7 +109,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Data Último Pagamento Inválida"
+                            message = "Data Último Pagamento Inválida",
+                            data = model,
+                            modelState = ModelState
                         });
 
                     var newModel = new Models.SocioFinanceiro
@@ -130,7 +132,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Falha ao Atualizar"
+                            message = "Falha ao Atualizar",
+                            data = model,
+                            modelState = ModelState
                         });
 
                     return Ok(new
@@ -139,6 +143,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         type = "OK",
                         message = "SUCESSO ::: ",
                         data = model,
+                        modelState = ModelState
                     });
                 }
 
@@ -148,6 +153,12 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     type = "ERRO",
                     message = "Model Inválida",
                     data = model,
+                    modelState = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value?.Errors?.Select(e => e.ErrorMessage).ToArray()
+                        )
                 });
             }
             catch (Exception ex)
@@ -160,7 +171,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = mensagemErro
+                    message = mensagemErro,
+                    data = model,
+                    modelState = ModelState
                 });
             }
         }
@@ -177,7 +190,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Sócio não identificado"
+                            message = "Sócio não identificado",
+                            data = model,
+                            modelState = ModelState
                         });
 
                     if (string.IsNullOrEmpty(model?.DataUltimoPagamento?.ToString()))
@@ -185,7 +200,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Data Último Pagamento Inválida"
+                            message = "Data Último Pagamento Inválida",
+                            data = model,
+                            modelState = ModelState
                         });
 
                     _db.Entry(model).State = EntityState.Modified;
@@ -196,7 +213,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Falha ao Atualizar"
+                            message = "Falha ao Atualizar",
+                            data = model,
+                            modelState = ModelState
                         });
 
                     return Ok(new
@@ -205,6 +224,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         type = "OK",
                         message = "SUCESSO ::: ",
                         data = model,
+                        modelState = ModelState
                     });
                 }
 
@@ -214,6 +234,12 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     type = "ERRO",
                     message = "Model Inválida",
                     data = model,
+                    modelState = ModelState
+                        .Where(x => x.Value?.Errors.Count > 0)
+                        .ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value?.Errors?.Select(e => e.ErrorMessage).ToArray()
+                        )
                 });
             }
             catch (Exception ex)
@@ -226,7 +252,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = mensagemErro
+                    message = mensagemErro,
+                    data = model,
+                    modelState = ModelState
                 });
             }
         }

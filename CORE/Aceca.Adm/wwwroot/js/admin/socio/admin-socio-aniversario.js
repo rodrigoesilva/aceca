@@ -66,11 +66,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 $(function () {
-    var bsDatepickerFormat = $('.dt-calendar');
+    //var bsDatepickerFormat = $('.dt-calendar');
 
     // Format
-    if (bsDatepickerFormat.length) {
-        bsDatepickerFormat.datepicker({
+    if ($('#pop_line_item_02').length) {
+        $('#pop_line_item_02').datepicker({
             autoclose: true,
             todayHighlight: true,
             format: 'dd/mm',
@@ -503,13 +503,13 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
-        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj.socioId)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj?.id)),
+        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj?.socioId)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : `${obj.dia} / ${obj.mes}`)),
-        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.socio.ativo));
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj?.socio.nome)),
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : `${obj?.dia} / ${obj?.mes}`)),
+        //(popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj?.socio.ativo));
 
 
     // Pop Action
@@ -528,7 +528,8 @@ function fn_PopGetObj() {
         SocioId: $('#hdSocioAniversarioId').val(),
         Nome: $('.form-add-new-item .dt-line-01').val(),
         DataAniversario: $('.form-add-new-item .dt-line-02').val(),
-        Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
+        DataAniversario: moment.utc($('.form-add-new-item .dt-line-02').val(), 'DD/MM')?.format('YYYY-MM-DD'),
+        //Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
     console.log("fn_PopGetObj !", objFormData);
@@ -701,7 +702,7 @@ function fnItem_Edit(varItems_Row) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: varItems_Row,
@@ -801,7 +802,7 @@ function fnItem_Add(varTbl_Obj) {
 
         $.ajax(
             {
-                url: varAjax_UrlController, //"/TipoMidia/Create",  //
+                url: varAjax_UrlController,
                 type: varAjax_TypeAction,
                 dataType: varAjax_TypeData,
                 data: formData_newItem,
