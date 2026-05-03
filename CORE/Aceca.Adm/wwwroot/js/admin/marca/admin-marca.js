@@ -431,220 +431,6 @@ function fn_ZoomImg(src) {
     $('#imgZoomTarget').attr('src', src);
     $('#imgZoomModal').css('display', 'flex');
 }
-function fn_FiltrarDados1() {
-
-    var varAjax_UrlController = `${var_Controller}/FiltrarDados`;
-
-    var varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9];
-    var varCol_Ordenacao = [2, 'asc'];
-
-    var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json';
-
-    $.busyLoadFull("show");
-
-    // =========================
-    // INIT ZOOM GLOBAL
-    // =========================
-    fn_InitZoom();
-
-    $('.datatables-basic').DataTable().clear().destroy();
-
-    varTbl_Data = $('.datatables-basic').DataTable({
-
-        processing: true,
-        serverSide: true,
-        deferRender: true,   // 🔥 performance
-        scrollX: true,       // 🔥 mobile
-
-        ajax: {
-            url: varAjax_UrlController,
-            type: 'POST',
-            contentType: 'application/json; charset=utf-8',
-
-            data: function (d) {
-                return JSON.stringify({
-                    draw: d.draw,
-                    start: d.start,
-                    length: d.length,
-                    search: d.search,
-
-                    filtros: {
-                        marcaFaseId: $('#cmb_MarcaFase').val(),
-                        marcaTipoId: $('#cmb_MarcaTipo').val(),
-                        marcaSubTipoId: $('#cmb_MarcaSubTipo').val(),
-                        pesquisarSemVariante: $('#chk_PesquisarSemVariante')[0].checked,
-                        pesquisarDescricao: $('#chk_PesquisarDescricao')[0].checked,
-                    }
-                });
-            },
-
-            dataSrc: function (json) {
-                return json.data;
-            }
-        },
-
-        // =========================
-        // COLUNAS
-        // =========================
-        columns: [
-
-            // 🔥 CONTROL (OBRIGATÓRIO VISÍVEL)
-            {
-                data: null,
-                defaultContent: '',
-                className: 'control',
-                orderable: false,
-                responsivePriority: 1
-            },
-            // CodigoAceca
-            { data: 'CodigoAceca', className: 'text-center', responsivePriority: 2 },
-            // NomeMarca
-            { data: 'NomeMarca', className: 'text-center', responsivePriority: 3 },
-
-            // IMG PRINCIPAL
-            {
-                data: 'ImgPrincipalFull',
-                className: 'text-center',
-                responsivePriority: 4,
-                render: function (data) {
-                    return `<img loading="lazy"
-                                class="td-img"
-                                src="${data}"
-                                style="cursor:pointer"
-                                onclick="fn_ZoomImg('${data}')">`;
-                }
-            },
-
-            // IMG DETALHE
-            {
-                data: 'ImgDetalheFull',
-                className: 'text-center',
-                responsivePriority: 5,
-                render: function (data) {
-                    return `<img loading="lazy"
-                                class="td-img"
-                                src="${data}"
-                                style="cursor:pointer"
-                                onclick="fn_ZoomImg('${data}')">`;
-                }
-            },
-            // Descricao
-            { data: 'Descricao', className: 'text-start', responsivePriority: 6 },
-            // NomeFabrica
-            {
-                data: 'NomeFabrica',
-                className: 'text-center',
-                responsivePriority: 7,
-                render: function (data, type, full) {
-                    return (!data) ? full.TxtFabrica : data;
-                }
-            },
-            // Tipo
-            { data: 'SubTipo', className: 'text-center', responsivePriority: 8 },
-            // NomeFinalidade
-            { data: 'NomeFinalidade', className: 'text-center', responsivePriority: 9 },
-            // NomeFase
-            { data: 'NomeFase', className: 'text-center', responsivePriority: 10 },
-            // IncluidoPor Img
-            {
-                data: 'IncluidoPor',
-                className: 'text-center',
-                responsivePriority: 11,
-                render: function (data, type) {
-                    if (!data || type !== 'display') return '';
-
-                    return data.split('/').map((p, i) =>
-                        `<img src="../img/avatars/${i}.png"
-                              title="${p}"
-                              style="width:28px;height:28px;border-radius:50%">`
-                    ).join('');
-                }
-            },
-            // IncluidoPor nome
-            { data: 'IncluidoPor', visible: false },
-            // Acoes
-            {
-                data: 'Id',
-                orderable: false,
-                responsivePriority: 2,
-                render: function (data, type, full) {
-                    if (type !== 'display') return '';
-
-                    var itemObjJson = encodeURIComponent(JSON.stringify(full));
-
-                    return `<a href="javascript:fn_Modal(${itemObjJson},'Edit');"
-                                class="btn btn-sm btn-icon">
-                                <i class="ri-edit-box-line"></i>
-                            </a>`;
-                }
-            }
-        ],
-
-        order: [varCol_Ordenacao],
-
-        // =========================
-        // RESPONSIVE MOBILE
-        // =========================
-        responsive: {
-            details: {
-                type: 'column',
-                target: 0,
-
-                renderer: function (api, rowIdx) {
-
-                    var row = api.row(rowIdx).data();
-
-                    var fabrica = row.TxtFabrica || row.NomeFabrica;
-
-                    var incluidoPor = row.IncluidoPor
-                        ? row.IncluidoPor.split('/').join(', ')
-                        : '';
-
-                    var card = `
-                    <div class="card-mobile">
-
-                        <div class="card-imgs">
-                            <img src="${row.ImgPrincipalFull}" onclick="fn_ZoomImg('${row.ImgPrincipalFull}')">
-                            <img src="${row.ImgDetalheFull}" onclick="fn_ZoomImg('${row.ImgDetalheFull}')">
-                        </div>
-
-                        <div class="card-grid">
-                            <div><b>Código:</b> ${row.CodigoAceca}</div>
-                            <div><b>Marca:</b> ${row.NomeMarca}</div>
-                            <div><b>Fase:</b> ${row.NomeFase}</div>
-                            <div><b>Finalidade:</b> ${row.NomeFinalidade}</div>
-                            <div><b>SubTipo:</b> ${row.SubTipo}</div>
-                            <div><b>Fábrica:</b> ${fabrica}</div>
-                        </div>
-
-                        <div class="card-desc">${row.Descricao || ''}</div>
-
-                        <div class="card-footer">
-                            <div>${incluidoPor}</div>
-                        </div>
-
-                    </div>`;
-
-                    return $(card);
-                }
-            }
-        },
-
-        language: {
-            url: varLang_UrlTranslate
-        },
-
-        drawCallback: function () {
-            fn_LazyLoad();
-        },
-
-        initComplete: function () {
-            fn_GridComplete(this);
-            $.busyLoadFull("hide");
-        }
-    });
-}
-
 function fn_FiltrarDados() {
     //console.log("bfn_FiltrarDados ::: ");
     var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
@@ -744,12 +530,16 @@ function fn_FiltrarDados() {
             {
                 data: 'IncluidoPor', className: 'text-center', responsivePriority: 10011,
                 render: function (data, type, full) {
+                    
                     if (!data || full.Id === 0 || type !== 'display') return '';
                     var ul = `<ul class="m-0 avatar-group d-flex align-items-center" style="list-style:none;">`;
-                    var items = data.split('/').map(function (p, i) {
+                    var items = data.split('/').map(function (nome, i) {
+                        //console.log("IncluidoPor nome ::: ", nome);
+                        let pathAvatar = nome == "Aceca" ? `../img/avatars/socio/imgAvatarAceca` : `../img/avatars/${i}`;
+
                         return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="${p}" style="z-index:1;">
-                            <img src="../img/avatars/${i}.png" alt="Avatar" class="rounded-circle">
+                            title="${nome}" style="z-index:1;">
+                            <img src="${pathAvatar}.png" alt="Avatar" class="rounded-circle">
                         </li>`;
                     }).join('');
                     return ul + items + '</ul>';
@@ -1105,6 +895,13 @@ function fn_GridComplete(grid) {
 //#endregion
 
 //#region IMAGENS
+
+document.addEventListener('hidden.bs.modal', function (event) {
+    if (document.activeElement) {
+        document.activeElement.blur();
+    }
+});
+
 function fn_Zoom() {
     //console.log("fn_Zoom ::: ");
     var modal = document.getElementById('myModal');
@@ -1132,12 +929,6 @@ function fn_Zoom() {
     });
 }
 
-document.addEventListener('hidden.bs.modal', function (event) {
-    if (document.activeElement) {
-        document.activeElement.blur();
-    }
-});
-
 function fn_LazyLoad() {
     const images = document.querySelectorAll('.lazy-img');
 
@@ -1154,6 +945,17 @@ function fn_LazyLoad() {
 
     images.forEach(img => observer.observe(img));
 }
+
+function fn_PreviewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            document.getElementById('imagePreview').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]); // Converts to Base64 string
+    }
+}
+
 //#endregion
 
 //#region COMBO
@@ -1599,43 +1401,38 @@ function fn_Modal(obj, action) {
     //console.log("fn_Modal obj::: ", obj);
     //console.log("fn_Modal action::: ", action);
 
-    //let resultLoad = fnItem_Edit_CarregarDados(obj, action)
-    // console.log("fn_Modal resultLoad::: ", resultLoad);
-
     const popAddNewItem = document.querySelector('#modalAddNovaMarca');
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
-        (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.idMarcaFase)),
-        (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.idMarcaFinalidade)),
-        (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.idMarcaFabrica)),
-        (popAddNewItem.querySelector('#hdMarcaDimensaoId').value = (obj === null ? 0 : obj.idMarcaDimensao)),
-        (popAddNewItem.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.idMarcaTipo)),
-        (popAddNewItem.querySelector('#hdMarcaSubTipoId').value = (obj === null ? 0 : obj.idMarcaSubTipo)),
-        (popAddNewItem.querySelector('#hdMarcaImpressoraId').value = (obj === null ? 0 : obj.idMarcaImpressora)),
-        (popAddNewItem.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.idMarcaQualidadeImagem)),
+    (popAddNewItem.querySelector('#hdId').Value = (obj === null ? 0 : obj.Id)),
+        (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.IdMarcaFase)),
+        (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.IdMarcaFinalidade)),
+        (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.IdMarcaFabrica)),
+        (popAddNewItem.querySelector('#hdMarcaDimensaoId').value = (obj === null ? 0 : obj.IdMarcaDimensao)),
+        (popAddNewItem.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.IdMarcaTipo)),
+        (popAddNewItem.querySelector('#hdMarcaSubTipoId').value = (obj === null ? 0 : obj.IdMarcaSubTipo)),
+        (popAddNewItem.querySelector('#hdMarcaImpressoraId').value = (obj === null ? 0 : obj.IdMarcaImpressora)),
+        (popAddNewItem.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.IdMarcaQualidadeImagem)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-1' : ((obj.idMarcaFase === undefined || obj.idMarcaFase === null || obj.idMarcaFase <= 0) ? '-1' : obj.idMarcaFase)));
-    (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '' : obj.codigoAceca));
-    (popAddNewItem.querySelector('#txt_Nome').value = (obj === null ? false : obj.nomeMarca));
-    (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
-    (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-1' : ((obj.idMarcaFinalidade === undefined || obj.idMarcaFinalidade === null || obj.idMarcaFinalidade <= 0) ? '-1' : obj.idMarcaFinalidade)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-1' : ((obj.idMarcaFabrica === undefined || obj.idMarcaFabrica === null || obj.idMarcaFabrica <= 0) ? '-1' : obj.idMarcaFabrica)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-1' : ((obj.idMarcaDimensao === undefined || obj.idMarcaDimensao === null || obj.idMarcaDimensao <= 0) ? '-1' : obj.idMarcaDimensao)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-1' : ((obj.idMarcaTipo === undefined || obj.idMarcaTipo === null || obj.idMarcaTipo <= 0) ? '-1' : obj.idMarcaTipo)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-1' : ((obj.idMarcaSubTipo === undefined || obj.idMarcaSubTipo === null || obj.idMarcaSubTipo <= 0) ? '-1' : obj.idMarcaSubTipo)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-1' : ((obj.idMarcaImpressora === undefined || obj.idMarcaImpressora === null || obj.idMarcaImpressora <= 0) ? '-1' : obj.idMarcaImpressora)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-1' : ((obj.idQualidadeImagem === undefined || obj.idQualidadeImagem === null || obj.idQualidadeImagem <= 0) ? '-1' : obj.idQualidadeImagem)));
-    (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.descricao));
+        (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-1' : ((obj.IdMarcaFase === undefined || obj.IdMarcaFase === null || obj.IdMarcaFase <= 0) ? '-1' : obj.IdMarcaFase)));
+    (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '' : obj.CodigoAceca));
+    (popAddNewItem.querySelector('#txt_Nome').value = (obj === null ? false : obj.NomeMarca));
+    (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.IncluidoPor)),
+    (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-1' : ((obj.IdMarcaFinalidade === undefined || obj.IdMarcaFinalidade === null || obj.IdMarcaFinalidade <= 0) ? '-1' : obj.IdMarcaFinalidade)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-1' : ((obj.IdMarcaFabrica === undefined || obj.IdMarcaFabrica === null || obj.IdMarcaFabrica <= 0) ? '-1' : obj.IdMarcaFabrica)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-1' : ((obj.IdMarcaDimensao === undefined || obj.IdMarcaDimensao === null || obj.IdMarcaDimensao <= 0) ? '-1' : obj.IdMarcaDimensao)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-1' : ((obj.IdMarcaTipo === undefined || obj.IdMarcaTipo === null || obj.IdMarcaTipo <= 0) ? '-1' : obj.IdMarcaTipo)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-1' : ((obj.IdMarcaSubTipo === undefined || obj.IdMarcaSubTipo === null || obj.IdMarcaSubTipo <= 0) ? '-1' : obj.IdMarcaSubTipo)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-1' : ((obj.IdMarcaImpressora === undefined || obj.IdMarcaImpressora === null || obj.IdMarcaImpressora <= 0) ? '-1' : obj.IdMarcaImpressora)));
+    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-1' : ((obj.IdQualidadeImagem === undefined || obj.IdQualidadeImagem === null || obj.IdQualidadeImagem <= 0) ? '-1' : obj.IdQualidadeImagem)));
+    (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.Descricao));
 
-    (popAddNewItem.querySelector('#txt_Valor').value = (obj === null ? '' : obj.valor));
-    (popAddNewItem.querySelector('#txt_Valor1PI').value = (obj === null ? '' : obj.valor1PI));
-    (popAddNewItem.querySelector('#txt_Valor2PI').value = (obj === null ? '' : obj.valor2PI));
-
-    //Pop Arquivos
-    (obj === null || obj?.imgPrincipal === null) ? (popAddNewItem.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
-    (obj === null || obj?.imgDetalhe === null) ? (popAddNewItem.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
+    //Pop Valores
+    (obj.Valor !== null || obj.Valor1PI !== null || obj.Valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
+    (document.querySelector('#txt_Valor').value = (obj === null ? '' : obj.Valor));
+    (document.querySelector('#txt_Valor1PI').value = (obj === null ? '' : obj.Valor1PI));
+    (document.querySelector('#txt_Valor2PI').value = (obj === null ? '' : obj.Valor2PI));
 
     // Pop Action
     (popAddNewItem.querySelector('.address-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -1648,16 +1445,21 @@ function fn_Modal(obj, action) {
 
         //console.log("fn_Modal obj::: ", obj);
 
-        $("#cmbPop_MarcaFase").val(((obj.idMarcaFase === undefined || obj.idMarcaFase === null || obj.idMarcaFase <= 0) ? '-1' : obj.idMarcaFase)).change();
-        $("#cmbPop_MarcaFinalidade").val(((obj.idMarcaFinalidade === undefined || obj.idMarcaFinalidade === null || obj.idMarcaFinalidade <= 0) ? '-1' : obj.idMarcaFinalidade)).change();
-        $("#cmbPop_MarcaFabrica").val(((obj.idMarcaFabrica === undefined || obj.idMarcaFabrica === null || obj.idMarcaFabrica <= 0) ? '-1' : obj.idMarcaFabrica)).change();
-        $("#cmbPop_MarcaDimensao").val(((obj.idMarcaDimensao === undefined || obj.idMarcaDimensao === null || obj.idMarcaDimensao <= 0) ? '-1' : obj.idMarcaDimensao)).change();
-        $("#cmbPop_MarcaTipo").val(((obj.idMarcaTipo === undefined || obj.idMarcaTipo === null || obj.idMarcaTipo <= 0) ? '-1' : obj.idMarcaTipo)).change();
-        $("#cmbPop_MarcaSubTipo").val(((obj.idMarcaSubTipo === undefined || obj.idMarcaSubTipo === null || obj.idMarcaSubTipo <= 0) ? '-1' : obj.idMarcaSubTipo)).change();
-        $("#cmbPop_MarcaImpressora").val(((obj.idMarcaImpressora === undefined || obj.idMarcaImpressora === null || obj.idMarcaImpressora <= 0) ? '-1' : obj.idMarcaImpressora)).change();
-        $("#cmbPop_MarcaQualidadeImagem").val(((obj.idQualidadeImagem === undefined || obj.idQualidadeImagem === null || obj.idQualidadeImagem <= 0) ? '-1' : obj.idQualidadeImagem)).change();
+        $("#cmbPop_MarcaFase").val(((obj.IdMarcaFase === undefined || obj.IdMarcaFase === null || obj.IdMarcaFase <= 0) ? '-1' : obj.IdMarcaFase)).change();
+        $("#cmbPop_MarcaFinalidade").val(((obj.IdMarcaFinalidade === undefined || obj.IdMarcaFinalidade === null || obj.IdMarcaFinalidade <= 0) ? '-1' : obj.IdMarcaFinalidade)).change();
+        $("#cmbPop_MarcaFabrica").val(((obj.IdMarcaFabrica === undefined || obj.IdMarcaFabrica === null || obj.IdMarcaFabrica <= 0) ? '-1' : obj.IdMarcaFabrica)).change();
+        $("#cmbPop_MarcaDimensao").val(((obj.IdMarcaDimensao === undefined || obj.IdMarcaDimensao === null || obj.IdMarcaDimensao <= 0) ? '-1' : obj.IdMarcaDimensao)).change();
+        $("#cmbPop_MarcaTipo").val(((obj.IdMarcaTipo === undefined || obj.IdMarcaTipo === null || obj.IdMarcaTipo <= 0) ? '-1' : obj.IdMarcaTipo)).change();
+        $("#cmbPop_MarcaSubTipo").val(((obj.IdMarcaSubTipo === undefined || obj.IdMarcaSubTipo === null || obj.IdMarcaSubTipo <= 0) ? '-1' : obj.IdMarcaSubTipo)).change();
+        $("#cmbPop_MarcaImpressora").val(((obj.IdMarcaImpressora === undefined || obj.IdMarcaImpressora === null || obj.IdMarcaImpressora <= 0) ? '-1' : obj.IdMarcaImpressora)).change();
+        $("#cmbPop_MarcaQualidadeImagem").val(((obj.IdQualidadeImagem === undefined || obj.IdQualidadeImagem === null || obj.IdQualidadeImagem <= 0) ? '-1' : obj.IdQualidadeImagem)).change();
+        
+        //Pop Arquivos
+        //(document.querySelector('#txt_ImgPrincipal').value = '');
+        //(document.querySelector('#txt_ImgDetalhe').value = '');
 
-        (obj.valor !== null || obj.valor1PI !== null || obj.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
+        (obj === null || obj?.imgPrincipal === null) ? (popAddNewItem.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
+        (obj === null || obj?.imgDetalhe === null) ? (popAddNewItem.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
     }
 
     $('#modalAddNovaMarca').modal('show');
@@ -1667,9 +1469,19 @@ function fnItem_PopImgPrincipal(obj) {
     //console.log("fnItem_PopImgPrincipal obj !", obj);
 
     if (obj !== null) {
-        let objFile = {},
-            fileArq = obj?.imgPrincipal;
 
+        let imgName = obj?.ImgPrincipal,
+            imgNameFul = obj?.ImgPrincipalFull            ;
+
+        let objFile = {},
+            fileArq = imgName;
+
+        //preview img
+        const img = document.getElementById('img_ImgPrincipal');
+        img.src = obj.ImgPrincipalFull;
+        img.alt = obj.CodigoAceca;
+
+        //
         const fileInput = document.querySelector('#txt_ImgPrincipal');
 
         if (fileArq !== undefined) {
@@ -1701,9 +1513,19 @@ function fnItem_PopImgDetalhe(obj) {
     //console.log("fnItem_PopImgDetalhe obj !", obj);
 
     if (obj !== null) {
-        let objFile = {},
-            fileArq = obj?.imgDetalhe;
 
+        let imgName = obj?.ImgDetalhe,
+            imgNameFul = obj?.ImgDetalheFull;
+
+        let objFile = {},
+            fileArq = imgName;
+
+        //preview img
+        const img = document.getElementById('img_ImgDetalhe');
+        img.src = obj.ImgDetalheFull;
+        img.alt = obj.CodigoAceca;
+
+        //
         const fileInput = document.querySelector('#txt_ImgDetalhe');
 
         if (fileArq !== undefined) {
@@ -1865,70 +1687,6 @@ function fnItem_Edit(varItems_Row) {
                     fn_ModalErro(xhr, textStatus, errorThrown);
 
                     return false;
-                },
-            });
-    }
-}
-
-function fnItem_Edit_CarregarDados(obj, action) {
-    console.log("fnItem_Edit_CarregarDados obj ::: ", obj);
-    //var varPop_BtnAction = 'Edit';
-
-    //fn_Pop(obj, varPop_BtnAction);
-
-    var varAjax_UrlController = `${var_Controller}/GetFullById`,
-        varAjax_TypeAction = 'POST',
-        varAjax_TypeData = 'JSON',
-        varAjax_TypeContent = 'application/json; charset=utf-8';
-
-    if (obj === undefined || obj === null || obj.id === 0) {
-        Swal.fire({
-            title: 'OPS!!',
-            icon: 'error',
-            html: `Dados n&atilde;o identificados !!`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-danger waves-effect'
-            },
-        });
-    } else {
-
-        $.busyLoadFull("show");
-
-        $.ajax(
-            {
-                url: varAjax_UrlController,
-                type: varAjax_TypeAction,
-                dataType: varAjax_TypeData,
-                data: {
-                    id: obj.id
-                },
-                success: function (result) {
-                    console.log("result  :: ", result);
-
-                    if (result.bResult) {
-
-                        fn_Modal(result.data, action);
-
-                    } else {
-                        //console.log("result  :: ", result);
-                        $.busyLoadFull("hide");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> Erro ocorrido <br><br>` + result + `</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
-                    }
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
                 },
             });
     }

@@ -6,6 +6,10 @@
 
 //#region Declare
 
+// cache busting
+const VERSION = "1.0.0";
+console.log("Auth JS version:", VERSION);
+
 let var_Nome = 'Auth',
     var_Controller = '/Auth',
     var_ControllerCmb = '/HelperExtensions',
@@ -358,3 +362,98 @@ function fn_LoginCkSet(cname, cvalue, exmins ) {
 }
 
 //#endregion
+
+
+// ==========================
+// LOGIN
+// ==========================
+async function handleLogin(event) {
+    event.preventDefault();
+
+    const btn = document.getElementById("btn-login");
+    btn.disabled = true;
+
+    const email = document.getElementById("lEmail").value.trim();
+    const password = document.getElementById("lSenha").value.trim();
+
+    if (!email || !password) {
+        Swal.fire("Erro", "Preencha todos os campos", "error");
+        btn.disabled = false;
+        return;
+    }
+
+    try {
+
+        console.log(`var_Controller ::  ${var_Controller}`);
+        console.log(`/Login ::  ${var_Controller}/Login`);
+
+        const response = await fetch(`${var_Controller}/Login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        console.log(`data ::  ${data}`);
+
+        if (data.ok) {
+
+            // cache leve
+            sessionStorage.setItem("user", email);
+
+            if (document.getElementById("rememberMe").checked) {
+                document.cookie = "user=" + email + "; max-age=3600; path=/";
+            }
+
+            Swal.fire({
+                icon: "success",
+                title: "Login realizado",
+                timer: 1500,
+                showConfirmButton: false
+            });
+
+            setTimeout(() => window.location.href = "/dashboard", 1500);
+
+        } else {
+            Swal.fire("Erro", data.message, "error");
+        }
+
+    } catch (err) {
+        Swal.fire("Erro", "Falha na requisição", "error");
+    }
+
+    btn.disabled = false;
+}
+
+// ==========================
+// ESQUECI SENHA
+// ==========================
+async function handleForgotPassword(e) {
+    e.preventDefault();
+
+    const { value: email } = await Swal.fire({
+        title: "Recuperar senha",
+        input: "email",
+        inputLabel: "Digite seu email",
+        inputPlaceholder: "email@exemplo.com",
+        confirmButtonText: "Enviar",
+        showCancelButton: true
+    });
+
+    if (!email) return;
+
+    const res = await fetch(`${var_Controller}/ForgotPassword`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+    });
+
+    const data = await res.json();
+
+    if (data.ok) {
+        Swal.fire("Sucesso", "Email de recuperação enviado", "success");
+    } else {
+        Swal.fire("Erro", data.message, "error");
+    }
+}

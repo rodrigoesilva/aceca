@@ -69,6 +69,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 #endregion
 
 #region TODO - Configure Session authentication 
+
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true; // Makes the session cookie essential for compliance
+    options.IdleTimeout = TimeSpan.FromHours(1);
+});
+
 /*
 //Add Session services, optionally configuring options like timeout
 builder.Services.AddSession(options =>
@@ -124,10 +132,20 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+//app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        ctx.Context.Response.Headers.Append(
+            "Cache-Control", "public,max-age=604800");
+    }
+});
 
 app.UseRouting();
 
+// A ordem correta é: UseAuthentication → UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

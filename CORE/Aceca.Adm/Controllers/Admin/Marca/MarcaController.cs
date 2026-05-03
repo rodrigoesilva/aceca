@@ -2,17 +2,15 @@ using Aceca.Adm.Data;
 using Aceca.Adm.Models;
 using Aceca.Adm.VMModels;
 using Dapper;
+using FluentFTP;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -29,11 +27,16 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         private readonly AppDbContext _db;
         private readonly IMemoryCache _cache;
 
-        private readonly string _imgBaseUrl = string.Empty;
-        private readonly string _appBaseUrl = string.Empty;
+        private readonly string _urlBaseImg = string.Empty;
+        private readonly string _urlBaseSite = string.Empty;
+        private readonly string _urlBaseApp = string.Empty;
 
-        private string _strControllerName = string.Empty;
-        private string _strActionName = string.Empty;
+        private readonly string _ftpBaseUrl = string.Empty;
+        private readonly string _ftpHost = string.Empty;
+        private readonly string _ftpUser = string.Empty;
+        private readonly string _ftpPass = string.Empty;
+
+        private readonly bool _bIsLocalHost = false;
         //
 
         #endregion
@@ -50,8 +53,14 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             _appConfiguration = cfg;
             _cache = cache;
 
-            _imgBaseUrl = _appConfiguration["Url:Img"]!;
-            _appBaseUrl = _appConfiguration["App:Url"]!;
+            _urlBaseImg = _appConfiguration["Url:Img"]!;
+            _urlBaseSite = _appConfiguration["Url:Site"]!;
+            _urlBaseApp = _appConfiguration["Url:App"]!;
+
+            _ftpHost = _appConfiguration["Ftp:Host"]!;
+            _ftpUser = _appConfiguration["Ftp:User"]!;
+            _ftpPass = _appConfiguration["Ftp:Pass"]!;
+            _ftpBaseUrl = _appConfiguration["Ftp:Path"]!;
         }
 
         #region Index
@@ -76,7 +85,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
         #endregion
 
-        #region Filtros
+        #region Consulta LISTAGEM
 
         [HttpPost]
         public async Task<IActionResult> FiltrarDados([FromBody] DataTableRequest request)
@@ -88,21 +97,22 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                 var filtro = request.Filtros ?? new FiltroRequest();
 
-                var imgBase = _imgBaseUrl;
-                var imgDefault = $"{_appBaseUrl}/assets/img/img_inexistente.jpg";
+                var imgBase = _urlBaseImg;
+                var imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg";
 
                 var sqlFrom = new StringBuilder(@"
-FROM marcas m
-LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
-LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
-LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
-LEFT JOIN marcas_dimensao md ON m.marcaDimensaoId = md.id
-LEFT JOIN marcas_impressora mi ON m.marcaImpressoraId = mi.id
-LEFT JOIN marcas_raridade mr ON m.marcaRaridadeId = mr.id
-LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
-LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
-WHERE 1=1
-");
+                FROM marcas m
+                LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
+                LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
+                LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
+                LEFT JOIN marcas_dimensao md ON m.marcaDimensaoId = md.id
+                LEFT JOIN marcas_impressora mi ON m.marcaImpressoraId = mi.id
+                LEFT JOIN marcas_raridade mr ON m.marcaRaridadeId = mr.id
+                LEFT JOIN marcas_raridade mq ON m.marcaQualidadeImagemId = mq.id
+                LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
+                LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
+                WHERE 1=1
+                ");
 
                 var parameters = new DynamicParameters();
 
@@ -150,16 +160,16 @@ WHERE 1=1
                     {
                         // FULLTEXT só para termos com 3+ caracteres
                         sqlFrom.Append(@"
-MATCH(m.Nome, m.Descricao, m.CodigoAceca)
-AGAINST(@Search IN BOOLEAN MODE)
-OR ");
+                            MATCH(m.Nome, m.Descricao, m.CodigoAceca)
+                            AGAINST(@Search IN BOOLEAN MODE)
+                            OR ");
                     }
 
                     // LIKE sempre cobre CodigoAceca e Nome
                     sqlFrom.Append(@"
-m.CodigoAceca LIKE @SearchLike
-OR m.Nome LIKE @SearchLike
-");
+                        m.CodigoAceca LIKE @SearchLike
+                        OR m.Nome LIKE @SearchLike
+                        ");
 
                     // Descrição só se checkbox ativo
                     if (incluirDescricao)
@@ -197,38 +207,56 @@ OR m.Nome LIKE @SearchLike
                 // =========================
 
                 var dataSql = $@"
-SELECT
-    m.id AS Id,
-    m.CodigoAceca,
-    m.Nome AS NomeMarca,
+                    SELECT
+                        m.id AS Id,
 
-    mf.Descricao AS NomeFase,
-    mfa.Nome AS NomeFabrica,
-    md.Descricao AS NomeDimensao,
-    mfi.Descricao AS NomeFinalidade,
-    mi.Descricao AS NomeImpressora,
-    mr.Descricao AS NomeRaridade,
-    mst.Descricao AS SubTipo,
-    mt.Descricao AS Tipo,
-    m.fabrica_txt AS TxtFabrica,
-    m.impressora AS TxtImpressora,
+                        mf.id AS IdMarcaFase,
+                        mfi.id AS IdMarcaFinalidade,
+                        mfa.id AS IdMarcaFabrica,
+                        md.id AS IdMarcaDimensao,
+                        mt.id AS IdMarcaTipo,
+                        mst.id AS IdMarcaSubTipo,
+                        mi.id AS IdMarcaImpressora,
+                        mr.id AS IdMarcaRaridade,
+                        mq.id AS IdQualidadeImagem,
 
-    m.Descricao,
-    m.IncluidoPor,
+                        m.CodigoAceca,
+                        m.Nome AS NomeMarca,
 
-    IF(m.ImgPrincipal IS NOT NULL,
-        CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
-        @ImgDefault) AS ImgPrincipalFull,
+                        mf.Descricao AS NomeFase,
+                        mfa.Nome AS NomeFabrica,
+                        md.Descricao AS NomeDimensao,
+                        mfi.Descricao AS NomeFinalidade,
+                        mi.Descricao AS NomeImpressora,
+                        mr.Descricao AS NomeRaridade,
+                        mq.Descricao AS NomeQualidade,
+                        mst.Descricao AS SubTipo,
+                        mt.Descricao AS Tipo,
+                        m.fabrica_txt AS TxtFabrica,
+                        m.impressora AS TxtImpressora,
 
-    IF(m.ImgDetalhe IS NOT NULL,
-        CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
-        @ImgDefault) AS ImgDetalheFull
+                        m.Descricao,
+                        m.IncluidoPor,
 
-{sqlFrom}
+                        m.Valor,
+                        m.Valor1PI,
+                        m.Valor2PI,
 
-ORDER BY m.nome
-LIMIT @Limit OFFSET @Offset
-";
+                        m.ImgPrincipal,
+                        IF(m.ImgPrincipal IS NOT NULL,
+                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
+                            @ImgDefault) AS ImgPrincipalFull,
+
+                        m.ImgDetalhe,
+                        IF(m.ImgDetalhe IS NOT NULL,
+                            CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+                            @ImgDefault) AS ImgDetalheFull
+
+                    {sqlFrom}
+
+                    ORDER BY mf.id, m.nome, m.CodigoAceca
+                    LIMIT @Limit OFFSET @Offset
+                    ";
 
                 parameters.Add("@ImgBase", imgBase);
                 parameters.Add("@ImgDefault", imgDefault);
@@ -256,6 +284,10 @@ LIMIT @Limit OFFSET @Offset
                 return BadRequest(new { error = true, message = ex.Message });
             }
         }
+
+        #endregion
+
+        #region Filtros
 
         [HttpPost]
         public async Task<IActionResult> GetFullByIdFase(int id, string nome, bool bvariante)
@@ -459,52 +491,64 @@ LIMIT @Limit OFFSET @Offset
 
                 #region Upload Imagem
 
-                //Verifica se existe ImgPrincipal para upload
-                if (iFileImgPrincipal == null)
-                    vmModel.ImgPrincipal = null;
-                else
+                #region Upload Imagem ImgPrincipal
+
+                string strImgPrincipalSaveName = null;
+
+                if (iFileImgPrincipal != null)
                 {
                     if (!vmModel.ImgPrincipal.Equals("C:\\fakepath\\."))
                     {
                         var result = await UploadImg(vmModel, iFileImgPrincipal, true);
 
+                        var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
+
+                        strImgPrincipalSaveName = (string)jObjResult?["data"];
+
                         if (result.GetType() == typeof(NotFoundObjectResult) ||
                              result.GetType() == typeof(BadRequestObjectResult))
                             return BadRequest(new
                             {
                                 bResult = false,
                                 type = "ERRO",
-                                message = result?.ToString()
+                                message = (string)jObjResult?["message"],
+                                data = strImgPrincipalSaveName
                             });
-                    }
-                    else
-                    {
-                        vmModel?.ImgPrincipal = string.Empty;
                     }
                 }
 
-                //Verifica se existe ImgDetalhe para upload
-                if (iFileImgDetalhe == null)
-                    vmModel.ImgDetalhe = null;
-                else
+                vmModel?.ImgPrincipal = strImgPrincipalSaveName;
+
+                #endregion
+
+                #region Upload Imagem ImgDetalhe
+
+                string strImgDetalheSaveName = null;
+
+                if (iFileImgDetalhe != null)
                 {
                     if(!vmModel.ImgDetalhe.Equals("C:\\fakepath\\.")){
                         var result = await UploadImg(vmModel, iFileImgDetalhe, false);
 
+                        var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
+
+                        strImgDetalheSaveName = (string)jObjResult?["data"];
+
                         if (result.GetType() == typeof(NotFoundObjectResult) ||
                              result.GetType() == typeof(BadRequestObjectResult))
                             return BadRequest(new
                             {
                                 bResult = false,
                                 type = "ERRO",
-                                message = result?.ToString()
+                                message = (string)jObjResult?["message"],
+                                data = strImgDetalheSaveName
                             });
                     }
-                    else
-                    {
-                        vmModel?.ImgDetalhe = string.Empty;
-                    }
                 }
+
+                vmModel?.ImgDetalhe = strImgDetalheSaveName;
+
+                #endregion
 
                 #endregion
 
@@ -528,8 +572,8 @@ LIMIT @Limit OFFSET @Offset
 
                     CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca?.Trim() : null,
                     CodigoFabrica = !string.IsNullOrEmpty(vmModel?.CodigoFabrica) ? vmModel?.CodigoFabrica?.Trim() : null,
-                    ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? Path.GetFileName(vmModel?.ImgPrincipal) : null,
-                    ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? Path.GetFileName(vmModel?.ImgDetalhe) : null,
+                    ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? vmModel?.ImgPrincipal : null,
+                    ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? vmModel?.ImgDetalhe : null,
                     Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome?.Trim() : null,
                     Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao?.Trim() : null,
                     Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI?.Trim() : null,
@@ -1028,7 +1072,8 @@ LIMIT @Limit OFFSET @Offset
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = "Arquivo de Imagem Nulo ou Invalido"
+                    message = "Arquivo de Imagem Nulo ou Invalido",
+                    data = iFileImg?.FileName
                 });
 
             string fileExtension = Path.GetExtension(iFileImg?.FileName?.ToString())?.ToLowerInvariant();
@@ -1040,65 +1085,136 @@ LIMIT @Limit OFFSET @Offset
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = "Arquivo de Imagem com Extensão Inválida"
+                    message = "Arquivo de Imagem com Extensão Inválida",
+                    data = iFileImg?.FileName
                 });
 
+           //Recupera Nome Original da imagem
+            var fileImgOriginalName = string.Concat(iFileImg?.FileName?.Trim()?.ToLower(), (!(bool)iFileImg?.FileName.Contains(fileExtension) ? fileExtension : String.Empty));
+
             //Gera novo nome
-            var fileSaveName = string.Concat(Guid.NewGuid(), "_", iFileImg?.FileName?.Trim()?.ToLower(), !(bool)iFileImg?.FileName.Contains(fileExtension) ? fileExtension : String.Empty);
+            string strImgNomeBase ="aceca_"; //string.Empty; //
+            string strImgDetalheNomeBase = "detalhe_";
 
-            var fileTempPath = Path.GetTempFileName();
+            string strSaveFileName = $"{strImgNomeBase}{vmModel?.CodigoAceca?.Trim()?.ToLower()}";          
+            
+            fileExtension = (fileExtension.Equals(".jpg") ? fileExtension : ".jpg");
 
-            // monta o caminho onde vamos salvar o arquivo :
-            var strFileSaveFolderPath = bIsImgPrincipal
+            // monta o caminho onde vamos salvar o arquivo:
+            var strPathSaveFolder = string.Empty;
+            var strPathSaveFile = string.Empty;
+
+            if (_bIsLocalHost)
+            {
+                strPathSaveFolder = bIsImgPrincipal
                 ? Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", vmModel?.MarcaFaseId?.ToString())
                 : Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", "detalhes");
 
-            //Verifica diretorio existe e cria se necessario 
-            if (!Directory.Exists(strFileSaveFolderPath))
-                Directory.CreateDirectory(strFileSaveFolderPath);
-            
+                strSaveFileName = bIsImgPrincipal
+                ? $"{strSaveFileName}{fileExtension}"
+                : $"{strSaveFileName.Replace(strImgNomeBase, string.Concat(strImgNomeBase, strImgDetalheNomeBase))}{fileExtension}";
+
+                strPathSaveFile = Path.Combine(strPathSaveFolder, strSaveFileName);
+            }
+            else
+            {
+                strPathSaveFolder = bIsImgPrincipal
+                ? $"{_ftpBaseUrl}/midia/geral/{vmModel?.MarcaFaseId?.ToString()}"
+                : $"{_ftpBaseUrl}/midia/geral/detalhes";
+
+
+                strSaveFileName = bIsImgPrincipal
+                ? $"{strSaveFileName}{fileExtension}"
+                : $"{strSaveFileName.Replace(strImgNomeBase, string.Concat(strImgNomeBase, strImgDetalheNomeBase))}{fileExtension}";
+
+                strPathSaveFile = $"{strPathSaveFolder}/{strSaveFileName}";
+            }
+
             var fileDetails = new FileDetails()
             {
-                FileName = Guid.NewGuid() + "_" + fileSaveName,
+                FileName = strSaveFileName,
                 FileSize = iFileImg.Length / 1000,
-                FilePath = Path.Combine(strFileSaveFolderPath, fileSaveName),
+                FilePath = strPathSaveFile,
                 FileType = iFileImg?.ContentType,
             };
 
-            var fileSavePath = fileDetails.FilePath;
-
-            using (var stream = new FileStream(fileSavePath, FileMode.Create))
+            //local destino
+            if (_bIsLocalHost)
             {
-                await iFileImg.CopyToAsync(stream);
+                if (!Directory.Exists(strPathSaveFolder))
+                    Directory.CreateDirectory(strPathSaveFolder);
 
-                stream.Flush();
-                stream.Close();
+                var fileTempPath = Path.GetTempFileName();
+
+                using (var stream = new FileStream(fileDetails.FilePath, FileMode.Create))
+                {
+                    await iFileImg.CopyToAsync(stream);
+
+                    stream.Flush();
+                    stream.Close();
+                }
+
+                var fi = new FileInfo(fileTempPath);
+
+                // Checa se arquivo existe
+                if (!fi.Exists)
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Arquivo Temporario ::: " + fileTempPath + " inexistente",
+                        data = fileTempPath
+                    });
+            }
+            else
+            {
+                // Initialize the Remote FTP
+                using var ftpConn = new FtpClient(_ftpHost, _ftpUser, _ftpPass);
+
+                ftpConn.Connect();
+
+                //Verifica diretorio ja existe e cria se necessario 
+                if (!ftpConn.DirectoryExists(strPathSaveFolder))
+                    ftpConn.CreateDirectory(strPathSaveFolder, true);
+
+                //Verifica arquivo ja existe
+                if (ftpConn.FileExists(strPathSaveFile))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = $"Arquivo de imagem já existente ::: <br><br> {strSaveFileName}",
+                        data = strSaveFileName,
+                    });
+
+                using (var imgStream = iFileImg?.OpenReadStream())
+                {
+                    var uploadStatus = ftpConn.UploadStream(imgStream, fileDetails.FilePath, FtpRemoteExists.Overwrite);
+
+                    if (uploadStatus != FtpStatus.Success)
+                    {
+                        ftpConn.Disconnect();
+
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Arquivo de Imagem não foi Salvo",
+                            data = strSaveFileName,
+                        });
+                    }
+                        
+                }
+
+                ftpConn.Disconnect();
             }
 
-            var fi = new FileInfo(fileTempPath);
-
-            // Checa se arquivo existe
-            if (!fi.Exists)
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "Arquivo Temporario ::: " + fileTempPath + " inexistente",
-                    data = fileTempPath
-                });
-
             return Ok(new
-            {/*
-                        _logger.LogInformation(
-                        $"{lstModel} graus Fahrenheit = " +
-                        $"{resultado.Celsius} graus Celsius = " +
-                        $"{resultado.Kelvin} graus Kelvin");
-                    return resultado;
-                        */
+            {
                 bResult = true,
                 type = "OK",
                 message = "SUCESSO ::: ",
-                data = fileSaveName,
+                data = strSaveFileName
             });
         }
         #endregion

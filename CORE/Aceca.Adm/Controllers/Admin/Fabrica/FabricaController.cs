@@ -14,7 +14,9 @@ namespace Aceca.Adm.Controllers.Admin.Fabrica
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
 
-        private readonly string _appBaseUrl = string.Empty;
+        private readonly string _urlBaseImg = string.Empty;
+        private readonly string _urlBaseSite = string.Empty;
+        private readonly string _urlBaseApp = string.Empty;
         //
 
         #endregion
@@ -26,7 +28,9 @@ namespace Aceca.Adm.Controllers.Admin.Fabrica
             _appEnvironment = env;
             _appConfiguration = cfg;
 
-            _appBaseUrl = _appConfiguration["App:Url"]!;
+            _urlBaseImg = _appConfiguration["Url:Img"]!;
+            _urlBaseSite = _appConfiguration["Url:Site"]!;
+            _urlBaseApp = _appConfiguration["Url:App"]!;
         }
 
         #region Index

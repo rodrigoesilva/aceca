@@ -4,6 +4,29 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Aceca.Adm.Models
 {
+
+    // ======================
+    // MODELS
+    // ======================
+    public class LoginModel
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    public class ForgotModel
+    {
+        public string Email { get; set; }
+    }
+
+    public class ResetModel
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+        public string ConfirmPassword { get; set; }
+    }
+
+
     public class BaseModel
     {
         public bool Ativo { get; set; }
@@ -387,6 +410,9 @@ namespace Aceca.Adm.Models
         public Socio? Socio { get; set; }
 
         [NotMapped] public string? Token { get; set; }
+
+        public string? ResetPasswordToken { get; set; }
+        public DateTime? ResetPasswordTokenExpiry { get; set; }
     }
 
     [Table("usuarios_log")]
