@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -13,6 +14,8 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using static Aceca.Adm.Helper.HelperExtensionsController;
 
 namespace Aceca.Adm.Controllers
@@ -25,6 +28,7 @@ namespace Aceca.Adm.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
+        private readonly IServiceProvider _serviceProvider;
         private readonly AppDbContext _db;
         private EPerfil _socioPerfil;
 
@@ -37,12 +41,13 @@ namespace Aceca.Adm.Controllers
         //
 
         #endregion
-        public AuthController(ILogger<AuthController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
+        public AuthController(ILogger<AuthController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _db = db;
             _appEnvironment = env;
             _appConfiguration = cfg;
+            _serviceProvider = serviceProvider;
 
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
@@ -114,6 +119,8 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
+                var userIp = Task.FromResult<string>(GetGeoIPAsync().Result).Result;
+
                 if (!User.Identity.IsAuthenticated)
                     return AccessDenied();
 
@@ -132,13 +139,21 @@ namespace Aceca.Adm.Controllers
 
                 var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
 
+
                 ViewBag.PerfilAdm = (bool)jObjResult?["isPerfilAdm"];
+
+                var userId = (int)jObjResult?["userId"];
 
                 TempData["isPerfil"] = ViewBag.PerfilAdm;
                 TempData["Layout"] = ViewBag.PerfilAdm ? "_HorizontalLayout" : "_WithoutMenuLayout";
 
                 if (!await LoginSetCookieAsync(jObjResult?["userEmail"]?.ToString()))
                     BadRequest(new { msg = "SetCookie inválido." });
+
+                if (!string.IsNullOrEmpty(userIp))
+                {
+                    var resultLog = LoginLog(userIp, userId);
+                }
 
                 return ViewBag.PerfilAdm
                     ? RedirectToAction("Inicio", "Home")
@@ -241,6 +256,79 @@ namespace Aceca.Adm.Controllers
         }
 
         #endregion
+
+        // ──────────────────────────────────────────────
+        // LOGIN-LOG
+        // ──────────────────────────────────────────────
+
+        #region Login
+
+        [HttpPost]
+        public async Task<IActionResult> LoginLog(string varIp, int userId)
+        {
+            try
+            {
+                var responseGeo = await GetGeoInfoAsync(varIp);
+
+                if (responseGeo.GetType() == typeof(NotFoundObjectResult) ||
+                    responseGeo.GetType() == typeof(BadRequestObjectResult))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "geoUrl Inválido" });
+
+                var jObjResult = ((ObjectResult)responseGeo).Value;
+
+                var json = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
+
+                // Parse a JSON string into a JsonNode
+                JsonNode jsonNode = JsonNode.Parse(json);
+
+                if (string.IsNullOrEmpty(jsonNode?.ToString()))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Geo Inválido" });
+
+                //Save User Log
+                //var responseLog = await CreateUserLog(jsonNode, userId);
+
+                if (userId <= 0)
+                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
+
+                // Convert to a C# object
+                var objGeo = jsonNode.Deserialize<GeoModel>();
+
+                var newModel = new Models.UsuarioLog
+                {
+                    UsuarioId = userId,
+                    IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
+                    //OS = !string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
+                    //Browser = !string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
+                    //Device = !string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
+                    Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
+                    Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
+                    Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
+                    Latitude = objGeo?.latitude.ToString(),
+                    Longitude = objGeo?.longitude.ToString(),
+                };
+
+                using (var context = new AppDbContext())
+                {
+                    // Add data
+                    context.UsuarioLog.Add(newModel);
+                    context.SaveChanges();
+                }
+
+                return Ok(new
+                {
+                    bResult = true,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(mensagemErro);
+                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+            }
+        }
+
+        #endregion
+
 
         // ──────────────────────────────────────────────
         // ESQUECI A SENHA  (envia e-mail com link)
@@ -406,7 +494,7 @@ namespace Aceca.Adm.Controllers
 
                     var isPerfilAdm = _socioPerfil.Equals(EPerfil.Administracao);
 
-                    return Ok(new { isPerfilAdm, userEmail = email });
+                    return Ok(new { isPerfilAdm, userEmail = email, userId = userId });
                 }
                 else
                 {
@@ -745,6 +833,157 @@ namespace Aceca.Adm.Controllers
             }
 
             return Ok(true);
+        }
+
+        #endregion
+
+        // ──────────────────────────────────────────────
+        // GEO
+        // ──────────────────────────────────────────────
+
+        #region Geo
+
+        /// <summary>
+        /// Envia o e-mail de reset de senha via SMTP configurado no appsettings.json.
+        /// Configure as chaves: Email:Host, Email:Port, Email:EnableSsl,
+        ///                      Email:From, Email:User, Email:Password, Email:DisplayName
+        /// </summary>
+        public async Task<IActionResult> GetGeoInfoAsync(string varIp)
+        {
+            if (string.IsNullOrWhiteSpace(varIp))
+                return BadRequest(new { bResult = false, type = "ERRO", message = "IP Inválido" });
+
+            try
+            {
+                var geoUrl = _appConfiguration["Geo:Ipstack:Url"]!;
+                var geoKey = _appConfiguration["Geo:Ipstack:Key"]!;
+
+                using var client = new HttpClient();
+
+                string url = $"{geoUrl}/{varIp}?access_key={geoKey}";
+                var result = await client.GetAsync(url);
+
+                if (result.GetType() == typeof(NotFoundObjectResult) ||
+                    result.GetType() == typeof(BadRequestObjectResult))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "geoUrl Inválido" });
+
+                var code = result.EnsureSuccessStatusCode();
+                var json = await result.Content.ReadAsStringAsync();
+
+                var lst = JsonConvert.DeserializeObject<JObject>(json).Children().ToList();
+
+                return Ok(new { bResult = true, type = "SUCESSO", message = "SUCESSO ::: ", data = json});
+            }
+            catch (SmtpException ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(mensagemErro);
+                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro});
+            }
+        }
+
+        public async Task<string> GetGeoIPAsync()
+        {
+            string strIP = string.Empty;
+
+            try
+            {
+                var geoUrlBase = _appConfiguration["Geo:Url"]!;
+
+                if (string.IsNullOrEmpty(geoUrlBase))
+                    return strIP;
+
+                var result = await new HttpClient().GetStringAsync(geoUrlBase);
+
+                if (string.IsNullOrEmpty(result))
+                    return strIP;
+
+                var node = JsonNode.Parse(result);
+
+                strIP = (string)node["ip"];
+
+                return strIP;
+            }
+            catch (SmtpException ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(mensagemErro);
+                return strIP;
+            }
+
+        }
+
+        #endregion
+
+        #region UserLog
+        public async Task<IActionResult> CreateUserLog(JsonNode jsonNode, int userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(jsonNode?.ToString()))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "jsonNode null"
+                    });
+
+                if (userId <= 0)
+                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
+
+                // Convert to a C# object
+                var objGeo = jsonNode.Deserialize<GeoModel>();
+
+                var newModel = new Models.UsuarioLog
+                {
+                    UsuarioId = userId,
+                    IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
+                    //OS = !string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
+                    //Browser = !string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
+                    //Device = !string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
+                    Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
+                    Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
+                    Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
+                    Latitude = objGeo?.latitude.ToString(),
+                    Longitude = objGeo?.longitude.ToString(),
+                };
+
+                using (var context = new AppDbContext())
+                {
+                    // Add data
+                    context.UsuarioLog.Add(newModel);
+                    context.SaveChanges();
+                }
+
+                if (newModel?.Id <= 0)
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Falha ao Salvar"
+                    });
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = newModel,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
         }
 
         #endregion

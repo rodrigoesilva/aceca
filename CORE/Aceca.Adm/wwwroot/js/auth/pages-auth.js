@@ -7,7 +7,7 @@
 //#region Declare
 
 // cache busting
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 console.log("Auth JS version:", VERSION);
 
 let var_Nome = 'Auth',
@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
 //#region Login
 
 async function fn_LoginAuth() {
+    //console.log(`fn_LoginAuth ::`);
 
     loginSubmitButton.setAttribute('data-kt-indicator', 'on');
 
@@ -100,11 +101,12 @@ async function fn_LoginAuth() {
         });
 
         if (response.ok) {
-
+            
             let user = await response.json();
-           // console.log(`AUTH - user :: `, user);
 
             if (user.bResult) {
+
+                console.log(`AUTH fn_LoginAuth - user :: `, user);
 
                 btn.disabled = false;
                 btn.textContent = 'Entrar';
@@ -221,9 +223,13 @@ async function fn_LoginAuth() {
 
 function fn_LoginAuthIni() {
 
+    console.log(`fn_LoginAuthIni ::`);
+
     let userCk = fn_LoginCkGet(_cka);
 
     if (userCk != "") {
+
+        console.log(`AUTH fn_LoginAuthIni - userCk :: `, userCk);
 
         Swal.fire({
             title: `Ol&aacute; ${userCk.split("|")[0]}!`,
@@ -368,6 +374,9 @@ function fn_LoginCkSet(cname, cvalue, exmins ) {
 // LOGIN
 // ==========================
 async function handleLogin(event) {
+
+    console.log(`handleLogin ::  ${event}`);
+
     event.preventDefault();
 
     const btn = document.getElementById("btn-login");

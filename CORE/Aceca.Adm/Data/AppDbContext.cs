@@ -6,6 +6,31 @@ namespace Aceca.Adm.Data
 {
     public class AppDbContext : DbContext
     {
+        protected override void OnConfiguring(DbContextOptionsBuilder options)
+        {
+            if (!options.IsConfigured)
+            {
+                IConfigurationRoot configuration = new ConfigurationBuilder()
+                   .SetBasePath(Directory.GetCurrentDirectory())
+                   .AddJsonFile("appsettings.json")
+                   .Build();
+                var conn = configuration.GetConnectionString("MySqlConnection");
+                options.UseMySql(conn, ServerVersion.AutoDetect(conn),
+                        mySqlOptions =>
+                        {
+                            mySqlOptions.EnableRetryOnFailure(
+                                maxRetryCount: 5,
+                                maxRetryDelay: TimeSpan.FromSeconds(30),
+                                errorNumbersToAdd: null
+                            );
+                        });
+            }
+        }
+
+        public AppDbContext()
+        {
+        }
+
         public AppDbContext (DbContextOptions<AppDbContext> options)
             : base(options)
         {
