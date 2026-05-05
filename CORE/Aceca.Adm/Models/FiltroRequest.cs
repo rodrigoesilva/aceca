@@ -1,11 +1,15 @@
 ﻿namespace Aceca.Adm.Models
 {
-    public class FiltroRequest
+    public class FiltroRequestMarca
     {
         public int? MarcaFaseId { get; set; }
         public int? MarcaFabricaId { get; set; }
         public int? MarcaTipoId { get; set; }
         public int? MarcaSubTipoId { get; set; }
+
+        public int? MarcaMesId { get; set; }
+        public int? MarcaAnoId { get; set; }
+
         public string IncluidoPor { get; set; }
         public string CodigoAceca { get; set; }
         public string NomeMarca { get; set; }
@@ -16,20 +20,20 @@
         public int PageSize { get; set; } = 50;
     }
 
-    public class DataTableSearch
+    public class FilterDataSearchMarca
     {
         public string Value { get; set; }
         public bool Regex { get; set; }
     }
 
-    public class DataTableRequest
+    public class FilterDataMarca
     {
         public int Draw { get; set; }
         public int Start { get; set; }
         public int Length { get; set; }
 
-        public DataTableSearch Search { get; set; }
+        public FilterDataSearchMarca Search { get; set; }
 
-        public FiltroRequest Filtros { get; set; }
+        public FiltroRequestMarca Filtros { get; set; }
     }
 }

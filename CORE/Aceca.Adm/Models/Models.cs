@@ -421,8 +421,8 @@ namespace Aceca.Adm.Models
         [Key] public int? Id { get; set; }
 
         public int? UsuarioId { get; set; }
-        [MaxLength(255)] public string? IP { get; set; } = string.Empty;
-        [MaxLength(255)] public string? OS { get; set; } = string.Empty;
+        [MaxLength(255)] public string? IP { get; set; }
+        [MaxLength(255)] public string? OS { get; set; }
         [MaxLength(255)] public string? Browser { get; set; }
         [MaxLength(255)] public string? Device { get; set; }
         [MaxLength(255)] public string? Operadora { get; set; }
@@ -430,7 +430,7 @@ namespace Aceca.Adm.Models
         [MaxLength(255)] public string? Cidade { get; set; }
         [MaxLength(50)] public string? Latitude { get; set; }
         [MaxLength(50)] public string? Longitude { get; set; }
-        [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
+        [Column("last_login")] public DateTime? UltimoLogin { get; set; }
 
         public Usuario? Usuario { get; set; }
     }

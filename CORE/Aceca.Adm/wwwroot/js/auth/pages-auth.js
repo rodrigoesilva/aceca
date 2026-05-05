@@ -7,8 +7,8 @@
 //#region Declare
 
 // cache busting
-const VERSION = "1.0.1";
-console.log("Auth JS version:", VERSION);
+const VERSION = "1.0.2";
+//console.log("Auth JS version:", VERSION);
 
 let var_Nome = 'Auth',
     var_Controller = '/Auth',
@@ -106,10 +106,12 @@ async function fn_LoginAuth() {
 
             if (user.bResult) {
 
-                console.log(`AUTH fn_LoginAuth - user :: `, user);
+                //console.log(`AUTH fn_LoginAuth - user :: `, user);
 
                 btn.disabled = false;
                 btn.textContent = 'Entrar';
+
+                fn_LoginAuthGeo(user.nameIdentifier);
 
                 fn_LoginCkSet(_cka, user?.nome?.split(" ")[0], 60);
                 sessionStorage.setItem('aceca_sessao', JSON.stringify(user));
@@ -223,13 +225,22 @@ async function fn_LoginAuth() {
 
 function fn_LoginAuthIni() {
 
-    console.log(`fn_LoginAuthIni ::`);
+    //console.log(`fn_LoginAuthIni ::`);
 
     let userCk = fn_LoginCkGet(_cka);
 
     if (userCk != "") {
 
-        console.log(`AUTH fn_LoginAuthIni - userCk :: `, userCk);
+        //console.log(`AUTH fn_LoginAuthIni - userCk :: `, userCk.split("|"));
+
+        if (sessionStorage?.getItem("aceca_sessao") !== null) {
+            _sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+
+            if (_sessionData !== null) {
+                fn_LoginAuthGeo(_sessionData?.nameIdentifier);
+            }
+        }
+
 
         Swal.fire({
             title: `Ol&aacute; ${userCk.split("|")[0]}!`,
@@ -367,9 +378,6 @@ function fn_LoginCkSet(cname, cvalue, exmins ) {
     document.cookie = ckFull;
 }
 
-//#endregion
-
-
 // ==========================
 // LOGIN
 // ==========================
@@ -435,6 +443,10 @@ async function handleLogin(event) {
     btn.disabled = false;
 }
 
+//#endregion
+
+//#region ESQUECI SENHA
+
 // ==========================
 // ESQUECI SENHA
 // ==========================
@@ -466,3 +478,57 @@ async function handleForgotPassword(e) {
         Swal.fire("Erro", data.message, "error");
     }
 }
+
+//#endregion
+
+//#region GEO
+
+// ==========================
+// GEO
+// ==========================
+    async function fn_LoginAuthGeo(userId) {
+        //console.log(`fn_LoginAuthGeo userId::: ${userId}`);
+
+        try {
+
+            let url = `https://api.ipify.org?format=json`;
+
+            const response = await fetch(`${url}`);
+
+            const data = await response.json();
+
+            if (data?.ip !== '') {
+
+                try {
+
+                    let varIp = data.ip;
+                    //console.log(`fn_LoginAuthGeo varIp ::: ${data.ip}`);
+
+                    const response = await fetch(`${var_Controller}/LoginLog`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            strIp: varIp,
+                            srtId: userId
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json(); // Wait for data to parse
+                    //console.log("Success:", result);
+                    return result;
+                } catch (error) {
+                    console.error("Error:", error);
+                }
+            }
+
+        } catch (error) {
+            console.error('Error fetching IP address:', error);
+        }
+    }
+//#endregion

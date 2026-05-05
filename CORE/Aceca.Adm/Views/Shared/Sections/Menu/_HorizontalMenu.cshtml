@@ -81,7 +81,7 @@
                             <ul class="menu-sub">
                                 <li class='menu-item@(currentPage == "/Marca/Listagem" ? " active" : "")'>
                                     <a asp-controller="Marca" asp-action="Index" class="menu-link">
-                                        <i class='menu-icon tf-icons ri-circle-line px-1_5'></i>
+                                        <i class='menu-icon icon-base ri ri-article-line'></i>
                                         <div data-i18n="Listagem">Listagem</div>
                                     </a>
                                 </li>
@@ -149,6 +149,23 @@
                             </a>
                         </li>
                     
+                    </ul>
+                </li>
+
+                <!-- Novidades -->
+                <li class='menu-item@(currentPage.StartsWith("/Marca") ? " active" : "")'>
+                    <a href="javascript:void(0)" class="menu-link menu-toggle">
+                        <i class='menu-icon icon-base ri ri-map-2-line'></i>
+                        <div data-i18n="Novidades">Novidades</div>
+                    </a>
+                    
+                    <ul class="menu-sub">
+                        <li class='menu-item@(currentPage == "/Novidade/Listagem" ? " active" : "")'>
+                            <a asp-controller="Novidade" asp-action="Index" class="menu-link">
+                                <i class="menu-icon icon-base ri ri-article-line"></i>
+                                <div data-i18n="Listagem">Listagem</div>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 

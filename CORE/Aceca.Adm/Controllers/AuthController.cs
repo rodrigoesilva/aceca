@@ -119,7 +119,7 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
-                var userIp = Task.FromResult<string>(GetGeoIPAsync().Result).Result;
+               // var userIp = Task.FromResult<string>(GetGeoIPAsync().Result).Result;
 
                 if (!User.Identity.IsAuthenticated)
                     return AccessDenied();
@@ -149,11 +149,6 @@ namespace Aceca.Adm.Controllers
 
                 if (!await LoginSetCookieAsync(jObjResult?["userEmail"]?.ToString()))
                     BadRequest(new { msg = "SetCookie inválido." });
-
-                if (!string.IsNullOrEmpty(userIp))
-                {
-                    var resultLog = LoginLog(userIp, userId);
-                }
 
                 return ViewBag.PerfilAdm
                     ? RedirectToAction("Inicio", "Home")
@@ -264,11 +259,16 @@ namespace Aceca.Adm.Controllers
         #region Login
 
         [HttpPost]
-        public async Task<IActionResult> LoginLog(string varIp, int userId)
+        public async Task<IActionResult> LoginLog([FromForm] string strIp, [FromForm] string srtId)
         {
             try
             {
-                var responseGeo = await GetGeoInfoAsync(varIp);
+                var userId = Convert.ToInt32(srtId);
+
+                if (userId <= 0)
+                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
+
+                var responseGeo = await GetGeoInfoAsync(strIp);
 
                 if (responseGeo.GetType() == typeof(NotFoundObjectResult) ||
                     responseGeo.GetType() == typeof(BadRequestObjectResult))
@@ -287,24 +287,30 @@ namespace Aceca.Adm.Controllers
                 //Save User Log
                 //var responseLog = await CreateUserLog(jsonNode, userId);
 
-                if (userId <= 0)
-                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
-
                 // Convert to a C# object
                 var objGeo = jsonNode.Deserialize<GeoModel>();
+
+                /*
+                var strCurrentTime = jsonNode["time_zone"]["current_time"].ToString();
+
+                if (DateTime.TryParse(strCurrentTime, out DateTime dtUltimoLogin))
+                {
+                    // Use result here
+                }*/
 
                 var newModel = new Models.UsuarioLog
                 {
                     UsuarioId = userId,
                     IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
-                    //OS = !string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
-                    //Browser = !string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
-                    //Device = !string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
+                    OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
+                    Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
+                    Device = null,//!string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
                     Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
                     Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
                     Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
                     Latitude = objGeo?.latitude.ToString(),
                     Longitude = objGeo?.longitude.ToString(),
+                    UltimoLogin = DateTime.UtcNow.AddHours(-3),
                 };
 
                 using (var context = new AppDbContext())
@@ -938,14 +944,15 @@ namespace Aceca.Adm.Controllers
                 {
                     UsuarioId = userId,
                     IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
-                    //OS = !string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
-                    //Browser = !string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
-                    //Device = !string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
+                    OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
+                    Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
+                    Device = null,//!string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
                     Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
                     Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
                     Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
                     Latitude = objGeo?.latitude.ToString(),
                     Longitude = objGeo?.longitude.ToString(),
+                    //UltimoLogin = objGeo?.longitude.ToString(),
                 };
 
                 using (var context = new AppDbContext())

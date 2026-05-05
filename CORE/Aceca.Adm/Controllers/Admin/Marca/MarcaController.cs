@@ -88,14 +88,14 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         #region Consulta LISTAGEM
 
         [HttpPost]
-        public async Task<IActionResult> FiltrarDados([FromBody] DataTableRequest request)
+        public async Task<IActionResult> FiltrarDados([FromBody] FilterDataMarca request)
         {
             try
             {
                 if (request == null)
                     return BadRequest("Request inválido");
 
-                var filtro = request.Filtros ?? new FiltroRequest();
+                var filtro = request.Filtros ?? new FiltroRequestMarca();
 
                 var imgBase = _urlBaseImg;
                 var imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg";
