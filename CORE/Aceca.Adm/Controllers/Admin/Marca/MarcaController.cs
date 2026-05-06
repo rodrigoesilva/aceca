@@ -810,11 +810,11 @@ namespace Aceca.Adm.Controllers.Admin.Marca
         #region Funcoes
 
         [HttpPost]
-        public async Task<IActionResult> GetNovoCodigoAceca(int idFase, string strTermoBusca, bool bvariante, bool bExTemPaisDestino)
+        public async Task<IActionResult> GetNovoCodigoAceca(int idFase, string strNovoNomeParaCadastro, bool bvariante, bool bExTemPaisDestino)
         {
             string strNovoCodigoAceca = string.Empty;
 
-            if (idFase < 1 || string.IsNullOrEmpty(strTermoBusca))
+            if (idFase < 1 || string.IsNullOrEmpty(strNovoNomeParaCadastro))
                 return BadRequest(new
                 {
                     bResult = false,
@@ -827,11 +827,11 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             {
                 var queryExistsTermo = false;
 
-                var msgErroData = $"idMarcaFase :: {idFase} , strTermoBusca :: {strTermoBusca}";
+                var msgErroData = $"idMarcaFase :: {idFase} , strNovoNomeParaCadastro :: {strNovoNomeParaCadastro}";
 
                 var strCodigoAceca = string.Empty;
 
-                var strLetraInicial = strTermoBusca?.Trim()[0].ToString();
+                var strLetraInicial = strNovoNomeParaCadastro?.Trim()[0].ToString();
 
                 var query = _db.Marca
                     .Include(x => x.MarcaSubTipo.MarcaTipo)
@@ -855,7 +855,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     {
                         query = query.Where(x => x.CodigoAceca != null
                                                 && (bvariante
-                                                    ? x.CodigoAceca.StartsWith(strTermoBusca.Trim().ToString())
+                                                    ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
                                                     : (x.CodigoAceca.StartsWith(strLetraInicial) && x.MarcaFaseId.Equals(idFase))
                                                     )
                                                 )
@@ -880,7 +880,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 {
                     query = query.Where(x => x.CodigoAceca != null
                                             && (bvariante
-                                                ? x.CodigoAceca.StartsWith(strTermoBusca.Trim().ToString())
+                                                ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
                                                 : (x.MarcaFaseId.Equals(idFase))
                                                 )
                                             )
@@ -903,18 +903,18 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                             bResult = false,
                             type = "ERRO - listagem Nula",
                             message = "Variante Pai Inexistente",
-                            data = strTermoBusca
+                            data = strNovoNomeParaCadastro
                         });
                     }
 
-                    if (!queryExistsTermo && lstmodel == null)
+                    if (!queryExistsTermo && lstmodel == null)      
                     {
                         return Ok(new
                         {
                             bResult = false,
                             type = "ERRO - listagem Nula",
-                            message = "Essa fase  não inicia com essa letra",
-                            data = strTermoBusca
+                            message = "Essa fase não possui esse código Pai",
+                            data = strNovoNomeParaCadastro
                         });
                     }
                 }

@@ -86,7 +86,7 @@
                         <hr class="mt-0" />
                     </div>
 
-                    <!-- 01 -->
+                    <!-- 01 - Cabecalho -->
                     <div class="row mt-8 text-center">
                         <div class="col-md-3 div_nome">
                             <div class="form-floating form-floating-outline">
@@ -104,17 +104,8 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3 div_variante">
-                            <div class="form-floating form-floating-outline">
-                                <select id="cmbPop_MarcaVariante" name="cmbPop_MarcaVariante" class="select2 form-select form-select">
-                                    <option value="-1">-- Selecionar --</option>
-                                </select>
-                                <label for="cmbPop_MarcaVariante">&Eacute; uma variante ?</label>
-                            </div>
-                        </div>
-
                         <!--Especifico para quando a fase é EXPORT -->
-                        <div class="col-md-3 div_tem_pais_destino">
+                        <div class="col-md-2 div_tem_pais_destino">
                             <div class="form-floating form-floating-outline">
                                 <select id="cmbPop_MarcaExTemPaisDestino" name="cmbPop_MarcaExTemPaisDestino" class="select2 form-select form-select">
                                     <option value="-1">-- Selecionar --</option>
@@ -124,7 +115,16 @@
                         </div>
                         <!--Especifico para quando a fase é EXPORT -->
 
-                        <div class="col-md-3 div_variante_codigo">
+                        <div class="col-md-2 div_variante">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_MarcaVariante" name="cmbPop_MarcaVariante" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_MarcaVariante">&Eacute; uma variante ?</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-2 div_variante_codigo">
                             <div class="form-floating form-floating-outline">
                                 <input class="form-control" type="text" id="txt_CodigoVariante" name="txt_CodigoVariante" placeholder="C&oacute;digo Variante" />
                                 <label for="txt_CodigoVariante">C&oacute;digo Variante</label>
@@ -305,7 +305,7 @@
                     <!-- Botoes -->
                     <div class="col-12 mt-8 div_botoes text-center">
                         <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
-                        <button type="submit" class="btn btn-primary data-submit me-3">Cadastrar</button>
+                        <button type="button" class="btn btn-primary data-submit me-3" id="btCadastrar">Cadastrar</button>
                     </div>
                 </form>
             </div>
