@@ -75,7 +75,7 @@ function fn_GridList(formValid) {
         varCol_Exportar = [2, 3, 4, 5],
         varCol_Ordenacao = [[2, 'asc']],
 
-        varItems_QtdPorPage = 50,
+        varItems_QtdPorPage = 10,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
         varItems_Row = null,
         varItems_Id = 0;

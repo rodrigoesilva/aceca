@@ -1,18 +1,9 @@
 using Aceca.Adm.Data;
-using Aceca.Adm.Models;
-using Aceca.Adm.VMModels;
-using Dapper;
-using FluentFTP;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Globalization;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Aceca.Adm.Controllers.Pages.Download
 {
@@ -71,257 +62,28 @@ namespace Aceca.Adm.Controllers.Pages.Download
 
         #endregion
 
-        #region Consulta LISTAGEM
+        #region GRID
 
-        [HttpPost]
-        public async Task<IActionResult> FiltrarDados([FromBody] FilterDataMarca request)
+        [HttpGet]
+        public async Task<IActionResult> ListGrid()
         {
             try
             {
-                if (request == null)
-                    return BadRequest("Request inválido");
-
-                var filtro = request.Filtros ?? new FiltroRequestMarca();
-
-                var imgBase = _urlBaseImg;
-                var imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg";
-
-                var sqlFrom = new StringBuilder(@"
-                FROM marcas m
-                LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
-                LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
-                LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
-                LEFT JOIN marcas_dimensao md ON m.marcaDimensaoId = md.id
-                LEFT JOIN marcas_impressora mi ON m.marcaImpressoraId = mi.id
-                LEFT JOIN marcas_raridade mr ON m.marcaRaridadeId = mr.id
-                LEFT JOIN marcas_raridade mq ON m.marcaQualidadeImagemId = mq.id
-                LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
-                LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
-                WHERE 1=1
-                ");
-
-                var parameters = new DynamicParameters();
-
-                // =========================
-                // FILTROS
-                // =========================
-
-                if (filtro.MarcaFaseId > 0)
-                {
-                    sqlFrom.Append(" AND m.marcaFaseId = @MarcaFaseId");
-                    parameters.Add("@MarcaFaseId", filtro.MarcaFaseId);
-                }
-
-                if (filtro.MarcaTipoId > 0)
-                {
-                    sqlFrom.Append(" AND mst.marcaTipoId = @MarcaTipoId");
-                    parameters.Add("@MarcaTipoId", filtro.MarcaTipoId);
-                }
-
-                if (filtro.MarcaSubTipoId > 0)
-                {
-                    sqlFrom.Append(" AND m.marcaSubTipoId = @MarcaSubTipoId");
-                    parameters.Add("@MarcaSubTipoId", filtro.MarcaSubTipoId);
-                }
-
-                //
-
-                if (filtro.MarcaMesId > 0)
-                {
-                    sqlFrom.Append(" AND MONTH(m.dataCriacao) = @MarcaMesId");
-                    parameters.Add("@MarcaMesId", filtro.MarcaMesId);
-                }
-
-                if (filtro.MarcaAnoId > 0)
-                {
-                    sqlFrom.Append(" AND YEAR(m.dataCriacao) = @MarcaAnoId");
-                    parameters.Add("@MarcaAnoId", filtro.MarcaAnoId);
-                }
-
-                // =========================
-                // SEARCH
-                // =========================
-                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
-                {
-                    var rawSearch = request.Search.Value.Trim();
-                    var normalized = Regex.Replace(rawSearch, @"[^\w\s]", " ");
-
-                    var fullTextSearch = string.Join(" ",
-                        normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                                  .Select(s => $"+{s}*")
-                    );
-
-                    bool incluirDescricao = filtro.PesquisarDescricao;
-                    bool termoCurto = rawSearch.Length < 3; // ← detecta termos que o FULLTEXT ignora
-
-                    sqlFrom.Append(" AND (");
-
-                    if (!termoCurto)
-                    {
-                        // FULLTEXT só para termos com 3+ caracteres
-                        sqlFrom.Append(@"
-                            MATCH(m.Nome, m.Descricao, m.CodigoAceca)
-                            AGAINST(@Search IN BOOLEAN MODE)
-                            OR ");
-                    }
-
-                    // LIKE sempre cobre CodigoAceca e Nome
-                    sqlFrom.Append(@"
-                        m.CodigoAceca LIKE @SearchLike
-                        OR m.Nome LIKE @SearchLike
-                        ");
-
-                    // Descrição só se checkbox ativo
-                    if (incluirDescricao)
-                    {
-                        sqlFrom.Append(@" OR m.Descricao LIKE @SearchLike ");
-                    }
-
-                    sqlFrom.Append(")");
-
-                    parameters.Add("@Search", fullTextSearch);
-                    parameters.Add("@SearchLike", $"%{rawSearch}%");
-                }
-
-                // fallback
-                else if (!string.IsNullOrWhiteSpace(filtro.NomeMarca))
-                {
-                    sqlFrom.Append(" AND m.Nome LIKE @Nome");
-                    parameters.Add("@Nome", $"%{filtro.NomeMarca}%");
-                }
-
-                if (filtro.PesquisarSemVariante)
-                {
-                    sqlFrom.Append(" AND m.codigoAceca REGEXP '[0-9]$'");
-                }
-
-                // =========================
-                // COUNT
-                // =========================
-
-                var totalSql = "SELECT COUNT(1) FROM marcas";
-                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
-
-                // =========================
-                // DATA
-                // =========================
-
-                var dataSql = $@"
-                    SELECT
-                        m.id AS Id,
-
-                        mf.id AS IdMarcaFase,
-                        mfi.id AS IdMarcaFinalidade,
-                        mfa.id AS IdMarcaFabrica,
-                        md.id AS IdMarcaDimensao,
-                        mt.id AS IdMarcaTipo,
-                        mst.id AS IdMarcaSubTipo,
-                        mi.id AS IdMarcaImpressora,
-                        mr.id AS IdMarcaRaridade,
-                        mq.id AS IdQualidadeImagem,
-
-                        m.CodigoAceca,
-                        m.Nome AS NomeMarca,
-
-                        mf.Descricao AS NomeFase,
-                        mfa.Nome AS NomeFabrica,
-                        md.Descricao AS NomeDimensao,
-                        mfi.Descricao AS NomeFinalidade,
-                        mi.Descricao AS NomeImpressora,
-                        mr.Descricao AS NomeRaridade,
-                        mq.Descricao AS NomeQualidade,
-                        mst.Descricao AS SubTipo,
-                        mt.Descricao AS Tipo,
-                        m.fabrica_txt AS TxtFabrica,
-                        m.impressora AS TxtImpressora,
-
-                        m.Descricao,
-                        m.IncluidoPor,
-
-                        m.Valor,
-                        m.Valor1PI,
-                        m.Valor2PI,
-
-                        m.ImgPrincipal,
-                        IF(m.ImgPrincipal IS NOT NULL,
-                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
-                            @ImgDefault) AS ImgPrincipalFull,
-
-                        m.ImgDetalhe,
-                        IF(m.ImgDetalhe IS NOT NULL,
-                            CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
-                            @ImgDefault) AS ImgDetalheFull
-
-                    {sqlFrom}
-
-                    ORDER BY mf.id, m.nome, m.CodigoAceca
-                    LIMIT @Limit OFFSET @Offset
-                    ";
-
-                parameters.Add("@ImgBase", imgBase);
-                parameters.Add("@ImgDefault", imgDefault);
-                parameters.Add("@Limit", request.Length);
-                parameters.Add("@Offset", request.Start);
-
-                using var conn = _db.Database.GetDbConnection();
-
-                var total = await conn.ExecuteScalarAsync<int>(totalSql);
-                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
-                var data = await conn.QueryAsync(dataSql, parameters);
-
-                return Ok(new
-                {
-                    draw = request.Draw,
-                    recordsTotal = total,
-                    recordsFiltered = filtered,
-                    data
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erro FiltrarDados");
-
-                return BadRequest(new { error = true, message = ex.Message });
-            }
-        }
-
-        #endregion
-
-        #region Filtros
-
-        [HttpPost]
-        public async Task<IActionResult> GetTipoByIdFase(int id)
-        {
-            var msgErroData = $"idMarcaFase :: {id}";
-
-            if (id < 1)
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "GetTipoByIdFase - Id deve ser maior que 0",
-                    data = id
-                });
-
-            try
-            {
-                var lstModel = await _db.Marca
-                    .DistinctBy(x => x.MarcaSubTipo.MarcaTipoId)
-                    .Where(x => x.MarcaFaseId.Equals(id))
-                    .Include(x => x.MarcaSubTipo)
-                    .Include(x => x.MarcaSubTipo.MarcaTipo)
-                    .OrderBy(x => x.MarcaSubTipo.MarcaTipoId)
+                var lstModel = await _db.Download
+                    .Include(x => x.DownloadTipo)
+                    .Include(x => x.Socio)
+                    .OrderBy(x => x.DownloadTipoId)
                     .AsNoTracking()
                     .ToListAsync();
 
-                if (lstModel == null)
+                if (lstModel.Count <= 0)
                 {
-                    return BadRequest(new
+                    return Ok(new
                     {
                         bResult = true,
-                        type = "ERRO - GetFullByIdFase - lstModel",
-                        message = "listagem Nula",
-                        data = msgErroData
+                        type = "ERRO - VAZIO - lstResult",
+                        message = "listagem em branco",
+                        data = lstModel
                     });
                 }
 
@@ -331,6 +93,195 @@ namespace Aceca.Adm.Controllers.Pages.Download
                     type = "OK",
                     message = "SUCESSO ::: ",
                     data = lstModel,
+                    arqUrlBase = $"{_urlBaseSite}/arquivos",
+                    imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg"
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
+        #endregion
+
+        #region CRUD JS
+
+        [HttpPost]
+        public async Task<IActionResult> Create(Models.Download model)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    if (string.IsNullOrEmpty(model.Descricao))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Descricao deve ser preenchido"
+                        });
+
+                    var newModel = new Models.Download
+                    {
+                        DownloadTipoId = model.DownloadTipoId,
+                        Titulo = !string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
+                        Nome = !string.IsNullOrEmpty(model.Nome) ? model.Nome : null,
+                        Extensao = !string.IsNullOrEmpty(model.Extensao) ? model.Extensao : null,
+                        Imagem = !string.IsNullOrEmpty(model.Imagem) ? model.Imagem : null,
+                        Diretorio = !string.IsNullOrEmpty(model.Diretorio) ? model.Diretorio : null,
+                        Descricao = !string.IsNullOrEmpty(model.Descricao) ? model.Descricao : null,
+                        SocioId = model.SocioId,
+                        Ativo = model.Ativo
+                    };
+
+                    _db.Download.Add(newModel);
+                    _db.SaveChanges();
+
+                    model.Id = newModel?.Id;
+
+                    if (model?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar"
+                        });
+
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Model Inválida",
+                    data = model,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(Models.Download model)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    if (string.IsNullOrEmpty(model.Descricao))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Descricao deve ser preenchido"
+                        });
+
+                    _db.Entry(model).State = EntityState.Modified;
+                    _db.SaveChanges();
+
+                    if (model?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar"
+                        });
+
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Model Inválida",
+                    data = model,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                if (id < 1)
+                {
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Id deve ser maior que 0"
+                    });
+                }
+
+                var model = await _db.Download.FindAsync(id);
+
+                if (model == null)
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "ERRO - ID nao localizado",
+                        message = "ID nao localizado",
+                        data = id
+                    });
+
+                _db.Download.Remove(model);
+                _db.SaveChanges();
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
                 });
             }
             catch (Exception ex)

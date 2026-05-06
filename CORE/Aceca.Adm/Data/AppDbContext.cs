@@ -45,6 +45,11 @@ namespace Aceca.Adm.Data
         public DbSet<AgendaImagem> AgendaImagem { get; set; }
         #endregion
 
+        #region Download
+        public DbSet<Download> Download { get; set; }
+        public DbSet<DownloadTipo> DownloadTipo { get; set; }
+        #endregion
+
         #region Fabrica        
         public DbSet<Fabrica> Fabrica { get; set; }
         public DbSet<FabricaFase> FabricaFase { get; set; }

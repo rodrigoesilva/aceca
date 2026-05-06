@@ -18,9 +18,9 @@
 
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
-    <!-- Form Validation
+    <!-- Form Validation -->
     <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
-    -->
+    
     <!-- Flat Picker - Calendar -->
     <link rel="stylesheet" href="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.css" />
     <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css">
@@ -53,11 +53,11 @@
     <script src="~/vendor/libs/moment/moment.js"></script>
     <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
 
-    <!-- Form Validation
+    <!-- Form Validation -->
     <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
-    -->
+    
     <!-- Select Dropdownlist -->
     <script src="~/vendor/libs/select2/select2.js"></script>
     <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
@@ -93,7 +93,7 @@
     <script src="~/js/site.js"></script>
 }
 
-@* ************** Filtros ************** *@
+@* ************** Filtros ************** 
 <div class="card mb-6">
     <div class="card-widget-separator-wrapper">
         <div class="card-body card-widget-separator">
@@ -104,7 +104,7 @@
             <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
 
                 <!-- Mes -->
-                <div class="div_MarcaMes col-sm-6 col-lg-3">
+                <div class="div_MarcaMes col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div id="divDT">
                             <p class="mb-1">* Per&iacute;odo</p>
@@ -113,21 +113,8 @@
                     </div>
                 </div>
 
-                <!-- Fase -->
-                <div class="div_MarcaFase col-sm-6 col-lg-3">
-                    <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-                        <div>
-                            <p class="mb-1">* Fase</p>
-                            <select id="cmb_MarcaFase" class="select2 form-select form-select">
-                                <option value="-1">-- Selecionar --</option>
-                            </select>
-                        </div>
-                    </div>
-                    <hr class="d-none d-sm-block d-lg-none me-6">
-                </div>
-
                 <!-- Tipo-->
-                <div class="div_MarcaTipo col-sm-6 col-lg-2">
+                <div class="div_MarcaTipo col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Tipo</p>
@@ -139,21 +126,9 @@
                     <hr class="d-none d-sm-block d-lg-none me-6">
                 </div>
 
-                <!-- Sub-Tipo -->
-                <div class="div_MarcaSubTipo col-sm-6 col-lg-2">
-                    <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-                        <div>
-                            <p class="mb-1">* Sub-Tipo</p>
-                            <select id="cmb_MarcaSubTipo" class="select2 form-select form-select">
-                                <option value="-1">-- Selecionar Tipo --</option>
-                            </select>
-                        </div>
-                    </div>
-                    <hr class="d-none d-sm-block d-lg-none me-6">
-                </div>
 
                 <!-- Botoes -->
-                <div class="div_Botoes col-sm-6 col-lg-2">
+                <div class="div_Botoes col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div class="d-flex justify-content-center align-content-center flex-wrap gap-4 pt-8">
                             <!-- 
@@ -171,7 +146,7 @@
         </div>
     </div>
 </div>
-
+*@
 @*************** Content List Table ************** *@
 <div class="card">
     <div class="card-datatable table-responsive pt-0">
@@ -179,21 +154,75 @@
             <thead>
                 <tr>
                     <th></th>
-                    <th class="text-nowrap text-center">C&oacute;d. ACECA</th>
-                    <th class="text-start w-25">Nome</th>
                     <th>Imagem</th>
-                    <th>Detalhe</th>
-                    <th class="text-start w-50">Descri&ccedil;&atilde;o</th>
-                    <th>F&aacute;brica</th>
                     <th>Tipo</th>
-                    <th>Finalidade</th>
-                    <th>Fase</th>
+                    <th>T&iacute;tulo</th>
+                    <th class="text-start w-50">Descri&ccedil;&atilde;o</th>
+                    <th class="text-nowrap text-center">Formato</th>
                     <th class="text-nowrap text-center">Inclu&iacute;do por</th>
                     <th>Inclu&iacute;do por</th>
                     <th>A&ccedil;&otilde;es</th>
                 </tr>
             </thead>
         </table>
+    </div>
+</div>
+
+<!-- Modal Add new Item -->
+<div class="offcanvas offcanvas-end" id="pop-add-new-item">
+    <div class="offcanvas-header border-bottom">
+        <input type="hidden" id="hdId" name="hdId" value="0"/>
+        <input type="hidden" id="hdPaisCategoriaId" name="hdPaisCategoriaId" value="0" />
+        <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body flex-grow-1">
+        <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_01" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01"
+                               placeholder="Nome" aria-label="Nome" aria-describedby="line_item_01"/>
+                        <label for="pop_line_item_01">Nome</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_02" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                        <textarea class="form-control h-px-100 dt-line-02" id="pop_line_item_02" name="pop_line_item_02" placeholder="Descrição..."></textarea>
+                        <label for="pop_line_item_02">Descri&ccedil;&atilde;o</label>
+                    </div>
+                </div>
+            </div>
+            <div id="pop_div_line_item_04" name="PaisCategoria" class="col-sm-12">
+                <div class="form-floating form-floating-outline">
+                    <select id="cmb_PaisCategoria" name="cmb_PaisCategoria"
+                            class="form-select select2 dt-line-04"
+                            data-allow-clear="true">
+                        <option value="-1">-- Selecionar --</option>
+                    </select>
+                    <label for="cmb_PaisCategoria">Categoria</label>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" id="pop_line_item_05" class="form-check-input dt-line-05"
+                               name="pop_line_item_05" placeholder="Ativo" aria-label="Ativo"
+                               aria-describedby="line_item_03"/>
+                        <label class="form-check-label" for="pop_line_item_05">Ativo</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
+                <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>
+            </div>
+        </form>
+
     </div>
 </div>
 

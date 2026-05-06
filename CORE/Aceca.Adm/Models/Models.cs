@@ -123,6 +123,35 @@ namespace Aceca.Adm.Models
 
     #endregion
 
+    #region download
+
+    [Table("download")]
+    public class Download : BaseModel
+    {
+        [Key] public int? Id { get; set; }
+
+        public int? DownloadTipoId { get; set; }
+        public string? Titulo { get; set; } = string.Empty;
+        public string? Nome { get; set; } = string.Empty;
+        public string? Extensao { get; set; }
+        public string? Imagem { get; set; }
+        public string? Diretorio { get; set; } = string.Empty;
+        public string? Descricao { get; set; } = string.Empty;
+
+        public int? SocioId { get; set; }
+        public DownloadTipo? DownloadTipo { get; set; }
+        public Socio? Socio { get; set; }
+    }
+
+    [Table("download_tipo")]
+    public class DownloadTipo : BaseModel
+    {
+        [Key] public int? Id { get; set; }
+        public string? Descricao { get; set; }
+    }
+
+    #endregion
+
     #region Fabrica
 
     [Table("fabricas")]
