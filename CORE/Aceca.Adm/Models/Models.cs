@@ -332,6 +332,7 @@ namespace Aceca.Adm.Models
 
         public SocioPerfil? SocioPerfil { get; set; }
     }
+    
 
     [Table("socio_aniversario")]
     public class SocioAniversario
@@ -400,11 +401,52 @@ namespace Aceca.Adm.Models
         public TipoPagamento? TipoPagamento { get; set; }
     }
 
+    [Table("socio_log_acesso")]
+    public class SocioLogAcesso
+    {
+        [Key] public int? Id { get; set; }
+
+        public int? UsuarioId { get; set; }
+        [MaxLength(255)] public string? IP { get; set; }
+        [MaxLength(255)] public string? OS { get; set; }
+        [MaxLength(255)] public string? Browser { get; set; }
+        [MaxLength(255)] public string? Device { get; set; }
+        [MaxLength(255)] public string? Operadora { get; set; }
+        [MaxLength(50)] public string? Estado { get; set; }
+        [MaxLength(255)] public string? Cidade { get; set; }
+        [MaxLength(50)] public string? Latitude { get; set; }
+        [MaxLength(50)] public string? Longitude { get; set; }
+        [Column("last_login")] public DateTime? UltimoLogin { get; set; }
+
+        public Usuario? Usuario { get; set; }
+    }
+
     [Table("socio_perfil")]
     public class SocioPerfil : BaseModel
     {
         [Key] public int? Id { get; set; }
         [MaxLength(255)] public string? Descricao { get; set; } = string.Empty;
+    }
+    [Table("socio_seguranca")]
+    public class SocioSeguranca
+    {
+        [Key] public int? Id { get; set; }
+
+        public int? SocioId { get; set; }
+        [MaxLength(180)] public string? Email { get; set; } = string.Empty;
+        [MaxLength(255)] public string? Senha { get; set; } = string.Empty;
+        [MaxLength(255)][Column("senha_aberta")] public string? SenhaAberta { get; set; }
+        public bool SenhaAtualizada { get; set; }
+        [MaxLength(255)][Column("_senha")] public string? Senha1 { get; set; }
+        [MaxLength(255)][Column("_usuario")] public string? NomeUsuario { get; set; }
+        [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
+
+        public Socio? Socio { get; set; }
+
+        [NotMapped] public string? Token { get; set; }
+
+        public string? ResetPasswordToken { get; set; }
+        public DateTime? ResetPasswordTokenExpiry { get; set; }
     }
 
     #endregion

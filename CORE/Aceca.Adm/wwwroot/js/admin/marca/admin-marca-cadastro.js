@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        document.getElementById('btCadastrar').addEventListener('click', function () {
+        document.getElementById('btCadastrar').addEventListener('click', function (e) {
             //   this.closest('form').submit();
             fn_ModalSalvar(e);
         });
@@ -672,8 +672,10 @@ function fn_ChangeCombos() {
         if (idMarcaTipo <= 0 && bNovaVariante === false) {
             //fn_ModalOpcaoInvalida();
         } else {
+
             //console.log("cmb_MarcaTipo change objVariante ::: ", objVariante);
-            if (objVariante !== undefined) {
+
+            if (objVariante !== undefined && objVariante !== null) {
                 let marcaSubTipoId = ((objVariante.marcaSubTipoId === undefined || objVariante.marcaSubTipoId === null || objVariante.marcaSubTipoId <= 0) ? '-1' : objVariante.marcaSubTipoId);
                 let marcaSubTipoTxt = ((objVariante.marcaSubTipoId === undefined || objVariante.marcaSubTipoId === null || objVariante.marcaSubTipoId <= 0) ? '-1' : objVariante.marcaSubTipo.descricao);
 

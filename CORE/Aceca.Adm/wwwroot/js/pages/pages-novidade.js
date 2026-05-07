@@ -82,6 +82,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fn_AuthSession();
 
+        fn_Filtrar();
+
     })();
 });
 
@@ -102,6 +104,8 @@ $(function () {
         altInput: true,
         altFormat: "F Y", //defaults to "F Y"
         dateFormat: "m.y", //defaults to "F Y"
+        defaultDate: "today",
+
         //maxDate: $('#dt_Final').attr('value'),
         onClose: function (selectedDates, dateStr, instance) {
             //console.log("selectedDates :::", selectedDates);
@@ -187,6 +191,13 @@ function fn_Limpar() {
 
     $.busyLoadFull("show");
 
+    const today = new Date();
+    const month = today.getMonth() + 1; // getMonth() is zero-based (0-11)
+    const year = today.getFullYear();
+
+    param_DataIniMes = (param_DataIniMes === undefined || param_DataIniMes === null) ? month : param_DataIniMes;
+    param_DataIniAno = (param_DataIniAno === undefined || param_DataIniAno === null) ? year : param_DataIniAno;
+
     //$('#cmb_MarcaMes').prop('selectedIndex', 0).change();
     $('#cmb_MarcaFase').prop('selectedIndex', 0).change();
     $('#cmb_MarcaTipo').prop('selectedIndex', 0).change();
@@ -219,68 +230,17 @@ function fn_FiltrosShow() {
 
 function fn_FiltrosChange() {
 
-    $('#cmb_MarcaFase').on('change', function () {
-
-        idMarcaFase = $(this).find('option:selected').val();
-
-        //console.log("cmb_MarcaFase change idMarcaFase ::: ", idMarcaFase);
-        //console.log("cmb_MarcaFase change var_Filtrado ::: ", var_Filtrado);
-
-        if (idMarcaFase === undefined || idMarcaFase < 0) {
-            fn_FiltrosHide();
-        } else {
-            fn_LoadCmb_MarcaTipo();
-            //console.log("cmb_MarcaFase change ::: ");
-
-            // Clear the search and redraw the table
-            var table = $('.datatables-basic').DataTable();
-            table.search('').draw();
-
-            fn_Filtrar();
-        }
-    });
-
     $('#cmb_MarcaTipo').on('change', function () {
 
         let idMarcaTipo = $(this).find('option:selected').val();
 
         //console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
-        //console.log("cmb_MarcaTipo change idMarcaFase ::: ", idMarcaFase);
-        //console.log("cmb_MarcaTipo change var_Filtrado ::: ", var_Filtrado);
+        //console.log("cmb_MarcaTipo param_DataIniMes ::: ", param_DataIniMes);
+        //console.log("cmb_MarcaTipo param_DataIniAno ::: ", param_DataIniAno);;
 
-        if (idMarcaFase === undefined || idMarcaFase < 0) {
-            fn_ModalSelecionarFase();
-        } else {
+        idMarcaTipo <= 0 ? $('.div_MarcaSubTipo').attr('style', 'display: none !important') : $('.div_MarcaSubTipo').attr('style', 'display: block !important');
 
-            if (idMarcaTipo <= 0) {
-                $('.div_MarcaSubTipo').attr('style', 'display: none !important');
-                fn_Filtrar();
-            } else {
-                $('.div_MarcaSubTipo').attr('style', 'display: block !important');
-
-                if (!var_Filtrado) {
-                    fn_ModalConfirmarFiltros();
-                } else {
-                    fn_Filtrar();
-                    /*
-                    Swal.fire({
-                        title: 'Tipo Selecionado !!!',
-                        html: `Para realizar o filtro por Tipo, <br><br> selecione o Sub-Tipo.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
-                        imageUrl: `${urlImgModaltext}`,
-                        imageWidth: 400,
-                        imageAlt: `${var_ImgAlt}`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-primary waves-effect waves-light'
-                        },
-                    }).then((result) => {
-                        //console.log("cmb_MarcaFase change result ::: ", result);
-                    })
-                    */
-                }
-            }
-        }
+        fn_Filtrar();
     });
 
     $('#cmb_MarcaSubTipo').on('change', function () {
@@ -371,6 +331,9 @@ function fn_FiltrarDados() {
     $.busyLoadFull("show");
 
     $('.datatables-basic').DataTable().clear().destroy();
+
+    //console.log("bfn_FiltrarDados param_DataIniMes ::: ", param_DataIniMes);
+    //console.log("bfn_FiltrarDados param_DataIniAno ::: ", param_DataIniAno);
 
     varTbl_Data = $('.datatables-basic').DataTable({
         processing: true,
@@ -468,7 +431,7 @@ function fn_FiltrarDados() {
             { targets: -2, data: 'IncluidoPor', visible: false, responsivePriority: 99 },
             // COLUNA - Ações (sempre visível junto com control)
             {
-                data: 'Id', targets: -1, searchable: false, orderable: false, responsivePriority: 4,
+                visible:false, data: 'Id', targets: -1, searchable: false, orderable: false, responsivePriority: 4,
                 render: function (data, type, full) {
                     if (type !== 'display') return '';
                     var itemObjJson = encodeURIComponent(JSON.stringify(full));

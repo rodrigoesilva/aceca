@@ -6,8 +6,8 @@
 
 //#region Declare
 
-let var_Nome = 'Gest&atilde;o & Seguran&ccedil;a -> Usu&aacute;rios Log',
-    var_Controller = '/UsuarioLog',
+let var_Nome = 'Gest&atilde;o & Seguran&ccedil;a -> S&oacute;cios Log de Acesso',
+    var_Controller = '/SocioLogAcesso',
     var_ControllerCmb = '/HelperExtensions',
 
     varTbl_Obj = $('.datatables-basic'),
@@ -93,7 +93,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },

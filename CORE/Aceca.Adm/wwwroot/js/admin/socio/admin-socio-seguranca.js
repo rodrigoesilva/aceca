@@ -1,13 +1,13 @@
 /**
- * App -> Seguranca -> Usuarios
+ * App -> Usuarios
  */
 
 'use strict';
 
 //#region Declare
 
-let var_Nome = 'Gest&atilde;o & Seguran&ccedil;a -> Usu&aacute;rios Log',
-    var_Controller = '/UsuarioLog',
+let var_Nome = 'Gest&atilde;o & Seguran&ccedil;a -> S&oacute;rios',
+    var_Controller = '/SocioSeguranca',
     var_ControllerCmb = '/HelperExtensions',
 
     varTbl_Obj = $('.datatables-basic'),
@@ -50,6 +50,13 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
 
+        fn_LoadCmb_SocioPerfil();
+
+        // Form validation
+        const formAddNewItem = document.getElementById('form-pop-add-new-item');
+
+        formValid = fn_PopValidator(formAddNewItem);
+
         // Carrega Dados Grid
         fn_GridList(formValid);
     })();
@@ -65,7 +72,7 @@ function fn_GridList(formValid) {
         varAjax_UrlController = `${var_Controller}/ListGrid`,
         varAjax_TypeAction = 'GET',
 
-        varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9, 10],
+        varCol_Exportar = [2, 3, 4, 5, 6, 7],
         varCol_Ordenacao = [[2, 'asc']],
 
         varItems_QtdPorPage = 50,
@@ -93,7 +100,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    console.log("data fn :: ", result)
+                    //console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -123,63 +130,72 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'usuario.socio.nome',
+                    data: 'socio.nome',
                     targets: 2,
-                    /*
-                    render: function (data, type, row) {
-                        return `(${data}) - ${row.socio.nome}`;
-                    }
-                    */
                 },
-                // COLUNA - Cidade
+                // COLUNA - Login
                 {
-                    data: 'cidade',
+                    data: 'nomeUsuario',
                     targets: 3,
                     //className: "text-center",
                 },
-                // COLUNA - Estado
+                // COLUNA - Email
                 {
-                    data: 'estado',
+                    data: 'email',
                     targets: 4,
-                    className: "text-center",
+                    //className: "text-center",
                 },
-                // COLUNA - Device
+                // COLUNA - Tipo Usuario
                 {
-                    visible: false,
-                    data: 'device',
+                    data: 'socio.socioPerfilId',
                     targets: 5,
                     className: "text-center",
-                },
-                // COLUNA - IP
-                {
-                    visible:false,
-                    data: 'ip',
-                    targets: 6,
-                    className: "text-center",
-                },
-                // COLUNA - OS
-                {
-                    visible: false,
-                    data: 'os',
-                    targets: 7,
-                    //className: "text-center",
-                },
-                // COLUNA - Cidade Acesso
-                {
-                    data: 'cidade',
-                    targets: 8,
-                    //className: "text-center",
-                },
-                // COLUNA - Estado Acesso
-                {
-                    data: 'estado',
-                    targets: 9,
-                    className: "text-center",
+                    render: function (data, type, full) {
+                        let id = full.id;
+
+                        if (id != 0 && data !== undefined && data !== null) {
+
+                            let statusClass,
+                                statusLayout,
+                                statusDescricao = full.socio.socioPerfil.descricao,
+                                propostaStatusId = data;
+
+                            switch (propostaStatusId) {
+                                case 1: //'Nivel 1'
+                                    statusClass = 'bg-label-warning';
+                                    break;
+                                case 2: //'Nivel 2'
+                                    statusClass = 'bg-label-info';
+                                    break;
+                                case 3: //'Nivel 3'
+                                    statusClass = 'bg-label-secondary';
+                                    break;
+                                case 4: //'Nivel 4'
+                                    statusClass = 'bg-label-secondary';
+                                    break;
+                                case 5: //'Aprovada'
+                                    statusClass = 'bg-label-success';
+                                    break;
+                                case 6: //'Cancelada'
+                                    statusClass = 'bg-label-danger';
+                                    break;
+                            }
+
+                            statusLayout = '<span class="badge rounded-pill ' + statusClass + '"> ' + statusDescricao + '</span> ';
+
+                            //console.log("Status statusLayout ::: ", statusLayout);
+
+                            return statusLayout;
+
+                        } else {
+                            return '';
+                        }
+                    }
                 },
                 // COLUNA - Ultimo Login
                 {
                     data: 'ultimoLogin',
-                    targets: 10,
+                    targets: 6,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.id;
@@ -203,8 +219,9 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Status                    
                 {
+                    visible: false,
                     targets: -2,
-                    data: 'usuario.socio.ativo',
+                    data: 'socio.ativo',
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -251,13 +268,8 @@ function fn_GridList(formValid) {
                             let itemObjJson = encodeURIComponent(JSON.stringify(full));
 
                             btns =
-                                '<div class="d-inline-block">' +
-                                '<a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line ri-22px"></i></a>' +
-                                '<ul class="dropdown-menu dropdown-menu-end m-0">' +
-                                '<li><a href="javascript:fn_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="dropdown-item edit-record">Editar</a></li>' +
-                                '<div class="dropdown-divider"></div>' +
-                                '<li><a href="javascript:fnItem_Delete(' + itemObjJson + ');" class="dropdown-item text-danger delete-record">Excluir</a></li>' +
-                                '</ul>' +
+                                '<div class="d-inline-block text-nowrap">' +
+                                '<a href="javascript:fn_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
                                 '</div>'
                         }
 
@@ -265,7 +277,7 @@ function fn_GridList(formValid) {
                     }
                 },
             ],
-            //order: varCol_Ordenacao,
+            order: varCol_Ordenacao,
             dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
             displayLength: varItems_QtdPorPage,
             lengthMenu: varItems_DivPage,
@@ -333,6 +345,16 @@ function fn_GridList(formValid) {
                         }
                     ]
                 },
+                /*
+                {
+                    text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
+                    className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
+                    action: function (e, dt, node, config) {
+                        //console.log("BTN NEW ::: ", dt);
+                        fn_Pop(null, 'Create');
+                    }
+                }
+                */
             ],
             responsive: {
                 details: {
@@ -387,6 +409,24 @@ function fn_GridList(formValid) {
             }
         });
     }
+
+    // VALIDA SUBMIT POP
+    formValid.on('core.form.valid', function (e) {
+        //console.log("e ::: ", e);
+
+        var action = document.querySelector('.data-submit').textContent;
+        //console.log("action ::: ", action);
+
+        if (action === 'Alterar') {
+            var objFormData = fn_PopGetObj();
+            //console.log("objFormData ::: ", objFormData);
+
+            fnItem_Edit(objFormData)
+        } else {
+            fnItem_Add(varTbl_Obj)
+        }
+        //fnItem_Add(abc);
+    });
 }
 
 function fn_GridComplete(grid) {
@@ -504,6 +544,32 @@ function fn_CheckVerAtivos() {
     }
 }
 
+function fn_LoadCmb_SocioPerfil() {
+    //console.log("fn_LoadCmb_SocioPerfil ::: ");
+
+    if ($('#cmb_SocioPerfil').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_SocioPerfil`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_SocioPerfil  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_SocioPerfil  result id ::: ", id);
+                        //console.log("fn_LoadCmb_SocioPerfil  result ::: ", result);
+                        $("#cmb_SocioPerfil").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
 //#endregion
 
 //#region POP
@@ -536,7 +602,7 @@ function fn_Pop(obj, action) {
 
         $("#cmb_SocioPerfil").val(obj.socio.socioPerfilId).change();
 
-        console.log("fn_Pop ex val ::: ", $("#cmb_SocioPerfil").val());
+        //console.log("fn_Pop ex val ::: ", $("#cmb_SocioPerfil").val());
     }
 
     // Open Pop
@@ -547,16 +613,52 @@ function fn_PopGetObj() {
 
     const objFormData = {
         Id: $('#hdId').val(),
-        Nome: $('.form-add-new-item .dt-line-01').val(),
-        Login: $('.form-add-new-item .dt-line-02').val(),
+        SocioId: $('#hdSocioId').val(),
         Email: $('.form-add-new-item .dt-line-03').val(),
+        Nome: $('.form-add-new-item .dt-line-01').val(),
+        NomeUsuario: $('.form-add-new-item .dt-line-02').val(),        
         SocioPerfilId: $('#cmb_SocioPerfil').val(),
-        Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
+        Ativo: $('.form-add-new-item .dt-line-05').is(':checked'),
     };
 
     console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
+}
+
+function fn_PopValidator(formAddNewItem) {
+    var varformValid = FormValidation.formValidation(formAddNewItem, {
+        fields: {
+            pop_line_item_01: {
+                validators: {
+                    notEmpty: {
+                        message: 'O preenchimento &eacute; obrigat&oacute;rio'
+                    }
+                }
+            }
+        },
+        plugins: {
+            trigger: new FormValidation.plugins.Trigger(),
+            bootstrap5: new FormValidation.plugins.Bootstrap5({
+                // Use this for enabling/changing valid/invalid class
+                // eleInvalidClass: '',
+                eleValidClass: '',
+                rowSelector: '.col-sm-12'
+            }),
+            submitButton: new FormValidation.plugins.SubmitButton(),
+            // defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
+            autoFocus: new FormValidation.plugins.AutoFocus()
+        },
+        init: instance => {
+            instance.on('plugins.message.placed', function (e) {
+                if (e.element.parentElement.classList.contains('input-group')) {
+                    e.element.parentElement.insertAdjacentElement('afterend', e.messageElement);
+                }
+            });
+        }
+    });
+
+    return varformValid;
 }
 
 function fnItem_Delete(varItems_Row) {
@@ -662,7 +764,7 @@ function fnItem_Delete(varItems_Row) {
 }
 
 function fnItem_Edit(varItems_Row) {
-    //console.log("EDIT CLICK ::: ", varItems_Row);
+    console.log("EDIT CLICK ::: ", varItems_Row);
     //var varPop_BtnAction = 'Edit';
 
     //fn_Pop(varItems_Row, varPop_BtnAction);

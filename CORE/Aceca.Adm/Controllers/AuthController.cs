@@ -144,15 +144,22 @@ namespace Aceca.Adm.Controllers
 
                 var userId = (int)jObjResult?["userId"];
 
-                TempData["isPerfil"] = ViewBag.PerfilAdm;
-                TempData["Layout"] = ViewBag.PerfilAdm ? "_HorizontalLayout" : "_WithoutMenuLayout";
-
                 if (!await LoginSetCookieAsync(jObjResult?["userEmail"]?.ToString()))
                     BadRequest(new { msg = "SetCookie inválido." });
+
+                TempData["isPerfil"] = ViewBag.PerfilAdm;
+
+                /*
+                TempData["Layout"] = ViewBag.PerfilAdm ? "_HorizontalLayout" : "_WithoutMenuLayout";
 
                 return ViewBag.PerfilAdm
                     ? RedirectToAction("Inicio", "Home")
                     : RedirectToAction("Index", "Marca");
+                */
+
+                TempData["Layout"] = "_HorizontalLayout";
+
+                return RedirectToAction("Inicio", "Home");
             }
             catch (Exception ex)
             {

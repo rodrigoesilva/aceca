@@ -5,8 +5,8 @@
     var isPerfil = Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True";
 
   <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-6">
-        @*<a href="@(Url.Action("Index", "Home"))" class="app-brand-link gap-2">*@
-        <a href="@(isPerfil ? Url.Action("Index", "Home") : Url.Action("Index", "Marca"))" class="app-brand-link gap-2">
+        <a href="@(Url.Action("Index", "Home"))" class="app-brand-link gap-2">
+            @*<a href="@(isPerfil ? Url.Action("Index", "Home") : Url.Action("Index", "Marca"))" class="app-brand-link gap-2">*@
             <span class="app-brand-text demo menu-text fw-semibold ms-1 custom_text" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">A.C.E.C.A</span>
             <span class="d-none d-md-inline-block text-muted ms-1_5" style="font-size: 25px; -webkit-background-clip: text;-webkit-text-fill-color: transparent;background-image: linear-gradient(to right, #47007b,#7b0fcc 60%,#a32bff);">- Ambiente de @(isPerfil ? "Administração" : "Sócio")</span>
     </a>
