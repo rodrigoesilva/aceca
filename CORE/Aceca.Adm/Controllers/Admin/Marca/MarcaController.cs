@@ -932,7 +932,11 @@ namespace Aceca.Adm.Controllers.Admin.Marca
 
                 strCodigoAceca = lstmodel?.CodigoAceca?.ToString()?.Trim();
 
-                string strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
+                string strNumCodigoAceca = string.Empty;
+
+                strNumCodigoAceca = idFase != 42 
+                    ? new string(strCodigoAceca?.Where(char.IsDigit).ToArray())
+                    :new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
 
                 if (string.IsNullOrEmpty(strNumCodigoAceca))
                 {
