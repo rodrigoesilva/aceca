@@ -34,7 +34,8 @@ const swalWithBootstrapButtons = Swal.mixin({
     buttonsStyling: false
 });
 
-let modalMarca = document.getElementById('modalAddNovaMarca');
+let modalMarca = document.getElementById('modalAddNovaMarca'),
+    objModalData    ;
 
 let borderColor, bodyBg, headingColor;
 
@@ -96,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (action === 'Alterar') {
                 var objFormData = fn_ModalGetObj();
-                //console.log("objFormData ::: ", objFormData);
+                console.log("objFormData ::: ", objFormData);
 
                 //const formData = new FormData(document.forms['form-modal-full-edit']);
                 //console.log("fn_ModalSalvar formData ::: ", formData);
@@ -1406,7 +1407,7 @@ function fn_Modal(obj, action) {
     const popAddNewItem = document.querySelector('#modalAddNovaMarca');
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').Value = (obj === null ? 0 : obj.Id)),
+    (popAddNewItem.querySelector('#hdMarcaId').Value = (obj === null ? 0 : obj.Id)),
         (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.IdMarcaFase)),
         (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.IdMarcaFinalidade)),
         (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.IdMarcaFabrica)),
@@ -1463,6 +1464,12 @@ function fn_Modal(obj, action) {
         (obj === null || obj?.imgPrincipal === null) ? (popAddNewItem.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
         (obj === null || obj?.imgDetalhe === null) ? (popAddNewItem.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
     }
+
+    objModalData = obj;
+
+    $('#hdMarcaId').val(obj.Id);
+
+    console.log("fn_Modal objModalData !", objModalData);
 
     $('#modalAddNovaMarca').modal('show');
 }
@@ -1557,13 +1564,17 @@ function fnItem_PopImgDetalhe(obj) {
 }
 
 function fn_ModalGetObj(data, action) {
-    //console.log("fn_ModalGetObj data ::: ", data);
+    console.log("fn_ModalGetObj data ::: ", data);
     //console.log("fn_ModalGetObj action ::: ", action);
 
+    console.log("fn_ModalGetObj objModalData ::: ", objModalData);
+
     var loadCmbs = fn_PopLoadCombos();
+    console.log("fn_ModalGetObj hdMarcaId ::: ", $('#hdMarcaId').val());
+    console.log("fn_ModalGetObj hdMarcaFaseId ::: ", $('#hdMarcaFaseId').val());
 
     const objFormData = {
-        Id: $('#hdId').val(),
+        Id: $('#hdMarcaId').val(),
         IdMarcaFase: $('#hdMarcaFaseId').val(),
         IdMarcaFinalidade: $('#hdMarcaFinalidadeId').val(),
         IdMarcaFabrica: $('#hdMarcaFabricaId').val(),
@@ -1594,13 +1605,13 @@ function fn_ModalGetObj(data, action) {
         ImgDetalhe: $('#txt_ImgDetalhe').val(),
     };
 
-    //console.log("fn_ModalGetObj !", objFormData);
+    console.log("fn_ModalGetObj !", objFormData);
 
     return objFormData;
 }
 
 function fnItem_Edit(varItems_Row) {
-    //console.log("fnItem_Edit CLICK ::: ", varItems_Row);
+    console.log("fnItem_Edit CLICK ::: ", varItems_Row);
     //var varPop_BtnAction = 'Edit';
 
     var varAjax_UrlController = `${var_Controller}/Edit`,
