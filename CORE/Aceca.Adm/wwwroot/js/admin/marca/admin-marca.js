@@ -35,7 +35,9 @@ const swalWithBootstrapButtons = Swal.mixin({
 });
 
 let modalMarca = document.getElementById('modalAddNovaMarca'),
-    objModalData    ;
+    objModalData;
+
+let strUrlImgInexistente = "https://www.aceca.com.br/midia/geral/assets/img/img_inexistente.jpg";
 
 let borderColor, bodyBg, headingColor;
 
@@ -445,7 +447,7 @@ function fn_FiltrarDados() {
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
         varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9],
-        varCol_Ordenacao = [2, 'asc'], //set any columns order asc/desc
+        varCol_Ordenacao = [1, 'asc'], //set any columns order asc/desc
 
         varItems_QtdPorPage = 10,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
@@ -462,6 +464,8 @@ function fn_FiltrarDados() {
 
         autoWidth: false,
         scrollX: false,
+
+        order: [],
 
         ajax: {
             url: varAjax_UrlController,
@@ -497,21 +501,21 @@ function fn_FiltrarDados() {
             // COLUNA - control (sempre visível — prioridade máxima)
             { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
             // COLUNA - codigoAceca (2ª a aparecer no mobile)
-            { data: 'CodigoAceca', className: 'text-center', width: '90px', responsivePriority: 2 },
+            { data: 'CodigoAceca', className: 'text-center', width: '90px', responsivePriority: 2, orderable: true, },
             // COLUNA - nomeMarca (3ª a aparecer no mobile)
             { data: 'NomeMarca', className: 'text-center', width: '120px' , responsivePriority: 3 },
             // COLUNA - imagem (some primeiro no mobile)
             {
                 data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004,
                 render: function (data, type, row) {
-                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${data}">`;
+                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row?.CodigoAceca}" src="${data}">`;
                 }
             },
             // COLUNA - imagemDetalhe
             {
                 data: 'ImgDetalheFull', className: 'text-center', responsivePriority: 10005,
                 render: function (data, type, row) {
-                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row.CodigoAceca}" src="${data}">`;
+                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row?.CodigoAceca}" src="${data}">`;
                 }
             },
             // COLUNA - descricao
@@ -566,7 +570,7 @@ function fn_FiltrarDados() {
             }
         ],
 
-        order: [[1, 'asc']], // garante base na coluna CodigoAceca
+        order: varCol_Ordenacao, // garante base na coluna CodigoAceca
         autoWidth: false,
 
         language: {
@@ -815,7 +819,6 @@ function fn_FiltrarDados() {
                 { name: 'mobile', width: 768 }  // era 480 — aumentar dá mais espaço
             ]
         },
-
 
         drawCallback: function () {
             fn_Zoom();
@@ -1469,7 +1472,7 @@ function fn_Modal(obj, action) {
 
     $('#hdMarcaId').val(obj.Id);
 
-    console.log("fn_Modal objModalData !", objModalData);
+    //console.log("fn_Modal objModalData !", objModalData);
 
     $('#modalAddNovaMarca').modal('show');
 }
@@ -1480,40 +1483,43 @@ function fnItem_PopImgPrincipal(obj) {
     if (obj !== null) {
 
         let imgName = obj?.ImgPrincipal,
-            imgNameFul = obj?.ImgPrincipalFull            ;
+            imgNameFul = obj?.ImgPrincipalFull;
 
-        let objFile = {},
-            fileArq = imgName;
+        if (imgName !== null && imgName !== undefined) {
 
-        //preview img
-        const img = document.getElementById('img_ImgPrincipal');
-        img.src = obj.ImgPrincipalFull;
-        img.alt = obj.CodigoAceca;
+            let objFile = {},
+                fileArq = imgName;
 
-        //
-        const fileInput = document.querySelector('#txt_ImgPrincipal');
+            //preview img
+            const img = document.getElementById('img_ImgPrincipal');
+            img.src = obj?.ImgPrincipalFull !== null ? obj?.ImgPrincipalFull : strUrlImgInexistente;
+            img.alt = obj?.CodigoAceca !== null ? obj?.CodigoAceca : "Imagem Inexistente";
 
-        if (fileArq !== undefined) {
-            objFile = {
-                NomeArquivo: fileArq.split('.')[0],
-                Extensao: fileArq.split('.').pop(),
-            };
-        }
-        // Create a new File object
-        const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
-            type: `application/${objFile.Extensao}`,
-            //type: 'text/plain',
-            lastModified: new Date(),
-        });
+            //
+            const fileInput = document.querySelector('#txt_ImgPrincipal');
 
-        // Now let's create a DataTransfer to get a FileList
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(arqFile);
-        fileInput.files = dataTransfer.files;
+            if (fileArq !== null && fileArq !== undefined) {
+                objFile = {
+                    NomeArquivo: fileArq.split('.')[0],
+                    Extensao: fileArq.split('.').pop(),
+                };
+            }
+            // Create a new File object
+            const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
+                type: `application/${objFile.Extensao}`,
+                //type: 'text/plain',
+                lastModified: new Date(),
+            });
 
-        // Help Safari out
-        if (fileInput.webkitEntries.length) {
-            fileInput.dataset.file = `${dataTransfer.files[0].name}`;
+            // Now let's create a DataTransfer to get a FileList
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(arqFile);
+            fileInput.files = dataTransfer.files;
+
+            // Help Safari out
+            if (fileInput.webkitEntries.length) {
+                fileInput.dataset.file = `${dataTransfer.files[0].name}`;
+            }
         }
     }
 }
@@ -1526,52 +1532,55 @@ function fnItem_PopImgDetalhe(obj) {
         let imgName = obj?.ImgDetalhe,
             imgNameFul = obj?.ImgDetalheFull;
 
-        let objFile = {},
-            fileArq = imgName;
+        //if (imgName !== null && imgName !== undefined) {
 
-        //preview img
-        const img = document.getElementById('img_ImgDetalhe');
-        img.src = obj.ImgDetalheFull;
-        img.alt = obj.CodigoAceca;
+            let objFile = {},
+                fileArq = imgName;
 
-        //
-        const fileInput = document.querySelector('#txt_ImgDetalhe');
+            //preview img
+            const img = document.getElementById('img_ImgDetalhe');
+            img.src = obj?.ImgDetalheFull !== null ? obj?.ImgDetalheFull : strUrlImgInexistente;
+            img.alt = obj?.CodigoAceca !== null ? obj?.CodigoAceca : "Imagem Inexistente";
 
-        if (fileArq !== undefined) {
-            objFile = {
-                NomeArquivo: fileArq.split('.')[0],
-                Extensao: fileArq.split('.').pop(),
-            };
-        }
+            //
+            const fileInput = document.querySelector('#txt_ImgDetalhe');
 
-        // Create a new File object
-        const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
-            type: `application/${objFile.Extensao}`,
-            //type: 'text/plain',
-            lastModified: new Date(),
-        });
+            if (fileArq !== null && fileArq !== undefined) {
+                objFile = {
+                    NomeArquivo: fileArq.split('.')[0],
+                    Extensao: fileArq.split('.').pop(),
+                };
+            }
 
-        // Now let's create a DataTransfer to get a FileList
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(arqFile);
-        fileInput.files = dataTransfer.files;
+            // Create a new File object
+            const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
+                type: `application/${objFile.Extensao}`,
+                //type: 'text/plain',
+                lastModified: new Date(),
+            });
 
-        // Help Safari out
-        if (fileInput.webkitEntries.length) {
-            fileInput.dataset.file = `${dataTransfer.files[0].name}`;
-        }
+            // Now let's create a DataTransfer to get a FileList
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(arqFile);
+            fileInput.files = dataTransfer.files;
+
+            // Help Safari out
+            if (fileInput.webkitEntries.length) {
+                fileInput.dataset.file = `${dataTransfer.files[0].name}`;
+            }
+        //}
     }
 }
 
 function fn_ModalGetObj(data, action) {
-    console.log("fn_ModalGetObj data ::: ", data);
+    //console.log("fn_ModalGetObj data ::: ", data);
     //console.log("fn_ModalGetObj action ::: ", action);
 
-    console.log("fn_ModalGetObj objModalData ::: ", objModalData);
+    //console.log("fn_ModalGetObj objModalData ::: ", objModalData);
 
     var loadCmbs = fn_PopLoadCombos();
-    console.log("fn_ModalGetObj hdMarcaId ::: ", $('#hdMarcaId').val());
-    console.log("fn_ModalGetObj hdMarcaFaseId ::: ", $('#hdMarcaFaseId').val());
+    //console.log("fn_ModalGetObj hdMarcaId ::: ", $('#hdMarcaId').val());
+    //console.log("fn_ModalGetObj hdMarcaFaseId ::: ", $('#hdMarcaFaseId').val());
 
     const objFormData = {
         Id: $('#hdMarcaId').val(),
@@ -1611,7 +1620,7 @@ function fn_ModalGetObj(data, action) {
 }
 
 function fnItem_Edit(varItems_Row) {
-    console.log("fnItem_Edit CLICK ::: ", varItems_Row);
+    //console.log("fnItem_Edit CLICK ::: ", varItems_Row);
     //var varPop_BtnAction = 'Edit';
 
     var varAjax_UrlController = `${var_Controller}/Edit`,
