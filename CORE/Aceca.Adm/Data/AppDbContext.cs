@@ -78,6 +78,7 @@ namespace Aceca.Adm.Data
         public DbSet<Socio> Socio { get; set; }        
         public DbSet<SocioAniversario> SocioAniversario { get; set; }
         public DbSet<SocioColecao> SocioColecao { get; set; }
+        public DbSet<SocioColecaoInfo> SocioColecaoInfo { get; set; }
         public DbSet<SocioContato> SocioContato { get; set; }
         public DbSet<SocioEndereco> SocioEndereco { get; set; }
         public DbSet<SocioFinanceiro> SocioFinanceiro { get; set; }

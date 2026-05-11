@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
             //   this.closest('form').submit();
             fn_ModalSalvar(e);
         });
+
         /*
         $('.data-submit').on('click', function (e) {
             e.preventDefault();
