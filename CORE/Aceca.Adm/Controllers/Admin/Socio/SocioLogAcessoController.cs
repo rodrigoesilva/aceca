@@ -47,9 +47,8 @@ namespace Aceca.Adm.Controllers.Admin.Usuario
             try
             {
                 var lstModel = await _db.SocioLogAcesso
-                    .Include(x => x.Usuario)
-                    .Include(x => x.Usuario.Socio)
-                    .Include(x => x.Usuario.Socio.SocioPerfil)
+                    .Include(x => x.Socio)
+                    .Include(x => x.Socio.SocioPerfil)
                     .OrderByDescending(x => x.UltimoLogin)
                     .AsNoTracking()
                     .ToListAsync();

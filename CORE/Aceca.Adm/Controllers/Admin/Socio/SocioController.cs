@@ -1,10 +1,11 @@
 ﻿using Aceca.Adm.Data;
+using Aceca.Adm.Helper;
 using Aceca.Adm.Models;
 using Aceca.Adm.VMModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Mail;
 using System.Reflection;
+using System.Security.Cryptography;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
@@ -16,6 +17,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
+        private readonly HelperExtensionsController _helperController;
 
         private readonly string _urlBaseImg = string.Empty;
         private readonly string _urlBaseSite = string.Empty;
@@ -24,12 +26,15 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
         #endregion
 
-        public SocioController(ILogger<SocioController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
+        public SocioController(ILogger<SocioController> logger, AppDbContext db
+            , IWebHostEnvironment env, IConfiguration cfg
+            , HelperExtensionsController helperController)
         {
             _logger = logger;
             _db = db;
             _appEnvironment = env;
             _appConfiguration = cfg;
+            _helperController = helperController;
 
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
@@ -48,13 +53,6 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         {
             try
             {
-                /*
-                var lstModel = await _db.Socio
-                    .Include(x => x.SocioPerfil)
-                    .OrderBy(x => x.Nome)
-                    .AsNoTracking()
-                    .ToListAsync();
-                */
 
                 var result = from s in _db.Socio
                              join sa in _db.SocioAniversario on s.Id equals sa.SocioId
@@ -192,11 +190,28 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             message = "Nome deve ser preenchido"
                         });
 
+                    if (string.IsNullOrEmpty(model?.Email))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Email deve ser preenchido"
+
+                        });
+
+                    if (!_helperController.IsValidEmailUsingMailAddress(model?.Email?.Trim()?.ToLower()))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Formato de E-mail Inválido"
+                        });
+
                     var newModel = new Models.Socio
                     {
                         SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
                         Nome = model.Nome,
-                        ImgAvatar = model.ImgAvatar,
+                        ImgAvatar = !string.IsNullOrEmpty(model.ImgAvatar) ? model.ImgAvatar : null,
                         MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
                         Ativo = model.Ativo,
                     };
@@ -214,18 +229,29 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             message = "Falha ao Cadastrar Socio"
                         });
 
-                    #endregion
+                    #endregion    
 
-                    #region SocioContato
+                    #region SocioSeguranca
 
-                    if (string.IsNullOrEmpty(model?.Email))
+                    var resulCreateSocioSeguranca = await Create_SocioSeguranca(model);
+
+                    if (resulCreateSocioSeguranca.GetType() == typeof(NotFoundObjectResult) ||
+                               resulCreateSocioSeguranca.GetType() == typeof(NotFoundResult) ||
+                               resulCreateSocioSeguranca.GetType() == typeof(BadRequestObjectResult) ||
+                               resulCreateSocioSeguranca.GetType() == typeof(BadRequestResult))
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Email deve ser preenchido"
-
+                            message = "Falha ao Cadastrar Socio Seguranca",
+                            data = model
                         });
+
+                    var objJsonResulCreateSocioSegurancaReturnApi = ((ObjectResult)resulCreateSocioSeguranca).Value;
+
+                    #endregion
+
+                    #region SocioContato
 
                     var resulCreateSocioContato = await Create_SocioContato(model);
 
@@ -505,13 +531,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 _db.SaveChanges();
 
                 return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
+                {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
@@ -536,11 +556,63 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         #endregion
 
         #region Socio Derivacao
+        public async Task<IActionResult> Create_SocioSeguranca(VMSocio model)
+        {
+            try
+            {
+                var newModel = new SocioSeguranca();
+
+                using (MD5 md5Hash = MD5.Create())
+                {
+                    string strTempPass = _helperController.GenerateStringPassword(8);
+
+                    newModel = new SocioSeguranca
+                    {
+                        SocioId = (int)model.Id,
+                        Email = model?.Email?.Trim()?.ToLower(),
+                        Senha = _helperController.GenerateMD5HashPassword(md5Hash, strTempPass),
+                        SenhaAberta = strTempPass,
+                        SenhaAtualizada = false,
+                        NomeUsuario = model?.Nome,
+                        UltimoLogin = DateTime.UtcNow,
+                        Token = null,
+                        ResetPasswordToken = null,
+                        ResetPasswordTokenExpiry = null,
+                    };
+                }
+
+                _db.SocioSeguranca.Add(newModel);
+                _db.SaveChanges();
+
+                var newSocioContatoId = newModel?.Id;
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
         public async Task<IActionResult> Create_SocioContato(VMSocio model)
         {
             try
             {
-                if (!IsValidEmailUsingMailAddress(model?.Email?.Trim()?.ToLower()))
+                if (!_helperController.IsValidEmailUsingMailAddress(model?.Email?.Trim()?.ToLower()))
                     return BadRequest(new
                     {
                         bResult = false,
@@ -684,25 +756,6 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
         }
 
-        #endregion
-
-        #region Validador Email
-        public bool IsValidEmailUsingMailAddress(string emailAddress)
-        {
-            if (string.IsNullOrWhiteSpace(emailAddress))
-                return false;
-            try
-            {
-                var mailAddress = new MailAddress(emailAddress);
-                // Optional extra check to ensure the original input matches the parsed address,
-                // preventing issues with inputs like "John Doe" <john@doe.com>.
-                return mailAddress.Address == emailAddress;
-            }
-            catch (FormatException)
-            {
-                return false;
-            }
-        }
         #endregion
     }
 }

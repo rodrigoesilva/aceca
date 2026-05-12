@@ -149,17 +149,20 @@ async function fn_LoginAuth() {
                 }
 
             } else {
+                let msgContato = `<b>Não é possivel realizar o acesso. <br><br>Entre em contato conosco !!!</b>`;
+
+                //console.log(`AUTH fn_LoginAuth - user :: `, user);
 
                 Swal.fire({
-                    title: 'Dados Inv&aacute;lidos!!',
+                    title: `${user?.message}`,
                     icon: 'error',
-                    html: `<b>E-mail ou senha incorretos. <br><br> Verifique suas credenciais!!!</b>`,
+                    html: `${msgContato}`,
                     focusConfirm: false,
                     confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
                     customClass: {
                         confirmButton: 'btn btn-label-danger waves-effect'
                     }
-                }).then((result) => {
+                }).then((resultFail) => {
 
                     btn.disabled = false;
                     btn.textContent = 'Entrar';
@@ -167,7 +170,7 @@ async function fn_LoginAuth() {
                     fn_LoginLimpar();
                 });
 
-                err.innerHTML = '❌ E-mail ou senha incorretos.<br><br> Verifique suas credenciais.';
+                err.innerHTML = `❌ ${msgContato}`;
                 err.style.display = 'block';
 
                 btn.disabled = false;
@@ -196,7 +199,7 @@ async function fn_LoginAuth() {
                 customClass: {
                     confirmButton: 'btn btn-label-danger waves-effect'
                 }
-            }).then((result) => {
+            }).then((resultFail) => {
                 fn_LoginLimpar();
             });
         }

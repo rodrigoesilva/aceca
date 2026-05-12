@@ -1,9 +1,9 @@
 ﻿using Aceca.Adm.Data;
+using Aceca.Adm.Helper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
@@ -15,6 +15,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
+        private readonly HelperExtensionsController _helperController;
 
         private readonly string _urlBaseImg = string.Empty;
         private readonly string _urlBaseSite = string.Empty;
@@ -23,12 +24,15 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
         #endregion
 
-        public SocioSegurancaController(ILogger<SocioSegurancaController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
-        {
+        public SocioSegurancaController(ILogger<SocioSegurancaController> logger, AppDbContext db
+            , IWebHostEnvironment env, IConfiguration cfg
+            , HelperExtensionsController helperController)
+        { 
             _logger = logger;
             _db = db;
             _appEnvironment = env;
             _appConfiguration = cfg;
+            _helperController = helperController;
 
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
@@ -99,13 +103,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 if (ModelState.IsValid)
                 {
                     return Ok(new
-                    {/*
-                        _logger.LogInformation(
-                        $"{lstModel} graus Fahrenheit = " +
-                        $"{resultado.Celsius} graus Celsius = " +
-                        $"{resultado.Kelvin} graus Kelvin");
-                    return resultado;
-                        */
+                    {
                         bResult = true,
                         type = "OK",
                         message = "SUCESSO ::: ",
@@ -195,13 +193,12 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     // Atualiza senha
                     using (MD5 md5Hash = MD5.Create())
                     {
-                        string strTempPass = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds().ToString();
+                        string strTempPass = _helperController.GenerateStringPassword(8);
 
-                        string hash = GetMd5Hash(md5Hash, strTempPass);
+                        string hash = _helperController.GenerateMD5HashPassword(md5Hash, strTempPass);
                         newModelSocio.Senha = hash;
                         newModelSocio.SenhaAberta = strTempPass;
                         newModelSocio.SenhaAtualizada = false;
-                        newModelSocio.Senha1 = strTempPass;
                     }
 
                     _db.Entry(newModelSocio).State = EntityState.Modified;
@@ -303,23 +300,6 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             }
         }
 
-        #endregion
-
-
-        // ──────────────────────────────────────────────
-        // FUNÇÕES AUXILIARES
-        // ──────────────────────────────────────────────
-
-        #region Funções - MD5
-
-        static string GetMd5Hash(MD5 md5Hash, string input)
-        {
-            byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
-            var sBuilder = new StringBuilder();
-            for (int i = 0; i < data.Length; i++)
-                sBuilder.Append(data[i].ToString("x2"));
-            return sBuilder.ToString();
-        }
         #endregion
     }
 }

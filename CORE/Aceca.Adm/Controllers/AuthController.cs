@@ -1,4 +1,5 @@
 using Aceca.Adm.Data;
+using Aceca.Adm.Helper;
 using Aceca.Adm.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -30,6 +31,7 @@ namespace Aceca.Adm.Controllers
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly IServiceProvider _serviceProvider;
         private readonly AppDbContext _db;
+        private readonly HelperExtensionsController _helperController;
         private EPerfil _socioPerfil;
 
         private readonly string _urlBaseImg = string.Empty;
@@ -41,13 +43,17 @@ namespace Aceca.Adm.Controllers
         //
 
         #endregion
-        public AuthController(ILogger<AuthController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg, IServiceProvider serviceProvider)
-        {
+        public AuthController(ILogger<AuthController> logger, AppDbContext db
+            , IWebHostEnvironment env, IConfiguration cfg
+            , IServiceProvider serviceProvider
+            , HelperExtensionsController helperController)
+        { 
             _logger = logger;
             _db = db;
             _appEnvironment = env;
             _appConfiguration = cfg;
             _serviceProvider = serviceProvider;
+            _helperController = helperController;
 
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
@@ -199,10 +205,28 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
-                var user = await _db.Usuario.FirstOrDefaultAsync(s => s.Email == dto.Email.ToLower());
+                var user = await _db.SocioSeguranca
+                    .Include(x => x.Socio)
+                    .Include(x => x.Socio.SocioPerfil)
+                    .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 if (user == null)
-                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
+
+                if (user.SocioId <= 0)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
+
+                if (user.Socio.SocioPerfilId.Equals(6))
+                {
+                    ViewBag.Error = "Usuário Banido";
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
+                }
+
+                if (!user.Socio.Ativo)
+                {
+                    ViewBag.Error = "Usuário Inativo";
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
+                }
 
                 if (!LoginValidacao(dto.Senha, user))
                 {
@@ -210,42 +234,25 @@ namespace Aceca.Adm.Controllers
                     return Ok(new { bResult = false, type = "ERRO", message = "Credenciais Inválidas" });
                 }
 
-                var socio = await _db.Socio
-                    .Include(f => f.SocioPerfil)
-                    .FirstOrDefaultAsync(s => s.Id == user.SocioId);
-
-                if (socio == null)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
-
-                var userPass = user.Senha;
-
-                string strToken = LoginTokenJwt(user, socio);
+                string strToken = LoginTokenJwt(user, user.Socio);
 
                 if (string.IsNullOrEmpty(strToken))
                     return BadRequest(new { bResult = false, type = "ERRO", message = "Token Inválido" });
 
-                if (!await LoginSetClaimsAsync(user, socio))
+                if (!await LoginSetClaimsAsync(user, user.Socio))
                     return BadRequest(new { bResult = false, type = "ERRO", message = "SetClaims Inválido" });
 
-                var rootPathImgAvatar = Path.Combine(_appEnvironment.WebRootPath, "img", "avatars", "socio", "imgAvatar", socio?.Id?.ToString(), ".jpg");
-
-                // Atualiza UltimoLogin
-                user.UltimoLogin = DateTime.UtcNow;
-
-                user.Senha = !string.IsNullOrEmpty(user.Senha) ? user.Senha : userPass;
-                user.NomeUsuario = socio.Nome;
-
-                await _db.SaveChangesAsync();
+                var rootPathImgAvatar = Path.Combine(_appEnvironment.WebRootPath, "img", "avatars", "socio", "imgAvatar", user.SocioId.ToString(), ".jpg");
 
                 return Ok(new
                 {
                     bResult = true,
                     token = strToken,
-                    nameIdentifier = socio.Id.ToString(),
-                    nome = socio.Nome,
-                    avatar = !string.IsNullOrEmpty(socio.ImgAvatar) ? rootPathImgAvatar : rootPathImgAvatar,
-                    cargo = socio?.SocioPerfil?.Descricao,
-                    isPerfil = Convert.ToBoolean(socio?.SocioPerfil?.Descricao?.Equals("Administracao")),
+                    nameIdentifier = user.SocioId.ToString(),
+                    nome = user.Socio.Nome,
+                    avatar = !string.IsNullOrEmpty(user.Socio.ImgAvatar) ? rootPathImgAvatar : rootPathImgAvatar,
+                    cargo = user.Socio?.SocioPerfil?.Descricao,
+                    isPerfil = Convert.ToBoolean(user.Socio?.SocioPerfil?.Descricao?.Equals("Administracao")),
                     pswuptd = user.SenhaAtualizada
                 });
             }
@@ -263,7 +270,7 @@ namespace Aceca.Adm.Controllers
         // LOGIN-LOG
         // ──────────────────────────────────────────────
 
-        #region Login
+        #region LoginLog
 
         [HttpPost]
         public async Task<IActionResult> LoginLog([FromForm] string strIp, [FromForm] string srtId)
@@ -275,56 +282,43 @@ namespace Aceca.Adm.Controllers
                 if (userId <= 0)
                     return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
 
-                var responseGeo = await GetGeoInfoAsync(strIp);
+                var objGeo = new GeoModel();
 
-                if (responseGeo.GetType() == typeof(NotFoundObjectResult) ||
-                    responseGeo.GetType() == typeof(BadRequestObjectResult))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "geoUrl Inválido" });
+                if (!string.IsNullOrEmpty(strIp)){
 
-                var jObjResult = ((ObjectResult)responseGeo).Value;
+                    var responseGeo = await GetGeoInfoAsync(strIp);
 
-                var json = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
+                    var jObjResult = ((ObjectResult)responseGeo).Value;
 
-                // Parse a JSON string into a JsonNode
-                JsonNode jsonNode = JsonNode.Parse(json);
+                    var json = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
 
-                if (string.IsNullOrEmpty(jsonNode?.ToString()))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Geo Inválido" });
+                    // Parse a JSON string into a JsonNode
+                    JsonNode jsonNode = JsonNode.Parse(json);
 
-                //Save User Log
-                //var responseLog = await CreateUserLog(jsonNode, userId);
+                    // Convert to a C# object
+                    objGeo = jsonNode.Deserialize<GeoModel>();
 
-                // Convert to a C# object
-                var objGeo = jsonNode.Deserialize<GeoModel>();
+                    var newModel = new Models.SocioLogAcesso
+                    {
+                        SocioId = userId,
+                        IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
+                        OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
+                        Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
+                        Device = null,//!string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
+                        Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
+                        Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
+                        Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
+                        Latitude = objGeo?.latitude.ToString(),
+                        Longitude = objGeo?.longitude.ToString(),
+                        UltimoLogin = DateTime.UtcNow.AddHours(-3),
+                    };
 
-                /*
-                var strCurrentTime = jsonNode["time_zone"]["current_time"].ToString();
-
-                if (DateTime.TryParse(strCurrentTime, out DateTime dtUltimoLogin))
-                {
-                    // Use result here
-                }*/
-
-                var newModel = new Models.UsuarioLog
-                {
-                    UsuarioId = userId,
-                    IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
-                    OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
-                    Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
-                    Device = null,//!string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
-                    Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
-                    Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
-                    Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
-                    Latitude = objGeo?.latitude.ToString(),
-                    Longitude = objGeo?.longitude.ToString(),
-                    UltimoLogin = DateTime.UtcNow.AddHours(-3),
-                };
-
-                using (var context = new AppDbContext())
-                {
-                    // Add data
-                    context.UsuarioLog.Add(newModel);
-                    context.SaveChanges();
+                    using (var context = new AppDbContext())
+                    {
+                        // Add data
+                        context.SocioLogAcesso.Add(newModel);
+                        context.SaveChanges();
+                    }
                 }
 
                 return Ok(new
@@ -360,19 +354,30 @@ namespace Aceca.Adm.Controllers
                 if (string.IsNullOrWhiteSpace(dto?.Email))
                     return Ok(new { bResult = false, message = "E-mail inválido." });
 
-                var user = await _db.Usuario
-                    .FirstOrDefaultAsync(s => s.Email == dto.Email.Trim().ToLower());
+                var user = await _db.SocioSeguranca
+                   .Include(x => x.Socio)
+                   .Include(x => x.Socio.SocioPerfil)
+                   .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 // Por segurança, retorna sucesso mesmo se o e-mail não existir,
                 // para não expor quais e-mails estão cadastrados.
                 if (user == null)
                     return Ok(new { bResult = true, message = "Se o e-mail existir, você receberá as instruções." });
 
-                var socio = await _db.Socio
-                    .FirstOrDefaultAsync(s => s.Id == user.SocioId);
-
-                if (socio == null)
+                if (user.SocioId <= 0)
                     return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
+
+                if (user.Socio.SocioPerfilId.Equals(6))
+                {
+                    ViewBag.Error = "Usuário Banido";
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
+                }
+
+                if (!user.Socio.Ativo)
+                {
+                    ViewBag.Error = "Usuário Inativo";
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
+                }
 
                 // Gera token seguro
                 var tokenBytes = RandomNumberGenerator.GetBytes(32);
@@ -388,7 +393,7 @@ namespace Aceca.Adm.Controllers
                 var resetLink = $"{_urlBaseApp}/Auth/ResetPassword?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
 
                 // Envia e-mail
-                var result = await EnviarEmailResetSenhaAsync(user.Email, socio.Nome, resetLink);
+                var result = await EnviarEmailResetSenhaAsync(user.Email, user.Socio.Nome, resetLink);
 
                 if (result.GetType() == typeof(NotFoundObjectResult) ||
                     result.GetType() == typeof(BadRequestObjectResult))
@@ -443,11 +448,28 @@ namespace Aceca.Adm.Controllers
                 if (!dto.Senha.Any(char.IsDigit))
                     return Ok(new { bResult = false, message = "A senha deve conter pelo menos 1 número." });
 
-                var user = await _db.Usuario
-                    .FirstOrDefaultAsync(s => s.Email == dto.Email.Trim().ToLower());
+                var user = await _db.SocioSeguranca
+                    .Include(x => x.Socio)
+                    .Include(x => x.Socio.SocioPerfil)
+                    .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 if (user == null)
-                    return Ok(new { bResult = false, message = "Usuário não encontrado." });
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
+
+                if (user.SocioId <= 0)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
+
+                if (user.Socio.SocioPerfilId.Equals(6))
+                {
+                    ViewBag.Error = "Usuário Banido";
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
+                }
+
+                if (!user.Socio.Ativo)
+                {
+                    ViewBag.Error = "Usuário Inativo";
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
+                }
 
                 // Valida token e expiração
                 if (user.ResetPasswordToken != dto.Token ||
@@ -458,7 +480,8 @@ namespace Aceca.Adm.Controllers
                 // Atualiza senha
                 using (MD5 md5Hash = MD5.Create())
                 {
-                    string hash = GetMd5Hash(md5Hash, dto.Senha);
+                    string hash = _helperController.GenerateMD5HashPassword(md5Hash, dto.Senha);
+
                     user.Senha = hash;
                     user.SenhaAberta = dto.Senha;
                     user.SenhaAtualizada = true;
@@ -525,46 +548,61 @@ namespace Aceca.Adm.Controllers
         #endregion
 
         // ──────────────────────────────────────────────
-        // UPDATE DATA
+        // LOGIN UPDATE DATA
         // ──────────────────────────────────────────────
 
-        #region Update Data
+        #region LOGIN Update Data
 
         [HttpPost]
-        public async Task<IActionResult> LoginUpdate([FromBody] LoginUpdt model)
+        public async Task<IActionResult> LoginUpdate([FromBody] LoginUpdt dto)
         {
             try
             {
-                var newModel = new Models.Usuario();
+                var newModel = new Models.SocioSeguranca();
 
-                var user = await _db.Usuario.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.Email == model.Email.ToLower());
+                var user = await _db.SocioSeguranca
+                    .Include(x => x.Socio)
+                    .Include(x => x.Socio.SocioPerfil)
+                    .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 if (user == null)
-                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
 
-                var socio = await _db.Socio
-                    .Include(f => f.SocioPerfil)
-                    .FirstOrDefaultAsync(s => s.Id == user.SocioId);
-
-                if (socio == null)
+                if (user.SocioId <= 0)
                     return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
+
+                if (user.Socio.SocioPerfilId.Equals(6))
+                {
+                    ViewBag.Error = "Usuário Banido";
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
+                }
+
+                if (!user.Socio.Ativo)
+                {
+                    ViewBag.Error = "Usuário Inativo";
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
+                }
 
                 using (MD5 md5Hash = MD5.Create())
                 {
-                    string hash = GetMd5Hash(md5Hash, model.Senha);
+                    string hash = _helperController.GenerateMD5HashPassword(md5Hash, dto.Senha);
 
-                    newModel = new Models.Usuario
+                    newModel = new Models.SocioSeguranca
                     {
                         Id = user.Id,
-                        SocioId = socio.Id,
-                        Email = model.Email,
+                        SocioId = user.SocioId,
+                        Email = dto.Email,
                         Senha = hash,
-                        SenhaAberta = model.Senha,
+                        SenhaAberta = dto.Senha,
                         SenhaAtualizada = true,
-                        NomeUsuario = model.Username,
+                        NomeUsuario = dto.Username,
                         UltimoLogin = DateTime.UtcNow,
-                        Ativo = true,
+
+                        Socio = new Socio
+                        {
+                            MostrarSite = dto.ChkTermo,
+                            Ativo = true,
+                        }
                     };
 
                     _db.Entry(newModel).State = EntityState.Modified;
@@ -577,10 +615,10 @@ namespace Aceca.Adm.Controllers
                 return Ok(new
                 {
                     bResult = true,
-                    nameIdentifier = socio.Id.ToString(),
-                    nome = socio.Nome,
-                    cargo = socio?.SocioPerfil?.Descricao,
-                    isPerfil = Convert.ToBoolean(socio?.SocioPerfil?.Descricao?.Equals("Administracao")),
+                    nameIdentifier = user.SocioId.ToString(),
+                    nome = user.Socio.Nome,
+                    cargo = user.Socio?.SocioPerfil?.Descricao,
+                    isPerfil = Convert.ToBoolean(user.Socio?.SocioPerfil?.Descricao?.Equals("Administracao")),
                     pswuptd = true
                 });
             }
@@ -594,49 +632,19 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
-        // ──────────────────────────────────────────────
-        // FUNÇÕES AUXILIARES
-        // ──────────────────────────────────────────────
-
-        #region Funções - MD5
-
-        static string GetMd5Hash(MD5 md5Hash, string input)
-        {
-            byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(input));
-            var sBuilder = new StringBuilder();
-            for (int i = 0; i < data.Length; i++)
-                sBuilder.Append(data[i].ToString("x2"));
-            return sBuilder.ToString();
-        }
-
-        private bool VerifyMd5HashWithMySecurityAlgo(MD5 md5Hash, string input, string hash)
-        {
-            string hashOfInput = GetMd5Hash(md5Hash, input);
-            StringComparer comparer = StringComparer.OrdinalIgnoreCase;
-            return comparer.Compare(hashOfInput, hash) == 0;
-        }
-
-        private static Guid GenerateGuidFromString(string input)
-        {
-            using MD5 md5 = MD5.Create();
-            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-            byte[] hashBytes = md5.ComputeHash(inputBytes);
-            return new Guid(hashBytes);
-        }
-
-        #endregion
-
+        
         #region Funções - Login
 
-        private bool LoginValidacao(string passSource, Models.Usuario user)
+        private bool LoginValidacao(string passSource, Models.SocioSeguranca user)
         {
             using MD5 md5Hash = MD5.Create();
-            if (user is null || !VerifyMd5HashWithMySecurityAlgo(md5Hash, passSource, user.Senha))
+            if (user is null || !_helperController.VerifyMd5HashWithMySecurity(md5Hash, passSource, user.Senha))
                 return false;
+
             return true;
         }
 
-        private string LoginTokenJwt(Models.Usuario user, Socio socio)
+        private string LoginTokenJwt(Models.SocioSeguranca user, Socio socio)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appConfiguration["Jwt:Key"]!));
@@ -659,7 +667,7 @@ namespace Aceca.Adm.Controllers
             return strTok;
         }
 
-        private async Task<bool> LoginSetClaimsAsync(Models.Usuario user, Socio socio)
+        private async Task<bool> LoginSetClaimsAsync(Models.SocioSeguranca user, Socio socio)
         {
             try
             {
@@ -924,80 +932,6 @@ namespace Aceca.Adm.Controllers
                 return strIP;
             }
 
-        }
-
-        #endregion
-
-        #region UserLog
-        public async Task<IActionResult> CreateUserLog(JsonNode jsonNode, int userId)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(jsonNode?.ToString()))
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "jsonNode null"
-                    });
-
-                if (userId <= 0)
-                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
-
-                // Convert to a C# object
-                var objGeo = jsonNode.Deserialize<GeoModel>();
-
-                var newModel = new Models.UsuarioLog
-                {
-                    UsuarioId = userId,
-                    IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
-                    OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
-                    Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
-                    Device = null,//!string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
-                    Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
-                    Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
-                    Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
-                    Latitude = objGeo?.latitude.ToString(),
-                    Longitude = objGeo?.longitude.ToString(),
-                    //UltimoLogin = objGeo?.longitude.ToString(),
-                };
-
-                using (var context = new AppDbContext())
-                {
-                    // Add data
-                    context.UsuarioLog.Add(newModel);
-                    context.SaveChanges();
-                }
-
-                if (newModel?.Id <= 0)
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Falha ao Salvar"
-                    });
-
-                return Ok(new
-                {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = newModel,
-                });
-            }
-            catch (Exception ex)
-            {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
-            }
         }
 
         #endregion

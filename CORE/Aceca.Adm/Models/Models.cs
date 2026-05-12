@@ -425,7 +425,7 @@ namespace Aceca.Adm.Models
     {
         [Key] public int? Id { get; set; }
 
-        public int? UsuarioId { get; set; }
+        public int? SocioId { get; set; }
         public string? IP { get; set; }
         public string? OS { get; set; }
         public string? Browser { get; set; }
@@ -437,7 +437,7 @@ namespace Aceca.Adm.Models
         [MaxLength(50)] public string? Longitude { get; set; }
         [Column("last_login")] public DateTime? UltimoLogin { get; set; }
 
-        public Usuario? Usuario { get; set; }
+        public Socio? Socio { get; set; }
     }
 
     [Table("socio_perfil")]
@@ -451,21 +451,20 @@ namespace Aceca.Adm.Models
     {
         [Key] public int? Id { get; set; }
 
-        public int? SocioId { get; set; }
+        public int SocioId { get; set; }
+        [Column("nome_usuario")] public string? NomeUsuario { get; set; } = null;
         public string? Email { get; set; } = null;
         public string? Senha { get; set; } = null;
         [Column("senha_aberta")] public string? SenhaAberta { get; set; }
-        public bool SenhaAtualizada { get; set; }
-        [Column("_senha")] public string? Senha1 { get; set; }
-        [Column("_usuario")] public string? NomeUsuario { get; set; }
+        public bool SenhaAtualizada { get; set; }        
         [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
 
         public Socio? Socio { get; set; }
 
         [NotMapped] public string? Token { get; set; }
 
-        public string? ResetPasswordToken { get; set; }
-        public DateTime? ResetPasswordTokenExpiry { get; set; }
+        public string? ResetPasswordToken { get; set; } = null;
+        public DateTime? ResetPasswordTokenExpiry { get; set; } = null;
     }
 
     #endregion

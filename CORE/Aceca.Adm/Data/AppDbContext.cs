@@ -91,12 +91,6 @@ namespace Aceca.Adm.Data
         public DbSet<TipoPagamento> TipoPagamento { get; set; }
         #endregion
 
-        #region Usuario
-        public DbSet<Usuario> Usuario { get; set; }
-        public DbSet<UsuarioLog> UsuarioLog { get; set; }
-
-        #endregion
-
         public DbSet<Transactions> Transactions { get; set; } = default!;
     }
 }
