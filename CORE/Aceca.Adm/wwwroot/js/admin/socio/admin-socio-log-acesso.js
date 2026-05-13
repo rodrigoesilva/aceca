@@ -123,7 +123,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'socio.nome',
+                    data: 'socioEndereco.socio.nome',
                     targets: 2,
                     /*
                     render: function (data, type, row) {
@@ -131,55 +131,60 @@ function fn_GridList(formValid) {
                     }
                     */
                 },
-                // COLUNA - Cidade
+                // COLUNA - Endereco socio 
+                {
+                    data: 'socioEndereco.cidade',
+                    targets: 3,
+                    className: "text-center",
+                    render: function (data, type, full) {
+                        let id = full.id;
+
+                        if (id != 0 && data !== undefined && data !== null) {
+
+                            let socioEnderecoCidade = full.socioEndereco.cidade;
+                            let socioEnderecoUF = full.socioEndereco.estado;
+
+                            let socioEndereco = `${socioEnderecoUF}<br>${socioEnderecoCidade}`;
+
+                            return socioEndereco;
+
+                        } else {
+                            return '';
+                        }
+                    }
+                },                
+                // COLUNA - Origem Acesso
                 {
                     data: 'cidade',
-                    targets: 3,
-                    //className: "text-center",
-                },
-                // COLUNA - Estado
-                {
-                    data: 'estado',
                     targets: 4,
                     className: "text-center",
-                },
-                // COLUNA - Device
-                {
-                    visible: false,
-                    data: 'device',
-                    targets: 5,
-                    className: "text-center",
+                    render: function (data, type, full) {
+                        let id = full.id;
+
+                        if (id != 0 && data !== undefined && data !== null) {
+
+                            let origemCidade = full.cidade;
+                            let origemUF = full.estado;
+
+                            let origemAcesso = `${origemUF}<br>${origemCidade}`;
+
+                            return origemAcesso;
+
+                        } else {
+                            return '';
+                        }
+                    }
                 },
                 // COLUNA - IP
                 {
-                    visible:false,
                     data: 'ip',
-                    targets: 6,
-                    className: "text-center",
-                },
-                // COLUNA - OS
-                {
-                    visible: false,
-                    data: 'os',
-                    targets: 7,
-                    //className: "text-center",
-                },
-                // COLUNA - Cidade Acesso
-                {
-                    data: 'cidade',
-                    targets: 8,
-                    //className: "text-center",
-                },
-                // COLUNA - Estado Acesso
-                {
-                    data: 'estado',
-                    targets: 9,
+                    targets: 5,
                     className: "text-center",
                 },
                 // COLUNA - Ultimo Login
                 {
                     data: 'ultimoLogin',
-                    targets: 10,
+                    targets: 6,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.id;
@@ -192,7 +197,8 @@ function fn_GridList(formValid) {
                                 var gdat = '1900-01-01';
                                 return gdat;
                             } else {
-                                let dataFormat = moment.utc(data.toLocaleString()).format("DD/MM/YYYY");
+                                //let dataFormat = data ? moment.utc(data.toLocaleString()).subtract(3, 'hours').format("DD/MM/YYYY[<br>]HH:mm:ss") : '-';
+                                let dataFormat = data ? moment.utc(data.toLocaleString()).format("DD/MM/YYYY[<br>]HH:mm:ss") : '-';
 
                                 return (dataFormat);
                             }
@@ -204,7 +210,7 @@ function fn_GridList(formValid) {
                 // COLUNA - Status                    
                 {
                     targets: -2,
-                    data: 'socio.ativo',
+                    data: 'socioEndereco.socio.ativo',
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);

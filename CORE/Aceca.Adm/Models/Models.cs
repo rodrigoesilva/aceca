@@ -422,21 +422,20 @@ namespace Aceca.Adm.Models
     [Table("socio_log_acesso")]
     public class SocioLogAcesso
     {
-        [Key] public int? Id { get; set; }
-
-        public int? SocioId { get; set; }
+        public int? Id { get; set; }
+        public int? SocioEnderecoId { get; set; }
         public string? IP { get; set; }
         public string? OS { get; set; }
         public string? Browser { get; set; }
         public string? Device { get; set; }
         public string? Operadora { get; set; }
-        [MaxLength(50)] public string? Estado { get; set; }
+        public string? Estado { get; set; }
         public string? Cidade { get; set; }
-        [MaxLength(50)] public string? Latitude { get; set; }
-        [MaxLength(50)] public string? Longitude { get; set; }
+        public string? Latitude { get; set; }
+        public string? Longitude { get; set; }
         [Column("last_login")] public DateTime? UltimoLogin { get; set; }
 
-        public Socio? Socio { get; set; }
+        public SocioEndereco? SocioEndereco { get; set; }
     }
 
     [Table("socio_perfil")]

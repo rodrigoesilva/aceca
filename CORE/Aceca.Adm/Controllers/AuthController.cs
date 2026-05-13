@@ -300,7 +300,7 @@ namespace Aceca.Adm.Controllers
 
                     var newModel = new Models.SocioLogAcesso
                     {
-                        SocioId = userId,
+                        SocioEnderecoId = userId,
                         IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
                         OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
                         Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
