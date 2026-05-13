@@ -6,7 +6,7 @@
 
 //#region Declare
 
-let var_Nome = 'Gest&atilde;o & Seguran&ccedil;a -> S&oacute;rios',
+let var_Nome = 'Gest&atilde;o & Seguran&ccedil;a -> S&oacute;cios',
     var_Controller = '/SocioSeguranca',
     var_ControllerCmb = '/HelperExtensions',
 
@@ -100,7 +100,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    //console.log("data fn :: ", result)
+                    //console.log("fn_GridList :: ", result)
                     return result.data;
                 }
             },
@@ -145,10 +145,16 @@ function fn_GridList(formValid) {
                     targets: 4,
                     //className: "text-center",
                 },
+                // COLUNA - Senha
+                {
+                    data: 'senhaAberta',
+                    targets: 5,
+                    //className: "text-center",
+                },
                 // COLUNA - Tipo Usuario
                 {
                     data: 'socio.socioPerfilId',
-                    targets: 5,
+                    targets: 6,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.id;
@@ -195,7 +201,7 @@ function fn_GridList(formValid) {
                 // COLUNA - Ultimo Login
                 {
                     data: 'ultimoLogin',
-                    targets: 6,
+                    targets: 7,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.id;
@@ -208,7 +214,7 @@ function fn_GridList(formValid) {
                                 var gdat = '1900-01-01';
                                 return gdat;
                             } else {
-                                let dataFormat = moment.utc(data.toLocaleString()).format("DD/MM/YYYY");
+                                let dataFormat = data ? moment.utc(data.toLocaleString()).format("DD/MM/YYYY[<br>]HH:mm:ss") : '-';
 
                                 return (dataFormat);
                             }
@@ -219,7 +225,6 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Status                    
                 {
-                    visible: false,
                     targets: -2,
                     data: 'socio.ativo',
                     render: function (data, type, full, meta) {
