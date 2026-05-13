@@ -8,31 +8,30 @@ namespace Aceca.Adm.Models
     // ======================
     // MODELS
     // ======================
+    #region Model Geral
     public class LoginModel
     {
         public string Email { get; set; }
         public string Password { get; set; }
     }
-
     public class ForgotModel
     {
         public string Email { get; set; }
     }
-
     public class ResetModel
     {
         public string Email { get; set; }
         public string Password { get; set; }
         public string ConfirmPassword { get; set; }
     }
-
-
     public class BaseModel
     {
         public bool Ativo { get; set; }
         public DateTime? DataCriacao { get; set; } = DateTime.Now;
         public DateTime? DataAtualizacao { get; init; } = DateTime.Now;
     }
+
+    #endregion
 
     #region MENU
     public class MenuItem
@@ -480,52 +479,6 @@ namespace Aceca.Adm.Models
 
     #endregion
 
-    #region Usuario
-
-    [Table("usuarios")]
-    public class Usuario : BaseModel
-    {
-        [Key] public int? Id { get; set; }
-
-        public int? SocioId { get; set; }
-        public string? Email { get; set; } = null;
-        public string? Senha { get; set; } = null;
-        [Column("senha_aberta")] public string? SenhaAberta { get; set; }
-        public bool SenhaAtualizada { get; set; }
-        [Column("_senha")] public string? Senha1 { get; set; }
-        [Column("_usuario")] public string? NomeUsuario { get; set; }
-        [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
-
-        public Socio? Socio { get; set; }
-
-        [NotMapped] public string? Token { get; set; }
-
-        public string? ResetPasswordToken { get; set; }
-        public DateTime? ResetPasswordTokenExpiry { get; set; }
-    }
-
-    [Table("usuarios_log")]
-    public class UsuarioLog
-    {
-        [Key] public int? Id { get; set; }
-
-        public int? UsuarioId { get; set; }
-        public string? IP { get; set; }
-        public string? OS { get; set; }
-        public string? Browser { get; set; }
-        public string? Device { get; set; }
-        public string? Operadora { get; set; }
-        [MaxLength(50)] public string? Estado { get; set; }
-        public string? Cidade { get; set; }
-        [MaxLength(50)] public string? Latitude { get; set; }
-        [MaxLength(50)] public string? Longitude { get; set; }
-        [Column("last_login")] public DateTime? UltimoLogin { get; set; }
-
-        public Usuario? Usuario { get; set; }
-    }
-
-    #endregion
-
     #region Geo
 
     public class GeoModel
@@ -545,5 +498,5 @@ namespace Aceca.Adm.Models
     }
 
     #endregion
-
+    
 }

@@ -93,7 +93,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    //console.log("data fn :: ", result)
+                    //console.log("fn_GridList :: ", result)
                     return result.data;
                 }
             },
@@ -123,7 +123,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'usuario.socio.nome',
+                    data: 'socio.nome',
                     targets: 2,
                     /*
                     render: function (data, type, row) {
@@ -204,7 +204,7 @@ function fn_GridList(formValid) {
                 // COLUNA - Status                    
                 {
                     targets: -2,
-                    data: 'usuario.socio.ativo',
+                    data: 'socio.ativo',
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);

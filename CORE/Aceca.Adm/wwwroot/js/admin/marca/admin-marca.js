@@ -556,16 +556,63 @@ function fn_FiltrarDados() {
             { targets: -2, data: 'IncluidoPor', visible: false, responsivePriority: 99 },
             // COLUNA - Ações (sempre visível junto com control)
             {
+                visible: false,
                 data: 'Id', targets: -1, searchable: false, orderable: false, responsivePriority: 4,
-                render: function (data, type, full) {
-                    if (type !== 'display') return '';
-                    var itemObjJson = encodeURIComponent(JSON.stringify(full));
-                    return `<div class="d-inline-block text-nowrap">
+                render: function (data, type, full, meta) {
+
+                    isPerfil = document.getElementById('hdIsPerfil').value;
+                    //console.log("Acao isPerfil ::: ", isPerfil);
+
+                    let btns = '';
+
+                    //console.log("Acao data ::: ", data);
+                    //console.log("Acao type ::: ", type);
+                    //console.log("Acao full ::: ", full);
+                    //console.log("Acao meta ::: ", meta);
+                    if (type !== 'display') return ''; 
+
+                    let itemObjJson = encodeURIComponent(JSON.stringify(full));
+                    /*
+                    if (isPerfil === true) {
+                        btns = `<div class="d-inline-block">
+                                    <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                        <i class="ri-more-2-line ri-22px"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end m-0">
+                                        <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record">Editar</a></li>
+                                    <div class="dropdown-divider"></div>
+                                        <li><a href="javascript:fnItem_AddColecao(${itemObjJson},'AddColecao');" class="dropdown-item ri-add-line">Adicionar na Coleção</a></li>
+                                    </ul>
+                                </div>`;
+                    } else {
+                        btns = `<div class="d-inline-block">
+                                    <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                        <i class="ri-more-2-line ri-22px"></i>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end m-0">
+                                        <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Tenho na Coleção</a></li>
+                                        <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>
+                                        <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNaoQuero');" class="dropdown-item edit-record"><i class="icon-base ri ri-information-off-line icon-md me-2"></i>Não Quero</a></li>
+                                        <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoTroca');" class="dropdown-item edit-record"><i class="icon-base ri ri-checkbox-multiple-line icon-md me-2"></i>Para Troca</a></li>
+                                        <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoVenda');" class="dropdown-item edit-record"><i class="icon-base ri ri-shopping-cart-2-line icon-md me-2"></i>Para Venda</a></li>
+                                    <div class="dropdown-divider"></div>
+                                        <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete');" class="dropdown-item text-danger delete-record"><i class="icon-base ri ri-delete-bin-7-line icon-md me-2"></i>Remover da Coleção</a></li>
+                                    </ul>
+                                </div>`;
+                    }
+                    
+                   
+
+                    btns = `<div class="d-inline-block text-nowrap">
                         <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
                             class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
                             <i class="ri-edit-box-line ri-22px"></i>
                         </a>
                     </div>`;
+
+                     */
+
+                    return (btns);
                 }
             }
         ],
@@ -854,18 +901,19 @@ function fn_GridComplete(grid) {
         fn_FiltrosShow();
 
         isPerfil = document.getElementById('hdIsPerfil').value;
+        //console.log("fn_GridComplete - isPerfil ::: ", isPerfil);
 
         var columnNames = thisApi.columns().header().toArray().map(header => $(header).text());
-        //console.log("columnNames ::: ", columnNames);
+        //console.log("fn_GridComplete - columnNames ::: ", columnNames);
 
-        //console.log("isPerfil ::: ", isPerfil);
-
-        if (isPerfil === "false") {
+        if (isPerfil === false) {
             thisApi.column(12).visible(false); // coluna acoes
 
+            // Botao criar
             $(".create-new").attr('style', 'display: none !important');
         }
 
+        //console.log("fn_GridComplete - idMarcaFase ::: ", idMarcaFase);
         if (idMarcaFase > 0) {
             thisApi.column(9).visible(false); // coluna fase
         }

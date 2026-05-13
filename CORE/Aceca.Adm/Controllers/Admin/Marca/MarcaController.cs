@@ -837,7 +837,9 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     .Include(x => x.MarcaSubTipo.MarcaTipo)
                     .Include(x => x.MarcaFabrica)
                     .Include(x => x.MarcaImpressora)
-                    .Where(x => x.MarcaFaseId.Equals(idFase));
+                    .Where(x => x.MarcaFaseId.Equals(idFase))
+                    .OrderByDescending(x => x.CodigoAceca)
+                    .Take(10);
 
                 var queryExists = query.Any();
 
@@ -847,11 +849,11 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 if (idFase.Equals(14) // SA
                         || (idFase >= 27 && idFase <= 29) //27-Palheiros , 28 Fumos, 29 Exportacao
                         || (idFase >= 32 && idFase <= 34) //32-Cortadas, 33-Outros, 34-Quarentena
-                        || idFase.Equals(36) // Comemorativas
+                        
                         || (idFase >= 39 && idFase <= 41) //39-Clandestinas, 40-Exterior, 41-M&C
                     )
                 {
-                    if (idFase != 29)
+                    if (idFase != 29) // 29 Exportacao // 36 Comemorativas
                     {
                         query = query.Where(x => x.CodigoAceca != null
                                                 && (bvariante
@@ -878,6 +880,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 }
                 else
                 {
+                    //|| idFase.Equals(36) // Comemorativas
+
                     query = query.Where(x => x.CodigoAceca != null
                                             && (bvariante
                                                 ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
