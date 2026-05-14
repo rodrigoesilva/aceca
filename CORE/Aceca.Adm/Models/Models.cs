@@ -455,7 +455,7 @@ namespace Aceca.Adm.Models
         public string? Senha { get; set; } = null;
         [Column("senha_aberta")] public string? SenhaAberta { get; set; }
         public bool SenhaAtualizada { get; set; }        
-        [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
+        [Column("last_login")] public DateTime? UltimoLogin { get; set; }
 
         public Socio? Socio { get; set; }
 

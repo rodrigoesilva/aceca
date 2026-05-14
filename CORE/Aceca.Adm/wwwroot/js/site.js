@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (pgLogin === null) {
             const intervalId = setInterval(() => {
                 //console.log("Executando a cada 2 segundos");
-                fn_UpdateClock();
+                //fn_UpdateClock();
             }, 1000);
         }
 

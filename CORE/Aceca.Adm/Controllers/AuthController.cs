@@ -490,7 +490,7 @@ namespace Aceca.Adm.Controllers
                 // Invalida o token após uso
                 user.ResetPasswordToken = null;
                 user.ResetPasswordTokenExpiry = null;
-                user.UltimoLogin = DateTime.UtcNow;
+                user.UltimoLogin = DateTime.UtcNow.AddHours(-3);
 
                 await _db.SaveChangesAsync();
 
@@ -563,6 +563,7 @@ namespace Aceca.Adm.Controllers
                 var user = await _db.SocioSeguranca
                     .Include(x => x.Socio)
                     .Include(x => x.Socio.SocioPerfil)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 if (user == null)
@@ -596,7 +597,7 @@ namespace Aceca.Adm.Controllers
                         SenhaAberta = dto.Senha,
                         SenhaAtualizada = true,
                         NomeUsuario = dto.Username,
-                        UltimoLogin = DateTime.UtcNow,
+                        UltimoLogin = DateTime.UtcNow.AddHours(-3),
 
                         Socio = new Socio
                         {
@@ -604,10 +605,10 @@ namespace Aceca.Adm.Controllers
                             Ativo = true,
                         }
                     };
-
-                    _db.Entry(newModel).State = EntityState.Modified;
-                    _db.SaveChanges();
                 }
+                
+                _db.Entry(newModel).State = EntityState.Modified;
+                _db.SaveChanges();
 
                 if (newModel?.Id <= 0)
                     return BadRequest(new { bResult = false, type = "ERRO", message = "Falha ao Atualizar Socio" });

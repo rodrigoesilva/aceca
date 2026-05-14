@@ -574,7 +574,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         SenhaAberta = strTempPass,
                         SenhaAtualizada = false,
                         NomeUsuario = model?.Nome,
-                        UltimoLogin = DateTime.UtcNow,
+                        UltimoLogin = DateTime.UtcNow.AddHours(-3),
                         Token = null,
                         ResetPasswordToken = null,
                         ResetPasswordTokenExpiry = null,

@@ -186,7 +186,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         NomeUsuario = model?.Socio?.Nome,
                         ResetPasswordToken = null,
                         ResetPasswordTokenExpiry = null,
-                        UltimoLogin = DateTime.UtcNow,
+                        UltimoLogin = DateTime.UtcNow.AddHours(-3),
                     };
 
 
