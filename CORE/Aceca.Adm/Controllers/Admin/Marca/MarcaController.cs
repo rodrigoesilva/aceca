@@ -11,8 +11,10 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Text.RegularExpressions;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Aceca.Adm.Controllers.Admin.Marca
 {
@@ -837,62 +839,119 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     .Include(x => x.MarcaSubTipo.MarcaTipo)
                     .Include(x => x.MarcaFabrica)
                     .Include(x => x.MarcaImpressora)
-                    .Where(x => x.MarcaFaseId.Equals(idFase))
+                    //.Where(x => x.MarcaFaseId.Equals(idFase))
+                    .Where(x => x.CodigoAceca != null
+                                                    && (bvariante
+                                                        ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()) && x.MarcaFaseId.Equals(idFase)
+                                                        : (x.MarcaFaseId.Equals(idFase))
+                                                        )
+                                                    )
                     .OrderByDescending(x => x.CodigoAceca)
-                    .Take(10);
+                    .Take(5);
 
                 var queryExists = query.Any();
 
-                //
-                ///Fases que as marcas iniciam com letras
-                ///
-                if (idFase.Equals(14) // SA
-                        || (idFase >= 27 && idFase <= 29) //27-Palheiros , 28 Fumos, 29 Exportacao
-                        || (idFase >= 32 && idFase <= 34) //32-Cortadas, 33-Outros, 34-Quarentena
-                        
-                        || (idFase >= 39 && idFase <= 41) //39-Clandestinas, 40-Exterior, 41-M&C
-                    )
+                /*
+                10  Pré 1800 - 1943
+                11  $R 1800 - 1943
+                12  1PI 1942 - 1949
+                13  2PI 1945 - 1965
+                14  SA 1964 - 1988
+                15  ams20 1988 - 1990
+                16  amc20 1989 - 1993
+                17  AM 1990 - 1993
+                18  AMI 1992 - 1996
+                19  6av 1995 - 2000
+                20  5av 1999 - 2002
+                21  9av 2001 - 2005
+                22  10avDPF 2004 - 2008
+                23  10avDS 2007 - 2009
+                24  10av2009 - 2015
+                25  10av136 2013 - 2016
+                26  136Frontal 2016 - 2019
+                27  Palheiros - Artesanais
+                28  Fumos, Cigarrilhas, RP
+                29  Exportação
+                32  Cortadas
+                33  Outros
+                34  Quarentena
+                35  136Amarelo 2019 - 2025
+                36  Comemorativas Aceca
+                38  Vitrine
+                39  Clandestinas
+                40  Exterior
+                41  M & C baixe as imagens no seu computador para  ler
+                42  136QRCode
+                */
+
+                /*
+                switch (idFase)
                 {
-                    if (idFase != 29) // 29 Exportacao // 36 Comemorativas
-                    {
-                        query = query.Where(x => x.CodigoAceca != null
-                                                && (bvariante
-                                                    ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
-                                                    : (x.CodigoAceca.StartsWith(strLetraInicial) && x.MarcaFaseId.Equals(idFase))
+                    //////Fases que as marcas iniciam com letras
+                    case 29: // Exportação (ex0156)
+                        {
+                            //Se tem país de destino inicia com EA, Se não tem é EX (minusculos).
+
+                            var strLetraInicialBusca = bExTemPaisDestino ? "EA" : "EX";
+
+                            query = query.Where(x => x.CodigoAceca != null
+                                                    && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaFaseId.Equals(idFase)
                                                     )
-                                                )
-                            .OrderByDescending(x => x.CodigoAceca);
-                    }
-                    else
-                    {
-                        // 29 Exportacao
-                        //Se tem país de destino inicia com EA, Se não tem é EX (minusculos).
+                                .OrderByDescending(x => x.CodigoAceca);
+                        }
+                        break;
+                    case 10: //Pré 1800 - 1943 (Pre3570)
+                    case 14: //SA 1964 - 1988(Z003)
+                    case 27: //Palheiros - Artesanais ( CT09055 ) 
+                    case 28: // Fumos, Cigarrilhas, RP (RP0721)
+                    case 32: // Cortadas (PRE0677B)
+                    case 34: // Quarentena
+                    case 35: // 136Amarelo 2019 - 2025
+                    case 36: // Comemorativas Aceca
+                    case 39: //   Clandestinas
+                    case 40: //   Exterior
+                    case 41: //   M & C
+                        {
 
-                        var strLetraInicialBusca = bExTemPaisDestino ? "EA" : "EX";
+                            query = query.Where(x => x.CodigoAceca != null
+                                                    && (bvariante
+                                                        ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()) && x.MarcaFaseId.Equals(idFase)
+                                                        : (x.MarcaFaseId.Equals(idFase))
+                                                        )
+                                                    )
+                                .OrderByDescending(x => x.CodigoAceca)
+                                .Take(5);
 
-                        query = query.Where(x => x.CodigoAceca != null
-                                                && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaFaseId.Equals(idFase)
-                                                )
-                            .OrderByDescending(x => x.CodigoAceca);
-                    }
+                            
+                            query = query.Where(x => x.CodigoAceca != null
+                                                    && (bvariante
+                                                        ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
+                                                        : (x.CodigoAceca.StartsWith(strLetraInicial) && x.MarcaFaseId.Equals(idFase))
+                                                        )
+                                                    )
+                                .OrderByDescending(x => x.CodigoAceca);
+                            
+            }
+                        break;
+                    default:
+                        //////Fases que as marcas iniciam com numeros
+                        {
+                            //|| idFase.Equals(36) // Comemorativas
 
-                    queryExistsTermo = query.Any();
+                            query = query.Where(x => x.CodigoAceca != null
+                                                    && (bvariante
+                                                        ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
+                                                        : (x.MarcaFaseId.Equals(idFase))
+                                                        )
+                                                    )
+                                .OrderByDescending(x => x.CodigoAceca)
+                                .Take(5);
+                        }
+                        break;
                 }
-                else
-                {
-                    //|| idFase.Equals(36) // Comemorativas
 
-                    query = query.Where(x => x.CodigoAceca != null
-                                            && (bvariante
-                                                ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
-                                                : (x.MarcaFaseId.Equals(idFase))
-                                                )
-                                            )
-                        .OrderByDescending(x => x.CodigoAceca)
-                        .Take(5);
-
-                    queryExistsTermo = query.Any();
-                }
+                */
+                queryExistsTermo = query.Any();
 
                 var lstmodel = await query
                             .AsNoTracking()
@@ -934,13 +993,24 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     });
                 }
 
-                strCodigoAceca = lstmodel?.CodigoAceca?.ToString()?.Trim();
+                strCodigoAceca = lstmodel?.CodigoAceca?.ToString()?.Trim()?.ToUpper();
 
                 string strNumCodigoAceca = string.Empty;
 
-                strNumCodigoAceca = idFase != 42 
-                    ? new string(strCodigoAceca?.Where(char.IsDigit).ToArray())
-                    :new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
+                switch (idFase)
+                {
+                    //////Fases que as inciiam com numero e tem letras no meio
+                    case 12: //1PI 1942 - 1949 (1PI1251)
+                    case 13: //2PI 1945 - 1965 (2pi3999)
+                        strNumCodigoAceca = new string(strCodigoAceca?.Split("PI")[1]?.Where(char.IsDigit).ToArray());
+                        break;
+                    case 42: // 136QRCode
+                        strNumCodigoAceca = new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
+                        break;
+                    default:
+                        strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
+                        break;
+                }
 
                 if (string.IsNullOrEmpty(strNumCodigoAceca))
                 {
