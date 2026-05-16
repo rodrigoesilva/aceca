@@ -35,6 +35,11 @@ namespace Aceca.Adm.Data
             : base(options)
         {
         }
+
+        #region Socio
+        public DbSet<MarcaAcervo> MarcaAcervo { get; set; }
+        #endregion
+
         #region Admin
         public DbSet<AdminUsuario> AdminUsuarios { get; set; }
         public DbSet<Configuracao> Configuracoes { get; set; }

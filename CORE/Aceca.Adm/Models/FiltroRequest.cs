@@ -2,6 +2,7 @@
 {
     public class FiltroRequestMarca
     {
+        public int? MarcaAcervoId { get; set; }
         public int? MarcaFaseId { get; set; }
         public int? MarcaFabricaId { get; set; }
         public int? MarcaTipoId { get; set; }

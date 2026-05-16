@@ -58,11 +58,10 @@ namespace Aceca.Adm.Helper
 
             return enumData;
         }
-        public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFase_ot()
+        public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaAcervo()
         {
-            return await _db.MarcaFase
+            return await _db.MarcaAcervo
                 .Where(x => (bool)x.Ativo)
-                .OrderBy(x => x.Ordem)
                 .Select(x => new SelectListItem
                 {
                     Value = x.Id.ToString(),
@@ -90,34 +89,6 @@ namespace Aceca.Adm.Helper
             _cacheMarcaFase = data;
 
             return data;
-        }
-
-        public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFase1()
-        {
-            var lst = new List<SelectListItem>();
-
-            try
-            {
-                var lstModel = await _db.MarcaFase
-                        ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Ordem)
-                       .AsNoTracking()
-                       .ToListAsync();
-
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFinalidade()
         {

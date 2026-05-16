@@ -282,42 +282,45 @@ namespace Aceca.Adm.Controllers
                 if (userId <= 0)
                     return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
 
-                var objGeo = new GeoModel();
+                if (userId != 39)
+                {
+                    var objGeo = new GeoModel();
 
-                if (!string.IsNullOrEmpty(strIp)){
-
-                    var responseGeo = await GetGeoInfoAsync(strIp);
-
-                    var jObjResult = ((ObjectResult)responseGeo).Value;
-
-                    var json = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
-
-                    // Parse a JSON string into a JsonNode
-                    JsonNode jsonNode = JsonNode.Parse(json);
-
-                    // Convert to a C# object
-                    objGeo = jsonNode.Deserialize<GeoModel>();
-
-                    var newModel = new Models.SocioLogAcesso
+                    if (!string.IsNullOrEmpty(strIp))
                     {
-                        SocioEnderecoId = userId,
-                        IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
-                        OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
-                        Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
-                        Device = null,//!string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
-                        Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
-                        Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
-                        Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
-                        Latitude = objGeo?.latitude.ToString(),
-                        Longitude = objGeo?.longitude.ToString(),
-                        UltimoLogin = DateTime.UtcNow.AddHours(-3),
-                    };
+                        var responseGeo = await GetGeoInfoAsync(strIp);
 
-                    using (var context = new AppDbContext())
-                    {
-                        // Add data
-                        context.SocioLogAcesso.Add(newModel);
-                        context.SaveChanges();
+                        var jObjResult = ((ObjectResult)responseGeo).Value;
+
+                        var json = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
+
+                        // Parse a JSON string into a JsonNode
+                        JsonNode jsonNode = JsonNode.Parse(json);
+
+                        // Convert to a C# object
+                        objGeo = jsonNode.Deserialize<GeoModel>();
+
+                        var newModel = new Models.SocioLogAcesso
+                        {
+                            SocioEnderecoId = userId,
+                            IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
+                            OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
+                            Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
+                            Device = null,//!string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
+                            Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
+                            Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
+                            Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
+                            Latitude = objGeo?.latitude.ToString(),
+                            Longitude = objGeo?.longitude.ToString(),
+                            UltimoLogin = DateTime.UtcNow.AddHours(-3),
+                        };
+
+                        using (var context = new AppDbContext())
+                        {
+                            // Add data
+                            context.SocioLogAcesso.Add(newModel);
+                            context.SaveChanges();
+                        }
                     }
                 }
 

@@ -107,6 +107,7 @@ namespace Aceca.Adm.VMModels
     public class VMMarca : VMBaseModel
     {
         public int? Id { get; set; }
+        public int? MarcaAcervoId { get; set; }
         public int? MarcaDimensaoId { get; set; }
         public int? MarcaFabricaId { get; set; }
         public int? MarcaFaseId { get; set; }

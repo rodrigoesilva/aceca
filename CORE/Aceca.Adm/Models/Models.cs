@@ -55,6 +55,17 @@ namespace Aceca.Adm.Models
 
     #endregion
 
+    #region Acervo
+
+    [Table("marcas_acervo")]
+    public class MarcaAcervo : BaseModel
+    {
+        public int? Id { get; set; }
+        public string? Descricao { get; set; } = null;
+    }
+
+    #endregion
+
     #region admin
 
     [Table("admin_usuario")]
@@ -182,6 +193,8 @@ namespace Aceca.Adm.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int? Id { get; set; }
+
+        public int? MarcaAcervoId { get; set; }
         public int? MarcaDimensaoId { get; set; }
         public int? MarcaFabricaId { get; set; }
         [Column("fabrica_txt")] public string? TxtFabrica { get; set; } = null;
