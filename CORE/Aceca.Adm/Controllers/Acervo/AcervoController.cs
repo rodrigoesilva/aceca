@@ -64,6 +64,13 @@ namespace Aceca.Adm.Controllers.Acervo
         }
 
         #region Index
+
+        [Route("Index/{id}")]
+        public ActionResult Index(int id)
+        {
+            var modelMarcas = new Marcas { MarcaAcervoId = id };
+            return View("~/Views/Admin/Acervo/Listagem.cshtml", modelMarcas);
+        }
         public ActionResult Cigarro()
         {
             var modelMarcas = new Marcas { MarcaAcervoId = 1};

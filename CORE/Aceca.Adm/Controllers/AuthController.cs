@@ -18,6 +18,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Aceca.Adm.Helper.HelperExtensionsController;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Aceca.Adm.Controllers
 {
@@ -284,35 +285,33 @@ namespace Aceca.Adm.Controllers
 
                 if (userId != 39)
                 {
-                    var objGeo = new GeoModel();
-
                     if (!string.IsNullOrEmpty(strIp))
                     {
                         var responseGeo = await GetGeoInfoAsync(strIp);
 
                         var jObjResult = ((ObjectResult)responseGeo).Value;
 
-                        var json = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
+                        var jsonGeo = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
 
-                        // Parse a JSON string into a JsonNode
-                        JsonNode jsonNode = JsonNode.Parse(json);
-
-                        // Convert to a C# object
-                        objGeo = jsonNode.Deserialize<GeoModel>();
+                        var jsonAgent = jObjResult?.GetType()?.GetProperty("jsonAgent")?.GetValue(jObjResult, null)?.ToString();
+                        
+                        // 1. Parse the JSON string into a JsonNode
+                        JsonNode jsonNodeGeo = JsonNode.Parse(jsonGeo);
+                        JsonNode jsonNodeAgent = JsonNode.Parse(jsonAgent);
 
                         var newModel = new Models.SocioLogAcesso
                         {
                             SocioEnderecoId = userId,
-                            IP = !string.IsNullOrEmpty(objGeo?.ip) ? objGeo?.ip : null,
-                            OS = null,//!string.IsNullOrEmpty(model.Titulo) ? model.Titulo : null,
-                            Browser = null,//!string.IsNullOrEmpty(model.SubTitulo) ? model.SubTitulo : null,
-                            Device = null,//!string.IsNullOrEmpty(model.BreveDesc) ? model.BreveDesc : null,
-                            Operadora = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
-                            Estado = !string.IsNullOrEmpty(objGeo?.region_code) ? objGeo?.region_code : null,
-                            Cidade = !string.IsNullOrEmpty(objGeo?.city) ? objGeo?.city : null,
-                            Latitude = objGeo?.latitude.ToString(),
-                            Longitude = objGeo?.longitude.ToString(),
-                            UltimoLogin = DateTime.UtcNow.AddHours(-3),
+                            IP = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["ip"]?.GetValue<string>() : null,
+                            OS = !string.IsNullOrEmpty(jsonNodeAgent?.ToString()) ? jsonNodeAgent["device"]["name"]?.GetValue<string>() : null,
+                            Browser = !string.IsNullOrEmpty(jsonNodeAgent?.ToString()) ? jsonNodeAgent["name"]?.GetValue<string>() : null,
+                            Device = !string.IsNullOrEmpty(jsonNodeAgent?.ToString()) ? jsonNodeAgent["operating_system"]["name"]?.GetValue<string>() : null,
+                            Operadora = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["asn"]["organization"]?.GetValue<string>() : null,
+                            Estado = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["location"]["state_code"]?.GetValue<string>() : null,
+                            Cidade = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["location"]["city"]?.GetValue<string>() : null,
+                            Latitude = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["location"]["latitude"]?.GetValue<string>() : null,
+                            Longitude = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["location"]["longitude"]?.GetValue<string>() : null,
+                            UltimoLogin = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? DateTime.Parse(jsonNodeGeo["time_zone"]["current_time"].GetValue<string>()) : DateTime.UtcNow.AddHours(-3),
                         };
 
                         using (var context = new AppDbContext())
@@ -867,12 +866,6 @@ namespace Aceca.Adm.Controllers
         // ──────────────────────────────────────────────
 
         #region Geo
-
-        /// <summary>
-        /// Envia o e-mail de reset de senha via SMTP configurado no appsettings.json.
-        /// Configure as chaves: Email:Host, Email:Port, Email:EnableSsl,
-        ///                      Email:From, Email:User, Email:Password, Email:DisplayName
-        /// </summary>
         public async Task<IActionResult> GetGeoInfoAsync(string varIp)
         {
             if (string.IsNullOrWhiteSpace(varIp))
@@ -880,24 +873,73 @@ namespace Aceca.Adm.Controllers
 
             try
             {
-                var geoUrl = _appConfiguration["Geo:Ipstack:Url"]!;
-                var geoKey = _appConfiguration["Geo:Ipstack:Key"]!;
+                string strGeoOrigem = "Ipgeolocation";
+
+                string url = string.Empty;
+                string urlAgent = string.Empty;
+                string jsonAgent = string.Empty;
+
+                var geoUrl = _appConfiguration[$"Geo:{strGeoOrigem}:Url"]!;
+                var geoKey = _appConfiguration[$"Geo:{strGeoOrigem}:Key"]!;
+
+                switch (strGeoOrigem)
+                {
+                    case "Ipstack": // https://docs.apilayer.com/ipstack/docs/quickstart-guide?utm_source=IPstackHomePage&utm_medium=Referral#step-3-make-api-requests
+                        url = $"{geoUrl}/{varIp}?access_key={geoKey}";
+                        break;
+                    case "Ipgeolocation": // https://ipgeolocation.io/documentation/ip-location-api.html
+                        url = $"{geoUrl}/v3/ipgeo?apiKey={geoKey}&ip={varIp}"; // curl - X GET 'https://api.ipgeolocation.io/v3/ipgeo?apiKey=API_KEY&ip=91.128.103.196'
+                        urlAgent = $"{geoUrl}/v3/user-agent?apiKey={geoKey}";
+                        break;
+                    case "Ip2location": // https://api.ip2location.io/?key={YOUR_API_KEY}&ip=8.8.8.8&format=json	
+                        url = $"{geoUrl}/?key={geoKey}&ip={varIp}&format=json";
+                        break;
+                    default:
+                        url = $"{geoUrl}/{varIp}?access_key={geoKey}";
+                        break;
+                }
 
                 using var client = new HttpClient();
-
-                string url = $"{geoUrl}/{varIp}?access_key={geoKey}";
                 var result = await client.GetAsync(url);
 
                 if (result.GetType() == typeof(NotFoundObjectResult) ||
                     result.GetType() == typeof(BadRequestObjectResult))
                     return BadRequest(new { bResult = false, type = "ERRO", message = "geoUrl Inválido" });
 
-                var code = result.EnsureSuccessStatusCode();
+                var code = result?.EnsureSuccessStatusCode();
                 var json = await result.Content.ReadAsStringAsync();
 
                 var lst = JsonConvert.DeserializeObject<JObject>(json).Children().ToList();
 
-                return Ok(new { bResult = true, type = "SUCESSO", message = "SUCESSO ::: ", data = json});
+                //Agent Dados origem Device
+                if (!string.IsNullOrEmpty(urlAgent))
+                {
+                    var clientAgent = new HttpClient();
+                    var request = new HttpRequestMessage(HttpMethod.Get, urlAgent);
+                    request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0");
+
+                    var resultAgent = await clientAgent.SendAsync(request);
+
+                    if (resultAgent.GetType() == typeof(NotFoundObjectResult) ||
+                        resultAgent.GetType() == typeof(BadRequestObjectResult))
+                        return BadRequest(new { bResult = false, type = "ERRO", message = "geoUrl Inválido" });
+
+                    var codeAgent = resultAgent?.EnsureSuccessStatusCode();
+                    jsonAgent = await resultAgent.Content.ReadAsStringAsync();
+
+                    var node = JsonNode.Parse(json);
+
+                    // Add a simple value node
+                    node["user-agent"] = jsonAgent;
+
+                    json = node.ToJsonString();
+
+                    var lstAgent = JsonConvert.DeserializeObject<JObject>(jsonAgent).Children().ToList();
+
+                    lst.AddRange(lstAgent);
+               }
+
+                return Ok(new { bResult = true, type = "SUCESSO", message = "SUCESSO ::: ", data = json, jsonAgent = jsonAgent });
             }
             catch (SmtpException ex)
             {
