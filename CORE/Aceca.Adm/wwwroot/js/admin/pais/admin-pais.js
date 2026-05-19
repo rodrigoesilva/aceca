@@ -17,6 +17,10 @@ let var_Nome = 'Pa&iacute;s',
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
+let strUrlImgInexistente = "https://www.aceca.com.br/assets/img/img_inexistente.jpg";
+
+let strUrlImg = "https://www.aceca.com.br/midia";
+
 const swalWithBootstrapButtons = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-label-secondary waves-effect",
@@ -72,8 +76,8 @@ function fn_GridList(formValid) {
         varAjax_UrlController = `${var_Controller}/ListGrid`,
         varAjax_TypeAction = 'GET',
 
-        varCol_Exportar = [2, 3, 4, 5],
-        varCol_Ordenacao = [[2, 'asc']],
+        varCol_Exportar = [2, 3, 4, 5,6,7,8],
+        varCol_Ordenacao = [[5, 'asc']],
 
         varItems_QtdPorPage = 10,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
@@ -100,7 +104,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    //console.log("data fn :: ", result)
+                    //console.log("fn_GridList data :: ", result);
                     return result.data;
                 }
             },
@@ -128,20 +132,61 @@ function fn_GridList(formValid) {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
                 },
+                // COLUNA - imagem1 (some primeiro no mobile)
+                {
+                    defaultContent: '<i>Not set</i>',
+                    data: 'imagem1',
+                    targets: 2,
+                    className: 'text-center',
+                    responsivePriority: 10004,
+                    render: function (data, type, row) {
+
+                        let urlImg = (data !== null && data !== undefined && data !== '') ? `${strUrlImg}/paises/${data}` : strUrlImgInexistente;
+                        return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="ACECA" src="${urlImg}">`;
+                    }
+                },
+                // COLUNA - imagem2
+                {
+                    defaultContent: '<i>Not set</i>',
+                    data: 'imagem2',
+                    targets: 3,
+                    className: 'text-center',
+                    responsivePriority: 10005,
+                    render: function (data, type, row) {
+                        //console.log("fn_GridList data :: ", data);
+                        //console.log("fn_GridList row :: ", row);
+
+                        let urlImg = (data !== null && data !== undefined && data !== '') ? `${strUrlImg}/paises/${data}` : strUrlImgInexistente;
+                        return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="ACECA" src="${urlImg}">`;
+                    }
+                },
+                // COLUNA - imagem3
+                {
+                    defaultContent: '<i>Not set</i>',
+                    data: 'imagem2',
+                    targets: 4,
+                    className: 'text-center',
+                    responsivePriority: 10006,
+                    render: function (data, type, row) {
+                        let urlImg = (data !== null && data !== undefined && data !== '') ? `${strUrlImg}/paises/${data}` : strUrlImgInexistente;
+                        return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="ACECA" src="${urlImg}">`;
+                    }
+                },
                 // COLUNA - Nome
                 {
                     data: 'nome',
-                    targets: 2,
+                    targets: 5,
                 },
                 // COLUNA - Descricao
                 {
                     data: 'descricao',
-                    targets: 3,
+                    targets: 6,
                 },
                 // COLUNA - Pais Categoria
                 {
+                    visible:false,
                     data: 'paisCategoriaId',
-                    targets: 4,
+                    targets: 7,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.id;
@@ -352,6 +397,10 @@ function fn_GridList(formValid) {
                         return data ? $('<table class="table"/><tbody />').append(data) : false;
                     }
                 }
+            },
+            drawCallback: function () {
+                fn_Zoom();
+                fn_LazyLoad();
             },
             error: function (obj, textstatus) {
                 $.busyLoadFull("hide");
@@ -938,6 +987,104 @@ function fnItem_Add(varTbl_Obj) {
 
 //#endregion
 
+//#region IMAGENS
+
+document.addEventListener('hidden.bs.modal', function (event) {
+    if (document.activeElement) {
+        document.activeElement.blur();
+    }
+});
+
+function fn_InitZoom() {
+
+    if (document.getElementById('imgZoomModal')) return;
+
+    $('body').append(`
+        <div id="imgZoomModal" style="
+            display:none;position:fixed;inset:0;
+            background:rgba(0,0,0,0.85);
+            z-index:99999;
+            align-items:center;
+            justify-content:center;">
+            <img id="imgZoomTarget" style="
+                max-width:95vw;
+                max-height:95vh;">
+        </div>
+    `);
+
+    $('#imgZoomModal').click(function () {
+        $(this).hide();
+    });
+}
+function fn_ZoomImg(src) {
+    $('#imgZoomTarget').attr('src', src);
+    $('#imgZoomModal').css('display', 'flex');
+}
+
+function fn_Zoom() {
+    //console.log("fn_Zoom ::: ");
+    var modal = document.getElementById('myModal');
+
+    var img = document.querySelectorAll(".cmyImg");
+    var modalImg = document.getElementById("img01");
+    var captionText = document.getElementById("caption");
+
+    $(".cmyImg").click(function () {
+        //console.log("cmyImg ::: ", modalImg);
+        modal.style.display = "block";
+        modalImg.src = this.src;
+        modalImg.alt = this.alt;
+        captionText.innerHTML = this.alt;
+    });
+
+    $("#myModal").click(function () {
+        //console.log("myModal ::: ", img01);
+        img01.className += " out";
+        setTimeout(function () {
+            modal.style.display = "none";
+            img01.className = "modal-content";
+        }, 400);
+
+    });
+}
+
+function fn_LazyLoad() {
+    const images = document.querySelectorAll('.lazy-img');
+
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.classList.remove('lazy-img');
+                obs.unobserve(img);
+            }
+        });
+    });
+
+    images.forEach(img => observer.observe(img));
+}
+
+function fn_PreviewImage(input) {
+    // console.log("fn_PreviewImage input ::: ", input);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+
+            //console.log("fn_PreviewImage e ::: ", e);
+            //console.log("fn_PreviewImage input id ::: ", input.id);
+            if (input.id === 'txt_ImgPrincipal') {
+                //document.getElementById('img_ImgPrincipal').src = e.target.result;
+                document.getElementById('img_ImgPrincipal').src = e.target.result;
+            } else {
+                document.getElementById('img_ImgDetalhe').src = e.target.result;
+            }
+        };
+        reader.readAsDataURL(input.files[0]); // Converts to Base64 string
+    }
+}
+
+//#endregion
 
 //#region MODAL
 function fn_ModalErro(xhr, textStatus, errorThrown) {

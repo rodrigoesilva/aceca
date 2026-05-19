@@ -37,11 +37,11 @@ const swalWithBootstrapButtons = Swal.mixin({
 let modalMarca = document.getElementById('modalAddNovaMarca'),
     objModalData;
 
-let strUrlImgInexistente = "https://www.aceca.com.br/midia/geral/assets/img/img_inexistente.jpg";
+let strUrlImgInexistente = "https://www.aceca.com.br/assets/img/img_inexistente.jpg";
 
 let borderColor, bodyBg, headingColor;
 
-let idMarcaFase;
+let idMarcaFase, strMarcaAcervo;
 
 if (isDarkStyle) {
     borderColor = config.colors_dark.borderColor;
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
 
-        $('div.head-label-filtro').html(`<h5 class="card-title mb-0 title-filtro">${var_Nome}</h5>`);
+        fn_MenuAcervo();
 
         fn_Limpar();
 
@@ -120,6 +120,42 @@ document.addEventListener('DOMContentLoaded', function () {
     })();
 });
 
+//#endregion
+
+//#region Menu
+function fn_MenuAcervo() {
+    
+    const idMarcaAcervo = $('#hdMarcaAcervoId').val();
+    //console.log("fn_MenuAcervo idMarcaAcervo :: ", idMarcaAcervo);
+
+            switch (idMarcaAcervo) {
+                case '1':
+                    strMarcaAcervo = `Cigarros`;
+                    break;
+                case '2':
+                    strMarcaAcervo = `Palheiros`;
+                    break;
+                case '3':
+                    strMarcaAcervo = `Cigarrilhas`;
+                    break;
+                case '4':
+                    strMarcaAcervo = `Charutos`;
+                    break;
+                case '5':
+                    strMarcaAcervo = `Fumos & Diversos`;
+                    break;
+                case '6':
+                    strMarcaAcervo = `Afins`;
+                    break;
+                default:
+                    strMarcaAcervo = "";
+    }
+
+    $('#hdMarcaAcervoNome').val(strMarcaAcervo);
+
+    //Titulo
+    $('div.head-label-filtro').html(`<h5 class="card-title mb-0 title-filtro">${var_Nome} - ${strMarcaAcervo}</h5>`);
+}
 //#endregion
 
 //#region Botoes
@@ -495,7 +531,7 @@ function fn_FiltrarDados() {
             },
 
             dataSrc: function (json) {
-                //console.log("result json:: ", json);
+                //console.log("fn_FiltrarDados json:: ", json);
                 return json.data;
             }
         },
@@ -897,7 +933,8 @@ function fn_GridComplete(grid) {
     $('.card-header').after('<hr class="my-0">');
 
     //Titulo Tabela
-    $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome}</h5>`);
+    let var_MarcaAcervo = document.getElementById('hdMarcaAcervoNome').value;
+    $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome} - ${var_MarcaAcervo}</h5>`);
 
     $(".card-datatable").show();
 
@@ -906,7 +943,6 @@ function fn_GridComplete(grid) {
         fn_FiltrosShow();
 
         isPerfil = document.getElementById('hdIsPerfil').value;
-       
 
         var columnNames = thisApi.columns().header().toArray().map(header => $(header).text());
         //console.log("fn_GridComplete - columnNames ::: ", columnNames);
@@ -1009,10 +1045,19 @@ function fn_LazyLoad() {
 }
 
 function fn_PreviewImage(input) {
+   // console.log("fn_PreviewImage input ::: ", input);
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function (e) {
-            document.getElementById('imagePreview').src = e.target.result;
+            
+            //console.log("fn_PreviewImage e ::: ", e);
+            //console.log("fn_PreviewImage input id ::: ", input.id);
+            if (input.id === 'txt_ImgPrincipal') {
+                //document.getElementById('img_ImgPrincipal').src = e.target.result;
+                document.getElementById('img_ImgPrincipal').src = e.target.result;
+            } else {
+                document.getElementById('img_ImgDetalhe').src = e.target.result;
+            }
         };
         reader.readAsDataURL(input.files[0]); // Converts to Base64 string
     }
@@ -1063,8 +1108,6 @@ function fn_LoadCmb_MarcaFase() {
     const $cmbPop = $('#cmbPop_MarcaFase');
     const idMarcaAcervo = $('#hdMarcaAcervoId').val();
 
-    let strComboText;
-
     // mantém o option original (-1)
     $cmb.prop('disabled', true);
 
@@ -1074,6 +1117,8 @@ function fn_LoadCmb_MarcaFase() {
         cache: true,
         success: function (data) {
 
+            strMarcaAcervo = $('#hdMarcaAcervoNome').val();
+
             // 🔥 mantém o option fixo
             let options = '<option value="-1">-- Selecionar --</option>';
 
@@ -1082,19 +1127,7 @@ function fn_LoadCmb_MarcaFase() {
 
             data.forEach(item => {
 
-                switch (idMarcaAcervo) {
-                    case '1':
-                        strComboText = `CIGARROS - ${item.text}`;
-                        break;
-                    case '2':
-                        strComboText = `PALHEIROS - ${item.text}`;
-                        break;
-                    case '3':
-                        strComboText = `AFINS - ${item.text}`;
-                        break;
-                    default:
-                        strComboText = `${item.text}`;
-                }
+                let strComboText = strMarcaAcervo !== "" ? `${strMarcaAcervo?.toUpperCase()} - ${item.text}` : item.text;
 
                 //options += `<option value="${item.value}">${item.text}</option>`;
 
@@ -1480,13 +1513,14 @@ function fn_ModalErro(xhr, textStatus, errorThrown) {
 }
 
 function fn_Modal(obj, action) {
-    //console.log("fn_Modal obj::: ", obj);
+    //console.log("fn_Modal obj ::: ", obj);
     //console.log("fn_Modal action::: ", action);
 
     const popAddNewItem = document.querySelector('#modalAddNovaMarca');
 
     // Pop ID
     (popAddNewItem.querySelector('#hdMarcaId').Value = (obj === null ? 0 : obj.Id)),
+        (popAddNewItem.querySelector('#hdMarcaAcervoId').value = (obj === null ? 0 : obj.IdMarcaAcervo)),
         (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.IdMarcaFase)),
         (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.IdMarcaFinalidade)),
         (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.IdMarcaFabrica)),
@@ -1526,7 +1560,7 @@ function fn_Modal(obj, action) {
     if (obj !== null) {
 
         //console.log("fn_Modal obj::: ", obj);
-
+        //$("#cmbPop_MarcaAcervo").val(((obj.IdMarcaAcervo === undefined || obj.IdMarcaAcervo === null || obj.IdMarcaAcervo <= 0) ? '-1' : obj.IdMarcaAcervo)).change();
         $("#cmbPop_MarcaFase").val(((obj.IdMarcaFase === undefined || obj.IdMarcaFase === null || obj.IdMarcaFase <= 0) ? '-1' : obj.IdMarcaFase)).change();
         $("#cmbPop_MarcaFinalidade").val(((obj.IdMarcaFinalidade === undefined || obj.IdMarcaFinalidade === null || obj.IdMarcaFinalidade <= 0) ? '-1' : obj.IdMarcaFinalidade)).change();
         $("#cmbPop_MarcaFabrica").val(((obj.IdMarcaFabrica === undefined || obj.IdMarcaFabrica === null || obj.IdMarcaFabrica <= 0) ? '-1' : obj.IdMarcaFabrica)).change();
@@ -1554,20 +1588,28 @@ function fn_Modal(obj, action) {
 }
 
 function fnItem_PopImgPrincipal(obj) {
-    //console.log("fnItem_PopImgPrincipal obj !", obj);
+    //console.log("fnItem_PopImgPrincipal obj :::", obj);
 
     if (obj !== null) {
+
+        const img = document.getElementById('img_ImgPrincipal');
 
         let imgName = obj?.ImgPrincipal,
             imgNameFul = obj?.ImgPrincipalFull;
 
-        if (imgName !== null && imgName !== undefined) {
+        //console.log("fnItem_PopImgPrincipal imgName :::", imgName);
+        //console.log("fnItem_PopImgPrincipal imgNameFul :::", imgNameFul);
 
+        if (imgName === null || imgName === undefined) {
+            
+            img.src = strUrlImgInexistente;
+            img.alt = "Imagem Inexistente";
+
+        } else{
             let objFile = {},
                 fileArq = imgName;
 
-            //preview img
-            const img = document.getElementById('img_ImgPrincipal');
+            //preview img            
             img.src = obj?.ImgPrincipalFull !== null ? obj?.ImgPrincipalFull : strUrlImgInexistente;
             img.alt = obj?.CodigoAceca !== null ? obj?.CodigoAceca : "Imagem Inexistente";
 
@@ -1580,6 +1622,7 @@ function fnItem_PopImgPrincipal(obj) {
                     Extensao: fileArq.split('.').pop(),
                 };
             }
+
             // Create a new File object
             const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
                 type: `application/${objFile.Extensao}`,
@@ -1605,16 +1648,21 @@ function fnItem_PopImgDetalhe(obj) {
 
     if (obj !== null) {
 
+        const img = document.getElementById('img_ImgDetalhe');
+
         let imgName = obj?.ImgDetalhe,
             imgNameFul = obj?.ImgDetalheFull;
 
-        //if (imgName !== null && imgName !== undefined) {
+        if (imgName === null || imgName === undefined) {
 
+            img.src = strUrlImgInexistente;
+            img.alt = "Imagem Inexistente";
+
+        } else {
             let objFile = {},
                 fileArq = imgName;
 
-            //preview img
-            const img = document.getElementById('img_ImgDetalhe');
+            //preview img            
             img.src = obj?.ImgDetalheFull !== null ? obj?.ImgDetalheFull : strUrlImgInexistente;
             img.alt = obj?.CodigoAceca !== null ? obj?.CodigoAceca : "Imagem Inexistente";
 
@@ -1644,7 +1692,8 @@ function fnItem_PopImgDetalhe(obj) {
             if (fileInput.webkitEntries.length) {
                 fileInput.dataset.file = `${dataTransfer.files[0].name}`;
             }
-        //}
+            //}
+        }
     }
 }
 

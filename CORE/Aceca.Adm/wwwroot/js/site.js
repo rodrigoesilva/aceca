@@ -17,6 +17,26 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`SITE - Todos os recursos terminaram o carregamento!`);
 
+        /*
+        const successCallback = (position) => {
+            console.log("Latitude: ", position.coords.latitude);
+            console.log("Longitude: ", position.coords.longitude);
+        };
+
+        const errorCallback = (error) => {
+            console.error("Error Code: " + error.code + " - " + error.message);
+        };
+
+        // Optional configuration
+        const options = {
+            enableHighAccuracy: true, // Use GPS if available for better precision
+            timeout: 5000,            // Wait up to 5 seconds for a response
+            maximumAge: 0             // Do not use a cached position
+        };
+
+        navigator.geolocation.getCurrentPosition(successCallback, errorCallback, options);
+        */
+
         // Update the clock immediately on load, and then every second
         var pgLogin = document.querySelector(".pg-login");
 

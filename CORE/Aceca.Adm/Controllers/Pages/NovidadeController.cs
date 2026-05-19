@@ -260,7 +260,8 @@ namespace Aceca.Adm.Controllers.Pages.Novidade
 
                     {sqlFrom}
 
-                    ORDER BY mf.id, m.nome, m.CodigoAceca
+                    ORDER BY m.dataCriacao DESC,
+                        mf.id, m.nome, m.CodigoAceca
                     LIMIT @Limit OFFSET @Offset
                     ";
 

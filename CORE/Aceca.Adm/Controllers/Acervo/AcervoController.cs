@@ -66,29 +66,12 @@ namespace Aceca.Adm.Controllers.Acervo
         #region Index
 
         [Route("Index/{id}")]
-        public ActionResult Index(int id)
+        public async Task<ActionResult> Index(int id)
         {
             var modelMarcas = new Marcas { MarcaAcervoId = id };
-            return View("~/Views/Admin/Acervo/Listagem.cshtml", modelMarcas);
-        }
-        public ActionResult Cigarro()
-        {
-            var modelMarcas = new Marcas { MarcaAcervoId = 1};
-            return View("~/Views/Admin/Acervo/Listagem.cshtml", modelMarcas);
-        }
 
-        public ActionResult Palheiro()
-        {
-            var modelMarcas = new Marcas { MarcaAcervoId = 2 };
             return View("~/Views/Admin/Acervo/Listagem.cshtml", modelMarcas);
         }
-
-        public ActionResult Diverso()
-        {
-            var modelMarcas = new Marcas { MarcaAcervoId = 3 };
-            return View("~/Views/Admin/Acervo/Listagem.cshtml", modelMarcas);
-        }
-
         //[Authorize(Roles = "Administracao")]
         public ActionResult Cadastro()
         {
@@ -114,6 +97,7 @@ namespace Aceca.Adm.Controllers.Acervo
 
                 var sqlFrom = new StringBuilder(@"
                 FROM marcas m
+                LEFT JOIN marcas_acervo ma ON m.marcaAcervoId = ma.id
                 LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
                 LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
                 LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
@@ -227,7 +211,7 @@ namespace Aceca.Adm.Controllers.Acervo
                 var dataSql = $@"
                     SELECT
                         m.id AS Id,
-
+                        ma.id AS IdMarcaAcervo,
                         mf.id AS IdMarcaFase,
                         mfi.id AS IdMarcaFinalidade,
                         mfa.id AS IdMarcaFabrica,
@@ -240,7 +224,8 @@ namespace Aceca.Adm.Controllers.Acervo
 
                         m.CodigoAceca,
                         m.Nome AS NomeMarca,
-
+                        
+                        ma.Descricao AS NomeAcervo,
                         mf.Descricao AS NomeFase,
                         mfa.Nome AS NomeFabrica,
                         md.Descricao AS NomeDimensao,
@@ -599,6 +584,7 @@ namespace Aceca.Adm.Controllers.Acervo
                     Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI?.Trim() : null,
                     Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor?.Trim() : null,
                     IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? textInfo.ToTitleCase(vmModel?.IncluidoPor?.Trim()?.ToLower()) : null,
+                    IncluidoPorSocioId = !string.IsNullOrEmpty(vmModel?.IncluidoPorSocioId) ? string.Concat(vmModel?.IncluidoPorSocioId?.Trim(), ",") : null,
                     EmQuarentena = !string.IsNullOrEmpty(vmModel?.EmQuarentena?.ToString()) ? vmModel?.EmQuarentena : 0,
                     
                     //
@@ -832,44 +818,7 @@ namespace Aceca.Adm.Controllers.Acervo
         [HttpPost]
         public async Task<IActionResult> GetNovoCodigoAceca(int idMarcaAcervo, int idFase, string strNovoNomeParaCadastro, bool bvariante, bool bExTemPaisDestino)
         {
-            string strNovoCodigoAceca = string.Empty;
-
-            if (idFase < 1 || string.IsNullOrEmpty(strNovoNomeParaCadastro))
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "GetCodigoAceca - Id deve ser maior que 0",
-                    data = idFase
-                });
-
-            try
-            {
-                var queryExistsTermo = false;
-
-                var msgErroData = $"idMarcaFase :: {idFase} , strNovoNomeParaCadastro :: {strNovoNomeParaCadastro}";
-
-                var strCodigoAceca = string.Empty;
-
-                var strLetraInicial = strNovoNomeParaCadastro?.Trim()[0].ToString();
-
-                var query = _db.Marca
-                    .Include(x => x.MarcaSubTipo.MarcaTipo)
-                    .Include(x => x.MarcaFabrica)
-                    .Include(x => x.MarcaImpressora)
-                    //.Where(x => x.MarcaFaseId.Equals(idFase))
-                    .Where(x => x.CodigoAceca != null
-                                                    && (bvariante
-                                                        ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()) && x.MarcaFaseId.Equals(idFase)
-                                                        : (x.MarcaFaseId.Equals(idFase))
-                                                        )
-                                                    )
-                    .OrderByDescending(x => x.CodigoAceca)
-                    .Take(5);
-
-                var queryExists = query.Any();
-
-                /*
+            /*
                 10  Pré 1800 - 1943
                 11  $R 1800 - 1943
                 12  1PI 1942 - 1949
@@ -902,82 +851,80 @@ namespace Aceca.Adm.Controllers.Acervo
                 42  136QRCode
                 */
 
-                /*
-                switch (idFase)
+            string strNovoCodigoAceca = string.Empty;
+
+            if (idFase < 1 || string.IsNullOrEmpty(strNovoNomeParaCadastro))
+                return BadRequest(new
                 {
-                    //////Fases que as marcas iniciam com letras
-                    case 29: // Exportação (ex0156)
-                        {
-                            //Se tem país de destino inicia com EA, Se não tem é EX (minusculos).
+                    bResult = false,
+                    type = "ERRO",
+                    message = "GetCodigoAceca - Id deve ser maior que 0",
+                    data = idFase
+                });
 
-                            var strLetraInicialBusca = bExTemPaisDestino ? "EA" : "EX";
+            try
+            {
+                var model = new Marcas();
 
-                            query = query.Where(x => x.CodigoAceca != null
-                                                    && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaFaseId.Equals(idFase)
-                                                    )
-                                .OrderByDescending(x => x.CodigoAceca);
-                        }
-                        break;
-                    case 10: //Pré 1800 - 1943 (Pre3570)
-                    case 14: //SA 1964 - 1988(Z003)
-                    case 27: //Palheiros - Artesanais ( CT09055 ) 
-                    case 28: // Fumos, Cigarrilhas, RP (RP0721)
-                    case 32: // Cortadas (PRE0677B)
-                    case 34: // Quarentena
-                    case 35: // 136Amarelo 2019 - 2025
-                    case 36: // Comemorativas Aceca
-                    case 39: //   Clandestinas
-                    case 40: //   Exterior
-                    case 41: //   M & C
-                        {
+                var queryExistsTermo = false;
 
-                            query = query.Where(x => x.CodigoAceca != null
+                var msgErroData = $"idMarcaFase :: {idFase} , strNovoNomeParaCadastro :: {strNovoNomeParaCadastro}";
+
+                var strCodigoAceca = string.Empty;
+
+                var strLetraInicial = strNovoNomeParaCadastro?.Trim()[0].ToString();
+
+                var query = Enumerable.Empty<Marcas>().AsQueryable();
+
+                /*
+                var query = _db.Marca
+                    .Include(x => x.MarcaSubTipo.MarcaTipo)
+                    .Include(x => x.MarcaFabrica)
+                    .Include(x => x.MarcaImpressora);
+                    
+                    .Where(x => x.CodigoAceca != null
                                                     && (bvariante
-                                                        ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()) && x.MarcaFaseId.Equals(idFase)
-                                                        : (x.MarcaFaseId.Equals(idFase))
+                                                        ? (x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
+                                                        : (x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
                                                         )
                                                     )
-                                .OrderByDescending(x => x.CodigoAceca)
-                                .Take(5);
+                    */
 
-                            
-                            query = query.Where(x => x.CodigoAceca != null
-                                                    && (bvariante
-                                                        ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
-                                                        : (x.CodigoAceca.StartsWith(strLetraInicial) && x.MarcaFaseId.Equals(idFase))
-                                                        )
-                                                    )
-                                .OrderByDescending(x => x.CodigoAceca);
-                            
-            }
-                        break;
-                    default:
-                        //////Fases que as marcas iniciam com numeros
-                        {
-                            //|| idFase.Equals(36) // Comemorativas
+                if (idFase != 29)
+                {
+                    query = _db.Marca
+                    .Include(x => x.MarcaSubTipo.MarcaTipo)
+                    .Include(x => x.MarcaFabrica)
+                    .Include(x => x.MarcaImpressora)
+                    .Where(x => x.CodigoAceca != null
+                            && (bvariante
+                                ? (x.MarcaFaseId.Equals(idFase) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
+                                : (x.MarcaFaseId.Equals(idFase))
+                                )
+                          )
+                    .OrderByDescending(x => x.CodigoAceca)
+                    .Take(5);
+                }
+                else
+                {
+                    // 29 Exportacao
+                    //Se tem país de destino inicia com EA, Se não tem é EX (minusculos).
 
-                            query = query.Where(x => x.CodigoAceca != null
-                                                    && (bvariante
-                                                        ? x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString())
-                                                        : (x.MarcaFaseId.Equals(idFase))
-                                                        )
-                                                    )
-                                .OrderByDescending(x => x.CodigoAceca)
-                                .Take(5);
-                        }
-                        break;
+                    var strLetraInicialBusca = bExTemPaisDestino ? "EA" : "EX";
+
+                    query = _db.Marca
+                    .Include(x => x.MarcaSubTipo.MarcaTipo)
+                    .Include(x => x.MarcaFabrica)
+                    .Include(x => x.MarcaImpressora)
+                    .Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaFaseId.Equals(idFase))
+                    .OrderByDescending(x => x.CodigoAceca)
+                    .Take(5);
                 }
 
-                */
-                queryExistsTermo = query.Any();
+                var queryExists = query.Any();
 
-                var lstmodel = await query
-                            .AsNoTracking()
-                            .AsQueryable()
-                            .FirstOrDefaultAsync();
-
-                if (queryExists) {
-                    if (queryExistsTermo && bvariante && lstmodel == null)
+                if (!queryExists) {
+                    if (bvariante && model?.Id == null)
                     {
                         return Ok(new
                         {
@@ -988,30 +935,24 @@ namespace Aceca.Adm.Controllers.Acervo
                         });
                     }
 
-                    if (!queryExistsTermo && lstmodel == null)      
+                    if (model?.Id == null)
                     {
                         return Ok(new
                         {
                             bResult = false,
                             type = "ERRO - listagem Nula",
-                            message = "Essa fase não possui esse código Pai",
+                            message = "Erro ao recuperra novo codigo",
                             data = strNovoNomeParaCadastro
                         });
                     }
                 }
 
-                if (lstmodel == null)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = true,
-                        type = "ERRO - GetCodigoAceca - lstModel",
-                        message = "listagem Nula",
-                        data = msgErroData
-                    });
-                }
+                model = await query
+                          .AsNoTracking()
+                          .AsQueryable()
+                          .FirstOrDefaultAsync();
 
-                strCodigoAceca = lstmodel?.CodigoAceca?.ToString()?.Trim()?.ToUpper();
+                strCodigoAceca = model?.CodigoAceca?.ToString()?.Trim()?.ToUpper();
 
                 string strNumCodigoAceca = string.Empty;
 
@@ -1080,43 +1021,43 @@ namespace Aceca.Adm.Controllers.Acervo
                     });
                 }
 
-                if (lstmodel?.MarcaImpressoraId == null || lstmodel?.MarcaImpressoraId <= 0)
-                    if (!string.IsNullOrEmpty(lstmodel?.TxtImpressora))
+                if (model?.MarcaImpressoraId == null || model?.MarcaImpressoraId <= 0)
+                    if (!string.IsNullOrEmpty(model?.TxtImpressora))
                     {
                         var objImpressora = _db.MarcaImpressora
-                            .Where(i => i.Descricao.Equals(lstmodel.TxtImpressora.Trim()))
+                            .Where(i => i.Descricao.Equals(model.TxtImpressora.Trim()))
                             .FirstOrDefault();
 
                         if (objImpressora != null)
                         {
-                            lstmodel?.MarcaImpressora = new MarcaImpressora
+                            model?.MarcaImpressora = new MarcaImpressora
                             {
                                 Id = objImpressora?.Id,
                                 Descricao = objImpressora?.Descricao
                             };
 
-                            lstmodel?.MarcaImpressoraId = objImpressora?.Id;
+                            model?.MarcaImpressoraId = objImpressora?.Id;
                         }
                     }
 
 
-                if (lstmodel?.MarcaFabricaId == null || lstmodel?.MarcaFabricaId <= 0)
-                    if (!string.IsNullOrEmpty(lstmodel?.TxtFabrica))
+                if (model?.MarcaFabricaId == null || model?.MarcaFabricaId <= 0)
+                    if (!string.IsNullOrEmpty(model?.TxtFabrica))
                     {
                         var objFabrica = _db.MarcaFabrica
-                            .Where(i => i.Nome.Equals(lstmodel.TxtFabrica.Trim()))
+                            .Where(i => i.Nome.Equals(model.TxtFabrica.Trim()))
                             .FirstOrDefault();
 
                         if(objFabrica != null)
                         {
-                            lstmodel?.MarcaFabrica = new MarcaFabrica
+                            model?.MarcaFabrica = new MarcaFabrica
                             {
                                 Id = objFabrica?.Id,
                                 Nome = objFabrica?.Nome,
                                 Descricao = objFabrica?.Descricao
                             };
 
-                            lstmodel?.MarcaFabricaId = objFabrica?.Id;
+                            model?.MarcaFabricaId = objFabrica?.Id;
                         }
                     }
 
@@ -1125,7 +1066,7 @@ namespace Aceca.Adm.Controllers.Acervo
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
-                    data = lstmodel,
+                    data = model,
                     dataNovoCodigo = strNovoCodigoAceca
                 });
             }
@@ -1154,6 +1095,30 @@ namespace Aceca.Adm.Controllers.Acervo
             char[] chars = input.ToCharArray();
             chars[index] = newChar;
             return new string(chars);
+        }
+
+        public async Task<MarcaAcervo> GetMarcaAcervoById(int id)
+        {
+            try
+            {
+                if (id < 1)
+                    return null;
+
+                var model = await _db.MarcaAcervo.FindAsync(id);
+
+                if (model == null)
+                    return null;
+
+                return model;
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return null;
+            }
         }
 
         #endregion

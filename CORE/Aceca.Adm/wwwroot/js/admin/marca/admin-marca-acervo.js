@@ -1,13 +1,13 @@
 /**
- * Admin -> Marca -> Fase
+ * Admin -> Marca -> Tipo Acervo
  */
 
 'use strict';
 
 //#region Declare
 
-let var_Nome = 'Marcas -> Fase',
-    var_Controller = '/MarcaFase',
+let var_Nome = 'Marca -> Tipo Acervo',
+    var_Controller = '/MarcaAcervo',
     var_ControllerCmb = '/HelperExtensions',
 
     varTbl_Obj = $('.datatables-basic'),
@@ -70,8 +70,8 @@ function fn_GridList(formValid) {
         varAjax_UrlController = `${var_Controller}/ListGrid`,
         varAjax_TypeAction = 'GET',
 
-        varCol_Exportar = [2, 3, 4, 5],
-        varCol_Ordenacao = [[4, 'asc']],
+        varCol_Exportar = [2, 3],
+        varCol_Ordenacao = [[2, 'asc']],
 
         varItems_QtdPorPage = 50,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
@@ -126,26 +126,11 @@ function fn_GridList(formValid) {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
                 },
-                // COLUNA - Imagem
-                {
-                    data: 'imagem',
-                    targets: 2,
-                    visible: false,
-                    render: function (data, type, row, meta) {
-                        return data; //`<img name="myImg" class="td-img cmyImg" alt="${row.descricao}" src="${data}">`;
-                    }
-                },
                 // COLUNA - Descricao
                 {
                     data: 'descricao',
-                    targets: 3,
+                    targets: 2,
                 },
-                // COLUNA - Ordem
-                {
-                    data: 'ordem',
-                    targets: 4,
-                },
-
                 // COLUNA - Status                    
                 {
                     targets: -2,
@@ -197,7 +182,7 @@ function fn_GridList(formValid) {
 
                             btns =
                                 '<div class="d-inline-block text-nowrap">' +
-                                '<a href="javascript:fn_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
+                                    '<a href="javascript:fn_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
                                 '</div>'
                         }
 
@@ -488,7 +473,6 @@ function fn_Pop(obj, action) {
 
         // Pop Dados
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.descricao)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.ordem)),
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
 
 
@@ -506,7 +490,6 @@ function fn_PopGetObj() {
     const objFormData = {
         Id: $('#hdId').val(),
         Descricao: $('.form-add-new-item .dt-line-01').val(),
-        Ordem: $('.form-add-new-item .dt-line-02').val(),
         Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 

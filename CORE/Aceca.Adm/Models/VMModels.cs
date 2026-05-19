@@ -132,6 +132,7 @@ namespace Aceca.Adm.VMModels
         public string? Valor2PI { get; set; }
         public string? Valor { get; set; }
         public string? IncluidoPor { get; set; }
+        public string? IncluidoPorSocioId { get; set; }
         public int? EmQuarentena { get; set; }
 
         public VMMarcaDimensao? MarcaDimensao { get; set; }
@@ -148,6 +149,7 @@ namespace Aceca.Adm.VMModels
     {
         public int? Id { get; set; }
         public int? IdMarcaFase { get; set; }
+        public int? IdMarcaAcervo { get; set; }
         public int? IdMarcaFinalidade { get; set; }
         public int? IdMarcaFabrica { get; set; }
         public int? IdMarcaDimensao { get; set; }
@@ -159,6 +161,7 @@ namespace Aceca.Adm.VMModels
 
         public string? CodigoAceca { get; set; }
         public string? NomeMarca { get; set; }
+        public string? NomeAcervo { get; set; }        
         public string? NomeFase { get; set; }
         public string? NomeFabrica { get; set; }
         public string? NomeDimensao { get; set; }

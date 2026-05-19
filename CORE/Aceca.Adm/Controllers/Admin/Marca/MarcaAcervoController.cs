@@ -1,18 +1,15 @@
 ﻿using Aceca.Adm.Data;
-using Aceca.Adm.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
 using System.Reflection;
 
-namespace Aceca.Adm.Controllers.Admin.Pais
+namespace Aceca.Adm.Controllers.Admin.Marca
 {
-    public class PaisController : Controller
+    public class MarcaAcervoController : Controller
     {
         #region variaveis
 
-        private readonly ILogger<PaisController> _logger;
+        private readonly ILogger<MarcaAcervoController> _logger;
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
@@ -24,7 +21,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
 
         #endregion
 
-        public PaisController(ILogger<PaisController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
+        public MarcaAcervoController(ILogger<MarcaAcervoController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
         {
             _logger = logger;
             _db = db;
@@ -36,11 +33,11 @@ namespace Aceca.Adm.Controllers.Admin.Pais
             _urlBaseApp = _appConfiguration["Url:App"]!;
         }
 
-        #region Index
+        #region CRUD JS
 
         public ActionResult Index()
         {
-            return View("~/Views/Admin/Pais/Pais.cshtml");
+            return View("~/Views/Admin/Marca/MarcaAcervo.cshtml");
         }
 
         #endregion
@@ -52,9 +49,9 @@ namespace Aceca.Adm.Controllers.Admin.Pais
         {
             try
             {
-                var lstModel = await _db.Pais
-                    .Include(x =>x.PaisCategoria)
-                    .OrderBy(x => x.Nome)
+
+                var lstModel = await _db.MarcaAcervo
+                    .OrderBy(x => x.Descricao)
                     .AsNoTracking()
                     .ToListAsync();
 
@@ -70,12 +67,17 @@ namespace Aceca.Adm.Controllers.Admin.Pais
                 }
 
                 return Ok(new
-                {
+                {/*
+                    _logger.LogInformation(
+                    $"{lstModel} graus Fahrenheit = " +
+                    $"{resultado.Celsius} graus Celsius = " +
+                    $"{resultado.Kelvin} graus Kelvin");
+                return resultado;
+                    */
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
                     data = lstModel,
-                    imgBase = _urlBaseImg
                 });
             }
             catch (Exception ex)
@@ -98,7 +100,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
         #region CRUD JS
 
         [HttpPost]
-        public async Task<IActionResult> Create(Models.Pais model)
+        public async Task<IActionResult> Create(Models.MarcaAcervo model)
         {
             try
             {
@@ -112,15 +114,13 @@ namespace Aceca.Adm.Controllers.Admin.Pais
                             message = "Descricao deve ser preenchido"
                         });
 
-                    var newModel = new Models.Pais
+                    var newModel = new Models.MarcaAcervo
                     {
-                        PaisCategoriaId = model.PaisCategoriaId,
-                        Nome = !string.IsNullOrEmpty(model.Nome) ? model.Nome : null,
                         Descricao = !string.IsNullOrEmpty(model.Descricao) ? model.Descricao : null,
                         Ativo = model.Ativo
                     };
 
-                    _db.Pais.Add(newModel);
+                    _db.MarcaAcervo.Add(newModel);
                     _db.SaveChanges();
 
                     model.Id = newModel?.Id;
@@ -166,7 +166,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(Models.Pais model)
+        public async Task<IActionResult> Edit(Models.MarcaAcervo model)
         {
             try
             {
@@ -238,7 +238,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
                     });
                 }
 
-                var model = await _db.Pais.FindAsync(id);
+                var model = await _db.MarcaAcervo.FindAsync(id);
 
                 if (model == null)
                     return Ok(new
@@ -249,7 +249,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
                         data = id
                     });
 
-                _db.Pais.Remove(model);
+                _db.MarcaAcervo.Remove(model);
                 _db.SaveChanges();
 
                 return Ok(new

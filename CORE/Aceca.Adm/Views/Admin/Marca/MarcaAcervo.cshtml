@@ -19,7 +19,7 @@
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
     <!-- Form Validation -->
-    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
 
 
     <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
@@ -28,13 +28,6 @@
     <!-- Select Dropdownlist -->
     <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
     <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
-
-    <!-- CSS PAGE -->
-    <link rel="stylesheet" href="~/css/zoom.css">
-    <link rel="stylesheet" href="~/css/marcas.css?v=1.0.0">
-
-    <!--  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.8/css/responsive.dataTables.min.css">-->
-    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css" />
 }
 
 @section VendorScripts {
@@ -54,15 +47,10 @@
     <!-- Select Dropdownlist -->
     <script src="~/vendor/libs/select2/select2.js"></script>
     <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
-
-    <!--<script src="https://cdn.datatables.net/responsive/2.1.0/js/dataTables.responsive.js"></script>-->
-    <script src="~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js"></script>
 } 
 
 @section PageScripts {
-    <script src="~/js/admin/pais/admin-pais.js"></script>
-    <!-- Select Dropdownlist -->
-    <script src="~/js/forms-selects.js"></script>
+    <script src="~/js/admin/marca/admin-marca-acervo.js"></script>
 }
 
 @* ************** Content ************** *@
@@ -73,12 +61,7 @@
             <tr>
                 <th></th>
                 <th>id</th>
-                <th>img01</th>
-                <th>img02</th>
-                <th>img03</th>
-                <th>Nome</th>
                 <th>Descri&ccedil;&atilde;o</th>
-                <th>Categoria</th>
                 <th>Status</th>
                 <th>A&ccedil;&otilde;es</th>
             </tr>
@@ -87,17 +70,10 @@
     </div>
 </div>
 
-<!-- The Modal Zoom -->
-<div id="myModal" class="modal">
-    <span id="caption">img</span>
-    <img class="modal-content" id="img01">
-</div>
-
 <!-- Modal Add new Item -->
 <div class="offcanvas offcanvas-end" id="pop-add-new-item">
     <div class="offcanvas-header border-bottom">
         <input type="hidden" id="hdId" name="hdId" value="0"/>
-        <input type="hidden" id="hdPaisCategoriaId" name="hdPaisCategoriaId" value="0" />
         <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
@@ -108,30 +84,11 @@
                     <span id="line_item_01" class="input-group-text"></span>
                     <div class="form-floating form-floating-outline">
                         <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01"
-                               placeholder="Nome" aria-label="Nome" aria-describedby="line_item_01"/>
-                        <label for="pop_line_item_01">Nome</label>
+                               placeholder="descricao" aria-label="Descricao" aria-describedby="line_item_01" />
+                        <label for="pop_line_item_01">Descri&ccedil;&atilde;o</label>
                     </div>
                 </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <span id="line_item_02" class="input-group-text"></span>
-                    <div class="form-floating form-floating-outline">
-                        <textarea class="form-control h-px-100 dt-line-02" id="pop_line_item_02" name="pop_line_item_02" placeholder="Descrição..."></textarea>
-                        <label for="pop_line_item_02">Descri&ccedil;&atilde;o</label>
-                    </div>
-                </div>
-            </div>
-            <div id="pop_div_line_item_04" name="PaisCategoria" class="col-sm-12">
-                <div class="form-floating form-floating-outline">
-                    <select id="cmb_PaisCategoria" name="cmb_PaisCategoria"
-                            class="form-select select2 dt-line-04"
-                            data-allow-clear="true">
-                        <option value="-1">-- Selecionar --</option>
-                    </select>
-                    <label for="cmb_PaisCategoria">Categoria</label>
-                </div>
-            </div>
+            </div>            
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
                     <div class="form-check form-switch mb-2">

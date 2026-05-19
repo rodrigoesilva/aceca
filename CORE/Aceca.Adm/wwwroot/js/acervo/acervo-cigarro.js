@@ -1531,7 +1531,7 @@ function fn_Modal(obj, action) {
 }
 
 function fnItem_PopImgPrincipal(obj) {
-    //console.log("fnItem_PopImgPrincipal obj !", obj);
+    console.log("fnItem_PopImgPrincipal obj !", obj);
 
     if (obj !== null) {
 

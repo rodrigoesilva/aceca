@@ -25,7 +25,7 @@ const swalWithBootstrapButtons = Swal.mixin({
     buttonsStyling: false
 });
 
-let objVariante;
+let objVariante, strMarcaAcervo;
 
 const combosLoaded = {};
 
@@ -111,7 +111,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         //// FORM
-
         document.querySelector('#formPage').addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -122,16 +121,6 @@ document.addEventListener('DOMContentLoaded', function () {
             //   this.closest('form').submit();
             fn_ModalSalvar(e);
         });
-
-        /*
-        $('.data-submit').on('click', function (e) {
-            e.preventDefault();
-
-            //console.log("submit click::")
-            fn_ModalSalvar(e);
-        });
-        */
-
     })();
 });
 
@@ -227,8 +216,11 @@ function fn_ModalErro(xhr, textStatus, errorThrown) {
         confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
         customClass: {
             confirmButton: 'btn btn-label-danger waves-effect'
-        }
-    });
+        },
+    }).then((result) => {
+        fn_Limpar();
+        //console.log("fn_ModalOpcaoInvalida result ::: ", result);
+    })
 }
 
 function fn_Modal(obj, action) {
@@ -385,11 +377,13 @@ function fn_ModalGetObj() {
         IdMarcaQualidadeImagem: $('#hdMarcaQualidadeImagemId').val(),
         IdMarcaRaridade: $('#hdMarcaRaridadeId').val(),
 
+        MarcaAcervoId: $('#cmbPop_MarcaAcervo').val(),
         MarcaFaseId: $('#cmbPop_MarcaFase').val(),
         CodigoVariante: $('#txt_CodigoVariante').val(),
         CodigoAceca: $('#txt_Codigo').val(),
         Nome: $('#txt_Nome').val(),
         IncluidoPor: $('#txt_IncluidoPor').val(),
+        IncluidoPorSocioId: $('#cmbPop_IncluidoSocio').val(),
         MarcaFinalidadeId: $('#cmbPop_MarcaFinalidade').val(),
         MarcaFabricaId: $('#cmbPop_MarcaFabrica').val(),
         CodigoFabrica: $('#txt_CodFabrica').val(),
@@ -541,6 +535,9 @@ function fn_ChangeCombos() {
         fn_CamposHide("cmbPop_MarcaAcervo");
 
         if (idMarcaAcervo > 0) {
+
+            fn_MenuAcervo(); 
+
             document.querySelectorAll('#cmbPop_MarcaFase option').forEach(option => option.remove());
             $("#cmbPop_MarcaFase").append($("<option></option>").val(0).html("-- Selecionar --"));
 
@@ -566,7 +563,11 @@ function fn_ChangeCombos() {
 
         if (idMarcaFase > 0) {
 
-            console.log("cmb_MarcaFase change idMarcaVariante ::: ", idMarcaVariante);
+            //console.log("cmb_MarcaFase change idMarcaVariante ::: ", idMarcaVariante);
+
+            let txtFaseSel = $(this).find('option:selected').text();
+            document.getElementById("spNovoCodigo").textContent = `Novo Código ACECA - ${txtFaseSel}`;
+            document.getElementById("h6Titulo").textContent = `Dados do Item de Cadastro - ${txtFaseSel}`;
 
             if (idMarcaVariante > 0) {
                 $('#cmbPop_MarcaVariante').prop('selectedIndex', 0).change();
@@ -576,14 +577,16 @@ function fn_ChangeCombos() {
 
             if (idMarcaFase === 29) { //Exportacao
 
-                console.log("cmb_MarcaFase change Exportacao ::: ", idMarcaFase);
+                //console.log("cmb_MarcaFase change Exportacao ::: ", idMarcaFase);
+
+                $('#cmbPop_MarcaExTemPaisDestino').prop('selectedIndex', 0).change();
 
                 $('.div_variante').attr('style', 'display:none !important');
                 
                 $('.div_tem_pais_destino').attr('style', 'display:block !important');
             } else {
 
-                console.log("cmb_MarcaFase change ELSE ::: ", idMarcaFase);
+                //console.log("cmb_MarcaFase change ELSE ::: ", idMarcaFase);
                 $('.div_variante').attr('style', 'display:block !important');
                 $('.div_tem_pais_destino').attr('style', 'display:none !important');
             }
@@ -595,11 +598,13 @@ function fn_ChangeCombos() {
         let idMarcaVariante = $(this).find('option:selected').val();
         let idMarcaFase = $('#cmbPop_MarcaFase').find('option:selected').val();
 
-        console.log("cmbPop_MarcaVariante change idMarcaFase ::: ", idMarcaFase);
+        //console.log("cmbPop_MarcaVariante change idMarcaFase ::: ", idMarcaFase);
+
+        fn_CamposHide("cmbPop_MarcaVariante");
 
         if (idMarcaFase > 0) {
             if (idMarcaVariante > 0) {
-                console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
+                //console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
 
                 if (idMarcaFase == 29) {
                     $('.div_tem_pais_destino').attr('style', 'display:block !important');
@@ -607,17 +612,12 @@ function fn_ChangeCombos() {
                     $('.div_variante_codigo').show();
                 }
 
-                fn_CamposHide("cmbPop_MarcaVariante - 1");
-
                 $('.div_variante_codigo').show();
             }
             else {
-                console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
+                //console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
                 if (idMarcaVariante == 0) {
                     $('.div_variante_codigo').hide();
-                    //$('#txt_CodigoVariante').val('');
-
-                    //fn_CamposHide("cmbPop_MarcaVariante - 2");
 
                     fn_GetCodigoAceca();
                 }
@@ -628,17 +628,39 @@ function fn_ChangeCombos() {
     $('#cmbPop_MarcaExTemPaisDestino').on('change', function () {
 
         let idExPaisDestino = $(this).find('option:selected').val();
+        //console.log("cmbPop_MarcaExTemPaisDestino change idExPaisDestino ::: ", idExPaisDestino);
 
-        console.log("cmbPop_MarcaExTemPaisDestino change idExPaisDestino ::: ", idExPaisDestino);
+        fn_CamposHide("cmbPop_MarcaExTemPaisDestino");
 
         if (idExPaisDestino >= 0) {
             $('#cmbPop_MarcaVariante').prop('selectedIndex', 0).change();
             $('.div_variante').attr('style', 'display:block !important');
-            //fn_GetCodigoAceca();
         }else {
             $('.div_variante').attr('style', 'display:none !important');
         }
        
+    });
+
+    $('#cmbPop_IncluidoPor').on('change', function () {
+
+        let idIncluidoPor = $(this).find('option:selected').val();
+
+        console.log("cmbPop_IncluidoPor change idIncluidoPor ::: ", idIncluidoPor);
+
+        fn_CamposHide("cmbPop_IncluidoPor");
+
+        if (idIncluidoPor > 0) {
+            $('.div_IncluidoSocio').show();
+            $('.div_IncluidoNaoSocio').hide();
+            $('#txt_IncluidoPor').hide();
+            $('#txt_IncluidoPor').val('');
+        }
+        else {
+            $('.div_IncluidoSocio').hide();
+            $('.div_IncluidoNaoSocio').show();
+            $('#txt_IncluidoPor').show();
+            $('#txt_IncluidoPor').val('');
+        }
     });
 
     $('#cmbPop_MarcaFabrica').on('change', function () {
@@ -646,11 +668,7 @@ function fn_ChangeCombos() {
         let idMarcaFabrica = $(this).find('option:selected').val();
         //console.log("cmb_MarcaFabrica change idMarcaFabrica ::: ", idMarcaFabrica);
 
-        let bNovaVariante = $('#cmbPop_MarcaVariante').val() > 0 ? true : false;
-        //console.log("cmb_MarcaTipo change bNovaVariante ::: ", bNovaVariante);
-
-        if (idMarcaFabrica <= 0 && bNovaVariante === false) {
-            //fn_ModalOpcaoInvalida();
+        if (idMarcaFabrica > 0) {
         }
     });
 
@@ -658,10 +676,6 @@ function fn_ChangeCombos() {
 
         let idMarcaTipo = $(this).find('option:selected').val();
         //console.log("cmb_MarcaTipo change idMarcaTipo ::: ", idMarcaTipo);
-
-        let bNovaVariante = $('#cmbPop_MarcaVariante').val() > 0 ? true : false;
-        //console.log("cmb_MarcaTipo change bNovaVariante ::: ", bNovaVariante);
-        //console.log("cmbPop_MarcaSubTipo length ::: ", $('#cmbPop_MarcaSubTipo option').length);
 
         if ($('#cmbPop_MarcaSubTipo option').length <= 1 && idMarcaTipo > 0) {
 
@@ -672,9 +686,7 @@ function fn_ChangeCombos() {
             fn_LoadCmb_MarcaSubTipo(idMarcaTipo);
         }
 
-        if (idMarcaTipo <= 0 && bNovaVariante === false) {
-            //fn_ModalOpcaoInvalida();
-        } else {
+        if (idMarcaTipo > 0) {
 
             //console.log("cmb_MarcaTipo change objVariante ::: ", objVariante);
 
@@ -685,11 +697,6 @@ function fn_ChangeCombos() {
                 /*
                 console.log("cmb_MarcaTipo change marcaSubTipoId ::: ", marcaSubTipoId);
                 console.log("cmb_MarcaTipo change marcaSubTipoId ::: ", marcaSubTipoTxt);
-                
-                $('#cmbPop_MarcaSubTipo option').filter(function () {
-                    return $(this).text() === marcaSubTipoTxt;
-                }).prop('selected', true).trigger('change');
-                //$("#cmbPop_MarcaSubTipo").val(Number(marcaSubTipoId)).change();
                 */
 
                 $("#cmbPop_MarcaSubTipo").val(Number(marcaSubTipoId));
@@ -704,7 +711,7 @@ function fn_PopLoadCombos() {
     fn_LoadCmb_MarcaAcervo();
     fn_LoadCmb_MarcaExPaisDestino();
     fn_LoadCmb_MarcaVariante();
-    //fn_LoadCmb_MarcaFase();
+    fn_LoadCmb_IncluidoSocio();
     fn_LoadCmb_MarcaFinalidade();
     fn_LoadCmb_MarcaFabrica();
     fn_LoadCmb_MarcaDimensao();
@@ -781,6 +788,32 @@ function fn_LoadCmb_MarcaVariante() {
                         //console.log("fn_LoadCmb_MarcaVariante  result id ::: ", id);
                         //console.log("fn_LoadCmb_MarcaVariante  result ::: ", result);
                         $("#cmbPop_MarcaVariante").append($("<option></option>").val(result.value).html(result.text));
+                        $("#cmbPop_IncluidoPor").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+}
+
+function fn_LoadCmb_IncluidoSocio() {
+    //console.log("fn_LoadCmb_IncluidoSocio ::: ");
+
+    if ($('#cmbPop_IncluidoSocio').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_Socio`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_IncluidoSocio  data ::: ", data);
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_IncluidoSocio  result id ::: ", id);
+                        //console.log("fn_LoadCmb_IncluidoSocio  result ::: ", result);
+                        $("#cmbPop_IncluidoSocio").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
@@ -794,8 +827,7 @@ function fn_LoadCmb_MarcaVariante() {
 function fn_LoadCmb_MarcaFase() {
     //console.log("fn_LoadCmb_MarcaFase ::: ");
     
-    let strComboText;
-    let idMarcaAcervo = $('#cmbPop_MarcaAcervo').find('option:selected').val();
+       
 
     if ($('#cmbPop_MarcaFase').length <= 1) {
         $.ajax(
@@ -809,23 +841,7 @@ function fn_LoadCmb_MarcaFase() {
                     $.each(data, function (id, result) {
                         //console.log("fn_LoadCmb_MarcaFase  result id ::: ", id);
 
-                        switch (idMarcaAcervo) {
-                            case '1':
-                                strComboText = `CIGARROS - ${result.text}`;
-                                break;
-                            case '2':
-                                strComboText = `PALHEIROS - ${result.text}`;
-                                break;
-                            case '3':
-                                strComboText = `AFINS - ${result.text}`;
-                                break;
-                            default:
-                                strComboText = `${result.text}`;
-                        }
-
-                        //console.log("fn_LoadCmb_MarcaFase  strComboText ::: ", strComboText);
-
-                        $("#cmbPop_MarcaFase").append($("<option></option>").val(result.value).html(strComboText));
+                        $("#cmbPop_MarcaFase").append($("<option></option>").val(result.value).html(`${strMarcaAcervo} - ${result.text}`));
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
@@ -1101,8 +1117,9 @@ function fn_LoadCmb_MarcaRaridade() {
 //#endregion
 
 //#region FUNCOES
+
 function fn_CamposHide(origem) {
-    console.log("fn_CamposHide origem ::: ", origem);
+    //console.log("fn_CamposHide origem ::: ", origem);
 
     $('.div_original_variante').hide();
     document.getElementById("div_NomePaiVariante").innerHTML = '';
@@ -1117,7 +1134,12 @@ function fn_CamposHide(origem) {
     //Linha 01
     $('.div_dados').hide();
 
+    $('.div_Incluido').hide();
+    $('.div_IncluidoNaoSocio').hide();
+    $('.div_IncluidoSocio').hide();
     $('#txt_IncluidoPor').val('');
+    $('#txt_IncluidoPor').hide();
+
     //$('#cmbPop_MarcaFinalidade').prop('selectedIndex', 0).change();
     //$('#cmbPop_MarcaFabrica').prop('selectedIndex', 0).change();
     $('#txt_CodFabrica').val('');
@@ -1145,6 +1167,8 @@ function fn_CamposHide(origem) {
         
     //Linha 06 - Imagens
     $('.div_imagem').hide();
+    $('.div_img_principal').hide();
+    $('.div_img_detalhe').hide();
 
     $('#txt_ImgPrincipal').val('');
     $('#txt_ImgDetalhe').val('');
@@ -1156,23 +1180,23 @@ function fn_CamposHide(origem) {
 }
 
 function fn_CamposShow(result) {
-    console.log("fn_CamposShow result ::: ", result);
+    //console.log("fn_CamposShow result ::: ", result);
 
     let idMarcaFase = $('#cmbPop_MarcaFase').find('option:selected').val();
 
     if ($('#txt_Nome').val() != '') {
         //console.log("fn_CamposShow idMarcaFase ::: ", idMarcaFase);
         if (idMarcaFase != 29) {// 29 Exportacao
-            console.log("fn_CamposShow NAO EXPORT ::: ", idMarcaFase);
+            //console.log("fn_CamposShow NAO EXPORT ::: ", idMarcaFase);
             //$('.div_variante').show();
             //$('.div_tem_pais_destino').hide();
             //$('#cmbPop_MarcaExTemPaisDestino').prop('selectedIndex', 0).change();
             //$('.div_variante').attr('style', 'display:block !important');
             $('.div_tem_pais_destino').attr('style', 'display:none !important');
         } else {
-            console.log("fn_CamposShow ELSE EXPORT ::: ", idMarcaFase);
+            //console.log("fn_CamposShow ELSE EXPORT ::: ", idMarcaFase);
             //$('#cmbPop_MarcaVariante').prop('selectedIndex', 0).change();
-            $('.div_variante').attr('style', 'display:none !important');
+            //$('.div_variante').attr('style', 'display:none !important');
             $('.div_tem_pais_destino').attr('style', 'display:block !important');
             //$('.div_variante').hide();
             //$('.div_tem_pais_destino').show();
@@ -1195,15 +1219,19 @@ function fn_CamposShow(result) {
 
 
     //fn_CamposHide("fn_CamposShow");
-
+    /*
     $('#txt_Codigo').css('color', '#FFFFFF');
     $('#txt_Codigo').css('background-color', '#47007b');
     $('#txt_Codigo').css('text-align', 'center');
     $('#txt_Codigo').css("font-weight", "500");
     $('#txt_Codigo').css("font-size", "0.9375rem");
-    $('#txt_Codigo').val(result.dataNovoCodigo)
+    $('#txt_Codigo').val(result.dataNovoCodigo);
+    */
+    document.getElementById("div_NovoCodigo").textContent = result.dataNovoCodigo;
+    
 
     $('.div_codigo').show();
+    $('.div_Incluido').show();
     $('.div_dados').show();
     $('.div_imagem').show();
     $('.div_botoes').show();
@@ -1270,8 +1298,8 @@ function fn_GetCodigoAceca() {
     let idMarcaFase = $('#cmbPop_MarcaFase').find('option:selected').val();
     let idMarcaAcervo = $('#cmbPop_MarcaAcervo').find('option:selected').val();
 
-    console.log("fn_GetCodigoAceca idMarcaFase ::: ", idMarcaFase);
-    console.log("fn_GetCodigoAceca idMarcaAcervo ::: ", idMarcaAcervo);
+    //console.log("fn_GetCodigoAceca idMarcaFase ::: ", idMarcaFase);
+    //console.log("fn_GetCodigoAceca idMarcaAcervo ::: ", idMarcaAcervo);
 
     let txtNome = $('#txt_Nome').val();
     let txtCodigoVariante = $('#txt_CodigoVariante').val();
@@ -1297,7 +1325,7 @@ function fn_GetCodigoAceca() {
                 bExTemPaisDestino: bExTemPaisDestino
             },
             success: function (result) {
-                console.log("fn_GetCodigoAceca  result ::: ", result);
+                //console.log("fn_GetCodigoAceca  result ::: ", result);
 
                 if (result.bResult) {
                     objVariante = bNovaVariante ? result.data : null;
@@ -1307,7 +1335,7 @@ function fn_GetCodigoAceca() {
                     //
                     fn_CamposShow(result);                    
                 } else {
-                    console.log("fn_GetCodigoAceca  result ::: ", result);
+                    //console.log("fn_GetCodigoAceca  result ::: ", result);
 
                     Swal.fire({
                         title: 'OPS!!',
@@ -1335,7 +1363,7 @@ function fn_GetCodigoAceca() {
 }
 
 function fn_PreencheDadosExistentes(obj) {
-    console.log("fn_PreencheDadosExistentes obj::: ", obj);
+    //console.log("fn_PreencheDadosExistentes obj::: ", obj);
 
     // Pop ID
     (document.querySelector('#hdId').value = (obj === null ? 0 : obj.id));
@@ -1362,7 +1390,7 @@ function fn_PreencheDadosExistentes(obj) {
         (obj === null ? $('.div_original_variante').hide() : $('.div_original_variante').show());
 
         // Pop Dados
-    (document.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor));
+        (document.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor));
         $("#cmbPop_MarcaFinalidade").val(obj === null ? '-1' : ((obj.marcaFinalidadeId === undefined || obj.marcaFinalidadeId === null || obj.marcaFinalidadeId <= 0) ? '-1' : obj.marcaFinalidadeId)).change();
         $("#cmbPop_MarcaFabrica").val(obj === null ? '-1' : ((obj.marcaFabricaId === undefined || obj.marcaFabricaId === null || obj.marcaFabricaId <= 0) ? '-1' : obj.marcaFabricaId)).change();
         (document.querySelector('#txt_CodFabrica').value = (obj === null ? '' : obj.codigoFabrica));
@@ -1386,6 +1414,64 @@ function fn_PreencheDadosExistentes(obj) {
         (document.querySelector('#txt_ImgDetalhe').value = '');
         //(obj === null || obj?.imgPrincipal === null) ? (document.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
         //(obj === null || obj?.imgDetalhe === null) ? (document.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
+}
+
+function fn_MenuAcervo() {
+
+    let idMarcaAcervo = $('#cmbPop_MarcaAcervo').find('option:selected').val();
+    $('#hdMarcaAcervoId').val(idMarcaAcervo);
+    //console.log("fn_MenuAcervo idMarcaAcervo :: ", idMarcaAcervo);
+
+    switch (idMarcaAcervo) {
+        case '1':
+            strMarcaAcervo = `Cigarros`;
+            break;
+        case '2':
+            strMarcaAcervo = `Palheiros`;
+            break;
+        case '3':
+            strMarcaAcervo = `Cigarrilhas`;
+            break;
+        case '4':
+            strMarcaAcervo = `Charutos`;
+            break;
+        case '5':
+            strMarcaAcervo = `Fumos & Diversos`;
+            break;
+        case '6':
+            strMarcaAcervo = `Afins`;
+            break;
+        default:
+            strMarcaAcervo = "";
+    }
+
+    $('#hdMarcaAcervoNome').val(strMarcaAcervo);
+
+    //Titulo
+    $('div.head-label-filtro').html(`<h5 class="card-title mb-0 title-filtro">${var_Nome} - ${strMarcaAcervo}</h5>`);
+}
+
+function fn_PreencheDadosDescricao() {
+    console.log("fn_PreencheDadosDescricao :: ");
+
+    let var_MarcaAcervo = $('#cmbPop_MarcaAcervo').find('option:selected').text();
+    let var_MarcaFase = $('#cmbPop_MarcaFase').find('option:selected').text();
+    let var_MarcaExTemPaisDestino = $('#cmbPop_MarcaExTemPaisDestino').find('option:selected').text();
+    let var_MarcaVariante = $('#cmbPop_MarcaVariante').find('option:selected').text();
+    let var_MarcaFinalidade = $('#cmbPop_MarcaFinalidade').find('option:selected').text();
+    let var_MarcaFabrica = $('#cmbPop_MarcaFabrica').find('option:selected').text();
+    let var_CodFabrica = $('#txt_CodFabrica').val();
+    let var_MarcaDimensao = $('#cmbPop_MarcaDimensao').find('option:selected').text();
+    let var_MarcaTipo = $('#cmbPop_MarcaTipo').find('option:selected').text();
+    let var_MarcaSubTipo = $('#cmbPop_MarcaSubTipo').find('option:selected').text();
+    let var_MarcaImpressora = $('#cmbPop_MarcaImpressora').find('option:selected').text();
+    let var_MarcaQualidadeImagem = $('#cmbPop_MarcaQualidadeImagem').find('option:selected').text();
+    let var_MarcaRaridade = $('#cmbPop_MarcaRaridade').find('option:selected').text();
+
+    let strDescricao = `${var_MarcaFinalidade} - ${var_MarcaFabrica} - ${var_CodFabrica} - ${var_MarcaDimensao} - ${var_MarcaTipo} - ${var_MarcaSubTipo} - ${var_MarcaImpressora}`;
+    console.log("fn_PreencheDadosDescricao strDescricao :: ", strDescricao);
+
+    document.getElementById("txt_Descricao").value = strDescricao;
 }
 
 //#endregion
@@ -1509,6 +1595,31 @@ function fn_ModalSalvar(e) {
                 fn_ModalErro(xhr, textStatus, errorThrown);
             },
         });
+    }
+}
+
+//#endregion
+
+//#region IMAGENS
+
+function fn_PreviewImage(input) {
+    // console.log("fn_PreviewImage input ::: ", input);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+
+            //console.log("fn_PreviewImage e ::: ", e);
+            //console.log("fn_PreviewImage input id ::: ", input.id);
+            if (input.id === 'txt_ImgPrincipal') {
+                //document.getElementById('img_ImgPrincipal').src = e.target.result;
+                document.getElementById('img_ImgPrincipal').src = e.target.result;
+                $('.div_img_principal').show();
+            } else {
+                document.getElementById('img_ImgDetalhe').src = e.target.result;
+                $('.div_img_detalhe').show();
+            }
+        };
+        reader.readAsDataURL(input.files[0]); // Converts to Base64 string
     }
 }
 

@@ -1,4 +1,5 @@
 
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -215,7 +216,9 @@ namespace Aceca.Adm.Models
         public string? Valor2PI { get; set; } = null;
         public string? Valor { get; set; } = null;
         public string? IncluidoPor { get; set; } = null;
+        public string? IncluidoPorSocioId { get; set; } = null;
         public int? EmQuarentena { get; set; }
+        public MarcaAcervo? MarcaAcervo { get; set; }
         public MarcaDimensao? MarcaDimensao { get; set; }
         public MarcaFabrica? MarcaFabrica { get; set; }
         public MarcaFase? MarcaFase { get; set; }
@@ -226,7 +229,7 @@ namespace Aceca.Adm.Models
         public MarcaSubTipo? MarcaSubTipo { get; set; }
         //public FabricaFase? FabricaFase { get; set; }
 
-        public ICollection<SocioColecao> SociosColecao{ get; set; }
+        [ValidateNever] public ICollection<SocioColecao>? SociosColecao { get; set; }
     }
 
     [Table("marcas_dimensao")]
@@ -344,7 +347,7 @@ namespace Aceca.Adm.Models
 
         public SocioPerfil? SocioPerfil { get; set; }
 
-        public ICollection<SocioColecao> ColecaoSocios { get; set; }
+        [ValidateNever] public ICollection<SocioColecao>? ColecaoSocios { get; set; }
     }    
 
     [Table("socio_aniversario")]

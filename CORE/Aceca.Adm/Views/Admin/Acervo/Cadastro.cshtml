@@ -82,7 +82,7 @@
                 <form id="formPage" class="row g-4">
                     <!-- Dados da Marca -->
                     <div class="col-12">
-                        <h6>Dados do Item de Cadastro</h6>
+                        <h6 id="h6Titulo">Dados do Item de Cadastro</h6>
                         <hr class="mt-0" />
                     </div>
 
@@ -154,20 +154,48 @@
                     </div>
 
                     <div class="row mt-8 text-center div_codigo">
+                        <div class="alert alert-solid-dark d-flex justify-content-center align-items-center flex-wrap row-gap-2" role="alert">
+                            <span class="alert-icon rounded">
+                                <i class="icon-base ri ri-information-line icon-md"></i>
+                            </span>
+                            <span id="spNovoCodigo"></span>
+                        </div>
+                        <div id="div_NovoCodigo" class="alert alert-solid-primary" role="alert"></div>
+                        <!--
                         <div class="col-md-12 mt-n1 text-center">
-                            <label>Novo C&oacute;digo ACECA</label>
                             <input class="form-control" type="text" id="txt_Codigo" name="txt_Codigo" placeholder="C&oacute;digo ACECA"/>
                         </div>
+                        -->
                     </div>
 
                     <div class="row mt-8 text-center div_dados">
                         <!-- 02 -->
                         <div class="col-md-3 mt-8 div_Incluido">
                             <div class="form-floating form-floating-outline">
-                                <input class="form-control" type="text" id="txt_IncluidoPor" name="txt_IncluidoPor" placeholder="Inclu&iacute;do Por" />
-                                <label for="formValidationName">Inclu&iacute;do Por</label>
+                                <select id="cmbPop_IncluidoPor" name="cmbPop_IncluidoPor" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_IncluidoPor">Inclu&iacute;do por um s&oacute;cio ?</label>
                             </div>
                         </div>
+
+                        <div class="col-md-3 mt-8 div_IncluidoSocio">
+                            <div class="form-floating form-floating-outline">
+                                <select id="cmbPop_IncluidoSocio" name="cmbPop_IncluidoSocio" class="select2 form-select form-select">
+                                    <option value="-1">-- Selecionar --</option>
+                                </select>
+                                <label for="cmbPop_IncluidoSocio">Inclu&iacute;do pelo S&oacute;cio</label>
+                            </div>
+                        </div>
+
+                        <!--Especifico para quando incluido nao é socio -->
+                        <div class="col-md-3 mt-8 div_IncluidoNaoSocio">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="txt_IncluidoPor" name="txt_IncluidoPor" placeholder="Inclu&iacute;do Por" />
+                                <label for="txt_IncluidoPor">Inclu&iacute;do Por</label>
+                            </div>
+                        </div>
+                        <!--Especifico para quando incluido nao é socio -->
 
                         <div class="col-md-3 mt-8 div_finalidade">
                             <div class="form-floating form-floating-outline">
@@ -256,7 +284,7 @@
                         <div class="col-md-12 mt-8 div_descricao">
                             <div class="form-floating form-floating-outline">
                                 <textarea class="form-control h-px-100" id="txt_Descricao" name="txt_Descricao" placeholder="Descricao" rows="3"></textarea>
-                                <label for="formValidationBio">Descri&ccedil;&atilde;o</label>
+                                <label for="txt_Descricao">Descri&ccedil;&atilde;o</label>
                             </div>
                         </div>
                     </div>
@@ -293,24 +321,30 @@
 
                     <!-- Imagens -->
                     <div class="col-12 div_imagem">
-                        <h6 class="mt-2">Imagens</h6>
+                        <h6 class="mt-6">Imagens</h6>
                         <hr class="mt-0" />
                     </div>
 
-                    <div class="row mt-8 text-center div_imagem">
+                    <div class="row mt-4 text-center div_imagem">
                         <!-- 01 -->
-                        <div class="col-md-6" name="div_preco_imagem_principal">
+                        <div class="col-md-6 div_imagem_principal">
                             <div class="mb-4">
                                 <label for="txt_ImgPrincipal" class="form-label">Imagem Principal</label>
-                                <input class="form-control" type="file" id="txt_ImgPrincipal">
+                                <input id="txt_ImgPrincipal" type="file" class="form-control" onchange="fn_PreviewImage(this)">
+                            </div>
+                            <div class="mb-4 div_img_principal">
+                                <img id="img_ImgPrincipal" style="width: 200px; margin: 0 auto;" alt="ACECA" />
                             </div>
                         </div>
 
                         <!-- 02 -->
-                        <div class="col-md-6">
+                        <div class="col-md-6 div_imagem_detalhe">
                             <div class="mb-4">
                                 <label for="txt_ImgDetalhe" class="form-label">Imagem Detalhe</label>
-                                <input class="form-control" type="file" id="txt_ImgDetalhe">
+                                <input class="form-control" type="file" id="txt_ImgDetalhe" onchange="fn_PreviewImage(this)">
+                            </div>
+                            <div class="mb-4 div_img_detalhe">
+                                <img id="img_ImgDetalhe" style="width: 200px; margin: 0 auto;" alt="ACECA" />
                             </div>
                         </div>
                     </div>

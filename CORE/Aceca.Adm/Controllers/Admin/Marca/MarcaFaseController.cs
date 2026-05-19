@@ -63,13 +63,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                 }
 
                 return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
+                {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",

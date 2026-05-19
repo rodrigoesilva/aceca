@@ -76,13 +76,15 @@
                 <h5 class="card-title mb-0 title-filtro">Filtros</h5>
             </div>
             <div>
-                @Html.Hidden("hdMarcaAcervoId", Model.MarcaAcervoId)
+                @Html.Hidden("hdMarcaAcervoId", Model?.MarcaAcervoId)
+                @Html.Hidden("hdMarcaAcervoNome", "")
             </div>
 
+            <!-- LINHA 01 -->
             <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
 
                 <!-- Fase -->
-                <div class="col-sm-6 col-lg-2">
+                <div class="col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Fase</p>
@@ -94,22 +96,8 @@
                     <hr class="d-none d-sm-block d-lg-none me-6">
                 </div>
 
-                <!-- Fabrica 
-                <div class="col-sm-6 col-lg-3">
-                <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-                <div>
-                <p class="mb-1">* Fabrica</p>
-                <select id="cmb_MarcaFabrica" class="select2 form-select form-select">
-                <option value="-1">-- Selecionar --</option>
-                </select>
-                </div>
-                </div>
-                <hr class="d-none d-sm-block d-lg-none me-6">
-                </div>
-                -->
-
                 <!-- Tipo-->
-                <div class="div_MarcaTipo col-sm-6 col-lg-2">
+                <div class="div_MarcaTipo col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Tipo</p>
@@ -122,7 +110,7 @@
                 </div>
 
                 <!-- Sub-Tipo -->
-                <div class="div_MarcaSubTipo col-sm-6 col-lg-2">
+                <div class="div_MarcaSubTipo col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Sub-Tipo</p>
@@ -134,8 +122,13 @@
                     <hr class="d-none d-sm-block d-lg-none me-6">
                 </div>
 
+            </div>
+
+            <!-- LINHA 02 -->
+            <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
+                
                 <!-- Flag Listar Sem Variacao -->
-                <div class="div_PesquisarSemVariante d-flex justify-content-center col-sm-6 col-lg-2">
+                <div class="div_PesquisarSemVariante d-flex justify-content-center col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-end card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <div class="pt-8">
@@ -151,7 +144,7 @@
                 </div>
 
                 <!-- Flag Pesquisar na Descricao -->
-                <div class="div_PesquisarDescricao d-flex justify-content-center col-sm-6 col-lg-3">
+                <div class="div_PesquisarDescricao d-flex justify-content-center col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-end card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <div class="pt-8">
@@ -165,10 +158,9 @@
                     </div>
                     <hr class="d-none d-sm-block d-lg-none me-6">
                 </div>
-                
 
                 <!-- Botoes -->
-                <div class="div_Botoes col-sm-6 col-lg-1">
+                <div class="div_Botoes col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div class="d-flex justify-content-center align-content-center flex-wrap gap-4 pt-8">
                             <!-- 
@@ -183,28 +175,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Botoes 
-            <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
-
-            <div class="d-flex justify-content-center col-sm-6 col-lg-12">
-            <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-
-            <div class="pt-8">
-            <button type="button" class="btn btn-label-primary waves-effect btn-filter">
-            <span class="tf-icons ri-filter-2-line ri-16px me-1_5"></span>Pesquisar
-            </button>
-
-            <button type="button" class="btn btn-label-secondary waves-effect btn-filter-clear">
-            <span class="tf-icons ri-eraser-line ri-16px me-1_5"></span>Limpar Filtro
-            </button>
-            </div>
-            </div>
-            </div>
-
-            </div>
-
-            -->
         </div>
     </div>
 </div>
