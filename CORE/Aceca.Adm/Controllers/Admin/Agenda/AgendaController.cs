@@ -50,8 +50,8 @@ namespace Aceca.Adm.Controllers.Admin.Agenda
             {
                 var lstModel = await _db.Agenda
                     .Include(x => x.AgendaImagem)
-                    .OrderBy(x => x.Data)
                     .AsNoTracking()
+                    .OrderBy(x => x.Data)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -237,7 +237,7 @@ namespace Aceca.Adm.Controllers.Admin.Agenda
                     });
                 }
 
-                var model = await _db.Agenda.FindAsync(id);
+                var model = await _db.Agenda.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

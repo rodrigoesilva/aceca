@@ -239,7 +239,7 @@ namespace Aceca.Adm.Controllers.Admin.Agenda
                     });
                 }
 
-                var model = await _db.AgendaImagem.FindAsync(id);
+                var model = await _db.AgendaImagem.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

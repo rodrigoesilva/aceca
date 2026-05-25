@@ -17,6 +17,8 @@
         public bool PesquisarSemVariante { get; set; }
         public bool PesquisarDescricao { get; set; }
 
+        public bool ExibirGeral { get; set; } = true;
+
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 50;
     }

@@ -118,6 +118,22 @@ namespace Aceca.Adm.Controllers
             //return View("~/Views/Auth/RegisterUpdate.cshtml");
         }
 
+
+        /// <summary>
+        /// Exibe a página de atualizar dados (link enviado por e-mail para novo socio).
+        /// </summary>
+        [HttpGet]
+        public ActionResult NewRegistration(string token, string email)
+        {
+            if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(email))
+                return RedirectToAction("Index");
+
+            ViewBag.Token = token;
+            ViewBag.Email = email;
+
+            return View("~/Views/Auth/RegisterUpdate.cshtml");
+        }
+
         // ──────────────────────────────────────────────
         // ACCESS / LOGOUT
         // ──────────────────────────────────────────────
@@ -209,6 +225,7 @@ namespace Aceca.Adm.Controllers
                 var user = await _db.SocioSeguranca
                     .Include(x => x.Socio)
                     .Include(x => x.Socio.SocioPerfil)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 if (user == null)
@@ -359,6 +376,7 @@ namespace Aceca.Adm.Controllers
                 var user = await _db.SocioSeguranca
                    .Include(x => x.Socio)
                    .Include(x => x.Socio.SocioPerfil)
+                   .AsNoTracking()
                    .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 // Por segurança, retorna sucesso mesmo se o e-mail não existir,
@@ -381,24 +399,21 @@ namespace Aceca.Adm.Controllers
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
                 }
 
-                // Gera token seguro
-                var tokenBytes = RandomNumberGenerator.GetBytes(32);
-                var token = Convert.ToBase64String(tokenBytes)
-                                   .Replace("+", "-").Replace("/", "_").Replace("=", "");
+                var strToken = _helperController.GenerateSecuretToken();
 
                 // Armazena no usuário (campos que precisam existir no model Usuario)
-                user.ResetPasswordToken = token;
+                user.ResetPasswordToken = strToken;
                 user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
                 await _db.SaveChangesAsync();
 
                 // Monta link de reset
-                var resetLink = $"{_urlBaseApp}/Auth/ResetPassword?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
+                var resetLink = $"{_urlBaseApp}/Auth/ResetPassword?token={Uri.EscapeDataString(strToken)}&email={Uri.EscapeDataString(user.Email)}";
 
                 // Envia e-mail
-                var result = await EnviarEmailResetSenhaAsync(user.Email, user.Socio.Nome, resetLink);
+                var resultSendMail = await _helperController.EnviarEmailAsync(ETipoEmail.EsqueceuSenha, user.Email, user.Socio.Nome, resetLink);                
 
-                if (result.GetType() == typeof(NotFoundObjectResult) ||
-                    result.GetType() == typeof(BadRequestObjectResult))
+                if (resultSendMail.GetType() == typeof(NotFoundObjectResult) ||
+                    resultSendMail.GetType() == typeof(BadRequestObjectResult))
                     return BadRequest(new
                     {
                         bResult = false,
@@ -453,6 +468,7 @@ namespace Aceca.Adm.Controllers
                 var user = await _db.SocioSeguranca
                     .Include(x => x.Socio)
                     .Include(x => x.Socio.SocioPerfil)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 if (user == null)

@@ -52,9 +52,9 @@ namespace Aceca.Adm.Controllers.Pages
             {
 
                 var lstModel = await _db.SocioColecao
-                     .Include(x => x.Socio)
-                    .OrderBy(x => x.Socio.Nome)
+                    .Include(x => x.Socio)
                     .AsNoTracking()
+                    .OrderBy(x => x.Socio.Nome)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -253,7 +253,7 @@ namespace Aceca.Adm.Controllers.Pages
                     });
                 }
 
-                var model = await _db.SocioColecao.FindAsync(id);
+                var model = await _db.SocioColecao.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new
@@ -296,6 +296,7 @@ namespace Aceca.Adm.Controllers.Pages
         public async Task AdicionarOuAtualizarItemAsync(int socioId,int itemId,int quantidade, bool troca,bool venda, bool interesse)
         {
             var registro = await _db.SocioColecao
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
                     x.SocioId == socioId &&
                     x.MarcaId == itemId);
@@ -336,6 +337,7 @@ namespace Aceca.Adm.Controllers.Pages
                     x.MarcaId == itemId &&
                     x.Possui)
                 .Include(x => x.Socio)
+                .AsNoTracking()
                 .ToListAsync();
 
             return socios;
@@ -345,6 +347,7 @@ namespace Aceca.Adm.Controllers.Pages
         public async Task<List<SocioColecao>> QuemTroca(int itemId)
         {
             var troca = await _db.SocioColecao
+                .AsNoTracking()
                 .Where(x =>
                     x.MarcaId == itemId &&
                     x.DisponivelTroca)
@@ -361,6 +364,7 @@ namespace Aceca.Adm.Controllers.Pages
                     x.SocioId == socioId &&
                     x.Interesse)
                 .Include(x => x.Marca)
+                .AsNoTracking()
                 .ToListAsync();
 
             return desejos;

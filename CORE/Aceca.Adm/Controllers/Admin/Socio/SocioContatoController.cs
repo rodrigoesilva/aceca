@@ -52,9 +52,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                 var lstModel = await _db.SocioContato
                      .Include(x => x.Socio)
-                    .OrderBy(x => x.Socio.Nome)
-                    .AsNoTracking()
-                    .ToListAsync();
+                     .AsNoTracking()
+                     .OrderBy(x => x.Socio.Nome)
+                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
                 {
@@ -250,7 +250,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     });
                 }
 
-                var model = await _db.SocioContato.FindAsync(id);
+                var model = await _db.SocioContato.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

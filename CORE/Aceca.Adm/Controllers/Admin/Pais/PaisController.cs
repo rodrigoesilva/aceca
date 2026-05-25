@@ -54,8 +54,8 @@ namespace Aceca.Adm.Controllers.Admin.Pais
             {
                 var lstModel = await _db.Pais
                     .Include(x =>x.PaisCategoria)
-                    .OrderBy(x => x.Nome)
                     .AsNoTracking()
+                    .OrderBy(x => x.Nome)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -238,7 +238,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
                     });
                 }
 
-                var model = await _db.Pais.FindAsync(id);
+                var model = await _db.Pais.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

@@ -1,5 +1,5 @@
 <!-- Extra Large Modal -->
-<div class="modal fade" id="modalAddNovaMarca" aria-hidden="true" aria-labelledby="modalAddNovaMarca" tabindex="-1">
+<div class="modal fade" id="ModalMarca" aria-hidden="true" aria-labelledby="ModalMarca" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-body">
@@ -33,27 +33,44 @@
                                     </div>
 
                                     <!-- 01 -->
+                                    <div class="col-md-12 div_Nome">
+                                        <div class="form-floating form-floating-outline">
+                                            <input class="form-control form-control text-center" type="text" id="txt_Codigo" name="txt_Codigo" placeholder="C&oacute;digo ACECA" disabled style="color:#8c57ff;background-color:#ede4ff"/>
+                                            <!--<label for="formValidationEmail">C&oacute;digo ACECA</label>-->
+                                        </div>
+                                    </div>
+
                                     <div class="col-md-6 div_fase">
                                         <div class="form-floating form-floating-outline">
-                                            <select id="cmbPop_MarcaFase" name="cmbPop_MarcaFase" class="select2 form-select form-select">
+                                            <select id="cmbPop_MarcaAcervo" name="cmbPop_MarcaAcervo" class="form-select select2">
+                                                <option value="-1">-- Selecionar --</option>
+                                            </select>
+                                            <label for="cmbPop_MarcaAcervo">Tipo Acervo</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6 div_fase">
+                                        <div class="form-floating form-floating-outline">
+                                            <input class="form-control" type="text" id="txt_NomeFase" name="txt_NomeFase" placeholder="Fase" disabled style="color:#16b1ff;background-color:#daf3ff" />
+                                            <!--<label for="txt_NomeFase">Fase</label>-->
+                                        </div>
+                                    </div>
+
+                                    <!--
+                                    <div class="col-md-6 div_fase">
+                                        <div class="form-floating form-floating-outline">
+                                            <select id="cmbPop_MarcaFase" name="cmbPop_MarcaFase" class="select2 form-select form-select" disabled>
                                                 <option value="-1">-- Selecionar --</option>
                                             </select>
                                             <label for="cmbPop_MarcaFase">Fase</label>
                                         </div>
                                     </div>
-
-                                    <div class="col-md-6 div_Codigo">
-                                        <div class="form-floating form-floating-outline">
-                                            <input class="form-control" type="text" id="txt_Codigo" name="txt_Codigo" placeholder="C&oacute;digo ACECA"  disabled/>
-                                            <label for="formValidationEmail">C&oacute;digo ACECA</label>
-                                        </div>
-                                    </div>
-
+                                    -->
                                      <!-- 02 -->
                                     <div class="col-md-12 div_Nome">
                                         <div class="form-floating form-floating-outline">
                                             <input class="form-control" type="text" id="txt_Nome" name="txt_Nome" placeholder="Nome" />
-                                            <label for="formValidationName">Nome</label>
+                                            <label for="txt_Nome">Nome</label>
                                         </div>
                                     </div>
 
@@ -61,7 +78,7 @@
                                     <div class="col-md-6 div_Incluido">
                                         <div class="form-floating form-floating-outline">
                                             <input class="form-control" type="text" id="txt_IncluidoPor" name="txt_IncluidoPor" placeholder="Inclu&iacute;do Por" />
-                                            <label for="formValidationName">Inclu&iacute;do Por</label>
+                                            <label for="txt_IncluidoPor">Inclu&iacute;do Por</label>
                                         </div>
                                     </div>
                                    

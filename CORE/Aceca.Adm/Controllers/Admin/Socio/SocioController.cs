@@ -4,8 +4,11 @@ using Aceca.Adm.Models;
 using Aceca.Adm.VMModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
+using static Aceca.Adm.Helper.HelperExtensionsController;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
@@ -249,6 +252,10 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     var objJsonResulCreateSocioSegurancaReturnApi = ((ObjectResult)resulCreateSocioSeguranca).Value;
 
+                    var jObj = JObject.Parse(objJsonResulCreateSocioSegurancaReturnApi.ToString());
+
+                    var user = JsonConvert.DeserializeObject<SocioSeguranca>(jObj?.SelectToken("Result.Value.data")?.ToString());
+
                     #endregion
 
                     #region SocioContato
@@ -308,6 +315,35 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         });
 
                     var objJsonResulCreateSocioAniversarioReturnApi = ((ObjectResult)resulCreateSocioAniversario).Value;
+
+                    #endregion
+
+                    #region  Envio de Email
+
+                    var strToken = _helperController.GenerateSecuretToken();
+
+                    // Armazena no usuário (campos que precisam existir no model Usuario)
+                    user.ResetPasswordToken = strToken;
+                    user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
+                    await _db.SaveChangesAsync();
+
+                    // Monta link de reset
+                    var resetLink = $"{_urlBaseApp}/Auth/NewRegistration?token={Uri.EscapeDataString(strToken)}&email={Uri.EscapeDataString(user.Email)}";
+
+                    // Envia e-mail
+                    var resultSendMail = await _helperController.EnviarEmailAsync(ETipoEmail.Cadastro, user.Email, user.Socio.Nome, resetLink);
+
+                    if (resultSendMail.GetType() == typeof(NotFoundObjectResult) ||
+                        resultSendMail.GetType() == typeof(BadRequestObjectResult))
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha no envido do E-mail",
+                            data = user.Email
+                        });
+
+                    return Ok(new { bResult = true, message = "E-mail enviado com sucesso." });
 
                     #endregion
 
@@ -516,7 +552,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
             try
             {
-                var model = await _db.Socio.FindAsync(id);
+                var model = await _db.Socio.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new
@@ -552,7 +588,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 });
             }
         }
-
+        
         #endregion
 
         #region Socio Derivacao

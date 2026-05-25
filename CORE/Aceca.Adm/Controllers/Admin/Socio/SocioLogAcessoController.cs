@@ -50,8 +50,8 @@ namespace Aceca.Adm.Controllers.Admin.Usuario
                     .Include(x => x.SocioEndereco)
                     .Include(x => x.SocioEndereco.Socio)
                     .Include(x => x.SocioEndereco.Socio.SocioPerfil)
-                    .OrderByDescending(x => x.UltimoLogin)
                     .AsNoTracking()
+                    .OrderByDescending(x => x.UltimoLogin)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)

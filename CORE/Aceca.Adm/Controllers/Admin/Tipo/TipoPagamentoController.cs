@@ -51,8 +51,8 @@ namespace Aceca.Adm.Controllers.Admin.Tipo
             {
 
                 var lstModel = await _db.TipoPagamento
-                    .OrderBy(x => x.Descricao)
                     .AsNoTracking()
+                    .OrderBy(x => x.Descricao)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -238,7 +238,7 @@ namespace Aceca.Adm.Controllers.Admin.Tipo
                     });
                 }
 
-                var model = await _db.TipoPagamento.FindAsync(id);
+                var model = await _db.TipoPagamento.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

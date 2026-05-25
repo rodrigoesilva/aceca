@@ -162,6 +162,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Botoes Acoes
                 {
+                    visible: false,
                     data: 'id',
                     targets: -1,
                     className: "text-center",

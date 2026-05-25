@@ -93,7 +93,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    //console.log("fn_GridList :: ", result)
+                    console.log("fn_GridList :: ", result)
                     return result.data;
                 }
             },
@@ -175,16 +175,46 @@ function fn_GridList(formValid) {
                         }
                     }
                 },
+                // COLUNA - Tipo Acesso
+                {
+                    data: 'browser',
+                    targets: 5,
+                    className: "text-center",
+                   
+                    render: function (data, type, full) {
+                        let id = full.id;
+
+                        if (id != 0 && data !== undefined && data !== null) {
+
+                            let socioBrowser = full.browser;
+                            let socioOS = full.os;
+                            let socioDevice = full.device;
+
+                            let socioTipoAcesso = `${socioBrowser}<br>${socioDevice}<br>${socioOS}`;
+
+                            return socioTipoAcesso;
+
+                        } else {
+                            return '';
+                        }
+                    }
+                },
                 // COLUNA - IP
                 {
                     data: 'ip',
-                    targets: 5,
+                    targets: 6,
+                    className: "text-center",
+                },
+                // COLUNA - Operadora
+                {
+                    data: 'operadora',
+                    targets: 7,
                     className: "text-center",
                 },
                 // COLUNA - Ultimo Login
                 {
                     data: 'ultimoLogin',
-                    targets: 6,
+                    targets: 8,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.id;

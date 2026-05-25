@@ -52,9 +52,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                 var lstModel = await _db.SocioEndereco
                      .Include(x => x.Socio)
-                    .OrderBy(x => x.Socio.Nome)
-                    .AsNoTracking()
-                    .ToListAsync();
+                     .AsNoTracking()
+                     .OrderBy(x => x.Socio.Nome)
+                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
                 {
@@ -253,7 +253,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     });
                 }
 
-                var model = await _db.SocioEndereco.FindAsync(id);
+                var model = await _db.SocioEndereco.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

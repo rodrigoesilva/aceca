@@ -51,10 +51,10 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             {
 
                 var lstModel = await _db.SocioFinanceiro
-                     .Include(x => x.Socio)
-                       .Include(x => x.TipoPagamento)
-                    .OrderBy(x => x.Socio.Nome)
+                    .Include(x => x.Socio)
+                    .Include(x => x.TipoPagamento)
                     .AsNoTracking()
+                    .OrderBy(x => x.Socio.Nome)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -278,7 +278,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     });
                 }
 
-                var model = await _db.SocioFinanceiro.FindAsync(id);
+                var model = await _db.SocioFinanceiro.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

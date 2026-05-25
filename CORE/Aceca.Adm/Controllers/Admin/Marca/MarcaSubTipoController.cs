@@ -51,8 +51,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             {
                 var lstModel = await _db.MarcaSubTipo
                     .Include(x => x.MarcaTipo)
-                    .OrderBy(x => x.Descricao)
                     .AsNoTracking()
+                    .OrderBy(x => x.Descricao)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -240,7 +240,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     });
                 }
 
-                var model = await _db.MarcaSubTipo.FindAsync(id);
+                var model = await _db.MarcaSubTipo.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

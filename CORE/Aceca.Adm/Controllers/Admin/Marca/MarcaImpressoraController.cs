@@ -50,8 +50,8 @@ namespace Aceca.Adm.Controllers.Admin.Marca
             {
 
                 var lstModel = await _db.MarcaImpressora
-                    .OrderBy(x => x.Descricao)
                     .AsNoTracking()
+                    .OrderBy(x => x.Descricao)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -237,7 +237,7 @@ namespace Aceca.Adm.Controllers.Admin.Marca
                     });
                 }
 
-                var model = await _db.MarcaImpressora.FindAsync(id);
+                var model = await _db.MarcaImpressora.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

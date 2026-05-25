@@ -35,7 +35,7 @@ const swalWithBootstrapButtons = Swal.mixin({
     buttonsStyling: false
 });
 
-let modalMarca = document.getElementById('modalAddNovaMarca');
+let modalMarca = document.getElementById('ModalMarca');
 
 let borderColor, bodyBg, headingColor;
 
@@ -1176,7 +1176,7 @@ function fn_Modal(obj, action) {
     //console.log("fn_Modal obj::: ", obj);
     //console.log("fn_Modal action::: ", action);
 
-    const popAddNewItem = document.querySelector('#modalAddNovaMarca');
+    const popAddNewItem = document.querySelector('#ModalMarca');
 
     // Pop ID
     (popAddNewItem.querySelector('#hdId').Value = (obj === null ? 0 : obj.Id)),
@@ -1237,7 +1237,7 @@ function fn_Modal(obj, action) {
         (obj === null || obj?.imgDetalhe === null) ? (popAddNewItem.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
     }
 
-    $('#modalAddNovaMarca').modal('show');
+    $('#ModalMarca').modal('show');
 }
 
 function fnItem_PopImgPrincipal(obj) {
@@ -1433,7 +1433,7 @@ function fnItem_Edit(varItems_Row) {
 
                                 fn_FiltrarDados(objFiltro);
 
-                                $('#modalAddNovaMarca').modal('hide');
+                                $('#ModalMarca').modal('hide');
                             });
                         } else {
                             console.log("NO :: ");

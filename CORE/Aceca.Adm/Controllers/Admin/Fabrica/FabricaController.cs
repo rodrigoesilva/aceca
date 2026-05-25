@@ -51,8 +51,8 @@ namespace Aceca.Adm.Controllers.Admin.Fabrica
             {
                 var lstModel = await _db.Fabrica
                     .Include(x =>x.FabricaFase)
-                    .OrderBy(x => x.Nome)
                     .AsNoTracking()
+                    .OrderBy(x => x.Nome)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -234,7 +234,7 @@ namespace Aceca.Adm.Controllers.Admin.Fabrica
                     });
                 }
 
-                var model = await _db.Fabrica.FindAsync(id);
+                var model = await _db.Fabrica.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

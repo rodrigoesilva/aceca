@@ -218,6 +218,7 @@ namespace Aceca.Adm.Models
         public string? IncluidoPor { get; set; } = null;
         public string? IncluidoPorSocioId { get; set; } = null;
         public int? EmQuarentena { get; set; }
+        public bool? ExibirGeral { get; set; }
         public MarcaAcervo? MarcaAcervo { get; set; }
         public MarcaDimensao? MarcaDimensao { get; set; }
         public MarcaFabrica? MarcaFabrica { get; set; }
@@ -227,8 +228,6 @@ namespace Aceca.Adm.Models
         public MarcaQualidadeImagem? MarcaQualidadeImagem { get; set; }
         public MarcaRaridade? MarcaRaridade { get; set; }
         public MarcaSubTipo? MarcaSubTipo { get; set; }
-        //public FabricaFase? FabricaFase { get; set; }
-
         [ValidateNever] public ICollection<SocioColecao>? SociosColecao { get; set; }
     }
 
@@ -254,7 +253,6 @@ namespace Aceca.Adm.Models
         public string? Descricao { get; set; } = null;
         public int? Ordem { get; set; }
         [Column("menu_exibir")] public int? MenuExibir { get; set; }
-        public string? Imagem { get; set; } = null;
     }
 
     [Table("marcas_finalidade")]

@@ -51,8 +51,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             {
 
                 var lstModel = await _db.SocioPerfil
-                    .OrderBy(x => x.Descricao)
                     .AsNoTracking()
+                    .OrderBy(x => x.Descricao)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -245,7 +245,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     });
                 }
 
-                var model = await _db.SocioPerfil.FindAsync(id);
+                var model = await _db.SocioPerfil.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new

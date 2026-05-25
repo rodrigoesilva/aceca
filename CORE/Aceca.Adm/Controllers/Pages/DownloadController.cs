@@ -72,8 +72,8 @@ namespace Aceca.Adm.Controllers.Pages.Download
                 var lstModel = await _db.Download
                     .Include(x => x.DownloadTipo)
                     .Include(x => x.Socio)
-                    .OrderBy(x => x.DownloadTipoId)
                     .AsNoTracking()
+                    .OrderBy(x => x.DownloadTipoId)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -262,7 +262,7 @@ namespace Aceca.Adm.Controllers.Pages.Download
                     });
                 }
 
-                var model = await _db.Download.FindAsync(id);
+                var model = await _db.Download.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new
