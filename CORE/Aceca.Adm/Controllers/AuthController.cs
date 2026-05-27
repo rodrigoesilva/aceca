@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -932,7 +933,8 @@ namespace Aceca.Adm.Controllers
                 {
                     var clientAgent = new HttpClient();
                     var request = new HttpRequestMessage(HttpMethod.Get, urlAgent);
-                    request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0");
+                    //request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0");
+                    request.Headers.Add("User-Agent", Request.Headers["User-Agent"].ToString());
 
                     var resultAgent = await clientAgent.SendAsync(request);
 

@@ -596,6 +596,7 @@ namespace Aceca.Adm.Controllers.Acervo
                     MarcaDimensaoId = (vmModel?.MarcaDimensaoId < 0 || vmModel?.MarcaDimensaoId == null) ? 0 : vmModel?.MarcaDimensaoId,
                     MarcaFabricaId = (vmModel?.MarcaFabricaId < 0 || vmModel?.MarcaFabricaId == null) ? 0 : vmModel?.MarcaFabricaId,
                     MarcaFaseId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? 0 : vmModel?.MarcaFaseId,
+                    MarcaFaseAcervoId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? 0 : vmModel?.MarcaFaseId,
                     MarcaFinalidadeId = (vmModel?.MarcaFinalidadeId < 0 || vmModel?.MarcaFinalidadeId == null) ? 0 : vmModel?.MarcaFinalidadeId,
                     MarcaImpressoraId = (vmModel?.MarcaImpressoraId < 0 || vmModel?.MarcaImpressoraId == null) ? 0 : vmModel?.MarcaImpressoraId,
                     MarcaQualidadeImagemId = (vmModel?.MarcaQualidadeImagemId < 0 || vmModel?.MarcaQualidadeImagemId == null) ? 0 : vmModel?.MarcaQualidadeImagemId,
@@ -929,8 +930,8 @@ namespace Aceca.Adm.Controllers.Acervo
                    .AsNoTracking()
                    .Where(x => x.CodigoAceca != null
                         && (bvariante
-                            ? (x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
-                            : (x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
+                            ? (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
+                            : (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)))
                             )
                         )
                     .OrderByDescending(x => x.CodigoAceca)                    
@@ -1020,7 +1021,9 @@ namespace Aceca.Adm.Controllers.Acervo
                 if (int.TryParse(strNumCodigoAceca, out int intNumCodigoAceca))
                     if (!bvariante)
                     {
-                        strNovoCodigoAceca = strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString());
+                        strNovoCodigoAceca = idFase != 42 
+                            ? strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString())
+                            : string.Concat("136QR-", strNumCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString()));
 
                         if (Char.IsLetter(strNovoCodigoAceca[^1]))
                             strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1])

@@ -1,12 +1,10 @@
-﻿/*
- *  Pages
- */
-
-'use strict';
+﻿/**
+ * Proposta -> Editar
+ **/
 
 //#region Declare
 
-let _sessionData = null;
+let varSessionDataSite = 1;
 const _ck = "aceca_cookie";
 
 //#endregion
@@ -96,7 +94,7 @@ function fn_AuthOut() {
 
                     Swal.fire({
                         icon: 'success',
-                        title: `At&eacute mais ${_sessionData?.nome?.split(" ")[0]}!`,
+                        title: `At&eacute mais ${varSessionDataSite?.nome?.split(" ")[0]}!`,
                         html: `Nos vemos em breve`,
                         focusConfirm: true,
                         confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
@@ -126,16 +124,16 @@ function fn_AuthSession() {
     //console.log(`fn_AuthSession sessionStorage ::`, sessionStorage);
 
     if (sessionStorage?.getItem("aceca_sessao") !== null) {
-        _sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+        varSessionDataSite = JSON.parse(sessionStorage.getItem("aceca_sessao"));
 
-        //console.log(`fn_AuthSession _sessionData ::`, _sessionData);
+        //console.log(`fn_AuthSession varSessionDataSite ::`, varSessionDataSite);
 
-        if (_sessionData !== null) {
-            document.getElementById('hdSocioLogadoId').value = `${_sessionData?.nameIdentifier}`;
-            document.getElementById('hdIsPerfil').value = `${_sessionData?.isPerfil}`;
-            document.getElementById('tbAvatar').textContent = `${_sessionData?.avatar}`;
-            document.getElementById('tbNome').textContent = `${_sessionData?.nome}`;
-            document.getElementById('tbCargo').textContent = `${_sessionData?.cargo}`;
+        if (varSessionDataSite !== null) {
+            document.getElementById('hdSocioLogadoId').value = `${varSessionDataSite?.nameIdentifier}`;
+            document.getElementById('hdIsPerfil').value = `${varSessionDataSite?.isPerfil}`;
+            document.getElementById('tbAvatar').textContent = `${varSessionDataSite?.avatar}`;
+            document.getElementById('tbNome').textContent = `${varSessionDataSite?.nome}`;
+            document.getElementById('tbCargo').textContent = `${varSessionDataSite?.cargo}`;
         } else {
             fn_CleanUser();
         }

@@ -17,6 +17,7 @@ let var_Nome = 'Auth',
     varTbl_Obj = $('.datatables-basic'),
     varTbl_Data;
 
+let _sessionDataAuth = null;
 const _cka = "aceca_cookie";
 
 //
@@ -237,10 +238,10 @@ function fn_LoginAuthIni() {
         //console.log(`AUTH fn_LoginAuthIni - userCk :: `, userCk.split("|"));
 
         if (sessionStorage?.getItem("aceca_sessao") !== null) {
-            _sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+            _sessionDataAuth = JSON.parse(sessionStorage.getItem("aceca_sessao"));
 
-            if (_sessionData !== null) {
-                fn_LoginAuthGeo(_sessionData?.nameIdentifier);
+            if (_sessionDataAuth !== null) {
+                fn_LoginAuthGeo(_sessionDataAuth?.nameIdentifier);
             }
         }
 

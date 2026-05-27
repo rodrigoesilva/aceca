@@ -200,6 +200,8 @@ namespace Aceca.Adm.Models
         public int? MarcaFabricaId { get; set; }
         [Column("fabrica_txt")] public string? TxtFabrica { get; set; } = null;
         public int? MarcaFaseId { get; set; }
+        public int? MarcaFaseAcervoId { get; set; }
+        
         public int? MarcaFinalidadeId { get; set; }
         public int? MarcaImpressoraId { get; set; }
         [Column("impressora")] public string? TxtImpressora { get; set; } = null;
@@ -228,7 +230,7 @@ namespace Aceca.Adm.Models
         public MarcaQualidadeImagem? MarcaQualidadeImagem { get; set; }
         public MarcaRaridade? MarcaRaridade { get; set; }
         public MarcaSubTipo? MarcaSubTipo { get; set; }
-        [ValidateNever] public ICollection<SocioColecao>? SociosColecao { get; set; }
+        //[ValidateNever] public ICollection<SocioColecao>? SociosColecao { get; set; }
     }
 
     [Table("marcas_dimensao")]
@@ -345,7 +347,7 @@ namespace Aceca.Adm.Models
 
         public SocioPerfil? SocioPerfil { get; set; }
 
-        [ValidateNever] public ICollection<SocioColecao>? ColecaoSocios { get; set; }
+        //[ValidateNever] public ICollection<SocioColecao>? ColecaoSocios { get; set; }
     }    
 
     [Table("socio_aniversario")]
@@ -358,40 +360,6 @@ namespace Aceca.Adm.Models
 
         public Socio? Socio { get; set; }
     }
-
-    [Table("socio_colecao")]
-    public class SocioColecao : BaseModel
-    {
-        public int? Id { get; set; }
-        public int? SocioId { get; set; }
-        public int? MarcaId { get; set; }
-        public int? Quantidade { get; set; }
-        public bool Possui { get; set; }
-        public bool Interesse { get; set; }
-        public bool DisponivelTroca { get; set; }
-        public bool DisponivelVenda { get; set; }
-        public string? Observacao { get; set; } = null;
-        public int? TempoColecao { get; set; }
-
-        public Socio? Socio { get; set; }
-        public Marcas? Marca { get; set; }
-    }
-
-    [Table("socio_colecao_info")]
-    public class SocioColecaoInfo
-    {
-        [Key] public int? Id { get; set; }
-        public int? SocioId { get; set; }
-        public string? TipoColecao { get; set; } = null;
-        public string? ItensColecao { get; set; } = null;
-        public string? Advertencia { get; set; } = null;
-        public string? NegociacaoColecao { get; set; } = null;
-        public string? QtdEmbalagem { get; set; } = null;
-        public string? QtdEmbalagemNacional { get; set; } = null;
-        public int? TempoColecao { get; set; }
-
-        public Socio? Socio { get; set; }
-    }    
 
     [Table("socio_contato")]
     public class SocioContato
@@ -481,6 +449,43 @@ namespace Aceca.Adm.Models
 
     #endregion
 
+    #region Socio Colecao
+
+    [Table("socio_colecao")]
+    public class SocioColecao : BaseModel
+    {
+        public int? Id { get; set; }
+        public int? SocioId { get; set; }
+        public int? MarcaId { get; set; }
+        public int? Quantidade { get; set; }
+        public bool Possui { get; set; }
+        public bool Interesse { get; set; }
+        [Column("disponivel_troca")] public bool DisponivelTroca { get; set; }
+        [Column("disponivel_venda")] public bool DisponivelVenda { get; set; }
+        [Column("valor_venda")] public decimal ValorVenda { get; set; }
+        public string? Observacao { get; set; } = null;
+
+        public Socio? Socio { get; set; }
+        public Marcas? Marca { get; set; }
+    }
+
+    [Table("socio_colecao_info")]
+    public class SocioColecaoInfo
+    {
+        [Key] public int? Id { get; set; }
+        public int? SocioId { get; set; }
+        public string? TipoColecao { get; set; } = null;
+        public string? ItensColecao { get; set; } = null;
+        public string? Advertencia { get; set; } = null;
+        public string? NegociacaoColecao { get; set; } = null;
+        public string? QtdEmbalagem { get; set; } = null;
+        public string? QtdEmbalagemNacional { get; set; } = null;
+        public int? TempoColecao { get; set; }
+
+        public Socio? Socio { get; set; }
+    }
+
+    #endregion
     #region tipos
 
     [Table("tipo_pagamento")]

@@ -583,6 +583,16 @@ namespace Aceca.Adm.Helper
             EsqueceuSenha = 1
         }
 
+        public enum EColecaoAcao
+        {
+            ColecaoDelete = 0,
+            ColecaoIncluir = 1,
+            ColecaoInteresse = 2,
+            ColecaoNaoQuero = 3,
+            ColecaoTroca = 4,
+            ColecaoVenda = 5,
+        }
+
         #endregion
 
         // ──────────────────────────────────────────────

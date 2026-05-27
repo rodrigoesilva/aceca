@@ -1,15 +1,18 @@
 ﻿using Aceca.Adm.Data;
+using Aceca.Adm.Models;
+using Aceca.Adm.VMModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using static Aceca.Adm.Helper.HelperExtensionsController;
 
-namespace Aceca.Adm.Controllers.Admin.Pais
+namespace Aceca.Adm.Controllers.Pages
 {
-    public class PaisController : Controller
+    public class SocioColecao1Controller : Controller
     {
         #region variaveis
 
-        private readonly ILogger<PaisController> _logger;
+        private readonly ILogger<SocioColecao> _logger;
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
@@ -21,7 +24,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
 
         #endregion
 
-        public PaisController(ILogger<PaisController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
+        public SocioColecao1Controller(ILogger<SocioColecao> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
         {
             _logger = logger;
             _db = db;
@@ -37,22 +40,24 @@ namespace Aceca.Adm.Controllers.Admin.Pais
 
         public ActionResult Index()
         {
-            return View("~/Views/Admin/Pais/Pais.cshtml");
+            return View("~/Views/Admin/Socio/SocioColecao.cshtml");
         }
 
         #endregion
 
         #region GRID
-
+        /*
+         * 
         [HttpGet]
         public async Task<IActionResult> ListGrid()
         {
             try
             {
-                var lstModel = await _db.Pais
-                    .Include(x =>x.PaisCategoria)
+
+                var lstModel = await _db.SocioColecaos
+                    .Include(x => x.Socio)
                     .AsNoTracking()
-                    .OrderBy(x => x.Nome)
+                    .OrderBy(x => x.Socio.Nome)
                     .ToListAsync();
 
                 if (lstModel.Count <= 0)
@@ -72,7 +77,6 @@ namespace Aceca.Adm.Controllers.Admin.Pais
                     type = "OK",
                     message = "SUCESSO ::: ",
                     data = lstModel,
-                    imgBase = _urlBaseImg
                 });
             }
             catch (Exception ex)
@@ -90,34 +94,40 @@ namespace Aceca.Adm.Controllers.Admin.Pais
             }
         }
 
+        */
         #endregion
 
         #region CRUD JS
 
+        /*
+         
         [HttpPost]
-        public async Task<IActionResult> Create(Models.Pais model)
+        public async Task<IActionResult> Create(Models.SocioColecao model)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    if (string.IsNullOrEmpty(model.Descricao))
+                    if (model.SocioId < 0)
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Descricao deve ser preenchido"
+                            message = "SocioId Inválido"
                         });
 
-                    var newModel = new Models.Pais
+                    var newModel = new Models.SocioColecao
                     {
-                        PaisCategoriaId = model.PaisCategoriaId,
-                        Nome = !string.IsNullOrEmpty(model.Nome) ? model.Nome : null,
-                        Descricao = !string.IsNullOrEmpty(model.Descricao) ? model.Descricao : null,
-                        Ativo = model.Ativo
+                        SocioId = model.SocioId,
+                        MarcaId = model.MarcaId,
+                        Quantidade = model.Quantidade,
+                        Possui = true,
+                        DisponivelTroca = model.DisponivelTroca,
+                        DisponivelVenda = model.DisponivelVenda,
+                        Interesse = model.Interesse
                     };
 
-                    _db.Pais.Add(newModel);
+                    _db.SocioColecaos.Add(newModel);
                     _db.SaveChanges();
 
                     model.Id = newModel?.Id;
@@ -163,18 +173,26 @@ namespace Aceca.Adm.Controllers.Admin.Pais
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(Models.Pais model)
+        public async Task<IActionResult> Edit(Models.SocioColecao model)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    if (string.IsNullOrEmpty(model.Descricao))
+                    if (model?.Id < 1)
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Descricao deve ser preenchido"
+                            message = "Sócio não identificado"
+                        });
+
+                    if (model.SocioId < 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "SocioId Inválido"
                         });
 
                     _db.Entry(model).State = EntityState.Modified;
@@ -235,7 +253,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
                     });
                 }
 
-                var model = await _db.Pais.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+                var model = await _db.SocioColecaos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new
@@ -246,7 +264,7 @@ namespace Aceca.Adm.Controllers.Admin.Pais
                         data = id
                     });
 
-                _db.Pais.Remove(model);
+                _db.SocioColecaos.Remove(model);
                 _db.SaveChanges();
 
                 return Ok(new
@@ -272,6 +290,164 @@ namespace Aceca.Adm.Controllers.Admin.Pais
             }
         }
 
+        */
         #endregion
+
+        [HttpPost]
+        public async Task<IActionResult> ActionColecao(int itemId, int actionId, int socioId, bool isPerfil) 
+        {
+            switch ((EColecaoAcao)actionId)
+            {
+                case EColecaoAcao.ColecaoDelete:
+                    break;
+                case EColecaoAcao.ColecaoIncluir:
+                    AdicionarOuAtualizarItemAsync(socioId, itemId, 1, false, false, false);
+                    break;
+                case EColecaoAcao.ColecaoInteresse:
+                    break;
+                case EColecaoAcao.ColecaoNaoQuero:
+                    break;
+                case EColecaoAcao.ColecaoTroca:
+                    break;
+                case EColecaoAcao.ColecaoVenda:
+                    break;
+                default:
+                    break;
+            }
+
+            return Ok();
+        }
+
+        public async Task<IActionResult> AdicionarOuAtualizarItemAsync(int socioId,int itemId,int quantidade, bool troca,bool venda, bool interesse)
+        {
+            try
+            {
+                /*
+                var registro = new SocioColecao();
+
+                using (var db = new AppDbContext())
+                {
+                    //bool isConnected = db.Database.CanConnect();
+
+                    bool isConnected = _db.Database.CanConnect();
+
+                    if (isConnected)
+                    {
+                        _db.Database.OpenConnection();
+
+                        registro = await _db.SocioColecao
+                             .AsNoTracking()
+                             .Where(x =>
+                                x.SocioId == socioId &&
+                                x.MarcaId == itemId)
+                             .FirstOrDefaultAsync();
+                    }
+                }
+                */
+
+                var lstModel = await _db.SocioColecaos.AsNoTracking().FirstOrDefaultAsync();
+
+
+                var registro = await _db.SocioColecaos
+                     .Include(x => x.Socio)
+                     .AsNoTracking()
+                     .Where(x =>
+                        x.SocioId == socioId &&
+                        x.MarcaId == itemId)
+                     .FirstOrDefaultAsync();
+
+                if (registro == null)
+                {
+                    registro = new SocioColecao
+                    {
+                        SocioId = socioId,
+                        MarcaId = itemId,
+                        Quantidade = quantidade,
+                        Possui = true,
+                        DisponivelTroca = troca,
+                        DisponivelVenda = venda,
+                        Interesse = interesse
+                    };
+
+                    _db.SocioColecaos.Add(registro);
+                }
+                else
+                {
+                    registro.Quantidade = quantidade;
+                    registro.DisponivelTroca = troca;
+                    registro.DisponivelVenda = venda;
+                    registro.Interesse = interesse;
+
+                    _db.SocioColecaos.Update(registro);
+                }
+
+                await _db.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = lstModel,
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
+        /*
+        //Quem possui determinado item
+        public async Task<List<SocioColecao>> QuemTem(int itemId)
+        {
+            var socios = await _db.SocioColecao
+                .Where(x =>
+                    x.MarcaId == itemId &&
+                    x.Possui)
+                .Include(x => x.Socio)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return socios;
+        }
+
+        //Quem quer trocar determinado item
+        public async Task<List<SocioColecao>> QuemTroca(int itemId)
+        {
+            var troca = await _db.SocioColecao
+                .AsNoTracking()
+                .Where(x =>
+                    x.MarcaId == itemId &&
+                    x.DisponivelTroca)
+                .ToListAsync();
+
+            return troca;
+        }
+
+        //Itens desejados por um sócio
+        public async Task<List<SocioColecao>> QqualPreciso(int socioId)
+        {
+            var desejos = await _db.SocioColecao
+                .Where(x =>
+                    x.SocioId == socioId &&
+                    x.Interesse)
+                .Include(x => x.Marca)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return desejos;
+        }
+
+        */
     }
 }

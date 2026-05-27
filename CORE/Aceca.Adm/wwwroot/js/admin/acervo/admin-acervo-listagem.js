@@ -633,18 +633,40 @@ function fn_FiltrarDados() {
 
                     let itemObjJson = encodeURIComponent(JSON.stringify(full));
                     
-                    if (isPerfil === true) {
-                        btns = `<div class="d-inline-block">
+                    if (isPerfil === 'true') {
+
+                        const socioId = document.getElementById('hdSocioLogadoId').value;
+
+                        if (socioId === '39') {
+                            btns = `<div class="d-inline-block">
                                     <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
                                         <i class="ri-more-2-line ri-22px"></i>
                                     </a>
+
                                     <ul class="dropdown-menu dropdown-menu-end m-0">
-                                        <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record">Editar</a></li>
-                                    <div class="dropdown-divider"></div>
-                                        <li><a href="javascript:fnItem_AddColecao(${itemObjJson},'AddColecao');" class="dropdown-item ri-add-line">Adicionar na Coleção</a></li>
+                                            <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
+                                        <div class="dropdown-divider"></div>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Tenho na Coleção</a></li>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNaoQuero',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-information-off-line icon-md me-2"></i>Não Quero</a></li>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoTroca',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-checkbox-multiple-line icon-md me-2"></i>Para Troca</a></li>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoVenda',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-shopping-cart-2-line icon-md me-2"></i>Para Venda</a></li>
+                                        <div class="dropdown-divider"></div>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete',${socioId});" class="dropdown-item text-danger delete-record"><i class="icon-base ri ri-delete-bin-7-line icon-md me-2"></i>Remover da Coleção</a></li>
                                     </ul>
                                 </div>`;
-                    } else {
+                        } else {
+
+                            btns = `<div class="d-inline-block text-nowrap">
+                                <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
+                                    class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
+                                    <i class="ri-edit-box-line ri-22px"></i>
+                                </a>
+                            </div>`;
+                        }
+                    }
+                     /*
+                    else {
 
                         btns = `<div class="d-inline-block">
                                     <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -666,7 +688,7 @@ function fn_FiltrarDados() {
                     }
                     
                    
-                    /*
+                   
                     btns = `<div class="d-inline-block text-nowrap">
                         <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
                             class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
@@ -1863,6 +1885,97 @@ function fnItem_Edit(varItems_Row) {
                     return false;
                 },
             });
+    }
+}
+
+//#endregion
+
+//#region COLECAO
+
+function fnItem_Colecao(obj, action, socioId) {
+
+    let marcaId = obj?.Id;
+    let actionId = -1;
+
+    console.log("fnItem_Colecao obj ::: ", obj);
+    console.log("fnItem_Colecao action::: ", action);
+
+    if ((marcaId === undefined || marcaId === null || marcaId === '' || marcaId < 1)
+        || (socioId === undefined || socioId === null || socioId === '' || socioId < 1)
+    ) {
+        Swal.fire({
+            title: 'Dados Inv&aacute;lidos!!',
+            icon: 'error',
+            html: `<b>Os dados n&atilde;o foram informados corretamente!!!</b>`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-label-danger waves-effect'
+            }
+        }).then((result) => {
+            //fn_Limpar();
+        });
+    } else {
+        switch (action) {
+            case 'ColecaoIncluir':
+                actionId = 1;
+                break;
+            case 'ColecaoInteresse':
+                actionId = 2;
+                break;
+            case 'ColecaoNaoQuero':
+                actionId = 3;
+                break;
+            case 'ColecaoTroca':
+                actionId = 4;
+                break;
+            case 'ColecaoVenda':
+                actionId = 5;
+                break;
+            case 'ColecaoDelete':
+                actionId = 0;
+                break;
+            default:
+                actionId = -1;
+        }
+
+        $.busyLoadFull("show");
+
+        $.ajax({
+            url: `/SocioColecao/ActionColecao`,
+            type: 'POST',
+            dataType: 'JSON',
+            data: {
+                itemId: marcaId,
+                actionId: actionId,
+                socioId: socioId,
+                isPerfil: document.getElementById('hdIsPerfil').value
+            },
+            success: function (response) {
+                
+                console.log("Data received: ", response);
+
+                $.busyLoadFull("hide");
+
+                Swal.fire({
+                    title: 'Dados Salvos!',
+                    icon: 'success',
+                    text: 'Marca cadastrada com sucesso.',
+                    customClass: {
+                        confirmButton: 'btn btn-success waves-effect waves-light'
+                    }
+                }).then((resultSucesso) => {
+                    window.location.reload();
+                    //console.log("resultSucesso  :: ", resultSucesso);
+                });
+
+                return true;
+            },
+            error: function (xhr, status, error) {
+                console.error("Error: " + error);
+            }
+        });
+        
     }
 }
 
