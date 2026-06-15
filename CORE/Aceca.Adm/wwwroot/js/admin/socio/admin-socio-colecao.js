@@ -1,5 +1,5 @@
 /**
- * Acervo -> Cigarros
+ * Socio -> Colecao
  */
 
 'use strict';
@@ -9,7 +9,7 @@
 let isPerfil = document.getElementById('hdIsPerfil').value;
 
 let var_Nome = 'Listagem',
-    var_Controller = '/Acervo',
+    var_Controller = '/SocioColecao',
     var_ControllerCmb = '/HelperExtensions',
 
     varTbl_Obj = $('.datatables-basic'),
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
 //#region Menu
 function fn_MenuAcervo() {
     
-    const idMarcaAcervo = $('#hdMarcaAcervoId').val();
+    const idMarcaAcervo = '1'; // $('#hdMarcaAcervoId').val();
     //console.log("fn_MenuAcervo idMarcaAcervo :: ", idMarcaAcervo);
 
     switch (idMarcaAcervo) {

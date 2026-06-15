@@ -163,7 +163,7 @@ function fn_GridList(formValid) {
                 // COLUNA - imagem3
                 {
                     defaultContent: '<i>Not set</i>',
-                    data: 'imagem2',
+                    data: 'imagem3',
                     targets: 4,
                     className: 'text-center',
                     responsivePriority: 10006,

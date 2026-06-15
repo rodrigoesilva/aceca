@@ -247,7 +247,7 @@ function fn_Modal(obj, action) {
     // Pop Dados
             (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-1' : obj.idMarcaFase));
         (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '-1' : obj.codigoAceca));
-    (popAddNewItem.querySelector('#txt_Nome').checked = (obj === null ? false : obj.nomeMarca));
+    (popAddNewItem.querySelector('#txt_Nome').value = (obj === null ? '' : obj.nomeMarca));
         (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
             (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-1' : obj.idMarcaFinalidade));
     (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-1' : obj.idMarcaFabrica));
@@ -906,28 +906,6 @@ function fn_LoadCmb_MarcaFabrica() {
             }
         );
     }
-
-    if ($('#cmbPop_MarcaFabrica').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFabrica`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFabrica  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFabrica  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFabrica  result ::: ", result);
-                        $("#cmbPop_MarcaFabrica").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
 }
 
 function fn_LoadCmb_MarcaDimensao() {
@@ -958,28 +936,6 @@ function fn_LoadCmb_MarcaDimensao() {
 
 function fn_LoadCmb_MarcaTipo() {
     //console.log("fn_LoadCmb_MarcaTipo ::: ");
-
-    if ($('#cmbPop_MarcaTipo').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
-                        $("#cmbPop_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
 
     if ($('#cmbPop_MarcaTipo').length <= 1) {
         $.ajax(

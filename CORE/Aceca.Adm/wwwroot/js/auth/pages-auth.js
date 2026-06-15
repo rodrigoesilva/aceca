@@ -184,10 +184,7 @@ async function fn_LoginAuth() {
             btn.disabled = false;
             btn.textContent = 'Entrar';
 
-            let err = await response.json();
-            console.log(`response err ::  ${err}`);
-
-            const errObject = JSON.parse(err);
+            const errObject = await response.json();
 
             console.log(`response errObject ::  ${errObject}`);
 

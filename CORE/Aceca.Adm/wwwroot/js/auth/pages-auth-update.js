@@ -174,10 +174,7 @@ async function fn_RegUpdtAuth() {
                 btn.disabled = false;
                 btn.textContent = 'Atualizar Dados';
 
-                let err = await response.json();
-                console.log(`response err ::  ${err}`);
-
-                const errObject = JSON.parse(err);
+                const errObject = await response.json();
 
                 console.log(`response errObject ::  ${errObject}`);
 
