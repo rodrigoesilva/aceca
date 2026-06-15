@@ -137,7 +137,6 @@ function fn_GridList(formValid) {
                     data: 'id',
                     targets: 1,
                     visible: false,
-                    checkboxes: true,
                     render: function () {
                         return '<input type="checkbox" class="dt-checkboxes form-check-input">';
                     },
@@ -527,7 +526,6 @@ function fn_PopGetObj() {
         Id: $('#hdId').val(),
         SocioId: $('#hdSocioAniversarioId').val(),
         Nome: $('.form-add-new-item .dt-line-01').val(),
-        DataAniversario: $('.form-add-new-item .dt-line-02').val(),
         DataAniversario: moment.utc($('.form-add-new-item .dt-line-02').val(), 'DD/MM')?.format('YYYY-MM-DD'),
         //Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };

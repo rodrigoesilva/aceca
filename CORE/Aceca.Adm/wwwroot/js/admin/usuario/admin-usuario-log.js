@@ -133,13 +133,13 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Cidade
                 {
-                    data: 'cidade',
+                    data: 'socioEndereco.cidade',
                     targets: 3,
                     //className: "text-center",
                 },
                 // COLUNA - Estado
                 {
-                    data: 'estado',
+                    data: 'socioEndereco.estado',
                     targets: 4,
                     className: "text-center",
                 },

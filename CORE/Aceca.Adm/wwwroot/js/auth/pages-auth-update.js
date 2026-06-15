@@ -279,7 +279,7 @@ function fn_RegUpdtFormValidator(regUpdtFormAuthentication) {
                     validators: {
                         identical: {
                             compare: function () {
-                                return form.querySelector('[name="password"]').value;
+                                return regUpdtFormAuthentication.querySelector('[name="password"]').value;
                             },
                             message: 'The password and its confirm are not the same',
                         },

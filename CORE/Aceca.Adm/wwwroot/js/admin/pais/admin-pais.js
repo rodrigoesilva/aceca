@@ -1040,10 +1040,10 @@ function fn_Zoom() {
 
     $("#myModal").click(function () {
         //console.log("myModal ::: ", img01);
-        img01.className += " out";
+        modalImg.className += " out";
         setTimeout(function () {
             modal.style.display = "none";
-            img01.className = "modal-content";
+            modalImg.className = "modal-content";
         }, 400);
 
     });

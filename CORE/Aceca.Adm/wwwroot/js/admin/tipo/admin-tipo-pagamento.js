@@ -118,7 +118,6 @@ function fn_GridList(formValid) {
                     data: 'id',
                     targets: 1,
                     visible: false,
-                    checkboxes: true,
                     render: function () {
                         return '<input type="checkbox" class="dt-checkboxes form-check-input">';
                     },
