@@ -532,7 +532,7 @@ function fn_FiltrarDados() {
             contentType: varAjax_TypeContent,
 
             data: function (d) {
-                //console.log("param d:: ", d)
+                console.log("param d:: ", d)
                 return JSON.stringify({
                     draw: d.draw,
                     start: d.start,
@@ -541,10 +541,10 @@ function fn_FiltrarDados() {
                     search: d.search, // 🔥 OBRIGATÓRIO para server-side
 
                     filtros: {
-                        marcaAcervoId: $('#hdMarcaAcervoId').val(),
-                        marcaFaseId: $('#cmb_MarcaFase').val(),
-                        marcaTipoId: $('#cmb_MarcaTipo').val(),
-                        marcaSubTipoId: $('#cmb_MarcaSubTipo').val(),
+                        marcaAcervoId: parseInt($('#hdMarcaAcervoId').val()) || 0,
+                        marcaFaseId: parseInt($('#cmb_MarcaFase').val()) || 0,
+                        marcaTipoId: parseInt($('#cmb_MarcaTipo').val()) || 0,
+                        marcaSubTipoId: parseInt($('#cmb_MarcaSubTipo').val()) || 0,
                         pesquisarSemVariante: $('#chk_PesquisarSemVariante')[0].checked,
                         pesquisarDescricao: $('#chk_PesquisarDescricao')[0].checked,
                     }
