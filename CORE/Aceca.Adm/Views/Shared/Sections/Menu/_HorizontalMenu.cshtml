@@ -16,6 +16,23 @@
             @* ! Adm version menu-items *@
             <ul class="menu-inner" style="margin-left: 25%;">
 
+                 <!-- Colecao -->
+                <li class='menu-item@(currentPage.StartsWith("/SocioColecao") ? " active" : "")'>
+                    <a href="javascript:void(0)" class="menu-link menu-toggle">
+                        <i class='menu-icon icon-base ri ri-map-2-line'></i>
+                        <div data-i18n="Colecao">Colecao</div>
+                    </a>
+
+                    <ul class="menu-sub">
+                        <li class='menu-item@(currentPage == "/SocioColecao/Index" ? " active" : "")'>
+                            <a asp-controller="SocioColecao" asp-action="Index" class="menu-link">
+                                <i class="menu-icon icon-base ri ri-article-line"></i>
+                                <div data-i18n="Listagem">Listagem</div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <!-- Agenda -->
                 <li class='menu-item@(currentPage.StartsWith("/Agenda") ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">

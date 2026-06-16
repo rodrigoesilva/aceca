@@ -1,4 +1,4 @@
-﻿
+
 @{
     var pageApp = "ACECA";
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
@@ -56,7 +56,7 @@
 } 
 
 @section PageScripts {
-    <script src="~/js/admin/agenda/admin-agenda.js"></script>
+    <script src="~/js/admin/agenda/admin-agenda.js" asp-append-version="true"></script>
 }
 
 @* ************** Content ************** *@

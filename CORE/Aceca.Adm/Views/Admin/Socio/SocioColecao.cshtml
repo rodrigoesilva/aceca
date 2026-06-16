@@ -1,3 +1,5 @@
+@model Aceca.Adm.Models.Marcas
+
 @{
     var pageApp = "ACECA";
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
@@ -15,36 +17,25 @@
     <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
     <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css">
     <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css"/>
-
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
-    <!-- Form Validation
-    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
-    -->
-    <!-- Flat Picker - Calendar -->
-    <link rel="stylesheet" href="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.css" />
-    <link rel="stylesheet" href="~/vendor/libs/flatpickr/flatpickr.css">
-    <link rel="stylesheet" href="~/vendor/libs/flatpickr/plugins/monthSelect/style.css">
-    <!--Select Dropdownlist -->
-    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
-    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
-    <!-- DatePicker Range -->
-    <link rel="stylesheet" href="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css" />
-
-    <link rel="stylesheet" href="~/vendor/libs/jquery-timepicker/jquery-timepicker.css" />
-    <link rel="stylesheet" href="~/vendor/libs/pickr/pickr-themes.css" />
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css" integrity="sha512-WWc9iSr5tHo+AliwUnAQN1RfGK9AnpiOFbmboA0A0VJeooe69YR2rLgHw13KxF1bOSLmke+SNnLWxmZd8RTESQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Form Validation -->
+    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
 
 
     <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
     <link rel="stylesheet" href="~/vendor/libs/busy-load/app.min.css" />
 
+    <!-- Select Dropdownlist -->
+    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
+    <link rel="stylesheet" href="~/vendor/libs/bootstrap-select/bootstrap-select.css" />
+
     <!-- CSS PAGE -->
     <link rel="stylesheet" href="~/css/zoom.css">
     <link rel="stylesheet" href="~/css/marcas.css?v=1.0.0">
 
-    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css" />    
+    <!--  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.8/css/responsive.dataTables.min.css">-->
+    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css" />
 }
 
 @section VendorScripts {
@@ -52,41 +43,27 @@
     <!-- Flat Picker -->
     <script src="~/vendor/libs/moment/moment.js"></script>
     <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
-
-    <!-- Form Validation
+    <!-- Form Validation -->
     <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
     <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
-    -->
-    <!-- Select Dropdownlist -->
-    <script src="~/vendor/libs/select2/select2.js"></script>
-    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
-    <!-- DatePicker Range -->
-    <script src="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js"></script>
 
-    <script src="~/vendor/libs/moment/moment.js"></script>
-    <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
-    
-    <script src="~/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.js"></script>
-    <script src="~/vendor/libs/jquery-timepicker/jquery-timepicker.js"></script>
-    <script src="~/vendor/libs/pickr/pickr.js"></script>
 
-    <!--  -->
     <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
     <script src="~/vendor/libs/busy-load/app.min.js"></script>
 
-    <script src="~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js"></script>
+    <!-- Select Dropdownlist -->
+    <script src="~/vendor/libs/select2/select2.js"></script>
+    <script src="~/vendor/libs/bootstrap-select/bootstrap-select.js"></script>
 
+    <!--<script src="https://cdn.datatables.net/responsive/2.1.0/js/dataTables.responsive.js"></script>-->
+    <script src="~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js"></script>
 } 
 
 @section PageScripts {
+    <script src="~/js/admin/socio/admin-socio-colecao.js" asp-append-version="true"></script>
+    <script src="~/js/modal/modal-marca.js" asp-append-version="true"></script>
 
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
-
-    <script src="~/js/pages/pages-novidade.js" asp-append-version="true"></script>
     <!-- Select Dropdownlist -->
     <script src="~/js/forms-selects.js" asp-append-version="true"></script>
 
@@ -100,21 +77,16 @@
             <div class="head-label-filtro text-start">
                 <h5 class="card-title mb-0 title-filtro">Filtros</h5>
             </div>
+            <div>
+                @Html.Hidden("hdMarcaAcervoId", Model?.MarcaAcervoId)
+                @Html.Hidden("hdMarcaAcervoNome", "")
+            </div>
 
+            <!-- LINHA 01 -->
             <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
 
-                <!-- Mes -->
-                <div class="div_MarcaMes col-sm-6 col-lg-3">
-                    <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-                        <div id="divDT">
-                            <p class="mb-1">* Per&iacute;odo</p>
-                            <input id="dt_Periodo" name="dt_Periodo" class="form-control dt-calendar-year" type="text" placeholder="MM/YYYY" autocomplete="off" />
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Fase -->
-                <div class="div_MarcaFase col-sm-6 col-lg-3">
+                <div class="col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Fase</p>
@@ -127,7 +99,7 @@
                 </div>
 
                 <!-- Tipo-->
-                <div class="div_MarcaTipo col-sm-6 col-lg-2">
+                <div class="div_MarcaTipo col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Tipo</p>
@@ -140,7 +112,7 @@
                 </div>
 
                 <!-- Sub-Tipo -->
-                <div class="div_MarcaSubTipo col-sm-6 col-lg-2">
+                <div class="div_MarcaSubTipo col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Sub-Tipo</p>
@@ -152,8 +124,45 @@
                     <hr class="d-none d-sm-block d-lg-none me-6">
                 </div>
 
+            </div>
+
+            <!-- LINHA 02 -->
+            <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
+                
+                <!-- Flag Listar Sem Variacao -->
+                <div class="div_PesquisarSemVariante d-flex justify-content-center col-sm-6 col-lg-4">
+                    <div class="d-flex justify-content-between align-items-end card-widget-1 row gap-4 gap-md-0">
+                        <div>
+                            <div class="pt-8">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox"
+                                           id="chk_PesquisarSemVariante">
+                                    <label class="form-check-label" for="chk_PesquisarSemVariante">Listar sem Variantes</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="d-none d-sm-block d-lg-none me-6">
+                </div>
+
+                <!-- Flag Pesquisar na Descricao -->
+                <div class="div_PesquisarDescricao d-flex justify-content-center col-sm-6 col-lg-4">
+                    <div class="d-flex justify-content-between align-items-end card-widget-1 row gap-4 gap-md-0">
+                        <div>
+                            <div class="pt-8">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox"
+                                    id="chk_PesquisarDescricao">
+                                    <label class="form-check-label" for="chk_PesquisarDescricao">Pesquisar na Descrição</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="d-none d-sm-block d-lg-none me-6">
+                </div>
+
                 <!-- Botoes -->
-                <div class="div_Botoes col-sm-6 col-lg-2">
+                <div class="div_Botoes col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div class="d-flex justify-content-center align-content-center flex-wrap gap-4 pt-8">
                             <!-- 
@@ -202,3 +211,6 @@
     <span id="caption">img</span>
     <img class="modal-content" id="img01">
 </div>
+
+<!-- marca modal -->
+@await Html.PartialAsync("../../_Partials/_Modals/ModalMarca.cshtml")

@@ -1,4 +1,4 @@
-﻿@{
+@{
     var pageApp = "ACECA";
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
     var pageTipo = string.Empty; //" - Listagem - ";
@@ -50,7 +50,7 @@
 } 
 
 @section PageScripts {
-    <script src="~/js/admin/agenda/admin-agenda-imagem.js"></script>
+    <script src="~/js/admin/agenda/admin-agenda-imagem.js" asp-append-version="true"></script>
 }
 
 @* ************** Content ************** *@

@@ -1,4 +1,4 @@
-﻿@{
+@{
     var pageApp = "ACECA";
     var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
     var pageTipo = string.Empty;
@@ -33,7 +33,7 @@
 
 @section PageScripts {
     <!-- Select Dropdownlist -->
-    <script src="~/js/forms-selects.js"></script>
+    <script src="~/js/forms-selects.js" asp-append-version="true"></script>
 }
 
 @* ************** Content ************** *@
