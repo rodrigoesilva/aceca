@@ -74,154 +74,102 @@ document.addEventListener('DOMContentLoaded', function () {
 //#region Login
 
 async function fn_LoginAuth() {
-    //console.log(`fn_LoginAuth ::`);
-
-    loginSubmitButton.setAttribute('data-kt-indicator', 'on');
-
-    loginSubmitButton.disabled = true;
-
+    const err   = document.getElementById('loginErr');
     const email = document.getElementById('lEmail').value.trim().toLowerCase();
     const senha = document.getElementById('lSenha').value;
-    const btn = document.getElementById('btnEntrar');
-    const err = document.getElementById('loginErr');
 
+    fn_BtnLoading(loginSubmitButton);
     err.style.display = 'none';
-    btn.disabled = true;
-    btn.textContent = 'Verificando…';
-
-    let user = null;
 
     try {
-
         const response = await fetch(`${var_Controller}/Login`, {
             method: 'POST',
-            headers: {
-                "Content-Type": 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, senha }),
         });
 
-        if (response.ok) {
-            
-            let user = await response.json();
+        const user = await response.json();
 
-            if (user.bResult) {
+        if (response.ok && user.bResult) {
 
-                //console.log(`AUTH fn_LoginAuth - user :: `, user);
+            // Geo: fire-and-forget — não bloqueia o redirecionamento
+            fn_LoginAuthGeo(user.nameIdentifier);
 
-                btn.disabled = false;
-                btn.textContent = 'Entrar';
+            fn_LoginCkSet(_cka, user.nome?.split(' ')[0], 1440); // 24h (teto absoluto da sessão)
+            sessionStorage.setItem('aceca_sessao', JSON.stringify(user));
 
-                fn_LoginAuthGeo(user.nameIdentifier);
-
-                fn_LoginCkSet(_cka, user?.nome?.split(" ")[0], 1440); // 24h (teto absoluto da sessão)
-                sessionStorage.setItem('aceca_sessao', JSON.stringify(user));
-
-                loginSubmitButton.disabled = false;
-
-                if (user?.pswuptd === false) {
-                    Swal.fire({
-                        title: `Ol&aacute; ${user?.nome?.split(" ")[0]}!`,
-                        html: `Identificamos que a sua senha expirou!! <br><br> Fa&ccedil;a a atualiza&ccedil;&atilde;o para realizar seu acesso.`,
-                        imageUrl: `${urlImgModaltext}`,
-                        imageWidth: 400,
-                        imageAlt: `${var_ImgAlt}`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-primary waves-effect waves-light'
-                        }
-                    }).then((result) => {
-                        window.location.href = '/Auth/UpdatePass';
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'success',
-                        title: `Ol&aacute; ${user?.nome?.split(" ")[0]}!`,
-                        html: `Seja bem-vindo`,
-                        focusConfirm: true,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-success waves-effect'
-                        }
-                    }).then((result) => {
-                        window.location.href = '/Auth/Access';
-                    });
-                }
-
-            } else {
-                let msgContato = `<b>Não é possivel realizar o acesso. <br><br>Entre em contato conosco !!!</b>`;
-
-                //console.log(`AUTH fn_LoginAuth - user :: `, user);
-
+            // Botão permanece desabilitado enquanto o Swal exibe (redirect iminente)
+            if (user.pswuptd === false) {
                 Swal.fire({
-                    title: `${user?.message}`,
-                    icon: 'error',
-                    html: `${msgContato}`,
+                    title: `Ol&aacute; ${user.nome?.split(' ')[0]}!`,
+                    html: `Identificamos que a sua senha expirou!!<br><br>Fa&ccedil;a a atualiza&ccedil;&atilde;o para realizar seu acesso.`,
+                    imageUrl: urlImgModaltext,
+                    imageWidth: 400,
+                    imageAlt: var_ImgAlt,
                     focusConfirm: false,
                     confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-danger waves-effect'
-                    }
-                }).then((resultFail) => {
-
-                    btn.disabled = false;
-                    btn.textContent = 'Entrar';
-
-                    fn_LoginLimpar();
-                });
-
-                err.innerHTML = `❌ ${msgContato}`;
-                err.style.display = 'block';
-
-                btn.disabled = false;
-                btn.textContent = 'Entrar';
-
-                fn_LoginLimpar();
+                    customClass: { confirmButton: 'btn btn-primary waves-effect waves-light' }
+                }).then(() => { window.location.href = '/Auth/UpdatePass'; });
+            } else {
+                Swal.fire({
+                    icon: 'success',
+                    title: `Ol&aacute; ${user.nome?.split(' ')[0]}!`,
+                    html: `Seja bem-vindo`,
+                    focusConfirm: true,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: { confirmButton: 'btn btn-label-success waves-effect' }
+                }).then(() => { window.location.href = '/Auth/Access'; });
             }
+
         } else {
+            const msg = user?.message ?? 'Não foi possível realizar o acesso.';
 
-            btn.disabled = false;
-            btn.textContent = 'Entrar';
+            err.textContent = `❌ ${msg}`; // textContent evita XSS com conteúdo do servidor
+            err.style.display = 'block';
 
-            const errObject = await response.json();
-
-            console.log(`response errObject ::  ${errObject}`);
+            fn_BtnReset(loginSubmitButton);
+            document.getElementById('lSenha').value = ''; // limpa só a senha, mantém o e-mail
 
             Swal.fire({
-                title: 'Ops!!',
+                title: msg,
                 icon: 'error',
-                html: `<b>N&atilde;o foi possível realizar o acesso!!!</b>`,
-                focusConfirm: false,
+                html: `<b>Verifique suas credenciais e tente novamente.</b>`,
+                focusConfirm: true,
                 confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                customClass: {
-                    confirmButton: 'btn btn-label-danger waves-effect'
-                }
-            }).then((resultFail) => {
-                fn_LoginLimpar();
+                customClass: { confirmButton: 'btn btn-label-danger waves-effect' }
             });
         }
-    }
-    catch (ex) {
 
-        btn.disabled = false;
-        btn.textContent = 'Entrar';
-
-        console.log(`response ex ::  ${ex}`);
-
+    } catch (ex) {
+        console.error('fn_LoginAuth:', ex);
+        fn_BtnReset(loginSubmitButton);
         Swal.fire({
             title: 'Ops!!',
             icon: 'error',
-            html: `<b>N&atilde;o foi possível realizar o acesso!!!</b>`,
-            focusConfirm: false,
+            html: `<b>N&atilde;o foi poss&iacute;vel realizar o acesso.<br>Tente novamente.</b>`,
+            focusConfirm: true,
             confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-danger waves-effect'
-            }
-        }).then((result) => {
-            fn_LoginLimpar();
+            customClass: { confirmButton: 'btn btn-label-danger waves-effect' }
         });
     }
+}
+
+// Exibe estado de carregamento no botão usando a estrutura HTML do spinner
+function fn_BtnLoading(btn) {
+    btn.disabled = true;
+    const txtSpan  = btn.querySelector('.btn-text');
+    const spinSpan = btn.querySelector('.btn-spinner');
+    if (txtSpan)  txtSpan.style.display  = 'none';
+    if (spinSpan) spinSpan.style.display = 'inline-flex';
+}
+
+// Restaura o botão ao estado normal
+function fn_BtnReset(btn) {
+    btn.disabled = false;
+    const txtSpan  = btn.querySelector('.btn-text');
+    const spinSpan = btn.querySelector('.btn-spinner');
+    if (txtSpan)  txtSpan.style.display  = '';
+    if (spinSpan) spinSpan.style.display = 'none';
 }
 
 function fn_LoginAuthIni() {
@@ -428,109 +376,6 @@ function fn_LoginCkSet(cname, cvalue, exmins ) {
 
     document.cookie = ckFull;
 }
-
-// ==========================
-// LOGIN
-// ==========================
-async function handleLogin(event) {
-
-    console.log(`handleLogin ::  ${event}`);
-
-    event.preventDefault();
-
-    const btn = document.getElementById("btn-login");
-    btn.disabled = true;
-
-    const email = document.getElementById("lEmail").value.trim();
-    const password = document.getElementById("lSenha").value.trim();
-
-    if (!email || !password) {
-        Swal.fire("Erro", "Preencha todos os campos", "error");
-        btn.disabled = false;
-        return;
-    }
-
-    try {
-
-        console.log(`var_Controller ::  ${var_Controller}`);
-        console.log(`/Login ::  ${var_Controller}/Login`);
-
-        const response = await fetch(`${var_Controller}/Login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-
-        console.log(`data ::  ${data}`);
-
-        if (data.ok) {
-
-            // cache leve
-            sessionStorage.setItem("user", email);
-
-            if (document.getElementById("rememberMe").checked) {
-                document.cookie = "user=" + email + "; max-age=3600; path=/";
-            }
-
-            Swal.fire({
-                icon: "success",
-                title: "Login realizado",
-                timer: 1500,
-                showConfirmButton: false
-            });
-
-            setTimeout(() => window.location.href = "/dashboard", 1500);
-
-        } else {
-            Swal.fire("Erro", data.message, "error");
-        }
-
-    } catch (err) {
-        Swal.fire("Erro", "Falha na requisição", "error");
-    }
-
-    btn.disabled = false;
-}
-
-//#endregion
-
-//#region ESQUECI SENHA
-
-// ==========================
-// ESQUECI SENHA
-// ==========================
-async function handleForgotPassword(e) {
-    e.preventDefault();
-
-    const { value: email } = await Swal.fire({
-        title: "Recuperar senha",
-        input: "email",
-        inputLabel: "Digite seu email",
-        inputPlaceholder: "email@exemplo.com",
-        confirmButtonText: "Enviar",
-        showCancelButton: true
-    });
-
-    if (!email) return;
-
-    const res = await fetch(`${var_Controller}/ForgotPassword`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
-    });
-
-    const data = await res.json();
-
-    if (data.ok) {
-        Swal.fire("Sucesso", "Email de recuperação enviado", "success");
-    } else {
-        Swal.fire("Erro", data.message, "error");
-    }
-}
-
-//#endregion
 
 //#region GEO
 
