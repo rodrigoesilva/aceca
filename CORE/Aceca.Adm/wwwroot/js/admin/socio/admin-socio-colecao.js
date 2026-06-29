@@ -480,6 +480,24 @@ function fn_FiltrarDados() {
             {
                 data: 'observacao', className: 'text-start', responsivePriority: 4
             },
+            // COLUNA - incluidoPor (avatar)
+            {
+                data: 'IncluidoPor', className: 'text-center', responsivePriority: 10010,
+                render: function (data, type, full) {
+                    if (!data || full.Id === 0 || type !== 'display') return '';
+                    var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
+                    var items = data.split('/').map(function (nome, i) {
+                        let pathAvatar = nome == "Aceca" ? `../img/avatars/socio/imgAvatarAceca` : `../img/avatars/${i}`;
+                        return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="${nome}" style="z-index:1;">
+                            <img src="${pathAvatar}.png" alt="Avatar" class="rounded-circle">
+                        </li>`;
+                    }).join('');
+                    return ul + items + '</ul>';
+                }
+            },
+            // COLUNA - incluidoPor hidden (filtro)
+            { targets: -2, data: 'IncluidoPor', visible: false, responsivePriority: 99 },
             // COLUNA - Ações (sempre visível junto com control)
             {
                 //visible: false,
@@ -660,17 +678,7 @@ function fn_FiltrarDados() {
                         ? row.NomeFabrica
                         : row.TxtFabrica;
 
-                    // Avatares incluídoPor
-                    var avatarHtml = '';
-                    if (row.IncluidoPor) {
-                        var pessoas = row.IncluidoPor.split("/");
-                        avatarHtml = pessoas.map(function (p, i) {
-                            return `<img src="../img/avatars/${i}.png" alt="${p}" title="${p}"
-                                        style="width:28px;height:28px;border-radius:50%;border:1.5px solid #fff;margin-right:2px;">`;
-                        }).join('');
-                    }
-
-                    // ✅ incluidoPor como TEXTO PURO no card mobile
+                    // incluidoPor como TEXTO PURO no card mobile
                     var incluidoPorTexto = '';
 
                     if (row.IncluidoPor) {
