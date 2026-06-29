@@ -1,7 +1,9 @@
 using Aceca.Adm.Data;
 using Aceca.Adm.Helper;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,13 +28,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-builder.Services.AddSingleton<HelperExtensionsController>();
+builder.Services.AddScoped<HelperExtensionsController>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 // 1. Add Distributed Memory Cache (required as a backing store for session)
 builder.Services.AddDistributedMemoryCache(); //
+builder.Services.AddMemoryCache();
+
+//
+builder.Services.AddHttpClient();
 
 #region TODO - Configure Token authentication
 
@@ -77,7 +83,8 @@ builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true; // Makes the session cookie essential for compliance
-    options.IdleTimeout = TimeSpan.FromHours(1);
+    // 2 horas sem uso (ociosidade) — alinhado com o ExpireTimeSpan do cookie de autenticação
+    options.IdleTimeout = TimeSpan.FromHours(2);
 });
 
 /*
@@ -96,37 +103,86 @@ builder.Services.AddSession(options =>
 
 string strCookieName = builder.Configuration["Cookie:Key"];
 
+// Identifica requisições AJAX/fetch para responder com status (401/403) em vez de
+// redirecionar (302) para uma página HTML — o JavaScript trata o redirecionamento.
+static bool IsAjaxRequest(HttpRequest request)
+{
+    return string.Equals(request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase)
+        || request.Headers["Accept"].ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase);
+}
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.Cookie.Name = strCookieName;
         //o.Cookie.Domain = options.CookieDomain;
+
+        // Ociosidade: 2h sem uso. Com SlidingExpiration o cookie é renovado a cada
+        // atividade; após 2h sem requisições ele expira.
         options.SlidingExpiration = true;
-        options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-        //o.TicketDataFormat = ticketFormat;
-        //o.CookieManager = new CustomChunkingCookieManager();
-        options.LoginPath = "/Auth/AccessDenied";  //"/Auth/Index";
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+
+        // Sessão expirada / não autenticada -> SessionExpired
+        options.LoginPath = "/Auth/SessionExpired";
         options.LogoutPath = "/Auth/Logout";
+        // Autenticado, porém sem permissão (role) -> AccessDenied
         options.AccessDeniedPath = "/Auth/AccessDenied";
+
+        options.Events = new CookieAuthenticationEvents
+        {
+            // Teto absoluto de 24h: independentemente da atividade, a sessão encerra
+            // 24h após o login. O prazo é gravado no claim "sess_abs_exp" no login.
+            OnValidatePrincipal = async ctx =>
+            {
+                var absClaim = ctx.Principal?.FindFirst("sess_abs_exp")?.Value;
+
+                if (DateTimeOffset.TryParse(absClaim, CultureInfo.InvariantCulture,
+                        DateTimeStyles.RoundtripKind, out var absExp)
+                    && DateTimeOffset.UtcNow >= absExp)
+                {
+                    ctx.RejectPrincipal();
+                    await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                }
+            },
+
+            // Desafio de autenticação (sessão expirada/ausente): AJAX recebe 401 e o
+            // JS redireciona; navegação normal é redirecionada para SessionExpired.
+            OnRedirectToLogin = ctx =>
+            {
+                if (IsAjaxRequest(ctx.Request))
+                    ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                else
+                    ctx.Response.Redirect(ctx.RedirectUri);
+
+                return Task.CompletedTask;
+            },
+
+            // Sem permissão: AJAX recebe 403; navegação normal vai para AccessDenied.
+            OnRedirectToAccessDenied = ctx =>
+            {
+                if (IsAjaxRequest(ctx.Request))
+                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                else
+                    ctx.Response.Redirect(ctx.RedirectUri);
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 #endregion
 
-var app = builder.Build();
-/*
-// Create a service scope to get an AspnetCoreMvcFullContext instance using DI and seed the database.
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
 
-    SeedData.Initialize(services);
-}
-*/
+var app = builder.Build();
+
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-
+}
+else {
+    app.UseExceptionHandler("/Error");
+    
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 
@@ -150,6 +206,14 @@ app.UseRouting();
 // A ordem correta é: UseAuthentication → UseAuthorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.Use(async (ctx, next) =>
+{
+    ctx.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    ctx.Response.Headers.Append("X-Frame-Options", "DENY");
+    ctx.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    await next();
+});
 
 app.MapControllerRoute(
     name: "default",

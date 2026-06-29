@@ -4,7 +4,7 @@
   ViewData["main"] = isFront ? "front-" : "";
   ViewData["frontVar"] = isFront ? "Front" : "";
   @* Compact/Fluid class *@
-  ViewData["contentType"] = ViewData["container"] is string container && container == "container-xxl" ? "layout-compact" : "layout-wide";
+    ViewData["contentType"] = ViewData["container"] is string container && container == "container-xxl" ? "layout-wide" : "layout-wide";
 }
 
 @inject IHttpContextAccessor httpContextAccessor
@@ -62,6 +62,19 @@
   @RenderSection("VendorScripts", required: false)
 
   <script src='~/js/@ViewData["main"]main.js'></script>
+
+  @* Monitor de expiração de sessão (2h ocioso / 24h absoluto) — apenas para usuários autenticados *@
+  @if (httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true)
+  {
+    var absExpiry = httpContextAccessor.HttpContext.User.FindFirst("sess_abs_exp")?.Value;
+    <script>
+      window.__aceca_session = {
+        absoluteExpiry: '@absExpiry', // ISO 8601 — teto de 24h definido no login
+        idleMinutes: 120              // 2h sem uso
+      };
+    </script>
+    <script src="~/js/session-guard.js" asp-append-version="true"></script>
+  }
 
   <!-- Page Scripts-->
   @RenderSection("PageScripts", required: false)
