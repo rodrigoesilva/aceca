@@ -318,14 +318,14 @@ namespace Aceca.Adm.Controllers
                         {
                             SocioEnderecoId = userId,
                             IP         = nodeGeo["ip"]?.GetValue<string>(),
-                            OS         = nodeAgent?["device"]?["name"]?.GetValue<string>(),
+                            OS         = nodeAgent?["operating_system"]?["name"]?.GetValue<string>(),
                             Browser    = nodeAgent?["name"]?.GetValue<string>(),
-                            Device     = nodeAgent?["operating_system"]?["name"]?.GetValue<string>(),
+                            Device     = nodeAgent?["device"]?["type"]?.GetValue<string>(),
                             Operadora  = nodeGeo["asn"]?["organization"]?.GetValue<string>(),
                             Estado     = nodeGeo["location"]?["state_code"]?.GetValue<string>(),
                             Cidade     = nodeGeo["location"]?["city"]?.GetValue<string>(),
-                            Latitude   = nodeGeo["location"]?["latitude"]?.GetValue<string>(),
-                            Longitude  = nodeGeo["location"]?["longitude"]?.GetValue<string>(),
+                            Latitude   = nodeGeo["location"]?["latitude"]?.ToString()?.Trim('"'),
+                            Longitude  = nodeGeo["location"]?["longitude"]?.ToString()?.Trim('"'),
                             UltimoLogin = loginTime != default ? loginTime.DateTime : DateTime.UtcNow.AddHours(-3),
                         };
 
