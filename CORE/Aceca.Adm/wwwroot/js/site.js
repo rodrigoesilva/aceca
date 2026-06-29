@@ -117,26 +117,37 @@ function fn_AuthOut() {
 }
 
 function fn_AuthSession() {
-
-    //console.log(`fn_AuthSession sessionStorage ::`, sessionStorage);
-
     if (sessionStorage?.getItem("aceca_sessao") !== null) {
-        varSessionDataSite = JSON.parse(sessionStorage.getItem("aceca_sessao"));
-
-        //console.log(`fn_AuthSession varSessionDataSite ::`, varSessionDataSite);
-
-        if (varSessionDataSite !== null) {
-            document.getElementById('hdSocioLogadoId').value = `${varSessionDataSite?.nameIdentifier}`;
-            document.getElementById('hdIsPerfil').value = `${varSessionDataSite?.isPerfil}`;
-            document.getElementById('tbAvatar').textContent = `${varSessionDataSite?.avatar}`;
-            document.getElementById('tbNome').textContent = `${varSessionDataSite?.nome}`;
-            document.getElementById('tbCargo').textContent = `${varSessionDataSite?.cargo}`;
+        var sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+        if (sessionData !== null) {
+            fn_SetSessionData(sessionData);
         } else {
+            fn_RestoreSession();
+        }
+    } else {
+        fn_RestoreSession();
+    }
+}
+function fn_RestoreSession() {
+    $.ajax({
+        url: '/Auth/GetSessionData',
+        type: 'GET',
+        success: function (data) {
+            sessionStorage.setItem('aceca_sessao', JSON.stringify(data));
+            fn_SetSessionData(data);
+        },
+        error: function () {
             fn_CleanUser();
         }
-    }else {
-        fn_CleanUser();
-    }  
+    });
+}
+function fn_SetSessionData(data) {
+    varSessionDataSite = data;
+    document.getElementById('hdSocioLogadoId').value = `${data?.nameIdentifier}`;
+    document.getElementById('hdIsPerfil').value = `${data?.isPerfil}`;
+    if (document.getElementById('tbAvatar')) document.getElementById('tbAvatar').textContent = `${data?.avatar}`;
+    document.getElementById('tbNome').textContent = `${data?.nome}`;
+    document.getElementById('tbCargo').textContent = `${data?.cargo}`;
 }
 function fn_CleanUser() {
     document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;

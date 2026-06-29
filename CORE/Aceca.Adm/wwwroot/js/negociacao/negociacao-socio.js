@@ -211,7 +211,7 @@ function fn_GridList() {
                             let itemDados = full;
                             let itemObjJson = encodeURIComponent(JSON.stringify(full));
 
-                            btns = `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect" data-bs-toggle="tooltip" title="Ver Itens para Negociação"><i class="ri ri-eye-line ri-22px"></i></a>`
+                            btns = `<a href="javascript: fnItem_Negociacao(${itemObjJson},'NegociacaoSocio');" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect" data-bs-toggle="tooltip" title="Ver Itens para Negociação"><i class="ri ri-eye-line ri-22px"></i></a>`
                         }
 
                         return (btns);
@@ -401,53 +401,6 @@ function fn_GridComplete(grid) {
 
 //#endregion
 
-//#region FUNCOES
-
-function fn_CheckVerAtivos() {
-
-    const chkVerAtivos = document.querySelector('#chkFilterAtivo');
-
-    // //CHK VER ATIVOS
-    if (chkVerAtivos) {
-        chkVerAtivos.addEventListener('change', function () {
-            var table = $('.datatables-basic').DataTable();
-
-            if (this.checked) {
-                //console.log("Checkbox is checked..");
-                Swal.fire({
-                    title: 'INFO!!',
-                    icon: 'info',
-                    html: 'Essa op&ccedil;&atilde;o <br> exbir&aacute; somente os itens ativos !!',
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-info waves-effect'
-                    },
-                }).then((result) => {
-                    //console.log("result :: ", result);
-
-                    $.fn.dataTable.ext.search.push(
-                        function (settings, data, dataIndex) {
-
-                            var rowAtivo = $(table.row(dataIndex).node()).find('[name="spStatus"]').data("status") == true;
-
-                            return rowAtivo
-                        }
-                    );
-
-                    table.draw();
-                });
-            } else {
-                //console.log("Checkbox is not checked..");
-                $.fn.dataTable.ext.search.pop();
-                table.draw();
-            }
-        });
-    }
-}
-
-//#endregion
-
 //#region FUNCOES MASCARA
 
 function fn_Masks() {
@@ -471,397 +424,264 @@ function fn_MaskCEP(input) {
 
 //#endregion
 
-//#region POP
+//#region COMBO
 
-function fn_Pop(obj, action) {
-    //console.log("fn_Pop varItems_Row !", obj);
-    //console.log("fn_Pop action !", action);
+function fn_PopLoadCombos() {
 
-    const popAddNewItem = document.querySelector('#pop-add-new-item');
+    //console.log("fn_PopLoadCombos  ::: ");
 
-    popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
-    
-        // Pop ID
-        (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.socio.id)),
-        (popAddNewItem.querySelector('#hdSocioContatoId').value = (obj === null ? 0 : obj.socioContato.id)),
-        (popAddNewItem.querySelector('#hdSocioEnderecoId').value = (obj === null ? 0 : obj.socioEndereco.id)),
-        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj.socioAniversario.id)),
-        (popAddNewItem.querySelector('#hdSocioPerfilId').value = (obj === null ? 0 : obj.socio.socioPerfilId)),
-        // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),        
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.socioContato.email)),
-        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : `(${obj.socioContato.ddd}) ${obj.socioContato.telefone}`)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : obj.socioEndereco.cep)),
-        (popAddNewItem.querySelector('.dt-line-05').value = (obj === null ? '' : obj.socioEndereco.endereco)),
-        (popAddNewItem.querySelector('.dt-line-06').value = (obj === null ? '' : obj.socioEndereco.numero)),
-        (popAddNewItem.querySelector('.dt-line-07').value = (obj === null ? '' : obj.socioEndereco.complemento)),
-        (popAddNewItem.querySelector('.dt-line-08').value = (obj === null ? '' : obj.socioEndereco.bairro)),
-        (popAddNewItem.querySelector('.dt-line-09').value = (obj === null ? '' : obj.socioEndereco.estado)),
-        (popAddNewItem.querySelector('.dt-line-10').value = (obj === null ? '' : obj.socioEndereco.cidade)),
-        (popAddNewItem.querySelector('.dt-line-11').value = (obj === null ? '' : `${obj.socioAniversario.dia} / ${obj.socioAniversario.mes}`)),
-        (popAddNewItem.querySelector('.dt-line-12').checked = (obj === null ? true : obj.socio.ativo));
-        (popAddNewItem.querySelector('.dt-line-13').checked = (obj === null ? true : obj.socio.mostrarSite));
+    fn_LoadCmb_ColecaoStatus();
+    fn_LoadCmb_MarcaFase();
+    fn_LoadCmb_MarcaTipo();
+    fn_LoadCmb_MarcaSubTipo(0);
 
-        //(popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.socioPerfilId));
-       
+    $('#cmb_MarcaTipo').on('change', function () {
+        let idMarcaTipo = $(this).find('option:selected').val();
 
-    // Pop Action
-    (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
-    (popAddNewItem.querySelector('.data-submit').textContent = (action === 'Edit') ? 'Alterar' : 'Adicionar');
+        //console.log("cmb_MarcaTipo change  idMarcaTipo ::: ", idMarcaTipo);
 
-    if (obj !== null) {
+        //Limpar Combo cinema
+        document.querySelectorAll('#cmb_MarcaSubTipo option').forEach(option => option.remove());
 
-        $("#cmb_SocioEstado").val(obj.socioEndereco.estado).change();
+        $("#cmb_MarcaSubTipo").append($("<option></option>").val(0).html("-- Selecionar --"));
 
-        //console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
-    }
-
-
-    //console.log("fn_Pop popAddNewItem ::: ", popAddNewItem);
-
-    // Open Pop
-    popAddNewItemEl.show();
+        if ($(this).length <= 1 && idMarcaTipo > 0) {
+            fn_LoadCmb_MarcaSubTipo(idMarcaTipo);
+        }
+    });
 }
 
-function fn_PopGetObj() {
+let cmbMarcaFaseLoaded = false;
 
-    const objFormData = {
-        Id: $('#hdId').val(),
-        Nome: $('.form-add-new-item .dt-line-01').val(),
-        Email: $('.form-add-new-item .dt-line-02').val(),
-        Telefone: $('.form-add-new-item .dt-line-03').val(),
-        CEP: $('.form-add-new-item .dt-line-04').val(),
-        Endereco: $('.form-add-new-item .dt-line-05').val(),
-        Numero: $('.form-add-new-item .dt-line-06').val(),
-        Complemento: $('.form-add-new-item .dt-line-07').val(),
-        Bairro: $('.form-add-new-item .dt-line-08').val(),
-        Estado: $('#cmb_SocioEstado').val(),
-        Cidade: $('.form-add-new-item .dt-line-10').val(),
-        DataAniversario: $('.form-add-new-item .dt-line-11').val(),
-        Ativo: $('.form-add-new-item .dt-line-12').is(':checked'),
-        MostrarSite: $('.form-add-new-item .dt-line-13').is(':checked'),
-        
-        SocioEstadoId: $('#cmb_SocioEstado').val(),
-        SocioContatoId: $('#hdSocioContatoId').val(),
-        SocioEnderecoId: $('#hdSocioEnderecoId').val(),
-        SocioAniversarioId: $('#hdSocioAniversarioId').val(),
-        SocioPerfilId: $('#hdSocioPerfilId').val(),
-    };
+function fn_LoadCmb_ColecaoStatus() {
+    // console.log("fn_LoadCmb_ColecaoStatus ::: ");
 
-    //console.log("fn_PopGetObj !", objFormData);
+    if ($('#cmb_ColecaoStatus').length <= 1) {
+        $.ajax(
+            {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_ColecaoStatus`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_ColecaoStatus  data ::: ", data);
 
-    return objFormData;
-}
-
-function fn_PopValidator(formAddNewItem) {
-
-    var varformValid = FormValidation.formValidation(formAddNewItem, {
-        fields: {
-            pop_line_item_01: {
-                validators: {
-                    notEmpty: {
-                        message: 'O preenchimento &eacute; obrigat&oacute;rio'
-                    }
-                }
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_ColecaoStatus  result id ::: ", id);
+                        //console.log("fn_LoadCmb_ColecaoStatus  result ::: ", result);
+                        $("#cmb_ColecaoStatus").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
             }
-        },
-        plugins: {
-            trigger: new FormValidation.plugins.Trigger(),
-            bootstrap5: new FormValidation.plugins.Bootstrap5({
-                // Use this for enabling/changing valid/invalid class
-                // eleInvalidClass: '',
-                eleValidClass: '',
-                rowSelector: '.form-floating-outline'
-            }),
-            submitButton: new FormValidation.plugins.SubmitButton(),
-            // defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
-            autoFocus: new FormValidation.plugins.AutoFocus()
-        },
-        init: instance => {
-            instance.on('plugins.message.placed', function (e) {
-                if (e.element.parentElement.classList.contains('input-group')) {
-                    e.element.parentElement.insertAdjacentElement('afterend', e.messageElement);
-                }
-            });
-        }
-    });
-
-    return varformValid;
+        );
+    }
 }
 
-function fnItem_Delete(varItems_Row) {
+function fn_LoadCmb_MarcaFase() {
 
-    //console.log("DELETE OBJ ::: ", varItems_Row);
+    if (cmbMarcaFaseLoaded) return;
 
-    var varItems_Id = varItems_Row.id;
+    cmbMarcaFaseLoaded = true;
 
-    var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
-        varAjax_TypeAction = 'DELETE',
-        varAjax_TypeData = 'JSON';
+    const $cmb = $('#cmb_MarcaFase');
+    const $cmbPop = $('#cmbPop_MarcaFase');
+    const idMarcaAcervo = $('#hdMarcaAcervoId').val();
 
-    const swalWithBootstrapButtons = Swal.mixin({
-        customClass: {
-            confirmButton: "btn btn-label-success waves-effect",
-            cancelButton: "btn btn-label-danger waves-effect"
-        },
-        buttonsStyling: false
-    });
+    // mantém o option original (-1)
+    $cmb.prop('disabled', true);
 
-    swalWithBootstrapButtons.fire({
-        title: "Tem certeza?",
-        icon: "warning",
-        html: `<b> Essa a&ccedil;&atilde;o ir&aacute; excluir esse item </b> <br><br> voc&ecirc; n&atilde;o poder&aacute; reverter isso!`,
-        showCancelButton: true,
-        confirmButtonText: `<i class="ri-chat-delete-line"></i> &nbsp; Sim, confirmar!`,
-        cancelButtonText: `<i class="ri-check-double-line"></i> &nbsp; N&atilde;o, cancelar!`,
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
+    $.ajax({
+        url: `${var_ControllerCmb}/AsyncCmb_MarcaFase`,
+        type: 'GET',
+        cache: true,
+        success: function (data) {
 
-            $.busyLoadFull("show");
+            strMarcaAcervo = $('#hdMarcaAcervoNome').val();
 
-            $.ajax(
-                {
-                    type: varAjax_TypeAction,
-                    //dataType: varAjax_TypeData,
-                    url: varAjax_UrlController,
-                    data: {id: varItems_Id},
-                    success: function (result) {
-                        //console.log("result  :: ", result);
-                        //console.log("result bResult :: ", result.bResult);
+            // 🔥 mantém o option fixo
+            let options = '<option value="-1">-- Selecionar --</option>';
 
-                        var varTbl;
+            // opcional: "Todas"
+            options += '<option value="0">Todas</option>';
 
-                        $.busyLoadFull("hide");
+            data.forEach(item => {
 
-                        if ($.fn.dataTable.isDataTable('.datatables-basic')) {
-                            //console.log("YES :: ");
-                            varTbl = varTbl_Obj.DataTable();
+                let strComboText = strMarcaAcervo !== "" ? `${strMarcaAcervo?.toUpperCase()} - ${item.text}` : item.text;
 
-                            Swal.fire({
-                                title: 'Deletado!',
-                                icon: 'success',
-                                html: 'Item exclu&iacute;do com sucesso !!',
-                                customClass: {
-                                    confirmButton: 'btn btn-success waves-effect waves-light'
-                                }
-                            }).then((result) => {
-                                varTbl.ajax.reload(null, false);
-                            });
-                        } else {
-                            // console.log("NO :: ");
-                            varTbl = $('#example').DataTable({
-                                paging: false
-                            });
-                        }
-                    },
-                    error: function (xhr, textStatus, errorThrown) {
-                        fn_ModalErro(xhr, textStatus, errorThrown);
+                //options += `<option value="${item.value}">${item.text}</option>`;
 
-                        return false;
-                    }
-                });
-
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-
-            $.busyLoadFull("hide");
-
-            swalWithBootstrapButtons.fire({
-                title: "Cancelado",
-                icon: "info",
-                html: "Nenhuma a&ccedil;&atilde;o foi realizada !!",
-                focusConfirm: true,
-                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                customClass: {
-                    confirmButton: 'btn btn-label-secondary waves-effect'
-                }
+                options += `<option value="${item.value}">${strComboText}</option>`;
             });
+
+            $cmb.html(options).prop('disabled', false);
+            $cmbPop.html(options);
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            cmbMarcaFaseLoaded = false;
+            fn_ModalErro(xhr, textStatus, errorThrown);
         }
     });
 }
 
-function fnItem_Edit(varItems_Row) {
-    //console.log("fnItem_Edit varItems_Row ::: ", varItems_Row);
-    //var varPop_BtnAction = 'Edit';
+function fn_LoadCmb_MarcaTipo() {
+    //console.log("fn_LoadCmb_MarcaTipo ::: ");
 
-    //fn_Pop(varItems_Row, varPop_BtnAction);
+    //console.log("cmb_MarcaTipo change idMarcaFase ::: ", idMarcaFase);
 
-    var varAjax_UrlController = `${var_Controller}/Edit`,
-        varAjax_TypeAction = 'POST',
-        varAjax_TypeData = 'JSON',
-        varAjax_TypeContent = 'application/json; charset=utf-8';
+    let method = "AsyncCmb_MarcaTipo"; // (idMarcaFase <= 0 || idMarcaFase === undefined) ? "AsyncCmb_MarcaTipo" : "AsyncCmb_MarcaTipoByFase";
+    //console.log("cmb_MarcaTipo change method ::: ", method);
 
-    if (varItems_Row.Id === 0) {
-        Swal.fire({
-            title: 'OPS!!',
-            icon: 'error',
-            html: `Dados n&atilde;o identificados !!`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-danger waves-effect'
-            },
-        });
-    } else {
+    //console.log("cmb_MarcaTipo change length ::: ", $('#cmb_MarcaTipo option').length);
 
-        $.busyLoadFull("show");
-
+    //if (idMarcaFase !== undefined) {
+    if ($('#cmb_MarcaTipo option').length <= 1) {
         $.ajax(
             {
-                url: varAjax_UrlController,
-                type: varAjax_TypeAction,
-                dataType: varAjax_TypeData,
-                data: varItems_Row,
-                // contentType: varAjax_TypeContent,
-                success: function (result) {
+                crossDomain: true,
+                url: `${var_ControllerCmb}/${method}`,
+                type: 'GET',
+                data: {
+                    id: idMarcaFase,
+                },
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
 
-                    //console.log("result  :: ", result);
-                    //console.log("result bResult :: ", result.bResult);
-
-                    if (result.bResult) {
-
-                        $.busyLoadFull("hide");
-
-                        var varTbl;
-
-                        if ($.fn.dataTable.isDataTable('.datatables-basic')) {
-                            //console.log("YES :: ");
-                            varTbl = varTbl_Obj.DataTable();
-
-                            // Hide offcanvas using javascript method
-                            popAddNewItemEl.hide();
-
-                            $.busyLoadFull("hide");
-
-                            Swal.fire({
-                                title: 'Dados Salvos!',
-                                icon: 'success',
-                                text: 'Item alterado com sucesso.',
-                                customClass: {
-                                    confirmButton: 'btn btn-success waves-effect waves-light'
-                                }
-                            }).then((result) => {
-                                varTbl.ajax.reload(null, false);
-                            });
-                        } else {
-                            // console.log("NO :: ");
-                            varTbl = $('#example').DataTable({
-                                paging: false
-                            });
-                        }
-                    } else {
-                        //console.log("result  :: ", result);
-                        $.busyLoadFull("hide");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> Erro ocorrido <br><br>` + result + `</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
-                    }
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
+                        $("#cmb_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
                 },
                 error: function (xhr, textStatus, errorThrown) {
                     fn_ModalErro(xhr, textStatus, errorThrown);
-
-                    return false;
-                }
-            });
+                },
+            }
+        );
     }
-}
 
-function fnItem_Add(varTbl_Obj) {
-    //console.log("fnItem_Add varTbl_Obj ::: ", varTbl_Obj);
-
-    var varPop_BtnAction = 'Create';
-
-    var varAjax_UrlController = `${var_Controller}/Create`,
-        varAjax_TypeAction = 'POST',
-        varAjax_TypeData = 'JSON',
-        varAjax_TypeContent = 'application/json; charset=utf-8';
-
-    const formData_newItem = fn_PopGetObj();
-    console.log("fnItem_Add formData_newItem ::: ", formData_newItem);
-
-    if (formData_newItem != '') {
-
-        $.busyLoadFull("show");
-
+    if ($('#cmbPop_MarcaTipo option').length <= 1) {
         $.ajax(
             {
-                url: varAjax_UrlController,
-                type: varAjax_TypeAction,
-                dataType: varAjax_TypeData,
-                data: formData_newItem,
-                // contentType: varAjax_TypeContent,
-                success: function (result) {
-                    console.log("result  :: ", result);
-                    //console.log("result bResult :: ", result.bResult);
+                crossDomain: true,
+                url: `${var_ControllerCmb}/AsyncCmb_MarcaTipo`,
+                type: 'GET',
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaTipo  data ::: ", data);
 
-                    if (result.bResult) {
-
-                        $.busyLoadFull("hide");
-
-                        var varTbl;
-
-                        if ($.fn.dataTable.isDataTable('.datatables-basic')) {
-                            //console.log("YES :: ");
-                            varTbl = varTbl_Obj.DataTable();
-
-                            // Hide offcanvas using javascript method
-                            popAddNewItemEl.hide();
-
-                            $.busyLoadFull("hide");
-
-
-                            Swal.fire({
-                                title: 'Dados Salvos!',
-                                icon: 'success',
-                                text: 'Item adicionado com sucesso.',
-                                customClass: {
-                                    confirmButton: 'btn btn-success waves-effect waves-light'
-                                }
-                            }).then((result) => {
-                                varTbl.ajax.reload(null, false);
-                            });
-                        } else {
-                            // console.log("NO :: ");
-                            varTbl = $('#example').DataTable({
-                                paging: false
-                            });
-                        }
-                    } else {
-                        //console.log("result  :: ", result);
-                        $.busyLoadFull("hide");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> Erro ocorrido :: <br><br>` + result.message + `</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
-                    }
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaTipo  result ::: ", result);
+                        $("#cmbPop_MarcaTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
                 },
                 error: function (xhr, textStatus, errorThrown) {
                     fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+    // }
+}
 
-                    return false;
-                }
-            });
+function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
+
+    //console.log("fn_LoadCmb_MarcaSubTipo  idMarcaTipo ::: ", idMarcaTipo);
+
+    let urlLoad = idMarcaTipo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaSubTipoByTipo` : `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`;
+
+    if ($('#cmb_MarcaSubTipo').length <= 1) {
+
+        $.ajax(
+            {
+                crossDomain: true,
+                url: urlLoad,
+                type: 'GET',
+                data: {
+                    id: idMarcaTipo,
+                },
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaSubTipo  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaSubTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaSubTipo  result ::: ", result);
+                        $("#cmb_MarcaSubTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
+    }
+
+    if ($('#cmbPop_MarcaSubTipo').length <= 1) {
+
+        $.ajax(
+            {
+                crossDomain: true,
+                url: urlLoad,
+                type: 'GET',
+                data: {
+                    id: idMarcaTipo,
+                },
+                success: function (data) {
+                    //console.log("fn_LoadCmb_MarcaSubTipo  data ::: ", data);
+
+                    $.each(data, function (id, result) {
+                        //console.log("fn_LoadCmb_MarcaSubTipo  result id ::: ", id);
+                        //console.log("fn_LoadCmb_MarcaSubTipo  result ::: ", result);
+                        $("#cmbPop_MarcaSubTipo").append($("<option></option>").val(result.value).html(result.text));
+                    });
+                },
+                error: function (xhr, textStatus, errorThrown) {
+                    fn_ModalErro(xhr, textStatus, errorThrown);
+                },
+            }
+        );
     }
 }
+///
 
 //#endregion
 
 //#region MODAL
+
+function fn_ModalConfirmarFiltros() {
+    Swal.fire({
+        title: 'Aten&ccedil;&atilde;o !!!',
+        html: `Para confirmar a op&ccedil;&atilde;o, <br><br> clique no bot&atilde;o Pesquisar.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
+        imageUrl: `${urlImgModaltext}`,
+        imageWidth: 400,
+        imageAlt: `${var_ImgAlt}`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-primary waves-effect waves-light'
+        },
+    }).then((result) => {
+        //console.log("cmb_MarcaFase change result ::: ", result);
+    })
+}
+
+function fn_ModalSelecionarFase() {
+    Swal.fire({
+        title: 'Aten&ccedil;&atilde;o !!!',
+        html: `Para utilizar essa op&ccedil;&atilde;o, <br><br> é necessário selecionar uma Fase!`,
+        imageUrl: `${urlImgModaltext}`,
+        imageWidth: 400,
+        imageAlt: `${var_ImgAlt}`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-primary waves-effect waves-light'
+        },
+    }).then((result) => {
+
+    })
+}
 
 function fn_ModalErro(xhr, textStatus, errorThrown) {
     const responseMessage = xhr.responseText;
@@ -887,6 +707,185 @@ function fn_ModalErro(xhr, textStatus, errorThrown) {
             confirmButton: 'btn btn-label-danger waves-effect'
         }
     });
+}
+
+//#endregion
+
+//#region POP
+
+function fn_Pop(obj) {
+    console.log("fn_Pop varItems_Row !", obj);
+
+    const popAddNewItem = document.querySelector('#pop-add-new-item');
+
+    popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
+
+    // Pop ID
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
+        (popAddNewItem.querySelector('#hdIdMarca').value = (obj === null ? 0 : obj.IdMarca)),
+
+        // Pop Dados
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.observacao)),
+        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.disponivel_negocio));
+
+
+    // Pop Action
+    (popAddNewItem.querySelector('.offcanvas-title').textContent = 'Alterar Registro');
+    (popAddNewItem.querySelector('.data-submit').textContent = 'Alterar');
+
+
+    // Open Pop
+    popAddNewItemEl.show();
+}
+
+function fn_PopGetObj() {
+
+    const objFormData = {
+        Id: $('#hdId').val(),
+        IdMarca: $('#hdIdMarca').val(),
+        Observacao: $('.form-add-new-item .dt-line-01').val(),
+        Disponivel_negocio: $('.form-add-new-item .dt-line-05').is(':checked')
+    };
+
+    //console.log("fn_PopGetObj !", objFormData);
+
+    return objFormData;
+}
+
+function fn_PopValidator(formAddNewItem) {
+    var varformValid = FormValidation.formValidation(formAddNewItem, {
+        fields: {
+            pop_line_item_01: {
+                validators: {
+                    notEmpty: {
+                        message: 'O preenchimento &eacute; obrigat&oacute;rio'
+                    }
+                }
+            }
+        },
+        plugins: {
+            trigger: new FormValidation.plugins.Trigger(),
+            bootstrap5: new FormValidation.plugins.Bootstrap5({
+                // Use this for enabling/changing valid/invalid class
+                // eleInvalidClass: '',
+                eleValidClass: '',
+                rowSelector: '.col-sm-12'
+            }),
+            submitButton: new FormValidation.plugins.SubmitButton(),
+            // defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
+            autoFocus: new FormValidation.plugins.AutoFocus()
+        },
+        init: instance => {
+            instance.on('plugins.message.placed', function (e) {
+                if (e.element.parentElement.classList.contains('input-group')) {
+                    e.element.parentElement.insertAdjacentElement('afterend', e.messageElement);
+                }
+            });
+        }
+    });
+
+    return varformValid;
+}
+
+//#endregion
+
+//#region COLECAO
+
+function fnItem_Colecao(obj, action) {
+    console.log("fnItem_Colecao obj ::: ", obj);
+    console.log("fnItem_Colecao action::: ", action);
+
+    let itemColecaoId = obj?.Id;
+    let itemColecaoObs = obj?.Observacao;
+    let marcaId = obj?.IdMarca;
+    let actionId = -1;
+    const socioId = document.getElementById('hdSocioLogadoId').value;
+
+    //console.log("fnItem_Colecao socioId::: ", socioId);
+
+    if ((itemColecaoId === undefined || itemColecaoId === null || itemColecaoId === '' || itemColecaoId < 1)
+        || (marcaId === undefined || marcaId === null || marcaId === '' || marcaId < 1)
+        || (socioId === undefined || socioId === null || socioId === '' || socioId < 1)
+    ) {
+        Swal.fire({
+            title: 'Dados Inv&aacute;lidos!!',
+            icon: 'error',
+            html: `<b>Os dados n&atilde;o foram informados corretamente!!!</b>`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-label-danger waves-effect'
+            }
+        }).then((result) => {
+            //fn_Limpar();
+        });
+    } else {
+
+        switch (action) {
+            case 'ColecaoDelete':
+                actionId = 0;
+                break;
+            case 'ColecaoIncluir':
+            case 'ColecaoObs':
+                actionId = 1;
+                break;
+            case 'ColecaoInteresse':
+                actionId = 2;
+                break;
+            case 'ColecaoNegociar':
+                actionId = 3;
+                break;
+            default:
+                actionId = -1;
+        }
+
+        $.busyLoadFull("show");
+
+        $.ajax({
+            url: `/SocioColecao/ActionColecao`,
+            type: 'POST',
+            dataType: 'JSON',
+            data: {
+                itemColecaoId: itemColecaoId,
+                marcaId: marcaId,
+                actionId: actionId,
+                socioId: socioId,
+                isPerfil: document.getElementById('hdIsPerfil').value,
+                itemColecaoObs: itemColecaoObs
+            },
+            success: function (response) {
+
+                console.log("Data received: ", response);
+
+                $.busyLoadFull("hide");
+
+                Swal.fire({
+                    title: 'Dados Salvos!',
+                    icon: 'success',
+                    text: 'Coleção atualizada com sucesso.',
+                    customClass: {
+                        confirmButton: 'btn btn-success waves-effect waves-light'
+                    }
+                }).then((resultSucesso) => {
+                    //window.location.reload();
+                    console.log("resultSucesso  :: ", resultSucesso);
+
+                    let table = $('.datatables-basic').DataTable();
+                    table.ajax.reload(null, false);
+
+                    const popAddNewItem = document.querySelector('#pop-add-new-item');
+                    popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
+                    popAddNewItemEl.hide();
+                    //$('.offcanvas').hide()
+                });
+
+                return true;
+            },
+            error: function (xhr, status, error) {
+                console.error("Error: " + error);
+            }
+        });
+    }
 }
 
 //#endregion

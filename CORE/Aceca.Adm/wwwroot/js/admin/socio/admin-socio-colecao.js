@@ -68,8 +68,6 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
 
-        fn_MenuAcervo();
-
         fn_Limpar();
 
         // Filtros
@@ -113,47 +111,6 @@ document.addEventListener('DOMContentLoaded', function () {
         fn_FiltrarDados();
     })();
 });
-
-//#endregion
-
-//#region Menu
-
-function fn_MenuAcervo() {
-    
-    const idMarcaAcervo = '1'; // $('#hdMarcaAcervoId').val();
-    //console.log("fn_MenuAcervo idMarcaAcervo :: ", idMarcaAcervo);
-
-    switch (idMarcaAcervo) {
-        case '1':
-            strMarcaAcervo = `Geral`;
-            break;
-        case '2':
-            strMarcaAcervo = `Amostras`;
-            break;
-        case '3':
-            strMarcaAcervo = `Palheiros`;
-            break;
-        case '4':
-            strMarcaAcervo = `Cigarrilhas`;
-            break;
-        case '5':
-            strMarcaAcervo = `Charutos`;
-            break;
-        case '6':
-            strMarcaAcervo = `Fumos & Diversos`;
-            break;
-        case '7':
-            strMarcaAcervo = `Afins`;
-            break;
-        default:
-            strMarcaAcervo = "";
-    }
-
-    $('#hdMarcaAcervoNome').val(strMarcaAcervo);
-
-    //Titulo
-    $('div.head-label-filtro').html(`<h5 class="card-title mb-0 title-filtro">${var_Nome} - ${strMarcaAcervo}</h5>`);
-}
 
 //#endregion
 
@@ -1432,50 +1389,6 @@ function fnItem_Colecao(obj, action) {
             }
         });
     }
-}
-
-//#endregion
-
-//#region Auth
-
-function fn_AuthSession() {
-    if (sessionStorage?.getItem("aceca_sessao") !== null) {
-        var sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
-        if (sessionData !== null) {
-            fn_SetSessionData(sessionData);
-        } else {
-            fn_RestoreSession();
-        }
-    } else {
-        fn_RestoreSession();
-    }
-}
-
-function fn_RestoreSession() {
-    $.ajax({
-        url: '/Auth/GetSessionData',
-        type: 'GET',
-        success: function (data) {
-            sessionStorage.setItem('aceca_sessao', JSON.stringify(data));
-            fn_SetSessionData(data);
-        },
-        error: function () {
-            fn_CleanUser();
-        }
-    });
-}
-
-function fn_SetSessionData(data) {
-    document.getElementById('hdSocioLogadoId').value = `${data?.nameIdentifier}`;
-    document.getElementById('hdIsPerfil').value = `${data?.isPerfil}`;
-    document.getElementById('tbNome').textContent = `${data?.nome}`;
-    document.getElementById('tbCargo').textContent = `${data?.cargo}`;
-}
-
-function fn_CleanUser() {
-    document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
-    sessionStorage.removeItem('aceca_sessao');
-    window.location.href = '/Auth/Index';
 }
 
 //#endregion

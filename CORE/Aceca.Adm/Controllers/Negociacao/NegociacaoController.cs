@@ -53,7 +53,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
         public ActionResult Index()
         {
-            return View("~/Views/Admin/Negociacao/NegociacaoColecao.cshtml");
+            return View("~/Views/Admin/Negociacao/NegociacaoAcervo.cshtml");
         }
 
         [HttpGet]
