@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (pgLogin === null) {
             fn_AuthSession();
+            setInterval(fn_CheckSession, 1000);
         }
 
         $('.btn-logout').on('click', function () {
@@ -111,6 +112,36 @@ function fn_AuthOut() {
     catch (ex) {
         console.log(`response ex :: ${ex}`);
     }
+}
+
+let _sessionInvalidating = false;
+
+function fn_CheckSession() {
+    if (_sessionInvalidating) return;
+    // Aguarda a primeira confirmação de sessão (varSessionDataSite sai de 1 após fn_SetSessionData)
+    if (!varSessionDataSite || varSessionDataSite === 1) return;
+
+    var raw = sessionStorage.getItem("aceca_sessao");
+    if (!raw) { fn_SessionInvalid(); return; }
+
+    try {
+        var d = JSON.parse(raw);
+        if (!d || !d.nameIdentifier) fn_SessionInvalid();
+    } catch (e) {
+        fn_SessionInvalid();
+    }
+}
+
+function fn_SessionInvalid() {
+    if (_sessionInvalidating) return;
+    _sessionInvalidating = true;
+    document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+    sessionStorage.removeItem('aceca_sessao');
+    try {
+        localStorage.removeItem('aceca_last_activity');
+        localStorage.removeItem('aceca_abs_exp');
+    } catch (e) { /* ignore */ }
+    window.location.href = '/Auth/AccessDenied';
 }
 
 function fn_AuthSession(callback) {
