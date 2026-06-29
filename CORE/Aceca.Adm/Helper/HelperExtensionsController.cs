@@ -96,6 +96,13 @@ namespace Aceca.Adm.Helper
             ColecaoInteresse = 2,
             ColecaoNegociar = 3,
         }
+
+        public enum ENegociacaoAcao
+        {
+            NegociacaoMeusNegocios = 0,
+            NegociacaoSocio = 1,
+            NegociacaoAcervo = 2,
+        }
         public enum EColecaoStatus
         {
             [Description("Minha Coleção")] Possui = 1,

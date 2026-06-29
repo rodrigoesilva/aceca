@@ -791,28 +791,28 @@ function fn_PopValidator(formAddNewItem) {
 
 //#region COLECAO
 
-function fnItem_Colecao(obj, action) {
-    console.log("fnItem_Colecao obj ::: ", obj);
-    console.log("fnItem_Colecao action::: ", action);
+function fnItem_Negociacao(obj, action) {
+    console.log("fnItem_Negociacao obj ::: ", obj);
+    console.log("fnItem_Negociacao action::: ", action);
 
-    let itemColecaoId = obj?.Id;
-    let itemColecaoObs = obj?.Observacao;
-    let marcaId = obj?.IdMarca;
+    let socioId = obj?.Id;
+    let quantidadePossui = obj?.quantidadePossui;
     let actionId = -1;
-    const socioId = document.getElementById('hdSocioLogadoId').value;
 
-    //console.log("fnItem_Colecao socioId::: ", socioId);
+    const socioLogadoId = document.getElementById('hdSocioLogadoId').value;
 
-    if ((itemColecaoId === undefined || itemColecaoId === null || itemColecaoId === '' || itemColecaoId < 1)
-        || (marcaId === undefined || marcaId === null || marcaId === '' || marcaId < 1)
-        || (socioId === undefined || socioId === null || socioId === '' || socioId < 1)
+    //console.log("fnItem_Negociacao socioId::: ", socioId);
+
+    if ((socioId === undefined || socioId === null || socioId === '' || socioId < 1)
+        || (quantidadePossui === undefined || quantidadePossui === null || quantidadePossui === '' || quantidadePossui < 1)
+        || (socioLogadoId === undefined || socioLogadoId === null || socioLogadoId === '' || socioLogadoId < 1)
     ) {
         Swal.fire({
             title: 'Dados Inv&aacute;lidos!!',
             icon: 'error',
             html: `<b>Os dados n&atilde;o foram informados corretamente!!!</b>`,
             focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`, 
             customClass: {
                 confirmButton: 'btn btn-label-danger waves-effect'
             }
@@ -822,18 +822,14 @@ function fnItem_Colecao(obj, action) {
     } else {
 
         switch (action) {
-            case 'ColecaoDelete':
+            case 'NegociacaoMeusNegocios':
                 actionId = 0;
                 break;
-            case 'ColecaoIncluir':
-            case 'ColecaoObs':
+            case 'NegociacaoSocio':
                 actionId = 1;
                 break;
-            case 'ColecaoInteresse':
+            case 'NegociacaoAcervo':
                 actionId = 2;
-                break;
-            case 'ColecaoNegociar':
-                actionId = 3;
                 break;
             default:
                 actionId = -1;
@@ -842,16 +838,15 @@ function fnItem_Colecao(obj, action) {
         $.busyLoadFull("show");
 
         $.ajax({
-            url: `/SocioColecao/ActionColecao`,
+            url: `/Negociacao/ActionNegociacao`,
             type: 'POST',
             dataType: 'JSON',
             data: {
-                itemColecaoId: itemColecaoId,
-                marcaId: marcaId,
-                actionId: actionId,
                 socioId: socioId,
-                isPerfil: document.getElementById('hdIsPerfil').value,
-                itemColecaoObs: itemColecaoObs
+                quantidadePossui: quantidadePossui,
+                socioLogadoId: socioLogadoId,
+                actionId: actionId,
+                isPerfil: document.getElementById('hdIsPerfil').value
             },
             success: function (response) {
 

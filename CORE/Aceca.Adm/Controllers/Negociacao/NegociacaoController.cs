@@ -600,5 +600,58 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         #endregion
+
+        [HttpPost]
+        public async Task<IActionResult> ActionNegociacao(int socioId, int quantidadePossui, int socioLogadoId, int actionId, bool isPerfil)
+        {
+            try
+            {
+                if (actionId < 0)
+                    return BadRequest("ActionId inválido");
+
+                IActionResult response = Ok();
+
+                bool bDispoivelNegocio = false;
+                bool bInteresse = false;
+
+                switch ((ENegociacaoAcao)actionId)
+                {
+                    case ENegociacaoAcao.NegociacaoMeusNegocios:
+                        //response = await RemoverItemAsync(itemColecaoId);
+                        break;
+                    case ENegociacaoAcao.NegociacaoSocio:
+                        //response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bInteresse, itemColecaoObs);
+                        break;
+                    case ENegociacaoAcao.NegociacaoAcervo:
+                        {
+                            bInteresse = true;
+                            //response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bInteresse, itemColecaoObs);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: "
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
     }
 }
