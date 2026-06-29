@@ -77,45 +77,42 @@ function fn_UpdateClock() {
 //#region AUTH
 
 function fn_AuthOut() {
-    console.log(`fn_AuthOut ::`);
+    //console.log(`fn_AuthOut ::`);
     try {
+        $.ajax({
+            url: '/Auth/Logout',
+            type: 'GET',
+            success: function (result) {
+                // 1. Limpa estado do cliente (sem redirect aqui)
+                document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+                sessionStorage.removeItem('aceca_sessao');
+                try {
+                    localStorage.removeItem('aceca_last_activity');
+                    localStorage.removeItem('aceca_abs_exp');
+                } catch (e) { /* ignore */ }
 
-       // $.busyLoadFull("show");
-
-        $.ajax(
-            {
-                url: '/Auth/Logout',
-                type: 'GET',
-                success: function (result) {
-                    //console.log(`result ::  ${result}`);
-                    fn_CleanUser();
-
-                    //$.busyLoadFull("hide");
-
-                    Swal.fire({
-                        icon: 'success',
-                        title: `At&eacute mais ${varSessionDataSite?.nome?.split(" ")[0]}!`,
-                        html: `Nos vemos em breve`,
-                        focusConfirm: true,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-label-success waves-effect'
-                        }
-                    }).then((resultBye) => {
-                        //console.log(`resultBye ::  ${resultBye}`);
-                        window.location.href = 'https://www.aceca.com.br/';
-                    });
-                },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    console.log(`response XMLHttpRequest ::  ${XMLHttpRequest}`);
-                    //$.busyLoadFull("hide");
-
-                    return false;
-                }
-            });
+                // 2. Exibe Swal e só então redireciona
+                Swal.fire({
+                    icon: 'success',
+                    title: `At&eacute; mais ${varSessionDataSite?.nome?.split(" ")[0] ?? ''}!`,
+                    html: `Nos vemos em breve`,
+                    focusConfirm: true,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: {
+                        confirmButton: 'btn btn-label-success waves-effect'
+                    }
+                }).then(() => {
+                    window.location.href = '/Auth/Index';
+                });
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                console.log(`response XMLHttpRequest :: ${XMLHttpRequest}`);
+                return false;
+            }
+        });
     }
     catch (ex) {
-        console.log(`response ex ::  ${ex}`);
+        console.log(`response ex :: ${ex}`);
     }
 }
 
@@ -144,7 +141,11 @@ function fn_AuthSession() {
 function fn_CleanUser() {
     document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
     sessionStorage.removeItem('aceca_sessao');
-    window.location.href = 'https://www.aceca.com.br/';
+    try {
+        localStorage.removeItem('aceca_last_activity');
+        localStorage.removeItem('aceca_abs_exp');
+    } catch (e) { /* ignore */ }
+    window.location.href = '/Auth/Index';
 }
 function fn_CkRemove(_ck) {
     document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
