@@ -11,7 +11,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Mail;
-using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -39,6 +38,9 @@ namespace Aceca.Adm.Controllers
         private readonly string _urlBaseSite = string.Empty;
         private readonly string _urlBaseApp = string.Empty;
 
+        // SigningCredentials cacheados — criados uma vez no construtor, reutilizados a cada login
+        private readonly SigningCredentials _jwtSigningCredentials;
+
         private string _strControllerName = string.Empty;
         private string _strActionName = string.Empty;
         //
@@ -63,6 +65,10 @@ namespace Aceca.Adm.Controllers
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
             _urlBaseApp = _appConfiguration["Url:App"]!;
+
+            var jwtKeyBytes = Encoding.UTF8.GetBytes(_appConfiguration["Jwt:Key"]!);
+            _jwtSigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(jwtKeyBytes), SecurityAlgorithms.HmacSha256);
         }
 
         public record LoginIn(string Email, string Senha);
@@ -193,9 +199,8 @@ namespace Aceca.Adm.Controllers
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(Access), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -229,37 +234,27 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
+                var email = dto.Email.Trim().ToLowerInvariant();
+
                 var user = await _db.SocioSeguranca
                     .Include(x => x.Socio)
-                    .Include(x => x.Socio.SocioPerfil)
+                    .ThenInclude(s => s.SocioPerfil)
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
+                    .FirstOrDefaultAsync(x => x.Email == email);
 
-                if (user == null)
+                if (user is null)
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
 
-                if (user.SocioId <= 0)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
-
                 if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
-                {
-                    ViewBag.Error = "Usuário Banido";
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
-                }
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
-                {
-                    ViewBag.Error = "Usuário Inativo";
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
-                }
 
                 if (!LoginValidacao(dto.Senha, user))
-                {
-                    ViewBag.Error = "Nome de usuário ou senha inválidos";
                     return Ok(new { bResult = false, type = "ERRO", message = "Credenciais Inválidas" });
-                }
 
-                string strToken = LoginTokenJwt(user, user.Socio);
+                var strToken = LoginTokenJwt(user, user.Socio);
 
                 if (string.IsNullOrEmpty(strToken))
                     return BadRequest(new { bResult = false, type = "ERRO", message = "Token Inválido" });
@@ -267,25 +262,21 @@ namespace Aceca.Adm.Controllers
                 if (!await LoginSetClaimsAsync(user, user.Socio))
                     return BadRequest(new { bResult = false, type = "ERRO", message = "SetClaims Inválido" });
 
-                var rootPathImgAvatar = Path.Combine(_appEnvironment.WebRootPath, "img", "avatars", "socio", "imgAvatar", user.SocioId.ToString(), ".jpg");
-
                 return Ok(new
                 {
                     bResult = true,
                     token = strToken,
                     nameIdentifier = user.SocioId.ToString(),
                     nome = user.Socio.Nome,
-                    avatar = !string.IsNullOrEmpty(user.Socio.ImgAvatar) ? rootPathImgAvatar : rootPathImgAvatar,
                     cargo = user.Socio?.SocioPerfil?.Descricao,
-                    isPerfil = Convert.ToBoolean(user.Socio?.SocioPerfil?.Descricao?.Equals("Administracao")),
+                    isPerfil = string.Equals(user.Socio?.SocioPerfil?.Descricao, "Administracao", StringComparison.Ordinal),
                     pswuptd = user.SenhaAtualizada
                 });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(Login), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -303,61 +294,52 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
-                var userId = Convert.ToInt32(srtId);
-
-                if (userId <= 0)
+                if (!int.TryParse(srtId, out var userId) || userId <= 0)
                     return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
 
-                if (userId != 39)
+                if (userId != 39 && !string.IsNullOrEmpty(strIp))
                 {
-                    if (!string.IsNullOrEmpty(strIp))
+                    var responseGeo = await GetGeoInfoAsync(strIp);
+                    var jObjResult  = ((ObjectResult)responseGeo).Value;
+
+                    var jsonGeo   = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
+                    var jsonAgent = jObjResult?.GetType()?.GetProperty("jsonAgent")?.GetValue(jObjResult, null)?.ToString();
+
+                    if (!string.IsNullOrEmpty(jsonGeo))
                     {
-                        var responseGeo = await GetGeoInfoAsync(strIp);
+                        JsonNode nodeGeo   = JsonNode.Parse(jsonGeo)!;
+                        JsonNode nodeAgent = !string.IsNullOrEmpty(jsonAgent) ? JsonNode.Parse(jsonAgent)! : null;
 
-                        var jObjResult = ((ObjectResult)responseGeo).Value;
-
-                        var jsonGeo = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
-
-                        var jsonAgent = jObjResult?.GetType()?.GetProperty("jsonAgent")?.GetValue(jObjResult, null)?.ToString();
-                        
-                        // 1. Parse the JSON string into a JsonNode
-                        JsonNode jsonNodeGeo = JsonNode.Parse(jsonGeo);
-                        JsonNode jsonNodeAgent = JsonNode.Parse(jsonAgent);
+                        DateTimeOffset.TryParse(
+                            nodeGeo["time_zone"]?["current_time"]?.GetValue<string>(),
+                            out var loginTime);
 
                         var newModel = new Models.SocioLogAcesso
                         {
                             SocioEnderecoId = userId,
-                            IP = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["ip"]?.GetValue<string>() : null,
-                            OS = !string.IsNullOrEmpty(jsonNodeAgent?.ToString()) ? jsonNodeAgent["device"]["name"]?.GetValue<string>() : null,
-                            Browser = !string.IsNullOrEmpty(jsonNodeAgent?.ToString()) ? jsonNodeAgent["name"]?.GetValue<string>() : null,
-                            Device = !string.IsNullOrEmpty(jsonNodeAgent?.ToString()) ? jsonNodeAgent["operating_system"]["name"]?.GetValue<string>() : null,
-                            Operadora = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["asn"]["organization"]?.GetValue<string>() : null,
-                            Estado = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["location"]["state_code"]?.GetValue<string>() : null,
-                            Cidade = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["location"]["city"]?.GetValue<string>() : null,
-                            Latitude = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["location"]["latitude"]?.GetValue<string>() : null,
-                            Longitude = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? jsonNodeGeo["location"]["longitude"]?.GetValue<string>() : null,
-                            UltimoLogin = !string.IsNullOrEmpty(jsonNodeGeo?.ToString()) ? DateTime.Parse(jsonNodeGeo["time_zone"]["current_time"].GetValue<string>()) : DateTime.UtcNow.AddHours(-3),
+                            IP         = nodeGeo["ip"]?.GetValue<string>(),
+                            OS         = nodeAgent?["device"]?["name"]?.GetValue<string>(),
+                            Browser    = nodeAgent?["name"]?.GetValue<string>(),
+                            Device     = nodeAgent?["operating_system"]?["name"]?.GetValue<string>(),
+                            Operadora  = nodeGeo["asn"]?["organization"]?.GetValue<string>(),
+                            Estado     = nodeGeo["location"]?["state_code"]?.GetValue<string>(),
+                            Cidade     = nodeGeo["location"]?["city"]?.GetValue<string>(),
+                            Latitude   = nodeGeo["location"]?["latitude"]?.GetValue<string>(),
+                            Longitude  = nodeGeo["location"]?["longitude"]?.GetValue<string>(),
+                            UltimoLogin = loginTime != default ? loginTime.DateTime : DateTime.UtcNow.AddHours(-3),
                         };
 
-                        using (var context = new AppDbContext())
-                        {
-                            // Add data
-                            context.SocioLogAcesso.Add(newModel);
-                            context.SaveChanges();
-                        }
+                        _db.SocioLogAcesso.Add(newModel);
+                        await _db.SaveChangesAsync();
                     }
                 }
 
-                return Ok(new
-                {
-                    bResult = true,
-                });
+                return Ok(new { bResult = true });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(LoginLog), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -383,28 +365,18 @@ namespace Aceca.Adm.Controllers
 
                 var user = await _db.SocioSeguranca
                    .Include(x => x.Socio)
-                   .Include(x => x.Socio.SocioPerfil)
-                   .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
+                   .FirstOrDefaultAsync(x => x.Email == dto.Email.Trim().ToLowerInvariant());
 
                 // Por segurança, retorna sucesso mesmo se o e-mail não existir,
                 // para não expor quais e-mails estão cadastrados.
-                if (user == null)
+                if (user is null)
                     return Ok(new { bResult = true, message = "Se o e-mail existir, você receberá as instruções." });
 
-                if (user.SocioId <= 0)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
-
-                if (user.Socio.SocioPerfilId.Equals(6))
-                {
-                    ViewBag.Error = "Usuário Banido";
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
-                }
+                if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
-                {
-                    ViewBag.Error = "Usuário Inativo";
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
-                }
 
                 var strToken = _helperController.GenerateSecuretToken();
 
@@ -435,9 +407,8 @@ namespace Aceca.Adm.Controllers
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(ForgotPassword), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -476,26 +447,16 @@ namespace Aceca.Adm.Controllers
 
                 var user = await _db.SocioSeguranca
                     .Include(x => x.Socio)
-                    .Include(x => x.Socio.SocioPerfil)
-                    .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
+                    .FirstOrDefaultAsync(x => x.Email == dto.Email.Trim().ToLowerInvariant());
 
-                if (user == null)
+                if (user is null)
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
 
-                if (user.SocioId <= 0)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
-
-                if (user.Socio.SocioPerfilId.Equals(6))
-                {
-                    ViewBag.Error = "Usuário Banido";
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
-                }
+                if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
-                {
-                    ViewBag.Error = "Usuário Inativo";
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
-                }
 
                 // Valida token e expiração
                 if (user.ResetPasswordToken != dto.Token ||
@@ -521,9 +482,8 @@ namespace Aceca.Adm.Controllers
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(ResetPassword), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -562,9 +522,8 @@ namespace Aceca.Adm.Controllers
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(LoginPerfilAdm), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -589,49 +548,16 @@ namespace Aceca.Adm.Controllers
                     .Include(x => x.Socio.SocioPerfil)
                     .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
 
-                if (user == null)
+                if (user is null)
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
 
-                if (user.SocioId <= 0)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Sócio Inválido" });
-
-                if (user.Socio.SocioPerfilId.Equals(6))
-                {
-                    ViewBag.Error = "Usuário Banido";
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido - Abraços meu amigo !!" });
-                }
+                if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
-                {
-                    ViewBag.Error = "Usuário Inativo";
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
-                }
-                /*
-                using (MD5 md5Hash = MD5.Create())
-                {
-                    string hash = _helperController.GenerateMD5HashPassword(md5Hash, dto.Senha);
 
-                    newModel = new Models.SocioSeguranca
-                    {
-                        Id = user.Id,
-                        SocioId = user.SocioId,
-                        Email = dto.Email,
-                        Senha = hash,
-                        SenhaAberta = dto.Senha,
-                        SenhaAtualizada = true,
-                        NomeUsuario = dto.Username,
-                        UltimoLogin = DateTime.UtcNow.AddHours(-3),
-
-                        Socio = new Socio
-                        {
-                            MostrarSite = dto.ChkTermo,
-                            Ativo = true,
-                        }
-                    };
-                }
-               */
-
-                string hash = _helperController.GenerateHashPassword(dto.Senha);
+                var hash = _helperController.GenerateHashPassword(dto.Senha);
 
                 newModel = new Models.SocioSeguranca
                 {
@@ -654,24 +580,20 @@ namespace Aceca.Adm.Controllers
                 _db.Entry(newModel).State = EntityState.Modified;
                 await _db.SaveChangesAsync();
 
-                if (newModel?.Id <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Falha ao Atualizar Socio" });
-
                 return Ok(new
                 {
                     bResult = true,
                     nameIdentifier = user.SocioId.ToString(),
                     nome = user.Socio.Nome,
                     cargo = user.Socio?.SocioPerfil?.Descricao,
-                    isPerfil = Convert.ToBoolean(user.Socio?.SocioPerfil?.Descricao?.Equals("Administracao")),
+                    isPerfil = string.Equals(user.Socio?.SocioPerfil?.Descricao, "Administracao", StringComparison.Ordinal),
                     pswuptd = true
                 });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(LoginUpdate), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -682,26 +604,18 @@ namespace Aceca.Adm.Controllers
 
         private bool LoginValidacao(string openPassword, Models.SocioSeguranca user)
         {
-            if (user.Id != 39)
-            {
-                using MD5 md5Hash = MD5.Create();
-                if (user is null || !_helperController.VerifyMd5HashWithMySecurity(md5Hash, openPassword, user.Senha))
-                    return false;
-            }
+            if (user.Id == 39)
+                return true;
 
-            return true;
+            using MD5 md5Hash = MD5.Create();
+            return _helperController.VerifyMd5HashWithMySecurity(md5Hash, openPassword, user.Senha);
         }
 
         private string LoginTokenJwt(Models.SocioSeguranca user, Socio socio)
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_appConfiguration["Jwt:Key"]!));
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            // Cookie dura 24h, token JWT alinhado
             var tok = new JwtSecurityToken(
                 expires: DateTime.UtcNow.AddHours(24),
-                signingCredentials: cred,
+                signingCredentials: _jwtSigningCredentials,
                 claims: [
                     new(ClaimTypes.NameIdentifier, socio.Id.ToString()),
                     new(ClaimTypes.Email, user.Email),
@@ -785,8 +699,7 @@ namespace Aceca.Adm.Controllers
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(LoginSetCookieAsync), ex.Message);
                 return false;
             }
 
@@ -821,9 +734,8 @@ namespace Aceca.Adm.Controllers
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(GetCookieExpirationAsync), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -849,9 +761,8 @@ namespace Aceca.Adm.Controllers
             }
             catch (SmtpException ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(EnviarEmailResetSenhaAsync), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
 
             return Ok(true);
@@ -940,11 +851,10 @@ namespace Aceca.Adm.Controllers
 
                 return Ok(new { bResult = true, type = "SUCESSO", message = "SUCESSO ::: ", data = json, jsonAgent = jsonAgent });
             }
-            catch (SmtpException ex)
+            catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
-                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro});
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(GetGeoInfoAsync), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
 
@@ -970,10 +880,9 @@ namespace Aceca.Adm.Controllers
 
                 return strIP;
             }
-            catch (SmtpException ex)
+            catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-                _logger.LogError(mensagemErro);
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(GetGeoIPAsync), ex.Message);
                 return strIP;
             }
 
