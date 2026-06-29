@@ -86,7 +86,8 @@ namespace Aceca.Adm.Helper
         {
             Cadastro = 0,
             EsqueceuSenha = 1,
-            ColecaoInteresse = 2
+            ColecaoInteresse = 2,
+            AcessoImagemIndevido = 3
         }
 
         public enum EColecaoAcao
@@ -869,6 +870,94 @@ namespace Aceca.Adm.Helper
             }
 
             return Ok(true);
+        }
+
+        /// <summary>
+        /// Envia alerta silencioso para ti@aceca.com.br quando detectada
+        /// tentativa de acesso indevido a uma imagem protegida.
+        /// </summary>
+        public async Task EnviarAlertaImagemAsync(
+            string socioId, string socioNome,
+            string codigoAceca, string imagemSrc,
+            string acao, string timestamp)
+        {
+            var smtpHost     = _appConfiguration["Email:Host"]        ?? "smtp.gmail.com";
+            var smtpPort     = int.Parse(_appConfiguration["Email:Port"]      ?? "587");
+            var smtpSsl      = bool.Parse(_appConfiguration["Email:EnableSsl"] ?? "true");
+            var smtpFrom     = _appConfiguration["Email:From"]        ?? "noreply@aceca.com.br";
+            var smtpUser     = _appConfiguration["Email:User"]        ?? smtpFrom;
+            var smtpPassword = _appConfiguration["Email:Password"]    ?? "";
+            var displayName  = _appConfiguration["Email:DisplayName"] ?? "ACECA - Área do Sócio";
+
+            var body = $@"
+                <!DOCTYPE html>
+                <html lang=""pt-BR"">
+                <head><meta charset=""UTF-8""></head>
+                <body style=""font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;"">
+                  <div style=""max-width:600px;margin:0 auto;background:#fff;border-radius:10px;
+                               padding:36px 40px;box-shadow:0 2px 12px rgba(0,0,0,.08);"">
+                    <div style=""text-align:center;"">
+                      <img src=""https://www.aceca.com.br/img/logo/logo02.png""
+                           alt=""ACECA"" width=""200"" style=""max-width:100%;"">
+                    </div>
+                    <h2 style=""color:#cc0000;margin-top:24px;"">
+                      ⚠️ Tentativa de Acesso Indevido a Imagem
+                    </h2>
+                    <table style=""width:100%;border-collapse:collapse;margin-top:16px;"">
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;width:40%;border:1px solid #e0d0f0;"">Timestamp</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{timestamp}</td>
+                      </tr>
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Sócio (Nome)</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{socioNome}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Sócio (ID)</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{socioId}</td>
+                      </tr>
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Código ACECA</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{codigoAceca}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">URL da Imagem</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;word-break:break-all;"">{imagemSrc}</td>
+                      </tr>
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Ação Detectada</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;color:#cc0000;
+                                    font-weight:bold;"">{acao}</td>
+                      </tr>
+                    </table>
+                    <hr style=""border:none;border-top:1px solid #eee;margin:28px 0;"">
+                    <p style=""font-size:12px;color:#aaa;text-align:center;"">
+                      © ACECA - Associação dos Colecionadores de Embalagens de Cigarros e Afins
+                    </p>
+                  </div>
+                </body>
+                </html>";
+
+            var mailMessage = new MailMessage
+            {
+                From       = new MailAddress(smtpFrom, displayName),
+                Subject    = $"⚠️ ALERTA: Acesso indevido a imagem [{codigoAceca}] — {socioNome}",
+                IsBodyHtml = true,
+                Body       = body
+            };
+            mailMessage.To.Add("ti@aceca.com.br");
+
+            using var smtp = new SmtpClient(smtpHost, smtpPort)
+            {
+                Credentials = new NetworkCredential(smtpUser, smtpPassword),
+                EnableSsl   = smtpSsl
+            };
+
+            try   { await smtp.SendMailAsync(mailMessage); }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO EnviarAlertaImagemAsync :: {msg}", ex.Message);
+            }
         }
 
         #endregion

@@ -900,5 +900,25 @@ namespace Aceca.Adm.Controllers
         }
 
         #endregion
+
+        #region Proteção de Imagem
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> ReportImageAccess(
+            [FromForm] string codigoAceca,
+            [FromForm] string imagemSrc,
+            [FromForm] string acao,
+            [FromForm] string timestamp)
+        {
+            var socioId   = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "?";
+            var socioNome = User.FindFirstValue(ClaimTypes.Name)           ?? "Desconhecido";
+
+            await _helperController.EnviarAlertaImagemAsync(socioId, socioNome, codigoAceca, imagemSrc, acao, timestamp);
+
+            return Ok();
+        }
+
+        #endregion
     }
 }
