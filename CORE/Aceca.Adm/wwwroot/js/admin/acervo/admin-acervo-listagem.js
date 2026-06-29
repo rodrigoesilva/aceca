@@ -815,17 +815,7 @@ function fn_FiltrarDados() {
                         ? row.NomeFabrica
                         : row.TxtFabrica;
 
-                    // Avatares incluídoPor
-                    var avatarHtml = '';
-                    if (row.IncluidoPor) {
-                        var pessoas = row.IncluidoPor.split("/");
-                        avatarHtml = pessoas.map(function (p, i) {
-                            return `<img src="../img/avatars/${i}.png" alt="${p}" title="${p}"
-                                        style="width:28px;height:28px;border-radius:50%;border:1.5px solid #fff;margin-right:2px;">`;
-                        }).join('');
-                    }
-
-                    // ✅ incluidoPor como TEXTO PURO no card mobile
+                    // incluidoPor como TEXTO PURO no card mobile
                     var incluidoPorTexto = '';
 
                     if (row.IncluidoPor) {
