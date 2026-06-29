@@ -411,7 +411,7 @@ function fn_FiltrarDados() {
                 render: function (data, type, full) {
                     
                     if (!data || full.Id === 0 || type !== 'display') return '';
-                    var ul = `<ul class="m-0 avatar-group d-flex align-items-center" style="list-style:none;">`;
+                    var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
                     var items = data.split('/').map(function (nome, i) {
                         //console.log("IncluidoPor nome ::: ", nome);
                         let pathAvatar = nome == "Aceca" ? `../img/avatars/socio/imgAvatarAceca` : `../img/avatars/${i}`;
