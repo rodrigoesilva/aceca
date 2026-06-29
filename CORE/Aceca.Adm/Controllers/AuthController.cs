@@ -706,6 +706,17 @@ namespace Aceca.Adm.Controllers
             return true;
         }
 
+        [HttpGet]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public IActionResult GetSessionData()
+        {
+            var nameIdentifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var nome           = User.FindFirstValue(ClaimTypes.Name);
+            var cargo          = User.FindFirstValue(ClaimTypes.Role);
+            var isPerfil       = string.Equals(cargo, "Administracao", StringComparison.Ordinal);
+            return Ok(new { nameIdentifier, nome, cargo, isPerfil });
+        }
+
         [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
         public async Task<IActionResult> GetCookieExpirationAsync()
         {

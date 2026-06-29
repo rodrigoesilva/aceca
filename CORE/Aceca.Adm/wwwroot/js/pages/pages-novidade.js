@@ -1425,27 +1425,43 @@ function fnItem_Edit(varItems_Row) {
 //#region Auth
 
 function fn_AuthSession() {
-    let sessionData;
-
     if (sessionStorage?.getItem("aceca_sessao") !== null) {
-        sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
-
+        var sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
         if (sessionData !== null) {
-            document.getElementById('hdSocioLogadoId').value = `${sessionData?.nameIdentifier}`;
-            document.getElementById('hdIsPerfil').value = `${sessionData?.isPerfil}`;
-            document.getElementById('tbNome').textContent = `${sessionData?.nome}`;
-            document.getElementById('tbCargo').textContent = `${sessionData?.cargo}`;
+            fn_SetSessionData(sessionData);
         } else {
-            fn_CleanUser();
+            fn_RestoreSession();
         }
     } else {
-        fn_CleanUser();
+        fn_RestoreSession();
     }
 }
+
+function fn_RestoreSession() {
+    $.ajax({
+        url: '/Auth/GetSessionData',
+        type: 'GET',
+        success: function (data) {
+            sessionStorage.setItem('aceca_sessao', JSON.stringify(data));
+            fn_SetSessionData(data);
+        },
+        error: function () {
+            fn_CleanUser();
+        }
+    });
+}
+
+function fn_SetSessionData(data) {
+    document.getElementById('hdSocioLogadoId').value = `${data?.nameIdentifier}`;
+    document.getElementById('hdIsPerfil').value = `${data?.isPerfil}`;
+    document.getElementById('tbNome').textContent = `${data?.nome}`;
+    document.getElementById('tbCargo').textContent = `${data?.cargo}`;
+}
+
 function fn_CleanUser() {
     document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
     sessionStorage.removeItem('aceca_sessao');
-    window.location.href = 'https://www.aceca.com.br/';
+    window.location.href = '/Auth/Index';
 }
 
 //#endregion
