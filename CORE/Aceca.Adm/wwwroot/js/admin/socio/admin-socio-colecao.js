@@ -8,13 +8,15 @@
 
 let isPerfil = document.getElementById('hdIsPerfil').value;
 
-let var_Nome = 'Listagem',
+let var_Nome = 'Cole&ccedil;&atilde;o',
     var_Controller = '/SocioColecao',
     var_ControllerCmb = '/HelperExtensions',
 
     varTbl_Obj = $('.datatables-basic'),
     varTbl_Data,
-    objFiltro;
+    objFiltro,
+
+    formValid, popAddNewItemEl;
 
 let var_Filtrado = false,
     var_ImgAlt = "ACECA",
@@ -75,18 +77,6 @@ document.addEventListener('DOMContentLoaded', function () {
         fn_PopLoadCombos();
         fn_FiltrosChange();
 
-        /*
-        $('.btn-filter').on('click', function () {
-            fn_Filtrar();
-        });
-
-        let timeout;
-        $('#nome').on('keyup', function () {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => table.draw(), 400);
-        });
-        */
-
         $('.btn-filter-clear').on('click', function () {
             fn_Limpar();
         });
@@ -97,17 +87,12 @@ document.addEventListener('DOMContentLoaded', function () {
             var action = document.querySelector('.data-submit').textContent;
             //console.log("action ::: ", action);
 
-            if (action === 'Alterar') {
-                var objFormData = fn_ModalGetObj();
-                console.log("objFormData ::: ", objFormData);
+            var objFormData = fn_PopGetObj();
+            //console.log("objFormData ::: ", objFormData);
 
-                //const formData = new FormData(document.forms['form-modal-full-edit']);
-                //console.log("fn_ModalSalvar formData ::: ", formData);
+            fnItem_Colecao(objFormData, 'ColecaoObs');
 
-                fnItem_Edit(objFormData)
-            } else {
-                fnItem_Add(varTbl_Obj)
-            }
+            //fnItem_Edit(objFormData,, 'ColecaoObs')
         });
 
         // Carrega Dados Combos Modal
@@ -125,12 +110,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
+        fn_FiltrarDados();
     })();
 });
 
 //#endregion
 
 //#region Menu
+
 function fn_MenuAcervo() {
     
     const idMarcaAcervo = '1'; // $('#hdMarcaAcervoId').val();
@@ -167,6 +154,7 @@ function fn_MenuAcervo() {
     //Titulo
     $('div.head-label-filtro').html(`<h5 class="card-title mb-0 title-filtro">${var_Nome} - ${strMarcaAcervo}</h5>`);
 }
+
 //#endregion
 
 //#region Botoes
@@ -178,12 +166,10 @@ function fn_Filtrar() {
 
     objFiltro = {
         param_MarcaAcervoId: $('#hdMarcaAcervoId').val(),
+        param_ColecaoStatusId: $('#cmb_ColecaoStatus').find('option:selected').val(),
         param_MarcaFaseId: $('#cmb_MarcaFase').find('option:selected').val(),
-        param_MarcaFabricaId: $('#cmb_MarcaFabrica').find('option:selected').val(),
-        param_MarcaFabricaNome: $('#cmb_MarcaFabrica').find('option:selected').text(),
         param_MarcaTipoId: $('#cmb_MarcaTipo').find('option:selected').val(),
         param_MarcaSubTipoId: $('#cmb_MarcaSubTipo').find('option:selected').val(),
-        param_IncluidoPor: $('#txt_IncluidoPor').val(),
         param_CodigoAceca: $('#txt_CodigoAceca').val(),
         param_NomeMarca: $('#txt_NomeMarca').val(),
         param_PesquisarSemVariante: $('#chk_PesquisarSemVariante')[0].checked,
@@ -203,8 +189,8 @@ function fn_Filtrar() {
    */
 
     if (objFiltro.param_MarcaAcervoId < 0
+        && objFiltro.param_ColecaoStatusId < 0
         && objFiltro.param_MarcaFaseId < 0
-        && objFiltro.param_MarcaFabricaId <= 0
         && objFiltro.param_MarcaTipoId <= 0
         && objFiltro.param_MarcaSubTipoId <= 0
     ) {
@@ -224,60 +210,7 @@ function fn_Filtrar() {
             fn_Limpar();
         });
     } else {
-        if (objFiltro.param_MarcaFaseId < 0) {
-            Swal.fire({
-                title: "OPS !!!",
-                html: `Nenhuma opção de fase foi informada!`,
-                imageUrl: `${urlImgModal}`,
-                imageWidth: 300,
-                imageAlt: `${var_ImgAlt}`,
-            })
-        } else {
-            //console.log("fn_Filtrar objFiltro NULO ::: ", objFiltro);
-
-            if (objFiltro.param_MarcaFaseId == 0) {
-                swalWithBootstrapButtons.fire({
-                    title: "Tem certeza?",
-                    html: `Essa opção aumentará o tempo  <br><br> de carregamento dos dados!`,
-                    imageUrl: `${urlImgModal}`,
-                    imageWidth: 300,
-                    imageAlt: `${var_ImgAlt}`,
-                    showCancelButton: true,
-                    confirmButtonText: "Sim, vou aguardar!",
-                    cancelButtonText: "Não, vou escolher uma fase!",
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        swalWithBootstrapButtons.fire({
-                            title: "Carregando!",
-                            text: "Aguarde o carregamento das informações.",
-                            icon: "success",
-                            confirmButtonText: "Ok, vamos aguardar!",
-                            cancelButtonText: "Não, vou escolher uma fase!",
-                        }).then((result) => {
-
-                            //console.log("fn_Filtrar cmb_MarcaTipo length ::: ", $('#cmb_MarcaTipo option').length);
-                            if ($('#cmb_MarcaTipo option').length <= 1) {
-                                fn_LoadCmb_MarcaTipo();
-                            }
-
-                            fn_FiltrarDados(objFiltro);
-                        });
-                    }
-                    else if (result.dismiss === Swal.DismissReason.cancel) {
-                        swalWithBootstrapButtons.fire({
-                            title: "Cancelado!",
-                            text: "Realize a escolha de uma fase.",
-                            icon: "info",
-                        }).then((result) => {
-                            $('#cmb_MarcaFase').prop('selectedIndex', 0).change();
-                        });
-                    }
-                });
-            } else {
-                console.log("fn_Filtrar objFiltro ::: ", objFiltro);
-                fn_FiltrarDados(objFiltro);
-            }
-        }
+        fn_FiltrarDados();
     }
 }
 
@@ -323,6 +256,17 @@ function fn_FiltrosShow() {
 
 function fn_FiltrosChange() {
 
+    $('#cmb_ColecaoStatus').on('change', function () {
+
+        let idColecaoStatus = $(this).find('option:selected').val();
+
+        //console.log("cmb_ColecaoStatus change idColecaoStatus ::: ", idColecaoStatus);
+        //console.log("cmb_ColecaoStatus change idMarcaFase ::: ", idMarcaFase);
+        //console.log("cmb_ColecaoStatus change var_Filtrado ::: ", var_Filtrado);
+
+        fn_Filtrar();
+    });
+
     $('#cmb_MarcaFase').on('change', function () {
 
         idMarcaFase = $(this).find('option:selected').val();
@@ -334,7 +278,7 @@ function fn_FiltrosChange() {
             fn_FiltrosHide();
         } else {
             fn_LoadCmb_MarcaTipo();
-            console.log("cmb_MarcaFase change ::: ");
+            //console.log("cmb_MarcaFase change ::: ");
 
             $('#chk_PesquisarDescricao')[0].checked = false;
 
@@ -364,27 +308,7 @@ function fn_FiltrosChange() {
             } else {
                 $('.div_MarcaSubTipo').attr('style', 'display: block !important');
 
-                if (!var_Filtrado) {
-                    fn_ModalConfirmarFiltros();
-                } else {
-                    fn_Filtrar();
-                    /*
-                    Swal.fire({
-                        title: 'Tipo Selecionado !!!',
-                        html: `Para realizar o filtro por Tipo, <br><br> selecione o Sub-Tipo.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
-                        imageUrl: `${urlImgModaltext}`,
-                        imageWidth: 400,
-                        imageAlt: `${var_ImgAlt}`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-primary waves-effect waves-light'
-                        },
-                    }).then((result) => {
-                        //console.log("cmb_MarcaFase change result ::: ", result);
-                    })
-                    */
-                }
+                fn_Filtrar();
             }
         }
     });
@@ -401,11 +325,7 @@ function fn_FiltrosChange() {
             if (idMarcaSubTipo <= 0) {
                 fn_Filtrar();
             } else {
-                if (!var_Filtrado) {
-                    fn_ModalConfirmarFiltros();
-                } else {
-                    fn_Filtrar();
-                }
+                fn_Filtrar();
             }
         }
     });
@@ -439,65 +359,12 @@ function fn_FiltrosChange() {
     });
 }
 
-function fn_FiltrosLoad() {
-    //console.log("fnItemLoadFiltros  ::: ");
-
-    $.busyLoadFull("show");
-
-    $(".card-datatable").hide();
-
-    fn_LoadCmb_MarcaFase();
-
-    fn_LoadCmb_MarcaFabrica();
-
-    fn_LoadCmb_MarcaTipo();
-
-    fn_LoadCmb_MarcaSubTipo(0);
-
-    $.busyLoadFull("hide");
-}
-
 //#endregion
 
 //#region GRID
 
-function fn_InitZoom() {
-
-    if (document.getElementById('imgZoomModal')) return;
-
-    $('body').append(`
-        <div id="imgZoomModal" style="
-            display:none;position:fixed;inset:0;
-            background:rgba(0,0,0,0.85);
-            z-index:99999;
-            align-items:center;
-            justify-content:center;">
-            <img id="imgZoomTarget" style="
-                max-width:95vw;
-                max-height:95vh;">
-        </div>
-    `);
-
-    $('#imgZoomModal').click(function () {
-        $(this).hide();
-    });
-}
-
-function fn_ZoomImg(src) {
-    $('#imgZoomTarget').attr('src', src);
-    $('#imgZoomModal').css('display', 'flex');
-}
-
-function fn_ZoomImgClose() {
-    const modal = document.getElementById('myModal');
-
-    if (modal) {
-        modal.style.display = 'none'; // Hides the div
-    }
-}
-
 function fn_FiltrarDados() {
-    console.log("bfn_FiltrarDados ::: ");
+    //console.log("bfn_FiltrarDados ::: ");
     var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
         varAjax_TypeAction = 'POST',
         varAjax_TypeData = 'JSON',
@@ -506,7 +373,7 @@ function fn_FiltrarDados() {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9],
+        varCol_Exportar = [1, 2, 5, 6, 7, 8, 9],
         varCol_Ordenacao = [1, 'asc'], //set any columns order asc/desc
 
         varItems_QtdPorPage = 10,
@@ -533,7 +400,7 @@ function fn_FiltrarDados() {
             contentType: varAjax_TypeContent,
 
             data: function (d) {
-                console.log("param d:: ", d)
+                //console.log("param d:: ", d)
                 return JSON.stringify({
                     draw: d.draw,
                     start: d.start,
@@ -548,12 +415,16 @@ function fn_FiltrarDados() {
                         marcaSubTipoId: parseInt($('#cmb_MarcaSubTipo').val()) || 0,
                         pesquisarSemVariante: $('#chk_PesquisarSemVariante')[0].checked,
                         pesquisarDescricao: $('#chk_PesquisarDescricao')[0].checked,
+                    },
+                    filtrosColecao: {
+                        socioId: parseInt($('#hdSocioLogadoId').val()) || 0,
+                        colecaoStatus: parseInt($('#cmb_ColecaoStatus').val()) || 0,
                     }
                 });
             },
 
             dataSrc: function (json) {
-                //console.log("fn_FiltrarDados json:: ", json);
+                console.log("fn_FiltrarDados dataSrc json:: ", json);
                 return json.data;
             }
         },
@@ -564,7 +435,7 @@ function fn_FiltrarDados() {
             // COLUNA - codigoAceca (2ª a aparecer no mobile)
             { data: 'CodigoAceca', className: 'text-center', width: '90px', responsivePriority: 2, orderable: true, },
             // COLUNA - nomeMarca (3ª a aparecer no mobile)
-            { data: 'NomeMarca', className: 'text-center', width: '120px' , responsivePriority: 3 },
+            { data: 'NomeMarca', className: 'text-center', width: '120px', responsivePriority: 3 },
             // COLUNA - imagem (some primeiro no mobile)
             {
                 data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004,
@@ -583,123 +454,70 @@ function fn_FiltrarDados() {
             { data: 'Descricao', className: 'text-start', responsivePriority: 10006 },
             // COLUNA - fabricaNome
             {
-                data: 'NomeFabrica', className: 'text-center', responsivePriority: 10007,
+                data: 'NomeFabrica', className: 'text-center text-nowrap', responsivePriority: 10007,
                 render: function (data, type, full) {
-                    return (data === '' || data === null) ? full.TxtFabrica : data;
+                    data = (data === '' || data === null || data === undefined) ? full.TxtFabrica : data;
+
+                    let nomeFabrica = (data === '' || data === null || data === undefined) ? '' : data?.trim()?.split(/\s+/).join("<br>");
+                    //console.log("nomeFabrica ::: ", nomeFabrica);
+                    return nomeFabrica;
                 }
             },
             // COLUNA - subTipo
             { data: 'SubTipo', className: 'text-center', responsivePriority: 10008 },
-            // COLUNA - finalidade
-            { data: 'NomeFinalidade', className: 'text-center', responsivePriority: 10009 },
             // COLUNA - nomeFase
-            { data: 'NomeFase', className: 'text-center', responsivePriority: 10010 },
-            // COLUNA - incluidoPor (avatar)
             {
-                data: 'IncluidoPor', className: 'text-center', responsivePriority: 10011,
+                data: 'NomeFase', className: 'text-center text-nowrap', responsivePriority: 10009,
                 render: function (data, type, full) {
-                    
                     if (!data || full.Id === 0 || type !== 'display') return '';
-                    var ul = `<ul class="m-0 avatar-group d-flex align-items-center" style="list-style:none;">`;
-                    var items = data.split('/').map(function (nome, i) {
-                        //console.log("IncluidoPor nome ::: ", nome);
-                        let pathAvatar = nome == "Aceca" ? `../img/avatars/socio/imgAvatarAceca` : `../img/avatars/${i}`;
 
-                        return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="${nome}" style="z-index:1;">
-                            <img src="${pathAvatar}.png" alt="Avatar" class="rounded-circle">
-                        </li>`;
-                    }).join('');
-                    return ul + items + '</ul>';
+                    const nomeFase = data?.trim()?.split(/\s+/).join("<br>");
+
+                    return nomeFase;
                 }
             },
-            // COLUNA - incluidoPor hidden (filtro)
-            { targets: -2, data: 'IncluidoPor', visible: false, responsivePriority: 99 },
+            // COLUNA - observacao
+            {
+                data: 'observacao', className: 'text-start', responsivePriority: 4
+            },
             // COLUNA - Ações (sempre visível junto com control)
             {
                 //visible: false,
                 data: 'Id', targets: -1, searchable: false, orderable: false, responsivePriority: 4,
+
                 render: function (data, type, full, meta) {
-
-                    isPerfil = document.getElementById('hdIsPerfil').value;
-                    //console.log("Acao isPerfil ::: ", isPerfil);
-
-                    let btns = '';
-
-                    //console.log("Acao data ::: ", data);
-                    //console.log("Acao type ::: ", type);
                     //console.log("Acao full ::: ", full);
-                    //console.log("Acao meta ::: ", meta);
-                    if (type !== 'display') return ''; 
-
+                    let itemId = data;
+                    let itemDados = full;
                     let itemObjJson = encodeURIComponent(JSON.stringify(full));
-                    
-                    if (isPerfil === 'true') {
 
-                        const socioId = document.getElementById('hdSocioLogadoId').value;
+                    let idColecaoStatus = $('#cmb_ColecaoStatus').find('option:selected').val();
 
-                        if (socioId === '39') {
-                            btns = `<div class="d-inline-block">
-                                    <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="ri-more-2-line ri-22px"></i>
-                                    </a>
+                    //console.log("Ações idColecaoStatus ::: ", idColecaoStatus);
 
-                                    <ul class="dropdown-menu dropdown-menu-end m-0">
-                                            <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
-                                        <div class="dropdown-divider"></div>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Tenho na Coleção</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNaoQuero',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-information-off-line icon-md me-2"></i>Não Quero</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoTroca',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-checkbox-multiple-line icon-md me-2"></i>Para Troca</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoVenda',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-shopping-cart-2-line icon-md me-2"></i>Para Venda</a></li>
-                                        <div class="dropdown-divider"></div>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete',${socioId});" class="dropdown-item text-danger delete-record"><i class="icon-base ri ri-delete-bin-7-line icon-md me-2"></i>Remover da Coleção</a></li>
-                                    </ul>
-                                </div>`;
-                        } else {
+                    var btn = '<div class="d-flex align-items-center">';
 
-                            btns = `<div class="d-inline-block text-nowrap">
-                                <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
-                                    class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
-                                    <i class="ri-edit-box-line ri-22px"></i>
-                                </a>
-                            </div>`;
-                        }
+
+                    if (full?.possui) {
+                        btn+= `<a href="javascript:fn_Pop(${itemObjJson});" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect" data-bs-toggle="tooltip" title="Editar Observação"><i class="ri-edit-box-line ri-22px"></i></a>
+                            <a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete');" class="btn btn-sm btn-icon btn-text-danger rounded-pill waves-effect delete-record" data-bs-toggle="tooltip" title="Remover da Coleção"><i class="ri-delete-bin-7-line ri-22px"></i></a>
+                            <a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNegociar');" class="btn btn-sm btn-icon btn-text-${(full?.disponivel_negocio ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Para Negociação"><i class="ri-shopping-cart-2-line ri-22px"></i></a>`
+                    };
+
+                    if (idColecaoStatus < 3 && !full?.possui) {
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Tenho Interesse"><i class="ri-eye-line ri-22px"></i></a>`
                     }
-                     /*
-                    else {
 
-                        btns = `<div class="d-inline-block">
-                                    <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="ri-more-2-line ri-22px"></i>
-                                    </a>
-
-                                    <ul class="dropdown-menu dropdown-menu-end m-0">
-                                            <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
-                                        <div class="dropdown-divider"></div>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Tenho na Coleção</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNaoQuero');" class="dropdown-item edit-record"><i class="icon-base ri ri-information-off-line icon-md me-2"></i>Não Quero</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoTroca');" class="dropdown-item edit-record"><i class="icon-base ri ri-checkbox-multiple-line icon-md me-2"></i>Para Troca</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoVenda');" class="dropdown-item edit-record"><i class="icon-base ri ri-shopping-cart-2-line icon-md me-2"></i>Para Venda</a></li>
-                                        <div class="dropdown-divider"></div>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete');" class="dropdown-item text-danger delete-record"><i class="icon-base ri ri-delete-bin-7-line icon-md me-2"></i>Remover da Coleção</a></li>
-                                    </ul>
-                                </div>`;
+                    if (idColecaoStatus < 3 && full?.interesse) {
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-${(!full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
                     }
-                    
-                   
-                   
-                    btns = `<div class="d-inline-block text-nowrap">
-                        <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
-                            class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
-                            <i class="ri-edit-box-line ri-22px"></i>
-                        </a>
-                    </div>`;
-                    */
-                     
+                            //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoInteresse' : 'ColecaoIncluir')});" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Tenho Interesse' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
+                            
+                    btn += '</div>'
 
-                    return (btns);
+                    //console.log("Ações btn ::: ", btn);
+
+                    return btn;
                 }
             }
         ],
@@ -772,16 +590,6 @@ function fn_FiltrarDados() {
                     }
                 ]
             },
-           
-            {
-                text: '<i class="ri-add-line"></i> <span class="d-none d-sm-inline-block">Adicionar Novo</span>',
-                className: 'btnAddNew create-new btn btn-primary waves-effect waves-light',
-                action: function (e, dt, node, config) {
-                    //console.log("BTN NEW ::: ", dt);
-                    window.location.href = '/Marca/Cadastro';
-                }
-            }
-            /* */
         ],
         responsive: {
             details: {
@@ -981,8 +789,10 @@ function fn_GridComplete(grid) {
     $('.card-header').after('<hr class="my-0">');
 
     //Titulo Tabela
-    let var_MarcaAcervo = document.getElementById('hdMarcaAcervoNome').value;
-    $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome} - ${var_MarcaAcervo}</h5>`);
+    let idColecaoStatus = $('#cmb_ColecaoStatus').find('option:selected').val();
+    let strColecaoStatus = $('#cmb_ColecaoStatus').find('option:selected').text();
+
+    $('div.head-label').html(`<h5 class="card-title mb-0">Listagem - ${idColecaoStatus < 0 ? var_Nome  : strColecaoStatus}</h5>`);
 
     $(".card-datatable").show();
 
@@ -1041,6 +851,45 @@ function fn_GridComplete(grid) {
 //#endregion
 
 //#region IMAGENS
+
+//#region ZOOM
+
+function fn_InitZoom() {
+
+    if (document.getElementById('imgZoomModal')) return;
+
+    $('body').append(`
+        <div id="imgZoomModal" style="
+            display:none;position:fixed;inset:0;
+            background:rgba(0,0,0,0.85);
+            z-index:99999;
+            align-items:center;
+            justify-content:center;">
+            <img id="imgZoomTarget" style="
+                max-width:95vw;
+                max-height:95vh;">
+        </div>
+    `);
+
+    $('#imgZoomModal').click(function () {
+        $(this).hide();
+    });
+}
+
+function fn_ZoomImg(src) {
+    $('#imgZoomTarget').attr('src', src);
+    $('#imgZoomModal').css('display', 'flex');
+}
+
+function fn_ZoomImgClose() {
+    const modal = document.getElementById('myModal');
+
+    if (modal) {
+        modal.style.display = 'none'; // Hides the div
+    }
+}
+
+//#endregion
 
 document.addEventListener('hidden.bs.modal', function (event) {
     if (document.activeElement) {
@@ -1119,15 +968,10 @@ function fn_PopLoadCombos() {
 
     //console.log("fn_PopLoadCombos  ::: ");
 
-    fn_LoadCmb_MarcaAcervo();
+    fn_LoadCmb_ColecaoStatus();
     fn_LoadCmb_MarcaFase();
-    fn_LoadCmb_MarcaFinalidade();
-    fn_LoadCmb_MarcaFabrica();
-    fn_LoadCmb_MarcaDimensao();
     fn_LoadCmb_MarcaTipo();
     fn_LoadCmb_MarcaSubTipo(0);
-    fn_LoadCmb_MarcaImpressora();
-    fn_LoadCmb_MarcaQualidadeImagem();
 
     $('#cmb_MarcaTipo').on('change', function () {
         let idMarcaTipo = $(this).find('option:selected').val();
@@ -1147,22 +991,22 @@ function fn_PopLoadCombos() {
 
 let cmbMarcaFaseLoaded = false;
 
-function fn_LoadCmb_MarcaAcervo() {
-    // console.log("fn_LoadCmb_MarcaAcervo ::: ");
+function fn_LoadCmb_ColecaoStatus() {
+    // console.log("fn_LoadCmb_ColecaoStatus ::: ");
 
-    if ($('#cmb_MarcaFase').length <= 1) {
+    if ($('#cmb_ColecaoStatus').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaAcervo`,
+                url: `${var_ControllerCmb}/AsyncCmb_ColecaoStatus`,
                 type: 'GET',
                 success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaAcervo  data ::: ", data);
+                    //console.log("fn_LoadCmb_ColecaoStatus  data ::: ", data);
 
                     $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaAcervo  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaAcervo  result ::: ", result);
-                        $("#cmbPop_MarcaAcervo").append($("<option></option>").val(result.value).html(result.text));
+                        //console.log("fn_LoadCmb_ColecaoStatus  result id ::: ", id);
+                        //console.log("fn_LoadCmb_ColecaoStatus  result ::: ", result);
+                        $("#cmb_ColecaoStatus").append($("<option></option>").val(result.value).html(result.text));
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
@@ -1217,109 +1061,6 @@ function fn_LoadCmb_MarcaFase() {
             fn_ModalErro(xhr, textStatus, errorThrown);
         }
     });
-}
-
-function fn_LoadCmb_MarcaFinalidade() {
-    //console.log("fn_LoadCmb_MarcaFinalidade ::: ");
-
-    if ($('#cmbPop_MarcaFinalidade').length <= 1) {
-
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFinalidade`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFinalidade  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFinalidade  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFinalidade  result ::: ", result);
-                        $("#cmbPop_MarcaFinalidade").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-
-    //console.log("fn_LoadCmb_CinemaProgramacao ::: ");
-}
-
-function fn_LoadCmb_MarcaFabrica() {
-    //console.log("fn_LoadCmb_MarcaFabrica ::: ");
-
-    if ($('#cmb_MarcaFabrica').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFabrica`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFabrica  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFabrica  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFabrica  result ::: ", result);
-                        $("#cmb_MarcaFabrica").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-
-    if ($('#cmbPop_MarcaFabrica').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFabrica`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFabrica  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFabrica  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaFabrica  result ::: ", result);
-                        $("#cmbPop_MarcaFabrica").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
-function fn_LoadCmb_MarcaDimensao() {
-    //console.log("fn_LoadCmb_MarcaDimensao ::: ");
-
-    if ($('#cmbPop_MarcaDimensao').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaDimensao`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaDimensao  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaDimensao  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaDimensao  result ::: ", result);
-                        $("#cmbPop_MarcaDimensao").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
 }
 
 function fn_LoadCmb_MarcaTipo() {
@@ -1440,59 +1181,6 @@ function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
         );
     }
 }
-
-function fn_LoadCmb_MarcaImpressora() {
-    //console.log("fn_LoadCmb_MarcaImpressora ::: ");
-
-    if ($('#cmbPop_MarcaImpressora').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaImpressora`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaImpressora  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaImpressora  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaImpressora  result ::: ", result);
-                        $("#cmbPop_MarcaImpressora").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
-function fn_LoadCmb_MarcaQualidadeImagem() {
-    //console.log("fn_LoadCmb_MarcaQualidadeImagem ::: ");
-
-    if ($('#cmbPop_MarcaQualidadeImagem').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaQualidadeImagem`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaQualidadeImagem  data ::: ", data);
-
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaQualidadeImagem  result id ::: ", id);
-                        //console.log("fn_LoadCmb_MarcaQualidadeImagem  result ::: ", result);
-                        $("#cmbPop_MarcaQualidadeImagem").append($("<option></option>").val(result.value).html(result.text));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
-    }
-}
-
 ///
 
 //#endregion
@@ -1535,7 +1223,7 @@ function fn_ModalSelecionarFase() {
 
 function fn_ModalErro(xhr, textStatus, errorThrown) {
     const responseMessage = xhr.responseText;
-    console.log("Server Response:", responseMessage);
+   console.log("Server Response:", responseMessage);
 
     const objError = JSON.parse(xhr.responseText);
     //console.log("Server msg:", obj.message);
@@ -1559,349 +1247,102 @@ function fn_ModalErro(xhr, textStatus, errorThrown) {
     });
 }
 
-function fn_Modal(obj, action) {
-    //console.log("fn_Modal obj ::: ", obj);
-    //console.log("fn_Modal action::: ", action);
+//#endregion
 
-    const popAddNewItem = document.querySelector('#ModalMarca');
+//#region POP
+
+function fn_Pop(obj) {
+   console.log("fn_Pop varItems_Row !", obj);
+
+    const popAddNewItem = document.querySelector('#pop-add-new-item');
+
+    popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdMarcaId').value = (obj === null ? 0 : obj.Id)),
-        (popAddNewItem.querySelector('#hdMarcaAcervoId').value = (obj === null ? 0 : obj.IdMarcaAcervo)),
-        (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.IdMarcaFase)),
-        (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.IdMarcaFinalidade)),
-        (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.IdMarcaFabrica)),
-        (popAddNewItem.querySelector('#hdMarcaDimensaoId').value = (obj === null ? 0 : obj.IdMarcaDimensao)),
-        (popAddNewItem.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.IdMarcaTipo)),
-        (popAddNewItem.querySelector('#hdMarcaSubTipoId').value = (obj === null ? 0 : obj.IdMarcaSubTipo)),
-        (popAddNewItem.querySelector('#hdMarcaImpressoraId').value = (obj === null ? 0 : obj.IdMarcaImpressora)),
-        (popAddNewItem.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.IdMarcaQualidadeImagem)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
+    (popAddNewItem.querySelector('#hdIdMarca').value = (obj === null ? 0 : obj.IdMarca)),
 
-    // Pop Dados
-        (popAddNewItem.querySelector('#cmbPop_MarcaAcervo').value = (obj === null ? '-1' : ((obj.IdMarcaAcervo === undefined || obj.IdMarcaAcervo === null || obj.IdMarcaAcervo <= 0) ? '-1' : obj.IdMarcaAcervo)));
-     //   (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-1' : ((obj.IdMarcaFase === undefined || obj.IdMarcaFase === null || obj.IdMarcaFase <= 0) ? '-1' : obj.IdMarcaFase)));
-    (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '' : obj.CodigoAceca));
-    (popAddNewItem.querySelector('#txt_Nome').value = (obj === null ? '' : obj.NomeMarca));
-    (popAddNewItem.querySelector('#txt_NomeFase').value = (obj === null ? '' : `${obj.NomeAcervo?.toUpperCase()} - ${obj.NomeFase?.toUpperCase()}`));
-    (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.IncluidoPor)),
-    (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-1' : ((obj.IdMarcaFinalidade === undefined || obj.IdMarcaFinalidade === null || obj.IdMarcaFinalidade <= 0) ? '-1' : obj.IdMarcaFinalidade)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-1' : ((obj.IdMarcaFabrica === undefined || obj.IdMarcaFabrica === null || obj.IdMarcaFabrica <= 0) ? '-1' : obj.IdMarcaFabrica)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-1' : ((obj.IdMarcaDimensao === undefined || obj.IdMarcaDimensao === null || obj.IdMarcaDimensao <= 0) ? '-1' : obj.IdMarcaDimensao)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-1' : ((obj.IdMarcaTipo === undefined || obj.IdMarcaTipo === null || obj.IdMarcaTipo <= 0) ? '-1' : obj.IdMarcaTipo)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-1' : ((obj.IdMarcaSubTipo === undefined || obj.IdMarcaSubTipo === null || obj.IdMarcaSubTipo <= 0) ? '-1' : obj.IdMarcaSubTipo)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-1' : ((obj.IdMarcaImpressora === undefined || obj.IdMarcaImpressora === null || obj.IdMarcaImpressora <= 0) ? '-1' : obj.IdMarcaImpressora)));
-    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-1' : ((obj.IdQualidadeImagem === undefined || obj.IdQualidadeImagem === null || obj.IdQualidadeImagem <= 0) ? '-1' : obj.IdQualidadeImagem)));
-    (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.Descricao));
+        // Pop Dados
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.observacao)),
+        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.disponivel_negocio));
 
-    //Pop Valores
-    (obj.Valor !== null || obj.Valor1PI !== null || obj.Valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
-    (document.querySelector('#txt_Valor').value = (obj === null ? '' : obj.Valor));
-    (document.querySelector('#txt_Valor1PI').value = (obj === null ? '' : obj.Valor1PI));
-    (document.querySelector('#txt_Valor2PI').value = (obj === null ? '' : obj.Valor2PI));
 
     // Pop Action
-    (popAddNewItem.querySelector('.address-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
-    (popAddNewItem.querySelector('.data-submit').textContent = (action === 'Edit') ? 'Alterar' : 'Adicionar');
+    (popAddNewItem.querySelector('.offcanvas-title').textContent = 'Alterar Registro');
+    (popAddNewItem.querySelector('.data-submit').textContent = 'Alterar');
 
-    // console.log("fn_Modal resultLoad::: ", resultLoad);
-    $.busyLoadFull("hide");
 
-    if (obj !== null) {
-
-        //console.log("fn_Modal obj::: ", obj);
-        $("#cmbPop_MarcaAcervo").val(((obj.IdMarcaAcervo === undefined || obj.IdMarcaAcervo === null || obj.IdMarcaAcervo <= 0) ? '-1' : obj.IdMarcaAcervo)).change();
-        //$("#cmbPop_MarcaFase").val(((obj.IdMarcaFase === undefined || obj.IdMarcaFase === null || obj.IdMarcaFase <= 0) ? '-1' : obj.IdMarcaFase)).change();
-        $("#cmbPop_MarcaFinalidade").val(((obj.IdMarcaFinalidade === undefined || obj.IdMarcaFinalidade === null || obj.IdMarcaFinalidade <= 0) ? '-1' : obj.IdMarcaFinalidade)).change();
-        $("#cmbPop_MarcaFabrica").val(((obj.IdMarcaFabrica === undefined || obj.IdMarcaFabrica === null || obj.IdMarcaFabrica <= 0) ? '-1' : obj.IdMarcaFabrica)).change();
-        $("#cmbPop_MarcaDimensao").val(((obj.IdMarcaDimensao === undefined || obj.IdMarcaDimensao === null || obj.IdMarcaDimensao <= 0) ? '-1' : obj.IdMarcaDimensao)).change();
-        $("#cmbPop_MarcaTipo").val(((obj.IdMarcaTipo === undefined || obj.IdMarcaTipo === null || obj.IdMarcaTipo <= 0) ? '-1' : obj.IdMarcaTipo)).change();
-        $("#cmbPop_MarcaSubTipo").val(((obj.IdMarcaSubTipo === undefined || obj.IdMarcaSubTipo === null || obj.IdMarcaSubTipo <= 0) ? '-1' : obj.IdMarcaSubTipo)).change();
-        $("#cmbPop_MarcaImpressora").val(((obj.IdMarcaImpressora === undefined || obj.IdMarcaImpressora === null || obj.IdMarcaImpressora <= 0) ? '-1' : obj.IdMarcaImpressora)).change();
-        $("#cmbPop_MarcaQualidadeImagem").val(((obj.IdQualidadeImagem === undefined || obj.IdQualidadeImagem === null || obj.IdQualidadeImagem <= 0) ? '-1' : obj.IdQualidadeImagem)).change();
-        
-        //Pop Arquivos
-        //(document.querySelector('#txt_ImgPrincipal').value = '');
-        //(document.querySelector('#txt_ImgDetalhe').value = '');
-
-        (obj === null || obj?.imgPrincipal === null) ? (popAddNewItem.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
-        (obj === null || obj?.imgDetalhe === null) ? (popAddNewItem.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
-    }
-
-    objModalData = obj;
-
-    $('#hdMarcaId').val(obj.Id);
-
-    //console.log("fn_Modal objModalData !", objModalData);
-
-    $('#ModalMarca').modal('show');
+    // Open Pop
+    popAddNewItemEl.show();
 }
 
-function fnItem_PopImgPrincipal(obj) {
-    //console.log("fnItem_PopImgPrincipal obj :::", obj);
-
-    if (obj !== null) {
-
-        const img = document.getElementById('img_ImgPrincipal');
-
-        let imgName = obj?.ImgPrincipal,
-            imgNameFul = obj?.ImgPrincipalFull;
-
-        //console.log("fnItem_PopImgPrincipal imgName :::", imgName);
-        //console.log("fnItem_PopImgPrincipal imgNameFul :::", imgNameFul);
-
-        if (imgName === null || imgName === undefined) {
-            
-            img.src = strUrlImgInexistente;
-            img.alt = "Imagem Inexistente";
-
-        } else{
-            let objFile = {},
-                fileArq = imgName;
-
-            //preview img            
-            img.src = obj?.ImgPrincipalFull !== null ? obj?.ImgPrincipalFull : strUrlImgInexistente;
-            img.alt = obj?.CodigoAceca !== null ? obj?.CodigoAceca : "Imagem Inexistente";
-
-            //
-            const fileInput = document.querySelector('#txt_ImgPrincipal');
-
-            if (fileArq !== null && fileArq !== undefined) {
-                objFile = {
-                    NomeArquivo: fileArq.split('.')[0],
-                    Extensao: fileArq.split('.').pop(),
-                };
-            }
-
-            // Create a new File object
-            const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
-                type: `application/${objFile.Extensao}`,
-                //type: 'text/plain',
-                lastModified: new Date(),
-            });
-
-            // Now let's create a DataTransfer to get a FileList
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(arqFile);
-            fileInput.files = dataTransfer.files;
-
-            // Help Safari out
-            if (fileInput.webkitEntries.length) {
-                fileInput.dataset.file = `${dataTransfer.files[0].name}`;
-            }
-        }
-    }
-}
-
-function fnItem_PopImgDetalhe(obj) {
-    //console.log("fnItem_PopImgDetalhe obj !", obj);
-
-    if (obj !== null) {
-
-        const img = document.getElementById('img_ImgDetalhe');
-
-        let imgName = obj?.ImgDetalhe,
-            imgNameFul = obj?.ImgDetalheFull;
-
-        if (imgName === null || imgName === undefined) {
-
-            img.src = strUrlImgInexistente;
-            img.alt = "Imagem Inexistente";
-
-        } else {
-            let objFile = {},
-                fileArq = imgName;
-
-            //preview img            
-            img.src = obj?.ImgDetalheFull !== null ? obj?.ImgDetalheFull : strUrlImgInexistente;
-            img.alt = obj?.CodigoAceca !== null ? obj?.CodigoAceca : "Imagem Inexistente";
-
-            //
-            const fileInput = document.querySelector('#txt_ImgDetalhe');
-
-            if (fileArq !== null && fileArq !== undefined) {
-                objFile = {
-                    NomeArquivo: fileArq.split('.')[0],
-                    Extensao: fileArq.split('.').pop(),
-                };
-            }
-
-            // Create a new File object
-            const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
-                type: `application/${objFile.Extensao}`,
-                //type: 'text/plain',
-                lastModified: new Date(),
-            });
-
-            // Now let's create a DataTransfer to get a FileList
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(arqFile);
-            fileInput.files = dataTransfer.files;
-
-            // Help Safari out
-            if (fileInput.webkitEntries.length) {
-                fileInput.dataset.file = `${dataTransfer.files[0].name}`;
-            }
-            //}
-        }
-    }
-}
-
-function fn_ModalGetObj(data, action) {
-    //console.log("fn_ModalGetObj data ::: ", data);
-    //console.log("fn_ModalGetObj action ::: ", action);
-
-    //console.log("fn_ModalGetObj objModalData ::: ", objModalData);
-
-    var loadCmbs = fn_PopLoadCombos();
-    //console.log("fn_ModalGetObj hdMarcaId ::: ", $('#hdMarcaId').val());
-    //console.log("fn_ModalGetObj hdMarcaFaseId ::: ", $('#hdMarcaFaseId').val());
+function fn_PopGetObj() {
 
     const objFormData = {
-        Id: $('#hdMarcaId').val(),
-        IdMarcaAcervo: $('#hdMarcaAcervoId').val(),
-        IdMarcaFase: $('#hdMarcaFaseId').val(),
-        IdMarcaFinalidade: $('#hdMarcaFinalidadeId').val(),
-        IdMarcaFabrica: $('#hdMarcaFabricaId').val(),
-        IdMarcaDimensao: $('#hdMarcaDimensaoId').val(),
-        IdMarcaTipo: $('#hdMarcaTipoId').val(),
-        IdMarcaSubTipo: $('#hdMarcaSubTipoId').val(),
-        IdMarcaImpressora: $('#hdMarcaImpressoraId').val(),
-        IdMarcaQualidadeImagem: $('#hdMarcaQualidadeImagemId').val(),
-
-        MarcaFaseId: $('#cmbPop_MarcaFase').val(),
-        CodigoAceca: $('#txt_Codigo').val(),
-        Nome: $('#txt_Nome').val(),
-        IncluidoPor: $('#txt_IncluidoPor').val(),
-        MarcaFinalidadeId: $('#cmbPop_MarcaFinalidade').val(),
-        MarcaFabricaId: $('#cmbPop_MarcaFabrica').val(),
-        MarcaDimensaoId: $('#cmbPop_MarcaDimensao').val(),
-        MarcaTipoId: $('#cmbPop_MarcaTipo').val(),
-        MarcaSubTipoId: $('#cmbPop_MarcaSubTipo').val(),
-        MarcaImpressoraId: $('#cmbPop_MarcaImpressora').val(),
-        MarcaQualidadeImagemId: $('#cmbPop_MarcaQualidadeImagem').val(),
-        Descricao: $('#txt_Descricao').val(),
-
-        Valor: $('#txt_Valor').val(),
-        Valor1PI: $('#txt_Valor1PI').val(),
-        Valor2PI: $('#txt_Valor2PI').val(),
-
-        ImgPrincipal: $('#txt_ImgPrincipal').val(),
-        ImgDetalhe: $('#txt_ImgDetalhe').val(),
+        Id: $('#hdId').val(),
+        IdMarca: $('#hdIdMarca').val(),
+        Observacao: $('.form-add-new-item .dt-line-01').val(),
+        Disponivel_negocio: $('.form-add-new-item .dt-line-05').is(':checked')
     };
 
-    console.log("fn_ModalGetObj !", objFormData);
+    //console.log("fn_PopGetObj !", objFormData);
 
     return objFormData;
 }
 
-function fnItem_Edit(varItems_Row) {
-    //console.log("fnItem_Edit CLICK ::: ", varItems_Row);
-    //var varPop_BtnAction = 'Edit';
-
-    var varAjax_UrlController = `${var_Controller}/Edit`,
-        varAjax_TypeAction = 'POST',
-        varAjax_TypeData = 'JSON',
-        varAjax_TypeContent = 'application/json; charset=utf-8';
-
-    if (varItems_Row.Id === 0) {
-        Swal.fire({
-            title: 'OPS!!',
-            icon: 'error',
-            html: `Dados n&atilde;o identificados !!`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-danger waves-effect'
-            },
-        });
-    } else {
-
-        $.busyLoadFull("show");
-
-        $.ajax(
-            {
-                url: varAjax_UrlController,
-                type: varAjax_TypeAction,
-                dataType: varAjax_TypeData,
-                data: varItems_Row,
-                // contentType: varAjax_TypeContent,
-                success: function (result) {
-
-                    //console.log("fnItem_Edit result  :: ", result);
-
-                    if (result.bResult) {
-
-                        $.busyLoadFull("hide");
-
-                        var varTbl;
-
-                        if ($.fn.dataTable.isDataTable('.datatables-basic')) {
-                            //console.log("YES :: ");
-                            varTbl = varTbl_Obj.DataTable();
-
-                            $.busyLoadFull("hide");
-
-                            Swal.fire({
-                                title: 'Dados Salvos!',
-                                icon: 'success',
-                                text: 'Item alterado com sucesso.',
-                                customClass: {
-                                    confirmButton: 'btn btn-success waves-effect waves-light'
-                                }
-                            }).then((result) => {
-
-                                //console.log("RESULTADO  :: ", result);
-                                //varTbl.ajax.reload(lstData, false);
-
-                                fn_FiltrarDados(objFiltro);
-
-                                $('#ModalMarca').modal('hide');
-                            });
-                        } else {
-                            console.log("NO :: ");
-                        }
-                    } else {
-                        console.log("result  :: ", result);
-
-                        $.busyLoadFull("hide");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> fn_Salvar - Erro ocorrido <br><br>` + result + `</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
-
-                        return false;
+function fn_PopValidator(formAddNewItem) {
+    var varformValid = FormValidation.formValidation(formAddNewItem, {
+        fields: {
+            pop_line_item_01: {
+                validators: {
+                    notEmpty: {
+                        message: 'O preenchimento &eacute; obrigat&oacute;rio'
                     }
-                },
-                error: function (xhr, textStatus, errorThrown) {
-
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-
-                    return false;
-                },
+                }
+            }
+        },
+        plugins: {
+            trigger: new FormValidation.plugins.Trigger(),
+            bootstrap5: new FormValidation.plugins.Bootstrap5({
+                // Use this for enabling/changing valid/invalid class
+                // eleInvalidClass: '',
+                eleValidClass: '',
+                rowSelector: '.col-sm-12'
+            }),
+            submitButton: new FormValidation.plugins.SubmitButton(),
+            // defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
+            autoFocus: new FormValidation.plugins.AutoFocus()
+        },
+        init: instance => {
+            instance.on('plugins.message.placed', function (e) {
+                if (e.element.parentElement.classList.contains('input-group')) {
+                    e.element.parentElement.insertAdjacentElement('afterend', e.messageElement);
+                }
             });
-    }
+        }
+    });
+
+    return varformValid;
 }
 
 //#endregion
 
 //#region COLECAO
 
-function fnItem_Colecao(obj, action, socioId) {
-
-    let marcaId = obj?.Id;
-    let actionId = -1;
-
+function fnItem_Colecao(obj, action) {
     console.log("fnItem_Colecao obj ::: ", obj);
     console.log("fnItem_Colecao action::: ", action);
 
-    if ((marcaId === undefined || marcaId === null || marcaId === '' || marcaId < 1)
+    let itemColecaoId = obj?.Id;
+    let itemColecaoObs = obj?.Observacao;
+    let marcaId = obj?.IdMarca;    
+    let actionId = -1;
+    const socioId = document.getElementById('hdSocioLogadoId').value;
+
+    //console.log("fnItem_Colecao socioId::: ", socioId);
+    
+    if ((itemColecaoId === undefined || itemColecaoId === null || itemColecaoId === '' || itemColecaoId < 1)
+        || (marcaId === undefined || marcaId === null || marcaId === '' || marcaId < 1)
         || (socioId === undefined || socioId === null || socioId === '' || socioId < 1)
     ) {
         Swal.fire({
@@ -1917,24 +1358,20 @@ function fnItem_Colecao(obj, action, socioId) {
             //fn_Limpar();
         });
     } else {
+
         switch (action) {
+            case 'ColecaoDelete':
+                actionId = 0;
+                break;
             case 'ColecaoIncluir':
+            case 'ColecaoObs':
                 actionId = 1;
                 break;
             case 'ColecaoInteresse':
                 actionId = 2;
                 break;
-            case 'ColecaoNaoQuero':
+            case 'ColecaoNegociar':
                 actionId = 3;
-                break;
-            case 'ColecaoTroca':
-                actionId = 4;
-                break;
-            case 'ColecaoVenda':
-                actionId = 5;
-                break;
-            case 'ColecaoDelete':
-                actionId = 0;
                 break;
             default:
                 actionId = -1;
@@ -1947,10 +1384,12 @@ function fnItem_Colecao(obj, action, socioId) {
             type: 'POST',
             dataType: 'JSON',
             data: {
-                itemId: marcaId,
+                itemColecaoId: itemColecaoId,
+                marcaId: marcaId,
                 actionId: actionId,
                 socioId: socioId,
-                isPerfil: document.getElementById('hdIsPerfil').value
+                isPerfil: document.getElementById('hdIsPerfil').value,
+                itemColecaoObs: itemColecaoObs
             },
             success: function (response) {
                 
@@ -1961,13 +1400,21 @@ function fnItem_Colecao(obj, action, socioId) {
                 Swal.fire({
                     title: 'Dados Salvos!',
                     icon: 'success',
-                    text: 'Marca cadastrada com sucesso.',
+                    text: 'Coleção atualizada com sucesso.',
                     customClass: {
                         confirmButton: 'btn btn-success waves-effect waves-light'
                     }
                 }).then((resultSucesso) => {
-                    window.location.reload();
-                    //console.log("resultSucesso  :: ", resultSucesso);
+                    //window.location.reload();
+                    console.log("resultSucesso  :: ", resultSucesso);
+
+                    let table = $('.datatables-basic').DataTable();
+                    table.ajax.reload(null, false);
+
+                    const popAddNewItem = document.querySelector('#pop-add-new-item');
+                    popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
+                    popAddNewItemEl.hide();
+                    //$('.offcanvas').hide()
                 });
 
                 return true;
@@ -1976,7 +1423,6 @@ function fnItem_Colecao(obj, action, socioId) {
                 console.error("Error: " + error);
             }
         });
-        
     }
 }
 
@@ -2002,6 +1448,7 @@ function fn_AuthSession() {
         fn_CleanUser();
     }
 }
+
 function fn_CleanUser() {
     document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
     sessionStorage.removeItem('aceca_sessao');

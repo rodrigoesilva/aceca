@@ -2,6 +2,7 @@ using Aceca.Adm.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.ComponentModel;
 using System.Net;
 using System.Net.Mail;
@@ -9,6 +10,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using static BCrypt.Net.BCrypt;
 
 namespace Aceca.Adm.Helper
 {
@@ -16,24 +18,91 @@ namespace Aceca.Adm.Helper
     {
         #region variaveis
 
-        private readonly AppDbContext _db = new AppDbContext();
+        //private readonly AppDbContext _db = new AppDbContext();
         private readonly ILogger<HelperExtensionsController> _logger;
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
+        private readonly AppDbContext _db;
 
         private static List<SelectListItem> _cacheMarcaFase;
         //
 
         #endregion
 
-        public HelperExtensionsController(ILogger<HelperExtensionsController> logger, IConfiguration cfg,
+        public HelperExtensionsController(ILogger<HelperExtensionsController> logger, 
+            IConfiguration cfg, 
+            AppDbContext db,
             IWebHostEnvironment env)
         {
             _logger = logger;
             _appEnvironment = env;
             _appConfiguration = cfg;
+            _db = db;
         }
 
+
+
+        // ──────────────────────────────────────────────
+        // ENUM
+        // ──────────────────────────────────────────────
+
+
+        #region Enums Functions
+        public static string GetEnumDescription(Enum value)
+        {
+            var fi = value.GetType().GetField(value.ToString());
+
+            var attributes = fi.GetCustomAttributes(typeof(DescriptionAttribute), false) as DescriptionAttribute[];
+
+            if (attributes != null && attributes.Any())
+            {
+                return attributes.First().Description;
+            }
+
+            return value.ToString();
+        }
+
+        #endregion
+
+        #region Enums
+        public enum ESimNao
+        {
+            [Description("Não")] Nao = 0,
+            Sim = 1
+        }
+
+        public enum EPerfil
+        {
+            Nenhum = 0,
+            Fundador = 1,
+            MembroHonra = 2,
+            InMemoria = 3,
+            Administracao = 4,
+            Socio = 5,
+            Banido = 6
+        }
+
+        public enum ETipoEmail
+        {
+            Cadastro = 0,
+            EsqueceuSenha = 1,
+            ColecaoInteresse = 2
+        }
+
+        public enum EColecaoAcao
+        {
+            ColecaoDelete = 0,
+            ColecaoIncluir = 1,
+            ColecaoInteresse = 2,
+            ColecaoNegociar = 3,
+        }
+        public enum EColecaoStatus
+        {
+            [Description("Minha Coleção")] Possui = 1,
+            [Description("Tenho Interesse")] Interesse = 2,
+            [Description("Para Negociação")] DisponivelNegocio = 3,
+        }
+        #endregion
 
         #region Combos Marcas
 
@@ -543,56 +612,32 @@ namespace Aceca.Adm.Helper
 
         #endregion
 
-        #region Enums Functions
-        public static string GetEnumDescription(Enum value)
+        #region Colecao
+
+        public async Task<IEnumerable<SelectListItem>> AsyncCmb_ColecaoStatus()
         {
-            var fi = value.GetType().GetField(value.ToString());
+            var enumData = new List<SelectListItem>();
 
-            var attributes = fi.GetCustomAttributes(typeof(DescriptionAttribute), false) as DescriptionAttribute[];
-
-            if (attributes != null && attributes.Any())
+            try
             {
-                return attributes.First().Description;
+                enumData = (Enum.GetValues(typeof(EColecaoStatus))
+                    .Cast<EColecaoStatus>()
+                    .Select(e => new SelectListItem()
+                    {
+                        Text = GetEnumDescription((EColecaoStatus)e),
+                        Value = Convert.ToInt32(e).ToString(),
+                    }))
+                .ToList();
+            }
+            catch (Exception ex)
+            {
+                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+
+                throw;
             }
 
-            return value.ToString();
+            return enumData;
         }
-
-        #endregion
-
-        #region Enums
-        public enum ESimNao
-        {
-            [Description("Não")] Nao = 0,
-            Sim = 1
-        }
-
-        public enum EPerfil
-        {
-            Nenhum = 0,
-            Fundador = 1,
-            MembroHonra = 2,
-            InMemoria = 3,
-            Administracao = 4,
-            Socio = 5
-        }
-
-        public enum ETipoEmail
-        {
-            Cadastro = 0,
-            EsqueceuSenha = 1
-        }
-
-        public enum EColecaoAcao
-        {
-            ColecaoDelete = 0,
-            ColecaoIncluir = 1,
-            ColecaoInteresse = 2,
-            ColecaoNaoQuero = 3,
-            ColecaoTroca = 4,
-            ColecaoVenda = 5,
-        }
-
         #endregion
 
         // ──────────────────────────────────────────────
@@ -600,7 +645,31 @@ namespace Aceca.Adm.Helper
         // ──────────────────────────────────────────────
 
 
-        #region Funções - MD5        
+        #region Funções - Pass
+        public string GenerateStringPassword(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            return RandomNumberGenerator.GetString(chars, length);
+        }
+
+        public string GenerateSecuretToken()
+        {
+            // Gera token seguro
+            var tokenBytes = RandomNumberGenerator.GetBytes(32);
+            var token = Convert.ToBase64String(tokenBytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
+
+            return token;
+        }
+
+        public bool IsMD5Hash(string input)
+        {
+            if (string.IsNullOrEmpty(input) || input.Length != 32) return false;
+
+            return Regex.IsMatch(input, "^[0-9a-fA-F]{32}$", RegexOptions.Compiled);
+        }
+
+        #region MD5        
 
         public string GenerateMD5HashPassword(MD5 md5Hash, string input)
         {
@@ -614,40 +683,42 @@ namespace Aceca.Adm.Helper
             return hash;
         }
 
-        public bool VerifyMd5HashWithMySecurity(MD5 md5Hash, string input, string hash)
+        public bool VerifyMd5HashWithMySecurity(MD5 md5Hash, string inputPassword, string hashedPassword)
         {
-            string hashOfInput = GenerateMD5HashPassword(md5Hash, input);
+            if (string.IsNullOrEmpty(inputPassword) || string.IsNullOrEmpty(hashedPassword)) return false;
+
+            if (!IsMD5Hash(inputPassword))
+                return VerifyHashPassword(inputPassword, hashedPassword);
+
+            //somenet se senha ainda MD5
+            string hashOfInput = GenerateMD5HashPassword(md5Hash, inputPassword);
+
             StringComparer comparer = StringComparer.OrdinalIgnoreCase;
-            return comparer.Compare(hashOfInput, hash) == 0;
+
+            return comparer.Compare(hashOfInput, hashedPassword) == 0;
+        }
+        #endregion
+
+        #region BCCryp
+
+        // 1. Hash a password (e.g., during User Registration)
+        // Save this 'hashedPassword' string directly to your database
+        public string GenerateHashPassword(string inputPassword)
+        {
+            const int WorkFactor = 12;
+            var hashedPassword = HashPassword(inputPassword, WorkFactor);
+
+            return hashedPassword;
         }
 
-        public static Guid GenerateGuidFromString(string input)
+        // 2. Verify a password (e.g., during User Login)
+        // Returns true if the password matches, false otherwise
+        public bool VerifyHashPassword(string cleanPassword, string storedHash)
         {
-            using MD5 md5 = MD5.Create();
-            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
-            byte[] hashBytes = md5.ComputeHash(inputBytes);
-            return new Guid(hashBytes);
+            return Verify(cleanPassword, storedHash);
         }
-        public string GenerateStringPassword(int length)
-        {
-            const string valid = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-            StringBuilder res = new StringBuilder();
-            Random rnd = new Random();
-            while (0 < length--)
-            {
-                res.Append(valid[rnd.Next(valid.Length)]);
-            }
-            return res.ToString();
-        }
+        #endregion
 
-        public string GenerateSecuretToken()
-        {
-            // Gera token seguro
-            var tokenBytes = RandomNumberGenerator.GetBytes(32);
-            var token = Convert.ToBase64String(tokenBytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
-
-            return token;
-        }
         #endregion
 
         // ──────────────────────────────────────────────

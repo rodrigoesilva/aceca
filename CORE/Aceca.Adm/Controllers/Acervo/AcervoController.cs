@@ -262,13 +262,26 @@ namespace Aceca.Adm.Controllers.Acervo
                             @ImgDefault) AS ImgPrincipalFull,
 
                         m.ImgDetalhe,
+                        
+                        /*
                         IF(m.ImgDetalhe IS NOT NULL,
                             CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
                             @ImgDefault) AS ImgDetalheFull
+                        */
+
+	                    CASE 
+                            WHEN m.ImgDetalhe IS NOT NULL THEN
+                                IF(mf.id = 36,
+                           		    COALESCE(CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),@ImgDefault),
+                           		    COALESCE(CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),@ImgDefault)
+                                )
+                            ELSE @ImgDefault
+	                    END AS ImgDetalheFull
 
                     {sqlFrom}
 
-                    ORDER BY mf.id, m.nome, m.CodigoAceca
+                    -- ORDER BY mf.id, m.nome, m.CodigoAceca
+                        ORDER BY m.CodigoAceca, m.nome
                     LIMIT @Limit OFFSET @Offset
                     ";
 
@@ -625,7 +638,7 @@ namespace Aceca.Adm.Controllers.Acervo
                 #endregion
 
                 _db.Marca.Add(model);
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
 
                 if (model?.Id <= 0)
                     return BadRequest(new
@@ -745,7 +758,7 @@ namespace Aceca.Adm.Controllers.Acervo
                     #endregion
 
                     _db.Entry(model).State = EntityState.Modified;
-                    _db.SaveChanges();
+                    await _db.SaveChangesAsync();
 
                     if (model?.Id <= 0)
                         return BadRequest(new
@@ -816,7 +829,7 @@ namespace Aceca.Adm.Controllers.Acervo
                     });
 
                 _db.Marca.Remove(model);
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
 
                 return Ok(new
                 {
@@ -907,35 +920,20 @@ namespace Aceca.Adm.Controllers.Acervo
                 var query = Enumerable.Empty<Marcas>().AsQueryable();
 
                 if (idFase != 29)
-                {/*
+                {                    
                     query = _db.Marca
-                    .Include(x => x.MarcaSubTipo.MarcaTipo)
-                    .Include(x => x.MarcaFabrica)
-                    .Include(x => x.MarcaImpressora)
-                    .Where(x => x.CodigoAceca != null
+                       .Include(x => x.MarcaSubTipo.MarcaTipo)
+                       .Include(x => x.MarcaFabrica)
+                       .Include(x => x.MarcaImpressora)
+                       .AsNoTracking()
+                       .Where(x => x.CodigoAceca != null
                             && (bvariante
-                                ? (x.MarcaFaseId.Equals(idFase) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
-                                : (x.MarcaFaseId.Equals(idFase))
+                                ? (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
+                                : (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)))
                                 )
-                          )
-                    .OrderByDescending(x => x.CodigoAceca)
-                    .Take(5);
-
-                     */
-                    
-                    query = _db.Marca
-                   .Include(x => x.MarcaSubTipo.MarcaTipo)
-                   .Include(x => x.MarcaFabrica)
-                   .Include(x => x.MarcaImpressora)
-                   .AsNoTracking()
-                   .Where(x => x.CodigoAceca != null
-                        && (bvariante
-                            ? (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
-                            : (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)))
                             )
-                        )
-                    .OrderByDescending(x => x.CodigoAceca)                    
-                    .Take(5);
+                        .OrderByDescending(x => x.CodigoAceca)                    
+                        .Take(5);
 
                 }
                 else
@@ -946,13 +944,13 @@ namespace Aceca.Adm.Controllers.Acervo
                     var strLetraInicialBusca = bExTemPaisDestino ? "EA" : "EX";
 
                     query = _db.Marca
-                    .Include(x => x.MarcaSubTipo.MarcaTipo)
-                    .Include(x => x.MarcaFabrica)
-                    .Include(x => x.MarcaImpressora)
-                    .AsNoTracking()
-                    .Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
-                    .OrderByDescending(x => x.CodigoAceca)
-                    .Take(5);
+                        .Include(x => x.MarcaSubTipo.MarcaTipo)
+                        .Include(x => x.MarcaFabrica)
+                        .Include(x => x.MarcaImpressora)
+                        .AsNoTracking()
+                        .Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
+                        .OrderByDescending(x => x.CodigoAceca)
+                        .Take(5);
                 }
 
                 var queryExists = query.Any();
@@ -982,7 +980,6 @@ namespace Aceca.Adm.Controllers.Acervo
                 }
 
                 model = await query
-                          .AsNoTracking()
                           .AsQueryable()
                           .FirstOrDefaultAsync();
 
@@ -1060,10 +1057,10 @@ namespace Aceca.Adm.Controllers.Acervo
                 if (model?.MarcaImpressoraId == null || model?.MarcaImpressoraId <= 0)
                     if (!string.IsNullOrEmpty(model?.TxtImpressora))
                     {
-                        var objImpressora = _db.MarcaImpressora
+                        var objImpressora = await _db.MarcaImpressora
                             .AsNoTracking()
                             .Where(i => i.Descricao.Equals(model.TxtImpressora.Trim()))
-                            .FirstOrDefault();
+                            .FirstOrDefaultAsync();
 
                         if (objImpressora != null)
                         {
@@ -1207,7 +1204,7 @@ namespace Aceca.Adm.Controllers.Acervo
             {
                 strPathSaveFolder = bIsImgPrincipal
                 ? Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", vmModel?.MarcaFaseId?.ToString())
-                : Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", "detalhes");
+                : Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", vmModel?.MarcaFaseId?.ToString(),"detalhes");
 
                 strSaveFileName = bIsImgPrincipal
                 ? $"{strSaveFileName}{fileExtension}"
@@ -1219,7 +1216,7 @@ namespace Aceca.Adm.Controllers.Acervo
             {
                 strPathSaveFolder = bIsImgPrincipal
                 ? $"{_ftpBaseUrl}/midia/geral/{vmModel?.MarcaFaseId?.ToString()}"
-                : $"{_ftpBaseUrl}/midia/geral/detalhes";
+                : $"{_ftpBaseUrl}/midia/geral/{vmModel?.MarcaFaseId?.ToString()}/detalhes";
 
 
                 strSaveFileName = bIsImgPrincipal

@@ -1,4 +1,5 @@
 using Aceca.Adm.Data;
+using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -69,23 +70,28 @@ namespace Aceca.Adm.Controllers.Pages.Download
         {
             try
             {
-                var lstModel = await _db.Download
-                    .Include(x => x.DownloadTipo)
-                    .Include(x => x.Socio)
-                    .AsNoTracking()
-                    .OrderBy(x => x.DownloadTipoId)
-                    .ToListAsync();
+                var dataSql = $@"
+                        SELECT 
+                            d.*, 
+                            dt.descricao AS downloadTipo,
+                            COALESCE(
+                                (
+                                    SELECT GROUP_CONCAT(ss.nome_usuario 
+                                                         ORDER BY FIND_IN_SET(s.id, REPLACE(d.socioId, ' ', '')) 
+                                                         SEPARATOR ' / ')
+                                    FROM socios s
+                                     INNER JOIN socio_seguranca ss ON ss.socioId = s.id
+                                    WHERE FIND_IN_SET(s.id, REPLACE(d.socioId, ' ', '')) > 0
+                                ),
+                                'Aceca'
+                            ) AS incluidoPor
+                        FROM download d
+                        INNER JOIN download_tipo dt ON d.downloadTipoId = dt.id 
+                        ORDER BY d.downloadTipoId, d.nome;
+                    ";
 
-                if (lstModel.Count <= 0)
-                {
-                    return Ok(new
-                    {
-                        bResult = true,
-                        type = "ERRO - VAZIO - lstResult",
-                        message = "listagem em branco",
-                        data = lstModel
-                    });
-                }
+                using var conn = _db.Database.GetDbConnection();
+                var lstModel = await conn.QueryAsync(dataSql);
 
                 return Ok(new
                 {

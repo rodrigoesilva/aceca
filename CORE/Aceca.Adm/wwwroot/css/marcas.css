@@ -137,6 +137,12 @@ table.dataTable.dtr-column > tbody > tr.parent > th.control::before {
         border: 1.5px solid var(--border)
     }
 
+    img.lazy-img {
+        background-color: #f0eaf8;
+        opacity: 0.35;
+        transition: opacity 0.25s ease-in;
+    }
+
     .td-img-placeholder {
         width: 60px;
         height: 60px;

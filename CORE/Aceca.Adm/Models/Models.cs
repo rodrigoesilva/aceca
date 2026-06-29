@@ -1,5 +1,3 @@
-
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -29,7 +27,7 @@ namespace Aceca.Adm.Models
     {
         public bool Ativo { get; set; }
         public DateTime? DataCriacao { get; set; } = DateTime.Now;
-        public DateTime? DataAtualizacao { get; init; } = DateTime.Now;
+        public DateTime? DataAtualizacao { get; set; } = DateTime.Now;
     }
 
     #endregion
@@ -61,6 +59,8 @@ namespace Aceca.Adm.Models
     [Table("marcas_acervo")]
     public class MarcaAcervo : BaseModel
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int? Id { get; set; }
         public string? Descricao { get; set; } = null;
     }
@@ -339,6 +339,8 @@ namespace Aceca.Adm.Models
     [Table("socios")]
     public class Socio : BaseModel
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int? Id { get; set; }
         public int? SocioPerfilId { get; set; }
         public string? Nome { get; set; } = null;
@@ -404,6 +406,8 @@ namespace Aceca.Adm.Models
     [Table("socio_log_acesso")]
     public class SocioLogAcesso
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int? Id { get; set; }
         public int? SocioEnderecoId { get; set; }
         public string? IP { get; set; }
@@ -454,15 +458,14 @@ namespace Aceca.Adm.Models
     [Table("socio_colecao")]
     public class SocioColecao : BaseModel
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int? Id { get; set; }
         public int? SocioId { get; set; }
         public int? MarcaId { get; set; }
-        public int? Quantidade { get; set; }
         public bool Possui { get; set; }
         public bool Interesse { get; set; }
-        [Column("disponivel_troca")] public bool DisponivelTroca { get; set; }
-        [Column("disponivel_venda")] public bool DisponivelVenda { get; set; }
-        [Column("valor_venda")] public decimal ValorVenda { get; set; }
+        [Column("disponivel_negocio")] public bool DisponivelNegocio { get; set; }
         public string? Observacao { get; set; } = null;
 
         public Socio? Socio { get; set; }

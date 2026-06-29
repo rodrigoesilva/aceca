@@ -254,14 +254,26 @@ namespace Aceca.Adm.Controllers.Pages.Novidade
                             @ImgDefault) AS ImgPrincipalFull,
 
                         m.ImgDetalhe,
+                        
+                        /*
                         IF(m.ImgDetalhe IS NOT NULL,
                             CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
                             @ImgDefault) AS ImgDetalheFull
+                        */
+
+	                    CASE 
+                            WHEN m.ImgDetalhe IS NOT NULL THEN
+                                IF(mf.id = 36,
+                           		    COALESCE(CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),@ImgDefault),
+                           		    COALESCE(CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),@ImgDefault)
+                                )
+                            ELSE @ImgDefault
+	                    END AS ImgDetalheFull
 
                     {sqlFrom}
 
-                    ORDER BY m.dataCriacao DESC,
-                        mf.id, m.nome, m.CodigoAceca
+                   ORDER BY m.dataCriacao DESC,
+                            m.CodigoAceca, m.nome
                     LIMIT @Limit OFFSET @Offset
                     ";
 

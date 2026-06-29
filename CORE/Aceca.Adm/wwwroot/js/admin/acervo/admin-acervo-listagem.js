@@ -6,8 +6,6 @@
 
 //#region Declare
 
-let isPerfil = document.getElementById('hdIsPerfil').value;
-
 let var_Nome = 'Listagem',
     var_Controller = '/Acervo',
     var_ControllerCmb = '/HelperExtensions',
@@ -15,6 +13,8 @@ let var_Nome = 'Listagem',
     varTbl_Obj = $('.datatables-basic'),
     varTbl_Data,
     objFiltro;
+
+let table = $('.datatables-basic').DataTable();
 
 let var_Filtrado = false,
     var_ImgAlt = "ACECA",
@@ -58,6 +58,8 @@ $.busyLoadSetup({
     background: "rgba(71,0,123, 0.86)"
 });
 
+let isPerfil = document.getElementById('hdIsPerfil').value;
+
 //#endregion
 
 //#region CARREGAMENTO INICIAL
@@ -74,18 +76,6 @@ document.addEventListener('DOMContentLoaded', function () {
         fn_FiltrosHide();
         fn_PopLoadCombos();
         fn_FiltrosChange();
-
-        /*
-        $('.btn-filter').on('click', function () {
-            fn_Filtrar();
-        });
-
-        let timeout;
-        $('#nome').on('keyup', function () {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => table.draw(), 400);
-        });
-        */
 
         $('.btn-filter-clear').on('click', function () {
             fn_Limpar();
@@ -362,28 +352,7 @@ function fn_FiltrosChange() {
                 fn_Filtrar();
             } else {
                 $('.div_MarcaSubTipo').attr('style', 'display: block !important');
-
-                if (!var_Filtrado) {
-                    fn_ModalConfirmarFiltros();
-                } else {
-                    fn_Filtrar();
-                    /*
-                    Swal.fire({
-                        title: 'Tipo Selecionado !!!',
-                        html: `Para realizar o filtro por Tipo, <br><br> selecione o Sub-Tipo.<br><br> Caso prefira, utilize as op&ccedil;&otilde;es de filtros dispon&iacute;veis!`,
-                        imageUrl: `${urlImgModaltext}`,
-                        imageWidth: 400,
-                        imageAlt: `${var_ImgAlt}`,
-                        focusConfirm: false,
-                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                        customClass: {
-                            confirmButton: 'btn btn-primary waves-effect waves-light'
-                        },
-                    }).then((result) => {
-                        //console.log("cmb_MarcaFase change result ::: ", result);
-                    })
-                    */
-                }
+                fn_Filtrar();
             }
         }
     });
@@ -400,11 +369,7 @@ function fn_FiltrosChange() {
             if (idMarcaSubTipo <= 0) {
                 fn_Filtrar();
             } else {
-                if (!var_Filtrado) {
-                    fn_ModalConfirmarFiltros();
-                } else {
-                    fn_Filtrar();
-                }
+                fn_Filtrar();
             }
         }
     });
@@ -460,41 +425,6 @@ function fn_FiltrosLoad() {
 
 //#region GRID
 
-function fn_InitZoom() {
-
-    if (document.getElementById('imgZoomModal')) return;
-
-    $('body').append(`
-        <div id="imgZoomModal" style="
-            display:none;position:fixed;inset:0;
-            background:rgba(0,0,0,0.85);
-            z-index:99999;
-            align-items:center;
-            justify-content:center;">
-            <img id="imgZoomTarget" style="
-                max-width:95vw;
-                max-height:95vh;">
-        </div>
-    `);
-
-    $('#imgZoomModal').click(function () {
-        $(this).hide();
-    });
-}
-
-function fn_ZoomImg(src) {
-    $('#imgZoomTarget').attr('src', src);
-    $('#imgZoomModal').css('display', 'flex');
-}
-
-function fn_ZoomImgClose() {
-    const modal = document.getElementById('myModal');
-
-    if (modal) {
-        modal.style.display = 'none'; // Hides the div
-    }
-}
-
 function fn_FiltrarDados() {
     //console.log("bfn_FiltrarDados ::: ");
     var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
@@ -505,7 +435,7 @@ function fn_FiltrarDados() {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9],
+        varCol_Exportar = [1, 2, 5, 6, 7, 8, 9],
         varCol_Ordenacao = [1, 'asc'], //set any columns order asc/desc
 
         varItems_QtdPorPage = 10,
@@ -532,7 +462,7 @@ function fn_FiltrarDados() {
             contentType: varAjax_TypeContent,
 
             data: function (d) {
-                console.log("param d:: ", d)
+                //console.log("param d:: ", d)
                 return JSON.stringify({
                     draw: d.draw,
                     start: d.start,
@@ -561,21 +491,23 @@ function fn_FiltrarDados() {
             // COLUNA - control (sempre visível — prioridade máxima)
             { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
             // COLUNA - codigoAceca (2ª a aparecer no mobile)
-            { data: 'CodigoAceca', className: 'text-center', width: '90px', responsivePriority: 2, orderable: true, },
+            { data: 'CodigoAceca', className: 'text-center text-nowrap', width: '90px', responsivePriority: 2, orderable: true, },
             // COLUNA - nomeMarca (3ª a aparecer no mobile)
-            { data: 'NomeMarca', className: 'text-center', width: '120px' , responsivePriority: 3 },
+            { data: 'NomeMarca', className: 'text-start', width: '120px' , responsivePriority: 3 },
             // COLUNA - imagem (some primeiro no mobile)
             {
                 data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004,
                 render: function (data, type, row) {
-                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row?.CodigoAceca}" src="${data}">`;
+                    if (type !== 'display') return data || '';
+                    return `<img name="myImg" class="td-img cmyImg lazy-img" alt="${row?.CodigoAceca}" data-src="${data}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">`;
                 }
             },
             // COLUNA - imagemDetalhe
             {
                 data: 'ImgDetalheFull', className: 'text-center', responsivePriority: 10005,
                 render: function (data, type, row) {
-                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row?.CodigoAceca}" src="${data}">`;
+                    if (type !== 'display') return data || '';
+                    return `<img name="myImg" class="td-img cmyImg lazy-img" alt="Detalhe :: ${row?.CodigoAceca}" data-src="${data}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">`;
                 }
             },
             // COLUNA - descricao
@@ -583,8 +515,15 @@ function fn_FiltrarDados() {
             // COLUNA - fabricaNome
             {
                 data: 'NomeFabrica', className: 'text-center', responsivePriority: 10007,
+                
                 render: function (data, type, full) {
-                    return (data === '' || data === null) ? full.TxtFabrica : data;
+                    if (!data || full.Id === 0 || type !== 'display') return '';
+
+                    data = (data === '' || data === null || data === undefined) ? full.TxtFabrica : data;
+
+                    let nomeFabrica = (data === '' || data === null || data === undefined) ? '' : data?.trim()?.split(/\s+/).join("<br>");
+                    //console.log("nomeFabrica ::: ", nomeFabrica);
+                    return nomeFabrica;
                 }
             },
             // COLUNA - subTipo
@@ -592,7 +531,16 @@ function fn_FiltrarDados() {
             // COLUNA - finalidade
             { data: 'NomeFinalidade', className: 'text-center', responsivePriority: 10009 },
             // COLUNA - nomeFase
-            { data: 'NomeFase', className: 'text-center', responsivePriority: 10010 },
+            {
+                data: 'NomeFase', className: 'text-center text-nowrap', responsivePriority: 10010,
+                render: function (data, type, full) {
+                    if (!data || full.Id === 0 || type !== 'display') return '';
+
+                    const nomeFase = data?.trim()?.split(/\s+/).join("<br>");
+
+                    return nomeFase;
+                }
+            },
             // COLUNA - incluidoPor (avatar)
             {
                 data: 'IncluidoPor', className: 'text-center', responsivePriority: 10011,
@@ -646,15 +594,31 @@ function fn_FiltrarDados() {
                                     <ul class="dropdown-menu dropdown-menu-end m-0">
                                             <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
                                         <div class="dropdown-divider"></div>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Tenho na Coleção</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNaoQuero',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-information-off-line icon-md me-2"></i>Não Quero</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoTroca',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-checkbox-multiple-line icon-md me-2"></i>Para Troca</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoVenda',${socioId});" class="dropdown-item edit-record"><i class="icon-base ri ri-shopping-cart-2-line icon-md me-2"></i>Para Venda</a></li>
-                                        <div class="dropdown-divider"></div>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete',${socioId});" class="dropdown-item text-danger delete-record"><i class="icon-base ri ri-delete-bin-7-line icon-md me-2"></i>Remover da Coleção</a></li>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Incluir na Coleção</a></li>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>                                            
                                     </ul>
                                 </div>`;
+
+                                /*
+
+                                  return (
+                                          '<div class="d-flex align-items-center">' +
+                                          '<a href="javascript:;" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect delete-record" data-bs-toggle="tooltip" title="Delete Invoice"><i class="ri-delete-bin-7-line ri-22px"></i></a>' +
+                                          '<a href="' +
+                                          userView +
+                                          '" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect" data-bs-toggle="tooltip" title="Preview"><i class="ri-eye-line ri-22px"></i></a>' +
+                                          '<button class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line ri-22px"></i></button>' +
+                                          '<div class="dropdown-menu dropdown-menu-end m-0">' +
+                                          '<a href="' +
+                                          userView +
+                                          '" class="dropdown-item"><i class="ri-eye-line me-2"></i><span>View</span></a>' +
+                                          '<a href="javascript:;" class="dropdown-item"><i class="ri-edit-box-line me-2"></i><span>Edit</span></a>' +
+                                          '<a href="javascript:;" class="dropdown-item delete-record"><i class="ri-delete-bin-7-line me-2"></i><span>Delete</span></a>' +
+                                          '</div>' +
+                                          '</div>'
+                                        );
+
+                                */
                         } else {
 
                             btns = `<div class="d-inline-block text-nowrap">
@@ -981,7 +945,9 @@ function fn_GridComplete(grid) {
 
     //Titulo Tabela
     let var_MarcaAcervo = document.getElementById('hdMarcaAcervoNome').value;
-    $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome} - ${var_MarcaAcervo}</h5>`);
+    let var_MarcaFase = $('#cmb_MarcaFase').find('option:selected').text();
+
+    $('div.head-label').html(`<h5 class="card-title mb-0">${var_Nome} - ${var_MarcaFase}</h5>`);
 
     $(".card-datatable").show();
 
@@ -1041,6 +1007,45 @@ function fn_GridComplete(grid) {
 
 //#region IMAGENS
 
+//#region ZOOM
+
+function fn_InitZoom() {
+
+    if (document.getElementById('imgZoomModal')) return;
+
+    $('body').append(`
+        <div id="imgZoomModal" style="
+            display:none;position:fixed;inset:0;
+            background:rgba(0,0,0,0.85);
+            z-index:99999;
+            align-items:center;
+            justify-content:center;">
+            <img id="imgZoomTarget" style="
+                max-width:95vw;
+                max-height:95vh;">
+        </div>
+    `);
+
+    $('#imgZoomModal').click(function () {
+        $(this).hide();
+    });
+}
+
+function fn_ZoomImg(src) {
+    $('#imgZoomTarget').attr('src', src);
+    $('#imgZoomModal').css('display', 'flex');
+}
+
+function fn_ZoomImgClose() {
+    const modal = document.getElementById('myModal');
+
+    if (modal) {
+        modal.style.display = 'none'; // Hides the div
+    }
+}
+
+//#endregion
+
 document.addEventListener('hidden.bs.modal', function (event) {
     if (document.activeElement) {
         document.activeElement.blur();
@@ -1075,18 +1080,20 @@ function fn_Zoom() {
 }
 
 function fn_LazyLoad() {
-    const images = document.querySelectorAll('.lazy-img');
+    const images = document.querySelectorAll('img.lazy-img[data-src]');
+    if (!images.length) return;
 
     const observer = new IntersectionObserver((entries, obs) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const img = entry.target;
                 img.src = img.dataset.src;
+                img.removeAttribute('data-src');
                 img.classList.remove('lazy-img');
                 obs.unobserve(img);
             }
         });
-    });
+    }, { rootMargin: '300px 0px' });
 
     images.forEach(img => observer.observe(img));
 }
@@ -1892,13 +1899,14 @@ function fnItem_Edit(varItems_Row) {
 
 //#region COLECAO
 
-function fnItem_Colecao(obj, action, socioId) {
+function fnItem_Colecao(obj, action) {
 
     let marcaId = obj?.Id;
     let actionId = -1;
+    const socioId = document.getElementById('hdSocioLogadoId').value;
 
-    console.log("fnItem_Colecao obj ::: ", obj);
-    console.log("fnItem_Colecao action::: ", action);
+    //console.log("fnItem_Colecao obj ::: ", obj);
+    //console.log("fnItem_Colecao action::: ", action);
 
     if ((marcaId === undefined || marcaId === null || marcaId === '' || marcaId < 1)
         || (socioId === undefined || socioId === null || socioId === '' || socioId < 1)
@@ -1917,23 +1925,17 @@ function fnItem_Colecao(obj, action, socioId) {
         });
     } else {
         switch (action) {
+            case 'ColecaoDelete':
+                actionId = 0;
+                break;
             case 'ColecaoIncluir':
                 actionId = 1;
                 break;
             case 'ColecaoInteresse':
                 actionId = 2;
                 break;
-            case 'ColecaoNaoQuero':
+            case 'ColecaoNegociar':
                 actionId = 3;
-                break;
-            case 'ColecaoTroca':
-                actionId = 4;
-                break;
-            case 'ColecaoVenda':
-                actionId = 5;
-                break;
-            case 'ColecaoDelete':
-                actionId = 0;
                 break;
             default:
                 actionId = -1;
@@ -1944,9 +1946,9 @@ function fnItem_Colecao(obj, action, socioId) {
         $.ajax({
             url: `/SocioColecao/ActionColecao`,
             type: 'POST',
-            dataType: 'JSON',
             data: {
-                itemId: marcaId,
+                itemColecaoId: 0,
+                marcaId: marcaId,
                 actionId: actionId,
                 socioId: socioId,
                 isPerfil: document.getElementById('hdIsPerfil').value
@@ -1960,13 +1962,15 @@ function fnItem_Colecao(obj, action, socioId) {
                 Swal.fire({
                     title: 'Dados Salvos!',
                     icon: 'success',
-                    text: 'Marca cadastrada com sucesso.',
+                    text: 'Coleção atualizada com sucesso.',
                     customClass: {
                         confirmButton: 'btn btn-success waves-effect waves-light'
                     }
                 }).then((resultSucesso) => {
-                    window.location.reload();
-                    //console.log("resultSucesso  :: ", resultSucesso);
+                    //window.location.reload();
+                    console.log("resultSucesso  :: ", resultSucesso);
+                   
+                    table.ajax.reload(null, false); 
                 });
 
                 return true;

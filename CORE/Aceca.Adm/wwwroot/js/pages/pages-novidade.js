@@ -292,40 +292,6 @@ function fn_FiltrosLoad() {
 
 //#region GRID
 
-function fn_InitZoom() {
-
-    if (document.getElementById('imgZoomModal')) return;
-
-    $('body').append(`
-        <div id="imgZoomModal" style="
-            display:none;position:fixed;inset:0;
-            background:rgba(0,0,0,0.85);
-            z-index:99999;
-            align-items:center;
-            justify-content:center;">
-            <img id="imgZoomTarget" style="
-                max-width:95vw;
-                max-height:95vh;">
-        </div>
-    `);
-
-    $('#imgZoomModal').click(function () {
-        $(this).hide();
-    });
-}
-function fn_ZoomImg(src) {
-    $('#imgZoomTarget').attr('src', src);
-    $('#imgZoomModal').css('display', 'flex');
-}
-
-function fn_ZoomImgClose() {
-    const modal = document.getElementById('myModal');
-
-    if (modal) {
-        modal.style.display = 'none'; // Hides the div
-    }
-}
-
 function fn_FiltrarDados() {
     //console.log("bfn_FiltrarDados ::: ");
     var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
@@ -415,7 +381,13 @@ function fn_FiltrarDados() {
             {
                 data: 'NomeFabrica', className: 'text-center', responsivePriority: 10007,
                 render: function (data, type, full) {
-                    return (data === '' || data === null) ? full.TxtFabrica : data;
+                    if (!data || full.Id === 0 || type !== 'display') return '';
+
+                    console.log("NomeFabrica data ::: ", data);
+                    let nomeFabrica = (data === '' || data === null) ? full.TxtFabrica : data;
+
+                    nomeFabrica = nomeFabrica?.trim()?.split(/\s+/).join("<br>");
+                    return nomeFabrica;
                 }
             },
             // COLUNA - subTipo
@@ -423,7 +395,16 @@ function fn_FiltrarDados() {
             // COLUNA - finalidade
             { data: 'NomeFinalidade', className: 'text-center', responsivePriority: 10009 },
             // COLUNA - nomeFase
-            { data: 'NomeFase', className: 'text-center', responsivePriority: 10010 },
+            {
+                data: 'NomeFase', className: 'text-center text-nowrap', responsivePriority: 10010,
+                render: function (data, type, full) {
+                    if (!data || full.Id === 0 || type !== 'display') return '';
+
+                    const nomeFase = data?.trim()?.split(/\s+/).join("<br>");
+
+                    return nomeFase;
+                }
+            },
             // COLUNA - incluidoPor (avatar)
             {
                 data: 'IncluidoPor', className: 'text-center', responsivePriority: 10011,
@@ -793,6 +774,45 @@ function fn_GridComplete(grid) {
 //#endregion
 
 //#region IMAGENS
+
+//#region ZOOM
+
+function fn_InitZoom() {
+
+    if (document.getElementById('imgZoomModal')) return;
+
+    $('body').append(`
+        <div id="imgZoomModal" style="
+            display:none;position:fixed;inset:0;
+            background:rgba(0,0,0,0.85);
+            z-index:99999;
+            align-items:center;
+            justify-content:center;">
+            <img id="imgZoomTarget" style="
+                max-width:95vw;
+                max-height:95vh;">
+        </div>
+    `);
+
+    $('#imgZoomModal').click(function () {
+        $(this).hide();
+    });
+}
+
+function fn_ZoomImg(src) {
+    $('#imgZoomTarget').attr('src', src);
+    $('#imgZoomModal').css('display', 'flex');
+}
+
+function fn_ZoomImgClose() {
+    const modal = document.getElementById('myModal');
+
+    if (modal) {
+        modal.style.display = 'none'; // Hides the div
+    }
+}
+
+//#endregion
 
 document.addEventListener('hidden.bs.modal', function (event) {
     if (document.activeElement) {

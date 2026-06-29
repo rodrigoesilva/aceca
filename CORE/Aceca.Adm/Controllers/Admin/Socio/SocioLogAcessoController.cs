@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
-namespace Aceca.Adm.Controllers.Admin.Usuario
+namespace Aceca.Adm.Controllers.Admin.Socio
 {
     public class SocioLogAcessoController : Controller
     {

@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
 using static Aceca.Adm.Helper.HelperExtensionsController;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
@@ -254,7 +253,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     var jObj = JObject.Parse(objJsonResulCreateSocioSegurancaReturnApi.ToString());
 
-                    var user = JsonConvert.DeserializeObject<SocioSeguranca>(jObj?.SelectToken("Result.Value.data")?.ToString());
+                    var user = JsonConvert.DeserializeObject<SocioSeguranca>(jObj?.SelectToken("data")?.ToString());
 
                     #endregion
 
@@ -322,16 +321,19 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     var strToken = _helperController.GenerateSecuretToken();
 
-                    // Armazena no usuário (campos que precisam existir no model Usuario)
-                    user.ResetPasswordToken = strToken;
-                    user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
-                    await _db.SaveChangesAsync();
+                    var trackedUser = await _db.SocioSeguranca.FirstOrDefaultAsync(x => x.Id == user.Id);
+                    if (trackedUser != null)
+                    {
+                        trackedUser.ResetPasswordToken = strToken;
+                        trackedUser.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
+                        await _db.SaveChangesAsync();
+                    }
 
                     // Monta link de reset
                     var resetLink = $"{_urlBaseApp}/Auth/NewRegistration?token={Uri.EscapeDataString(strToken)}&email={Uri.EscapeDataString(user.Email)}";
 
                     // Envia e-mail
-                    var resultSendMail = await _helperController.EnviarEmailAsync(ETipoEmail.Cadastro, user.Email, user.Socio.Nome, resetLink);
+                    var resultSendMail = await _helperController.EnviarEmailAsync(ETipoEmail.Cadastro, user.Email, model.Nome, resetLink);
 
                     if (resultSendMail.GetType() == typeof(NotFoundObjectResult) ||
                         resultSendMail.GetType() == typeof(BadRequestObjectResult))
@@ -343,15 +345,13 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             data = user.Email
                         });
 
-                    return Ok(new { bResult = true, message = "E-mail enviado com sucesso." });
-
                     #endregion
 
                     return Ok(new
                     {
                         bResult = true,
                         type = "OK",
-                        message = "SUCESSO ::: ",
+                        message = "E-mail enviado com sucesso",
                         data = model,
                     });
                 }
@@ -435,12 +435,12 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     var newModelSocioContato = new Models.SocioContato
                     {
-                        Id = model.SocioContatoId,
-                        SocioId = model.Id,
-                        DDI = model.DDI != null ? model.DDI : 55,
-                        DDD = !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt16(model.Telefone.Split(")")[0].Trim().Replace("(", string.Empty)) : null,
-                        Telefone = !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt64(model.Telefone.Split(")")[1].Trim()) : null,
-                        Email = model.Email,
+                        Id = model?.SocioContatoId,
+                        SocioId = model?.Id,
+                        DDI = model?.DDI != null ? model?.DDI : 55,
+                        DDD = !string.IsNullOrEmpty(model?.Telefone) ? Convert.ToInt16(model?.Telefone?.Split(")")[0]?.Trim().Replace("(", string.Empty)) : null,
+                        Telefone = !string.IsNullOrEmpty(model?.Telefone) ? Convert.ToInt64(model?.Telefone?.Split(")")[1]?.Trim()) : null,
+                        Email = model?.Email,
                     };
 
                     _db.Entry(newModelSocioContato).State = EntityState.Modified;
@@ -598,15 +598,13 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             {
                 var newModel = new SocioSeguranca();
 
-                using (MD5 md5Hash = MD5.Create())
-                {
-                    string strTempPass = _helperController.GenerateStringPassword(8);
+                string strTempPass = _helperController.GenerateStringPassword(8);
 
                     newModel = new SocioSeguranca
                     {
                         SocioId = (int)model.Id,
                         Email = model?.Email?.Trim()?.ToLower(),
-                        Senha = _helperController.GenerateMD5HashPassword(md5Hash, strTempPass),
+                        Senha = _helperController.GenerateHashPassword(strTempPass),
                         SenhaAberta = strTempPass,
                         SenhaAtualizada = false,
                         NomeUsuario = model?.Nome,
@@ -615,10 +613,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         ResetPasswordToken = null,
                         ResetPasswordTokenExpiry = null,
                     };
-                }
 
                 _db.SocioSeguranca.Add(newModel);
-                _db.SaveChanges();
+                await _db.SaveChangesAsync();
 
                 var newSocioContatoId = newModel?.Id;
 
@@ -627,7 +624,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
-                    data = model,
+                    data = newModel,
                 });
             }
             catch (Exception ex)

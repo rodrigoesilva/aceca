@@ -155,8 +155,6 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     _db.Entry(model).State = EntityState.Modified;
                     _db.SaveChanges();
 
-                    model?.Id = model?.Id;
-
                     if (model?.Id <= 0)
                         return BadRequest(new
                         {
@@ -191,15 +189,12 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
 
                     // Atualiza senha
-                    using (MD5 md5Hash = MD5.Create())
-                    {
-                        string strTempPass = _helperController.GenerateStringPassword(8);
+                    string strTempPass = _helperController.GenerateStringPassword(8);
 
-                        string hash = _helperController.GenerateMD5HashPassword(md5Hash, strTempPass);
+                        string hash = _helperController.GenerateHashPassword(strTempPass);
                         newModelSocio.Senha = hash;
                         newModelSocio.SenhaAberta = strTempPass;
                         newModelSocio.SenhaAtualizada = false;
-                    }
 
                     _db.Entry(newModelSocio).State = EntityState.Modified;
                     _db.SaveChanges();

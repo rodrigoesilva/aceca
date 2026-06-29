@@ -20,7 +20,7 @@
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
     <!-- Form Validation -->
-    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css"/>
+    <link rel="stylesheet" href="~/vendor/libs/@@form-validation/form-validation.css"/>
 
 
     <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
@@ -44,9 +44,9 @@
     <script src="~/vendor/libs/moment/moment.js"></script>
     <script src="~/vendor/libs/flatpickr/flatpickr.js"></script>
     <!-- Form Validation -->
-    <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
-    <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
-    <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+    <script src="~/vendor/libs/@@form-validation/popular.js"></script>
+    <script src="~/vendor/libs/@@form-validation/bootstrap5.js"></script>
+    <script src="~/vendor/libs/@@form-validation/auto-focus.js"></script>
 
 
     <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
@@ -85,8 +85,21 @@
             <!-- LINHA 01 -->
             <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
 
+                <!-- Status Colecao  -->
+                <div class="col-sm-6 col-lg-3">
+                    <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
+                        <div>
+                            <p class="mb-1">* Status</p>
+                            <select id="cmb_ColecaoStatus" class="select2 form-select form-select">
+                                <option value="-1">-- Todos --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <hr class="d-none d-sm-block d-lg-none me-6">
+                </div>
+               
                 <!-- Fase -->
-                <div class="col-sm-6 col-lg-4">
+                <div class="col-sm-6 col-lg-3">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Fase</p>
@@ -99,7 +112,7 @@
                 </div>
 
                 <!-- Tipo-->
-                <div class="div_MarcaTipo col-sm-6 col-lg-4">
+                <div class="div_MarcaTipo col-sm-6 col-lg-3">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Tipo</p>
@@ -112,7 +125,7 @@
                 </div>
 
                 <!-- Sub-Tipo -->
-                <div class="div_MarcaSubTipo col-sm-6 col-lg-4">
+                <div class="div_MarcaSubTipo col-sm-6 col-lg-3">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Sub-Tipo</p>
@@ -195,11 +208,9 @@
                     <th class="text-start w-50">Descri&ccedil;&atilde;o</th>
                     <th>F&aacute;brica</th>
                     <th>Tipo</th>
-                    <th>Finalidade</th>
-                    <th>Fase</th>
-                    <th class="text-nowrap text-center">Inclu&iacute;do por</th>
-                    <th>Inclu&iacute;do por</th>
-                    <th>A&ccedil;&otilde;es</th>
+                    <th>Fase</th>                                   
+                    <th class="text-nowrap text-center">Observa&ccedil;&atilde;o</th>
+                    <th></th>@*<th>A&ccedil;&otilde;es</th> *@
                 </tr>
             </thead>
         </table>
@@ -212,5 +223,41 @@
     <img class="modal-content" id="img01">
 </div>
 
-<!-- marca modal -->
-@await Html.PartialAsync("../../_Partials/_Modals/ModalMarca.cshtml")
+<!-- Modal Add new Item -->
+<div class="offcanvas offcanvas-end" id="pop-add-new-item">
+    <div class="offcanvas-header border-bottom">
+        <input type="hidden" id="hdId" name="hdId" value="0" />
+        <input type="hidden" id="hdIdMarca" name="hdIdMarca" value="0" />
+        <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body flex-grow-1">
+        <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_01" class="input-group-text"></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01"
+                               placeholder="observacao" aria-label="Observacao" aria-describedby="line_item_01" />
+                        <label for="pop_line_item_01">Observa&ccedil;&atilde;o</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" id="pop_line_item_05" class="form-check-input dt-line-05"
+                               name="pop_line_item_05" placeholder="Negociacao" aria-label="Negociacao"
+                               aria-describedby="line_item_03" />
+                        <label class="form-check-label" for="pop_line_item_05">Para Negocia&ccedil;&atilde;o</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <button id="btn-submit-modal" type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
+                <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>
+            </div>
+        </form>
+
+    </div>
+</div>

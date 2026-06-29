@@ -1,5 +1,19 @@
-﻿namespace Aceca.Adm.Models
+﻿using static Aceca.Adm.Helper.HelperExtensionsController;
+
+namespace Aceca.Adm.Models
 {
+    public class FiltroRequestColecao
+    {
+        public int? SocioId { get; set; }
+
+        public EColecaoStatus ColecaoStatus { get; set; }
+        public bool Possui { get; set; }
+        public bool Interesse { get; set; }
+        public bool DisponivelTroca { get; set; } = true;
+        public bool DisponivelVenda { get; set; } = true;
+        public decimal ValorVenda { get; set; }
+        public string Observacao { get; set; }
+    }
     public class FiltroRequestMarca
     {
         public int? MarcaAcervoId { get; set; }
@@ -38,5 +52,7 @@
         public FilterDataSearchMarca Search { get; set; }
 
         public FiltroRequestMarca Filtros { get; set; }
+
+        public FiltroRequestColecao FiltrosColecao { get; set; }
     }
 }
