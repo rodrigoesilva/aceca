@@ -98,9 +98,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fn_Zoom();
 
-        fn_AuthSession();
-
-
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' || event.key === 'Enter') {
                 //console.log("Esc ::: ");
@@ -108,7 +105,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        fn_FiltrarDados();
+        // Carrega dados somente após sessão garantida (hdSocioLogadoId preenchido)
+        fn_AuthSession(fn_FiltrarDados);
     })();
 });
 

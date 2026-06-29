@@ -39,10 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var pgLogin = document.querySelector(".pg-login");
 
         if (pgLogin === null) {
-            const intervalId = setInterval(() => {
-                //console.log("Executando a cada 2 segundos");
-                //fn_UpdateClock();
-            }, 1000);
+            fn_AuthSession();
         }
 
         $('.btn-logout').on('click', function () {
@@ -116,25 +113,27 @@ function fn_AuthOut() {
     }
 }
 
-function fn_AuthSession() {
+function fn_AuthSession(callback) {
     if (sessionStorage?.getItem("aceca_sessao") !== null) {
         var sessionData = JSON.parse(sessionStorage.getItem("aceca_sessao"));
         if (sessionData !== null) {
             fn_SetSessionData(sessionData);
+            if (callback) callback();
         } else {
-            fn_RestoreSession();
+            fn_RestoreSession(callback);
         }
     } else {
-        fn_RestoreSession();
+        fn_RestoreSession(callback);
     }
 }
-function fn_RestoreSession() {
+function fn_RestoreSession(callback) {
     $.ajax({
         url: '/Auth/GetSessionData',
         type: 'GET',
         success: function (data) {
             sessionStorage.setItem('aceca_sessao', JSON.stringify(data));
             fn_SetSessionData(data);
+            if (callback) callback();
         },
         error: function () {
             fn_CleanUser();

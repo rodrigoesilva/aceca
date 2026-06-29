@@ -80,9 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fn_Zoom();
 
-        fn_AuthSession();
-
-        fn_Filtrar();
+        fn_AuthSession(fn_Filtrar);
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' || event.key === 'Enter') {

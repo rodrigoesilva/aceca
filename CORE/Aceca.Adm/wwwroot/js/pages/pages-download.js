@@ -67,15 +67,12 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
 
 
-        fn_AuthSession();
-
         // Form validation
         const formAddNewItem = document.getElementById('form-pop-add-new-item');
-
         formValid = fn_PopValidator(formAddNewItem);
 
-        // Carrega Dados Grid
-        fn_GridList(formValid);
+        // Carrega grid somente após sessão garantida
+        fn_AuthSession(() => fn_GridList(formValid));
 
     })();
 });
