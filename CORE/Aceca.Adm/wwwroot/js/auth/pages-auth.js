@@ -114,7 +114,7 @@ async function fn_LoginAuth() {
 
                 fn_LoginAuthGeo(user.nameIdentifier);
 
-                fn_LoginCkSet(_cka, user?.nome?.split(" ")[0], 60);
+                fn_LoginCkSet(_cka, user?.nome?.split(" ")[0], 1440); // 24h (teto absoluto da sessão)
                 sessionStorage.setItem('aceca_sessao', JSON.stringify(user));
 
                 loginSubmitButton.disabled = false;
@@ -228,56 +228,106 @@ function fn_LoginAuthIni() {
 
     //console.log(`fn_LoginAuthIni ::`);
 
-    let userCk = fn_LoginCkGet(_cka);
+    const userCk         = fn_LoginCkGet(_cka);
+    const urlParams      = new URLSearchParams(window.location.search);
+    const comingExpired  = urlParams.get('expired') === '1';
 
-    if (userCk != "") {
+    if (userCk !== "") {
 
-        //console.log(`AUTH fn_LoginAuthIni - userCk :: `, userCk.split("|"));
+        if (fn_LoginSessionIsValid()) {
+            // Sessão ainda válida: exibe boas-vindas e redireciona
 
-        if (sessionStorage?.getItem("aceca_sessao") !== null) {
-            _sessionDataAuth = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+            //console.log(`AUTH fn_LoginAuthIni - userCk :: `, userCk.split("|"));
 
-            if (_sessionDataAuth !== null) {
-                fn_LoginAuthGeo(_sessionDataAuth?.nameIdentifier);
+            if (sessionStorage?.getItem("aceca_sessao") !== null) {
+                _sessionDataAuth = JSON.parse(sessionStorage.getItem("aceca_sessao"));
+                if (_sessionDataAuth !== null) {
+                    fn_LoginAuthGeo(_sessionDataAuth?.nameIdentifier);
+                }
             }
+
+            Swal.fire({
+                title: `Ol&aacute; ${userCk.split("|")[0].trim()}!`,
+                html: `Seja bem-vindo novamente`,
+                imageUrl: `${urlImgModaltext}`,
+                imageWidth: 400,
+                imageAlt: `${var_ImgAlt}`,
+                focusConfirm: false,
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: {
+                    confirmButton: 'btn btn-primary waves-effect waves-light'
+                },
+            }).then(() => {
+                window.location.href = '/Auth/Access';
+            });
+
+        } else {
+            // Cookie presente mas timestamps indicam expiração (browser fechado + reaberto)
+            fn_LoginLimpar();
+            fn_LoginShowExpiredAlert();
         }
 
-
-        Swal.fire({
-            title: `Ol&aacute; ${userCk.split("|")[0]}!`,
-            html: `Seja bem-vindo novamente`,
-            imageUrl: `${urlImgModaltext}`,
-            imageWidth: 400,
-            imageAlt: `${var_ImgAlt}`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-primary waves-effect waves-light'
-            },
-        }).then((result) => {
-            window.location.href = '/Auth/Access';
-        })
-    } else {
+    } else if (comingExpired) {
+        // Redirecionado da página SessionExpired
         fn_LoginLimpar();
+        fn_LoginShowExpiredAlert();
 
-        const loginFormAuthentication = document.querySelector('#frmLogin');
-
-        fn_LoginFormValidator(loginFormAuthentication);
-
-        loginSubmitButton.addEventListener('click', function (e) {
-
-            e.preventDefault();
-
-            if (loginFormValid) {
-                loginFormValid.validate().then(function (status) {
-
-                    if (status == 'Valid') {
-                        fn_LoginAuth();
-                    }
-                });
-            }
-        });
+    } else {
+        // Sem sessão anterior: exibe formulário normalmente
+        fn_LoginLimpar();
+        fn_LoginSetupForm();
     }
+}
+
+// Retorna true se a sessão local ainda está dentro dos limites de 2h ocioso / 24h absoluto
+function fn_LoginSessionIsValid() {
+    try {
+        const IDLE_MS    = 2 * 60 * 60 * 1000; // 2h
+        const lastAct    = parseInt(localStorage.getItem('aceca_last_activity'), 10) || 0;
+        const absExp     = parseInt(localStorage.getItem('aceca_abs_exp'), 10) || 0;
+        const now        = Date.now();
+
+        if (lastAct && (now - lastAct) >= IDLE_MS) return false;
+        if (absExp  && now >= absExp)               return false;
+
+        return true;
+    } catch (e) {
+        return true; // se não conseguir verificar, assume válido e deixa o servidor decidir
+    }
+}
+
+// Exibe Swal de sessão expirada e depois inicializa o formulário de login
+function fn_LoginShowExpiredAlert() {
+    fn_LoginSetupForm();
+
+    Swal.fire({
+        icon: 'warning',
+        title: 'Sess&atilde;o expirada',
+        html: 'Sua sess&atilde;o expirou.<br>Fa&ccedil;a o login novamente para continuar.',
+        focusConfirm: true,
+        confirmButtonText: `<i class="ri-lock-password-line"></i>&nbsp;Fazer login`,
+        customClass: {
+            confirmButton: 'btn btn-label-warning waves-effect'
+        }
+    });
+}
+
+// Inicializa validação e evento de submit do formulário de login
+function fn_LoginSetupForm() {
+    const loginFormAuthentication = document.querySelector('#frmLogin');
+
+    fn_LoginFormValidator(loginFormAuthentication);
+
+    loginSubmitButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (loginFormValid) {
+            loginFormValid.validate().then(function (status) {
+                if (status == 'Valid') {
+                    fn_LoginAuth();
+                }
+            });
+        }
+    });
 }
 
 function fn_LoginLimpar() {
@@ -372,7 +422,7 @@ function fn_LoginCkSet(cname, cvalue, exmins ) {
         return `${cvalue}|${v.toString(16) }${hash}`;
     });
 
-    d.setTime(d.getTime() + (exmins * 1000));
+    d.setTime(d.getTime() + (exmins * 60 * 1000)); // exmins em minutos → ms
     let expires = `expires=${d.toUTCString()}`;
     let ckFull = `${cname}= ${hash};${expires};path=/`;
 

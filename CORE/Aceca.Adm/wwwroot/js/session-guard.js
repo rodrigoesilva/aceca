@@ -132,6 +132,12 @@
         window.addEventListener(ev, markActivity, { passive: true });
     });
 
+    // Persiste o teto absoluto no localStorage para que pages-auth.js possa
+    // verificar expiração mesmo sem ter acesso ao window.__aceca_session
+    if (absoluteExpiry) {
+        try { localStorage.setItem('aceca_abs_exp', String(absoluteExpiry)); } catch (e) { /* ignore */ }
+    }
+
     markActivity();                            // carregamento conta como atividade
     setInterval(checkSessionExpiry, CHECK_INTERVAL);
 })();
