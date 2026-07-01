@@ -602,7 +602,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         #endregion
 
         [HttpPost]
-        public async Task<IActionResult> ActionNegociacao(int socioId, int quantidadePossui, int socioLogadoId, int actionId, bool isPerfil)
+        public async Task<IActionResult> ActionNegociacao(int socioNegociacaoId, int quantidadePossui, int socioLogadoId, int actionId, bool isPerfil)
         {
             try
             {

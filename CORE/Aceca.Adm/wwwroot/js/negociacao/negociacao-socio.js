@@ -795,15 +795,17 @@ function fnItem_Negociacao(obj, action) {
     console.log("fnItem_Negociacao obj ::: ", obj);
     console.log("fnItem_Negociacao action::: ", action);
 
-    let socioId = obj?.Id;
+    let socioNegociacaoId = obj?.socioId;
     let quantidadePossui = obj?.quantidadePossui;
     let actionId = -1;
 
     const socioLogadoId = document.getElementById('hdSocioLogadoId').value;
 
-    //console.log("fnItem_Negociacao socioId::: ", socioId);
+    console.log("fnItem_Negociacao socioNegociacaoId::: ", socioNegociacaoId);
+    console.log("fnItem_Negociacao quantidadePossui::: ", quantidadePossui);
+    console.log("fnItem_Negociacao socioLogadoId::: ", socioLogadoId);
 
-    if ((socioId === undefined || socioId === null || socioId === '' || socioId < 1)
+    if ((socioNegociacaoId === undefined || socioNegociacaoId === null || socioNegociacaoId === '' || socioNegociacaoId < 1)
         || (quantidadePossui === undefined || quantidadePossui === null || quantidadePossui === '' || quantidadePossui < 1)
         || (socioLogadoId === undefined || socioLogadoId === null || socioLogadoId === '' || socioLogadoId < 1)
     ) {
@@ -842,7 +844,7 @@ function fnItem_Negociacao(obj, action) {
             type: 'POST',
             dataType: 'JSON',
             data: {
-                socioId: socioId,
+                socioNegociacaoId: socioNegociacaoId,
                 quantidadePossui: quantidadePossui,
                 socioLogadoId: socioLogadoId,
                 actionId: actionId,
