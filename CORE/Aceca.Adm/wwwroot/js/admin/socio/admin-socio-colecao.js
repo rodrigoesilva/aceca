@@ -393,7 +393,7 @@ function fn_FiltrarDados() {
                 render: function (data, type, full) {
                     if (!data || full.Id === 0 || type !== 'display') return '';
 
-                    const codigoAceca = data.split('/').join("<br><br>");
+                    const codigoAceca = `${data.split('/').join("<br><br>")} / ${full.Id}`;
 
                     return codigoAceca;
                 }
@@ -1342,7 +1342,6 @@ function fnItem_Colecao(obj, action) {
                 actionId = 0;
                 break;
             case 'ColecaoIncluir':
-            case 'ColecaoObs':
                 actionId = 1;
                 break;
             case 'ColecaoInteresse':
@@ -1350,6 +1349,9 @@ function fnItem_Colecao(obj, action) {
                 break;
             case 'ColecaoNegociar':
                 actionId = 3;
+                break;
+            case 'ColecaoObs':
+                actionId = 4;
                 break;
             default:
                 actionId = -1;
@@ -1367,7 +1369,8 @@ function fnItem_Colecao(obj, action) {
                 actionId: actionId,
                 socioId: socioId,
                 isPerfil: document.getElementById('hdIsPerfil').value,
-                itemColecaoObs: itemColecaoObs
+                itemColecaoObs: itemColecaoObs,
+                disponivelNegocio: obj?.Disponivel_negocio === true
             },
             success: function (response) {
                 

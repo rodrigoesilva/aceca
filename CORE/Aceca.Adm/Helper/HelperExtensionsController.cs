@@ -99,6 +99,7 @@ namespace Aceca.Adm.Helper
             ColecaoIncluir = 1,
             ColecaoInteresse = 2,
             ColecaoNegociar = 3,
+            ColecaoObs = 4,
         }
 
         public enum ENegociacaoAcao

@@ -248,7 +248,7 @@ namespace Aceca.Adm.Controllers.Pages
                     SELECT
                         sc.id AS Id,
                         m.id AS IdMarca,
-                        sc.id AS IdSocio,
+                        sc.socioId AS IdSocio,
                         ma.id AS IdMarcaAcervo,
                         mf.id AS IdMarcaFase,
 
@@ -333,7 +333,7 @@ namespace Aceca.Adm.Controllers.Pages
         #endregion
 
         [HttpPost]
-        public async Task<IActionResult> ActionColecao(int itemColecaoId, int marcaId, int actionId, int socioId, bool isPerfil, string itemColecaoObs)
+        public async Task<IActionResult> ActionColecao(int itemColecaoId, int marcaId, int actionId, int socioId, bool isPerfil, string itemColecaoObs, bool disponivelNegocio = false)
         {
             try
             {
@@ -342,32 +342,20 @@ namespace Aceca.Adm.Controllers.Pages
 
                 IActionResult response = Ok();
 
-                bool bDispoivelNegocio = false;
-                bool bInteresse = false;
-
                 switch ((EColecaoAcao)actionId)
                 {
                     case EColecaoAcao.ColecaoDelete:
                         response = await RemoverItemAsync(itemColecaoId);
                         break;
                     case EColecaoAcao.ColecaoIncluir:
-                        response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bInteresse, itemColecaoObs);
-                        break;
                     case EColecaoAcao.ColecaoInteresse:
-                        {
-                            bInteresse = true;
-                            response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bInteresse, itemColecaoObs);
-                        }
-                        break;
                     case EColecaoAcao.ColecaoNegociar:
-                        {
-                            bDispoivelNegocio = true;
-                            response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bInteresse, itemColecaoObs);
-                        }
+                    case EColecaoAcao.ColecaoObs:
+                        response = await AdicionarOuAtualizarItemAsync(marcaId, socioId, (EColecaoAcao)actionId, disponivelNegocio, itemColecaoObs);
                         break;
                     default:
                         break;
-                }                
+                }
 
                 return Ok(new
                 {
@@ -390,15 +378,19 @@ namespace Aceca.Adm.Controllers.Pages
                 });
             }
         }
-        public async Task<IActionResult> AdicionarOuAtualizarItemAsync(int itemColecaoId, int marcaId, int socioId, bool disponivelNegocio, bool interesse, string itemColecaoObs)
+
+        /// <summary>
+        /// Cada ação altera exclusivamente o seu próprio flag (Possui / Interesse / DisponivelNegocio).
+        /// ColecaoObs apenas atualiza Observação/DisponivelNegocio (edição do modal), sem alternar
+        /// nenhum outro estado da coleção.
+        /// </summary>
+        public async Task<IActionResult> AdicionarOuAtualizarItemAsync(int marcaId, int socioId, EColecaoAcao acao, bool disponivelNegocio, string itemColecaoObs)
         {
             try
             {
                 using (var context = new AppDbContext())
                 {
                     var model = await context.SocioColecao
-                         .Include(x => x.Socio)
-                         .AsNoTracking()
                          .Where(x =>
                             x.SocioId == socioId &&
                             x.MarcaId == marcaId)
@@ -410,26 +402,37 @@ namespace Aceca.Adm.Controllers.Pages
                         {
                             SocioId = socioId,
                             MarcaId = marcaId,
-                            Possui = true,
-                            DisponivelNegocio = disponivelNegocio,
-                            Interesse = interesse
+                            Possui = acao == EColecaoAcao.ColecaoIncluir,
+                            Interesse = acao == EColecaoAcao.ColecaoInteresse,
+                            DisponivelNegocio = acao == EColecaoAcao.ColecaoNegociar
+                                || (acao == EColecaoAcao.ColecaoObs && disponivelNegocio),
+                            Observacao = !string.IsNullOrWhiteSpace(itemColecaoObs) ? itemColecaoObs.Trim() : null
                         };
 
                         context.SocioColecao.Add(model);
                     }
                     else
                     {
-                        if (interesse && !model.Possui) {
-                            var response = await RemoverItemAsync(itemColecaoId);
-                        }
-                        else
+                        switch (acao)
                         {
-                            model.DisponivelNegocio = !model.Possui ? disponivelNegocio : !model.DisponivelNegocio;
-                            model.Interesse = !model.Possui ? interesse : !model.Interesse;
-                            model.Observacao = !string.IsNullOrWhiteSpace(itemColecaoObs) ? itemColecaoObs?.Trim() : null;
-                            model.Possui = !model.Possui;
-                            context.SocioColecao.Update(model);
+                            case EColecaoAcao.ColecaoIncluir:
+                                model.Possui = !model.Possui;
+                                break;
+                            case EColecaoAcao.ColecaoInteresse:
+                                model.Interesse = !model.Interesse;
+                                break;
+                            case EColecaoAcao.ColecaoNegociar:
+                                model.DisponivelNegocio = !model.DisponivelNegocio;
+                                break;
+                            case EColecaoAcao.ColecaoObs:
+                                model.DisponivelNegocio = disponivelNegocio;
+                                break;
                         }
+
+                        if (!string.IsNullOrWhiteSpace(itemColecaoObs))
+                            model.Observacao = itemColecaoObs.Trim();
+
+                        context.SocioColecao.Update(model);
                     }
 
                     await context.SaveChangesAsync();
