@@ -399,6 +399,14 @@ namespace Aceca.Adm.Models
         public int? TipoPagamentoId { get; set; }
         public int? PagamentoEmDia { get; set; }
         [Column("dtUltimoPagamento")] public DateTime? DataUltimoPagamento { get; set; }
+
+        // Controle de envio dos avisos de vencimento (automação SocioFinanceiroCheckService).
+        // Guardam a data de vencimento (- 7 / - 2 dias) para a qual o aviso já foi disparado:
+        // se DataUltimoPagamento mudar (renovação), o vencimento recalculado não bate mais
+        // com o valor guardado, e o aviso volta a ser enviado no novo ciclo automaticamente.
+        [Column("data_aviso_vencimento_7dias")] public DateTime? DataAvisoVencimento7Dias { get; set; }
+        [Column("data_aviso_vencimento_2dias")] public DateTime? DataAvisoVencimento2Dias { get; set; }
+
         public Socio? Socio { get; set; }
         public TipoPagamento? TipoPagamento { get; set; }
     }

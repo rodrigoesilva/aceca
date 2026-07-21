@@ -198,11 +198,14 @@ function fn_CkRemove(_ck) {
 
 function fn_ImageProtect() {
 
+    // Seletor unificado: imagens do acervo na grid e no modal de zoom
+    var SEL = '.cmyImg, #imgZoomTarget';
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     function _imgMeta(img) {
         return {
-            codigoAceca: img?.getAttribute('data-codigo') || img?.getAttribute('data-id') || '',
+            codigoAceca: img?.getAttribute('data-codigo') || img?.getAttribute('data-id') || img?.alt || '',
             src:         img?.src || img?.getAttribute('data-src') || ''
         };
     }
@@ -221,87 +224,129 @@ function fn_ImageProtect() {
         var meta = _imgMeta(img);
         var ts   = new Date().toISOString();
         var fd   = new FormData();
-        fd.append('codigoAceca', meta.codigoAceca);
-        fd.append('imagemSrc',   meta.src);
+        fd.append('codigoAceca', meta.codigoAceca || '');
+        fd.append('imagemSrc',   meta.src         || '');
         fd.append('acao',        acao);
         fd.append('timestamp',   ts);
-        // silencioso — sem feedback visual
-        fetch('/Auth/ReportImageAccess', { method: 'POST', body: fd }).catch(() => {});
+        fetch('/Auth/ReportImageAccess', { method: 'POST', body: fd }).catch(function () {});
     }
 
-    // Cria canvas watermark e insere como overlay sobre a imagem alvo.
-    // Retorna a função de remoção para limpeza posterior.
+    // Cria overlay com selo 'PLÁGIO PROIBIDO' (aceca_plagio.jpeg) em mosaico diagonal
+    // sobre a imagem alvo. Retorna a função de remoção para limpeza posterior.
     function _watermark(img) {
-        var rect  = img.getBoundingClientRect();
-        var w     = rect.width  || img.naturalWidth  || 300;
-        var h     = rect.height || img.naturalHeight || 300;
+        var rect = img.getBoundingClientRect();
+        var w    = rect.width  || img.naturalWidth  || 300;
+        var h    = rect.height || img.naturalHeight || 300;
+        var diag = Math.ceil(Math.sqrt(w * w + h * h) * 1.2);
 
-        var canvas = document.createElement('canvas');
-        canvas.width  = w;
-        canvas.height = h;
-        canvas.style.cssText = [
+        var overlay = document.createElement('div');
+        overlay.style.cssText = [
             'position:fixed',
-            `left:${rect.left + window.scrollX}px`,
-            `top:${rect.top  + window.scrollY}px`,
-            `width:${w}px`,
-            `height:${h}px`,
+            'left:' + (rect.left + window.scrollX) + 'px',
+            'top:'  + (rect.top  + window.scrollY) + 'px',
+            'width:'  + w + 'px',
+            'height:' + h + 'px',
+            'overflow:hidden',
             'z-index:2147483647',
-            'pointer-events:none'
+            'pointer-events:none',
+            'background-color:rgba(255,255,255,0.45)'
         ].join(';');
 
-        var ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'rgba(255,255,255,0.55)';
-        ctx.fillRect(0, 0, w, h);
+        var stampSize = Math.max(90, Math.min(w / 2.2, 240));
+        var stamp = document.createElement('div');
+        stamp.style.cssText = [
+            'position:absolute',
+            'top:50%',
+            'left:50%',
+            'width:'  + diag + 'px',
+            'height:' + diag + 'px',
+            'transform:translate(-50%,-50%) rotate(-45deg)',
+            'background-image:url(/img/aceca_plagio.jpeg)',
+            'background-repeat:repeat',
+            'background-size:' + stampSize + 'px auto',
+            'opacity:0.6'
+        ].join(';');
 
-        ctx.save();
-        ctx.translate(w / 2, h / 2);
-        ctx.rotate(-Math.PI / 4);
-        ctx.font = `bold ${Math.max(14, Math.min(w / 12, 28))}px Arial`;
-        ctx.fillStyle = 'rgba(180,0,0,0.72)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        var lines = ['ACECA', 'CÓPIA NÃO AUTORIZADA'];
-        var lh = Math.max(18, Math.min(w / 10, 34));
-        lines.forEach(function (line, i) {
-            ctx.fillText(line, 0, (i - (lines.length - 1) / 2) * lh);
-        });
-        ctx.restore();
-
-        document.body.appendChild(canvas);
-        return function () { canvas.remove(); };
+        overlay.appendChild(stamp);
+        document.body.appendChild(overlay);
+        return function () { overlay.remove(); };
     }
+
+    // ── CSS base: impede seleção e arraste nativo em todas as imagens protegidas ──
+
+    (function () {
+        var s = document.createElement('style');
+        s.textContent = SEL + ' { -webkit-user-select:none!important; user-select:none!important; -webkit-touch-callout:none!important; -webkit-user-drag:none!important; }';
+        document.head.appendChild(s);
+    })();
+
+    // ── detecção de DevTools aberto ───────────────────────────────────────────
+    // Compara outerWidth/Height vs innerWidth/Height. Quando DevTools está
+    // encaixado (docked), ele reduz o innerWidth ou innerHeight. Threshold de
+    // 160px é conservador: a UI do browser (barra de endereços + abas) ocupa
+    // ~70–90px; DevTools ocupa no mínimo 200px.
+
+    var _devOpen = false;
+
+    function _devCheck() {
+        var wDiff = window.outerWidth  - window.innerWidth;
+        var hDiff = window.outerHeight - window.innerHeight;
+        var open  = wDiff > 160 || hDiff > 160;
+
+        if (open && !_devOpen) {
+            _devOpen = true;
+            _reportar(null, 'devtools-open');
+            document.querySelectorAll(SEL).forEach(function (el) {
+                el.style.filter = 'blur(14px)';
+            });
+        } else if (!open && _devOpen) {
+            _devOpen = false;
+            document.querySelectorAll(SEL).forEach(function (el) {
+                el.style.filter = '';
+            });
+        }
+    }
+
+    setInterval(_devCheck, 800);
 
     // ── variáveis de controle ─────────────────────────────────────────────────
 
     var _removeWatermark = null;
-    var _lastImg         = null;   // imagem mais recente alvo de zoom
+    var _lastImg         = null;
 
-    // ── rastrear qual .cmyImg foi clicada por último ──────────────────────────
+    // ── rastrear última imagem clicada ────────────────────────────────────────
 
-    $(document).on('click', '.cmyImg', function () {
+    $(document).on('click', SEL, function () {
         _lastImg = this;
     });
 
-    // ── contextmenu (botão direito) ───────────────────────────────────────────
+    // ── contextmenu: bloqueia botão direito em TODA a página ─────────────────
+    // Exceções: input, textarea, select e <a> — preserva colar e abrir link.
+    // Isso impede "Salvar como", "Imprimir" e "Salvar imagem como" do browser.
 
-    $(document).on('contextmenu', '.cmyImg', function (e) {
+    document.addEventListener('contextmenu', function (e) {
+        var tag = (e.target.tagName || '').toUpperCase();
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'A') return;
         e.preventDefault();
-        _reportar(this, 'contextmenu');
-        _swalAviso();
+        e.stopPropagation();
+        if (tag === 'IMG' && $(e.target).is(SEL)) {
+            _reportar(e.target, 'contextmenu');
+            _swalAviso();
+        }
+    }, true);
+
+    // ── drag: bloqueia arraste em TODAS as imagens ────────────────────────────
+
+    $(document).on('dragstart', 'img', function (e) {
+        e.preventDefault();
+        if ($(this).is(SEL)) _reportar(this, 'dragstart');
     });
 
-    // ── drag ─────────────────────────────────────────────────────────────────
-
-    $(document).on('dragstart', '.cmyImg', function (e) {
-        e.preventDefault();
-        _reportar(this, 'dragstart');
-    });
-
-    // ── copy (Ctrl+C / Cmd+C enquanto imagem está em foco) ───────────────────
+    // ── copy ─────────────────────────────────────────────────────────────────
 
     document.addEventListener('copy', function (e) {
         var active = document.activeElement;
-        if (active && active.matches && active.matches('.cmyImg')) {
+        if (active && active.matches && active.matches(SEL)) {
             e.preventDefault();
             _reportar(active, 'copy');
             _swalAviso();
@@ -314,32 +359,45 @@ function fn_ImageProtect() {
         var key  = e.key  || '';
         var code = e.code || '';
 
-        // PrintScreen
-        var isPrint = (key === 'PrintScreen' || code === 'PrintScreen');
-        // Ctrl+S / Ctrl+U / Ctrl+P
-        var isCtrlSave = e.ctrlKey && (key === 's' || key === 'S');
-        var isCtrlSrc  = e.ctrlKey && (key === 'u' || key === 'U');
-        var isCtrlPrint= e.ctrlKey && (key === 'p' || key === 'P');
+        var isPrint      = (key === 'PrintScreen' || code === 'PrintScreen');
+        var isF12        = (key === 'F12'  || code === 'F12');
+        var isCtrlShiftI = e.ctrlKey && e.shiftKey && (key === 'I' || key === 'i');
+        var isCtrlShiftJ = e.ctrlKey && e.shiftKey && (key === 'J' || key === 'j');
+        var isCtrlShiftC = e.ctrlKey && e.shiftKey && (key === 'C' || key === 'c');
+        var isCtrlShiftK = e.ctrlKey && e.shiftKey && (key === 'K' || key === 'k');
+        var isCtrlSave   = e.ctrlKey && !e.shiftKey && (key === 's' || key === 'S');
+        var isCtrlSrc    = e.ctrlKey && !e.shiftKey && (key === 'u' || key === 'U');
+        var isCtrlPrint  = e.ctrlKey && !e.shiftKey && (key === 'p' || key === 'P');
 
-        if (isPrint || isCtrlSave || isCtrlSrc || isCtrlPrint) {
-            e.preventDefault();
-            var img   = _lastImg;
-            var label = isPrint    ? 'printscreen'
-                      : isCtrlSave ? 'ctrl+s'
-                      : isCtrlSrc  ? 'ctrl+u'
-                      :              'ctrl+p';
+        var isDevTools = false;// isF12 || isCtrlShiftI || isCtrlShiftJ || isCtrlShiftC || isCtrlShiftK;
+        var isBlocked  = isPrint || isDevTools || isCtrlSave || isCtrlSrc || isCtrlPrint;
 
-            if (img) _reportar(img, label);
+        if (!isBlocked) return;
 
-            // watermark temporário sobre a última imagem visualizada
-            if (img) {
-                if (_removeWatermark) _removeWatermark();
-                _removeWatermark = _watermark(img);
-                setTimeout(function () {
-                    if (_removeWatermark) { _removeWatermark(); _removeWatermark = null; }
-                }, 4000);
-            }
+        e.preventDefault();
+        e.stopImmediatePropagation();
 
+        var img   = _lastImg;
+        var label = isPrint       ? 'printscreen'
+                  : isF12         ? 'f12'
+                  : isCtrlShiftI  ? 'ctrl+shift+i'
+                  : isCtrlShiftJ  ? 'ctrl+shift+j'
+                  : isCtrlShiftC  ? 'ctrl+shift+c'
+                  : isCtrlShiftK  ? 'ctrl+shift+k'
+                  : isCtrlSave    ? 'ctrl+s'
+                  : isCtrlSrc     ? 'ctrl+u'
+                  :                 'ctrl+p';
+
+        if (img) _reportar(img, label);
+
+        if (isDevTools) {
+            _swalAviso();
+        } else if (img) {
+            if (_removeWatermark) _removeWatermark();
+            _removeWatermark = _watermark(img);
+            setTimeout(function () {
+                if (_removeWatermark) { _removeWatermark(); _removeWatermark = null; }
+            }, 4000);
             _swalAviso();
         }
     }, true);
@@ -347,15 +405,14 @@ function fn_ImageProtect() {
     // ── beforeprint / afterprint ──────────────────────────────────────────────
 
     window.addEventListener('beforeprint', function () {
-        var img = _lastImg;
-        if (img) _reportar(img, 'print');
-        document.querySelectorAll('.cmyImg').forEach(function (el) {
+        if (_lastImg) _reportar(_lastImg, 'print');
+        document.querySelectorAll(SEL).forEach(function (el) {
             el.style.visibility = 'hidden';
         });
     });
 
     window.addEventListener('afterprint', function () {
-        document.querySelectorAll('.cmyImg').forEach(function (el) {
+        document.querySelectorAll(SEL).forEach(function (el) {
             el.style.visibility = '';
         });
     });

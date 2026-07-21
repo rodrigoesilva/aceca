@@ -100,9 +100,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Carrega Dados Combos Modal
-        //fn_PopLoadCombos();
-
         fn_Zoom();
 
         fn_AuthSession();
@@ -426,7 +423,7 @@ function fn_FiltrosLoad() {
 //#region GRID
 
 function fn_FiltrarDados() {
-    //console.log("bfn_FiltrarDados ::: ");
+    //console.log("fn_FiltrarDados ::: ");
     var varAjax_UrlController = `${var_Controller}/FiltrarDados`,
         varAjax_TypeAction = 'POST',
         varAjax_TypeData = 'JSON',
@@ -462,7 +459,7 @@ function fn_FiltrarDados() {
             contentType: varAjax_TypeContent,
 
             data: function (d) {
-                //console.log("param d:: ", d)
+                //console.log("fn_FiltrarDados param d:: ", d)
                 return JSON.stringify({
                     draw: d.draw,
                     start: d.start,
@@ -482,7 +479,7 @@ function fn_FiltrarDados() {
             },
 
             dataSrc: function (json) {
-                //console.log("fn_FiltrarDados json:: ", json);
+                console.log("fn_FiltrarDados json:: ", json);
                 return json.data;
             }
         },
@@ -491,7 +488,16 @@ function fn_FiltrarDados() {
             // COLUNA - control (sempre visível — prioridade máxima)
             { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
             // COLUNA - codigoAceca (2ª a aparecer no mobile)
-            { data: 'CodigoAceca', className: 'text-center text-nowrap', width: '90px', responsivePriority: 2, orderable: true, },
+            {
+                data: 'CodigoAceca', className: 'text-center text-nowrap', width: '90px', responsivePriority: 2, orderable: true,
+                render: function (data, type, full) {
+                    if (!data || full.Id === 0 || type !== 'display') return '';
+
+                    const codigoAceca = data.split('/').join("<br><br>");
+
+                    return codigoAceca;
+                }
+            },
             // COLUNA - nomeMarca (3ª a aparecer no mobile)
             { data: 'NomeMarca', className: 'text-start', width: '120px' , responsivePriority: 3 },
             // COLUNA - imagem (some primeiro no mobile)
@@ -1177,15 +1183,21 @@ function fn_LoadCmb_MarcaFase() {
 
     const $cmb = $('#cmb_MarcaFase');
     const $cmbPop = $('#cmbPop_MarcaFase');
-    const idMarcaAcervo = $('#hdMarcaAcervoId').val();
+    const idMarcaAcervo = parseInt($('#hdMarcaAcervoId').val()) || 0;
 
     // mantém o option original (-1)
     $cmb.prop('disabled', true);
 
+    // filtra somente as fases que possuem itens cadastrados para o acervo selecionado
+    let urlLoad = idMarcaAcervo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaFaseByAcervo` : `${var_ControllerCmb}/AsyncCmb_MarcaFase`;
+
     $.ajax({
-        url: `${var_ControllerCmb}/AsyncCmb_MarcaFase`,
+        url: urlLoad,
         type: 'GET',
         cache: true,
+        data: {
+            id: idMarcaAcervo,
+        },
         success: function (data) {
 
             strMarcaAcervo = $('#hdMarcaAcervoNome').val();

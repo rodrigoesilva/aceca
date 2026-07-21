@@ -178,9 +178,10 @@ namespace Aceca.Adm.Controllers.Acervo
                             OR ");
                     }
 
-                    // LIKE sempre cobre CodigoAceca e Nome
+                    // LIKE sempre cobre CodigoAceca, codigoAcecaNew e Nome
                     sqlFrom.Append(@"
                         m.CodigoAceca LIKE @SearchLike
+                        OR m.codigoAcecaNew LIKE @SearchLike
                         OR m.Nome LIKE @SearchLike
                         ");
 
@@ -233,9 +234,14 @@ namespace Aceca.Adm.Controllers.Acervo
                         mr.id AS IdMarcaRaridade,
                         mq.id AS IdQualidadeImagem,
 
-                        m.CodigoAceca,
-                        m.Nome AS NomeMarca,
-                        
+                         -- m.codigoAcecaNew,
+                        CASE
+                            WHEN m.codigoAcecaNew IS NOT NULL
+                            THEN CONCAT(m.codigoAcecaNew, '/', m.CodigoAceca)
+                            ELSE m.CodigoAceca
+                        END AS CodigoAceca,
+
+                        m.Nome AS NomeMarca,                        
                         ma.Descricao AS NomeAcervo,
                         mf.Descricao AS NomeFase,
                         mfa.Nome AS NomeFabrica,

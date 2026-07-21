@@ -5,11 +5,6 @@ using Aceca.Adm.VMModels;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -53,63 +48,242 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
         public ActionResult Index()
         {
-            return View("~/Views/Admin/Negociacao/NegociacaoAcervo.cshtml");
+            return View("~/Views/Admin/Negociacao/NegociacaoMeusNegocios.cshtml");
         }
 
-        [HttpGet]
-        public async Task<IActionResult> ListGrid()
+        [HttpPost]
+        public async Task<IActionResult> ListGrid([FromBody] FilterDataMarca request)
         {
             try
             {
-                // 1. Executa os JOINs trazendo apenas as colunas necessárias do banco de forma assíncrona
-                var dadosBrutos = await _db.Socio
-                    .AsNoTracking()
-                    .Join(_db.SocioColecao,
-                          socio => socio.Id,
-                          colecao => colecao.SocioId,
-                          (socio, colecao) => new { socio.Id, socio.Nome, ColecaoPossui = colecao.Possui })
-                    .Join(_db.SocioContato,
-                          combinado => combinado.Id,
-                          contato => contato.SocioId,
-                          (combinado, contato) => new { combinado.Id, combinado.Nome, combinado.ColecaoPossui, contato.DDI, contato.DDD, contato.Telefone, contato.Email })
-                    .ToListAsync();
+                if (request == null)
+                    return BadRequest("Request inválido");
 
-                // 2. Agrupa pelo Nome, calcula a quantidade de itens possuídos e ordena
-                var lstModel = dadosBrutos
-                    .GroupBy(x => x.Nome)
-                    .Select(grupo => new
+                var filtro = request.Filtros ?? new FiltroRequestMarca();
+
+                var filtroColecao = request.FiltrosColecao ?? new FiltroRequestColecao();
+
+                var imgBase = _urlBaseImg;
+                var imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg";
+
+                var sqlFrom = new StringBuilder(@"
+                FROM socio_colecao sc
+                INNER JOIN socios s ON sc.socioId = s.id
+                INNER JOIN marcas m ON sc.marcaId = m.id
+                LEFT JOIN marcas_acervo ma ON m.marcaAcervoId = ma.id
+                LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
+                LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
+                LEFT JOIN marcas_fabricas mfa ON m.marcaFabricaId = mfa.id
+                LEFT JOIN marcas_dimensao md ON m.marcaDimensaoId = md.id
+                LEFT JOIN marcas_impressora mi ON m.marcaImpressoraId = mi.id
+                LEFT JOIN marcas_raridade mr ON m.marcaRaridadeId = mr.id
+                LEFT JOIN marcas_raridade mq ON m.marcaQualidadeImagemId = mq.id
+                LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
+                LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
+                WHERE 1=1
+                ");
+
+                var parameters = new DynamicParameters();
+
+                // =========================
+                // FILTROS
+                // =========================
+                if (filtroColecao.SocioId > 0)
+                {
+                    if (filtroColecao.SocioId != 1 || !filtro.ExibirGeral)
                     {
-                        SocioNome = grupo.Key, // Como agrupamos por Nome, usamos o grupo.Key
-                        SocioId = grupo.FirstOrDefault()?.Id,// Pegamos o Id do primeiro registro do grupo (já que possuem o mesmo Nome)
-                        SocioDDI = grupo.FirstOrDefault()?.DDI,
-                        SocioDDD = grupo.FirstOrDefault()?.DDD,
-                        SocioTelefone = grupo.FirstOrDefault()?.Telefone,
-                        SocioEmail = grupo.FirstOrDefault()?.Email,
-                        QuantidadePossui = grupo.Count(x => x.ColecaoPossui)
-                    })
-                    .OrderBy(r => r.SocioNome)
-                    .ToList();
+                        sqlFrom.Append(" AND sc.disponivel_negocio = true");
+                        sqlFrom.Append(" AND sc.socioId = @SocioId");
+                        parameters.Add("@SocioId", filtroColecao.SocioId);
+                    }
+                }
+
+                if (filtro.MarcaAcervoId > 0)
+                {
+                    if (filtro.MarcaAcervoId != 1 || !filtro.ExibirGeral)
+                    {
+                        sqlFrom.Append(" AND m.marcaAcervoId = @MarcaAcervoId");
+                        parameters.Add("@MarcaAcervoId", filtro.MarcaAcervoId);
+                    }
+                }
+
+                if (filtro.MarcaFaseId > 0)
+                {
+                    if (filtro.MarcaAcervoId != 1)
+                    {
+                        sqlFrom.Append(" AND m.marcafaseAcervoId = @MarcaFaseAcervoId");
+                        parameters.Add("@MarcaFaseAcervoId", filtro.MarcaFaseId);
+                    }
+                    else
+                    {
+                        sqlFrom.Append(" AND m.marcaFaseId = @MarcaFaseId");
+                        parameters.Add("@MarcaFaseId", filtro.MarcaFaseId);
+                    }
+                }
+
+                if (filtro.MarcaTipoId > 0)
+                {
+                    sqlFrom.Append(" AND mst.marcaTipoId = @MarcaTipoId");
+                    parameters.Add("@MarcaTipoId", filtro.MarcaTipoId);
+                }
+
+                if (filtro.MarcaSubTipoId > 0)
+                {
+                    sqlFrom.Append(" AND m.marcaSubTipoId = @MarcaSubTipoId");
+                    parameters.Add("@MarcaSubTipoId", filtro.MarcaSubTipoId);
+                }
+
+                // =========================
+                // SEARCH
+                // =========================
+                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
+                {
+                    var rawSearch = request.Search.Value.Trim();
+                    var normalized = Regex.Replace(rawSearch, @"[^\w\s]", " ");
+
+                    var fullTextSearch = string.Join(" ",
+                        normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(s => $"+{s}*")
+                    );
+
+                    bool incluirDescricao = filtro.PesquisarDescricao;
+                    bool termoCurto = rawSearch.Length < 3; // ← detecta termos que o FULLTEXT ignora
+
+                    sqlFrom.Append(" AND (");
+
+                    if (!termoCurto)
+                    {
+                        // FULLTEXT só para termos com 3+ caracteres
+                        sqlFrom.Append(@"
+                            MATCH(m.Nome, m.Descricao, m.CodigoAceca)
+                            AGAINST(@Search IN BOOLEAN MODE)
+                            OR ");
+                    }
+
+                    // LIKE sempre cobre CodigoAceca, codigoAcecaNew e Nome
+                    sqlFrom.Append(@"
+                        m.CodigoAceca LIKE @SearchLike
+                        OR m.codigoAcecaNew LIKE @SearchLike
+                        OR m.Nome LIKE @SearchLike
+                        ");
+
+                    // Descrição só se checkbox ativo
+                    if (incluirDescricao)
+                    {
+                        sqlFrom.Append(@" OR m.Descricao LIKE @SearchLike ");
+                    }
+
+                    sqlFrom.Append(")");
+
+                    parameters.Add("@Search", fullTextSearch);
+                    parameters.Add("@SearchLike", $"%{rawSearch}%");
+                }
+
+                // fallback
+                else if (!string.IsNullOrWhiteSpace(filtro.NomeMarca))
+                {
+                    sqlFrom.Append(" AND m.Nome LIKE @Nome");
+                    parameters.Add("@Nome", $"%{filtro.NomeMarca}%");
+                }
+
+                if (filtro.PesquisarSemVariante)
+                {
+                    sqlFrom.Append(" AND m.codigoAceca REGEXP '[0-9]$'");
+                }
+
+                // =========================
+                // COUNT
+                // =========================
+
+                var totalSql = "SELECT COUNT(1) FROM marcas";
+                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
+
+                // =========================
+                // DATA
+                // =========================
+
+                var dataSql = $@"
+                    SELECT
+                        m.id AS Id,
+                        ma.id AS IdMarcaAcervo,
+                        mf.id AS IdMarcaFase,
+                        mfi.id AS IdMarcaFinalidade,
+                        mfa.id AS IdMarcaFabrica,
+                        md.id AS IdMarcaDimensao,
+                        mt.id AS IdMarcaTipo,
+                        mst.id AS IdMarcaSubTipo,
+                        mi.id AS IdMarcaImpressora,
+                        mr.id AS IdMarcaRaridade,
+                        mq.id AS IdQualidadeImagem,
+
+                         -- m.codigoAcecaNew,
+                        CASE
+                            WHEN m.codigoAcecaNew IS NOT NULL
+                            THEN CONCAT(m.codigoAcecaNew, '/', m.CodigoAceca)
+                            ELSE m.CodigoAceca
+                        END AS CodigoAceca,
+
+                        m.Nome AS NomeMarca,                        
+                        ma.Descricao AS NomeAcervo,
+                        mf.Descricao AS NomeFase,
+                        mfa.Nome AS NomeFabrica,
+                        md.Descricao AS NomeDimensao,
+                        mfi.Descricao AS NomeFinalidade,
+                        mi.Descricao AS NomeImpressora,
+                        mr.Descricao AS NomeRaridade,
+                        mq.Descricao AS NomeQualidade,
+                        mst.Descricao AS SubTipo,
+                        mt.Descricao AS Tipo,
+                        m.fabrica_txt AS TxtFabrica,
+                        m.impressora AS TxtImpressora,
+
+                        m.Descricao,
+                        m.IncluidoPor,
+
+                        m.Valor,
+                        m.Valor1PI,
+                        m.Valor2PI,
+
+                        m.ImgPrincipal,
+                        IF(m.ImgPrincipal IS NOT NULL,
+                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
+                            @ImgDefault) AS ImgPrincipalFull,
+
+                        m.ImgDetalhe,
+                        IF(m.ImgDetalhe IS NOT NULL,
+                            CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+                            @ImgDefault) AS ImgDetalheFull
+
+                    {sqlFrom}
+
+                    ORDER BY mf.id, m.nome, m.CodigoAceca
+                    LIMIT @Limit OFFSET @Offset
+                    ";
+
+                parameters.Add("@ImgBase", imgBase);
+                parameters.Add("@ImgDefault", imgDefault);
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
+                using var conn = _db.Database.GetDbConnection();
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
 
                 return Ok(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = lstModel
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data
                 });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(ex, "Erro FiltrarDados");
 
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
+                return BadRequest(new { error = true, message = ex.Message });
             }
         }
 
@@ -284,9 +458,10 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             OR ");
                     }
 
-                    // LIKE sempre cobre CodigoAceca e Nome
+                    // LIKE sempre cobre CodigoAceca, codigoAcecaNew e Nome
                     sqlFrom.Append(@"
                         m.CodigoAceca LIKE @SearchLike
+                        OR m.codigoAcecaNew LIKE @SearchLike
                         OR m.Nome LIKE @SearchLike
                         ");
 
@@ -339,9 +514,14 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         mr.id AS IdMarcaRaridade,
                         mq.id AS IdQualidadeImagem,
 
-                        m.CodigoAceca,
-                        m.Nome AS NomeMarca,
-                        
+                         -- m.codigoAcecaNew,
+                        CASE
+                            WHEN m.codigoAcecaNew IS NOT NULL
+                            THEN CONCAT(m.codigoAcecaNew, '/', m.CodigoAceca)
+                            ELSE m.CodigoAceca
+                        END AS CodigoAceca,
+
+                        m.Nome AS NomeMarca,                        
                         ma.Descricao AS NomeAcervo,
                         mf.Descricao AS NomeFase,
                         mfa.Nome AS NomeFabrica,

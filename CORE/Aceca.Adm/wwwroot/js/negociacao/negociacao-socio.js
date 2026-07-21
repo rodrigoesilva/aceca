@@ -159,23 +159,30 @@ function fn_GridList() {
                             let flag_country = (full?.socioDDI === 54 ? 'ar' : 'br');
 
                             if (flag_country) {
-                              var flag = `<i class ="fis fi fi-${flag_country} rounded-circle me-2 fs-4"></i>`;
+                                var flag = `<i class ="fis fi fi-${flag_country} rounded-circle me-2 ms-2 fs-4"></i>`;
                             } else {
                               // For Avatar badge
-                               var flag= `<i class ="fis fi fi-xx rounded-circle me-2 fs-4"></i>`;
+                                var flag = `<i class ="fis fi fi-br rounded-circle me-2 ms-2 fs-4"></i>`;
                             }
+
+                            // ri - whatsapp - line
 
                             var flag_icon =
                                 `<div class="d-flex justify-content-center align-items-center customer-country">
                                     <div>${flag}</div>
-                                    <div>
-                                        <span>(${full.socioDDD}) ${full.socioTelefone}</span>
+                                    <div class="d-inline-block text-nowrap">
+                                        <a href="https://api.whatsapp.com/send?phone=5551981623181&#038;text=Ol%C3%A1,%20venho%20do%20site%20e%20gostaria%20de%20receber%20algumas%20informações%20sobre%20itens%20para%20negocios%20da%20ACECA."
+                                            target="_blank"                                        
+                                            class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
+                                            <i class="ri-whatsapp-fill ri-28px text-success rounded-circle me-2 ms-2"></i>
+                                        </a>
                                     </div>
+                                    <!--<div><span>(${full.socioDDD}) ${full.socioTelefone}</span></div>-->
                                 </div>`;
 
                             return flag_icon;  ``;
                         } else {
-                            return '';//'Data Indispon&iacute;vel';
+                            return '';//'Data Indispon&iacute;vel'; <a href="https://api.whatsapp.com/send?phone=${full.socioDDI}${full.socioDDD}${full.socioTelefone};text=Ol%C3%A1,%20venho%20do%20site%20e%20gostaria%20de%20saber%20algumas%20informações%20sobre%20itens%20para%20negocios%20na%20ACECA"
                         }
                     }
                 },
@@ -183,6 +190,23 @@ function fn_GridList() {
                 {
                     data: 'socioEmail',
                     targets: 4,
+                    render: function (data, type, full) {
+                        //console.log("Email data ::: ", data);
+                        //console.log("Email full ::: ", full);
+                        //console.log("Email type ::: ", type);
+                        if (!data) return '';
+
+                        let mail = `<a href="mailto:${data?.trim()?.toLowerCase()}
+                                            ?subject=Negocios ACECA
+                                            &body=Olá, venho do site e gostaria de receber algumas informações sobre itens para negocios da ACECA"
+                                            class="text-secondary">
+                                        <i class="ri-mail-send-line ri-28px rounded-circle me-2 ms-2"></i>
+                                        Enviar e-mail para o Sócio
+                                    </a>`;
+
+                        //console.log("Email mail ::: ", mail);
+                        return mail;
+                    }
                 },
                 // COLUNA - Items
                 {
@@ -487,15 +511,21 @@ function fn_LoadCmb_MarcaFase() {
 
     const $cmb = $('#cmb_MarcaFase');
     const $cmbPop = $('#cmbPop_MarcaFase');
-    const idMarcaAcervo = $('#hdMarcaAcervoId').val();
+    const idMarcaAcervo = parseInt($('#hdMarcaAcervoId').val()) || 0;
 
     // mantém o option original (-1)
     $cmb.prop('disabled', true);
 
+    // filtra somente as fases que possuem itens cadastrados para o acervo selecionado
+    let urlLoad = idMarcaAcervo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaFaseByAcervo` : `${var_ControllerCmb}/AsyncCmb_MarcaFase`;
+
     $.ajax({
-        url: `${var_ControllerCmb}/AsyncCmb_MarcaFase`,
+        url: urlLoad,
         type: 'GET',
         cache: true,
+        data: {
+            id: idMarcaAcervo,
+        },
         success: function (data) {
 
             strMarcaAcervo = $('#hdMarcaAcervoNome').val();

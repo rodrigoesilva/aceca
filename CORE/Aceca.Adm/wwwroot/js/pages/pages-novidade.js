@@ -356,7 +356,17 @@ function fn_FiltrarDados() {
             // COLUNA - control (sempre visível — prioridade máxima)
             { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
             // COLUNA - codigoAceca (2ª a aparecer no mobile)
-            { data: 'CodigoAceca', className: 'text-center', width: '90px', responsivePriority: 2 },
+            // COLUNA - codigoAceca (2ª a aparecer no mobile)
+            {
+                data: 'CodigoAceca', className: 'text-center text-nowrap', width: '90px', responsivePriority: 2, orderable: true,
+                render: function (data, type, full) {
+                    if (!data || full.Id === 0 || type !== 'display') return '';
+
+                    const codigoAceca = data.split('/').join("<br><br>");
+
+                    return codigoAceca;
+                }
+            },
             // COLUNA - nomeMarca (3ª a aparecer no mobile)
             { data: 'NomeMarca', className: 'text-center', width: '120px' , responsivePriority: 3 },
             // COLUNA - imagem (some primeiro no mobile)

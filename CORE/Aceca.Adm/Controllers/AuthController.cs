@@ -249,7 +249,14 @@ namespace Aceca.Adm.Controllers
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
+                    return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
+
+                var financeiroPendente = await _db.SocioFinanceiro
+                    .AsNoTracking()
+                    .AnyAsync(f => f.SocioId == user.SocioId && f.PagamentoEmDia == 0);
+
+                if (financeiroPendente)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Situação Financeira Pendente" });
 
                 if (!LoginValidacao(dto.Senha, user))
                     return Ok(new { bResult = false, type = "ERRO", message = "Credenciais Inválidas" });
@@ -376,7 +383,7 @@ namespace Aceca.Adm.Controllers
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
+                    return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
 
                 var strToken = _helperController.GenerateSecuretToken();
 
@@ -456,7 +463,7 @@ namespace Aceca.Adm.Controllers
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
+                    return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
 
                 // Valida token e expiração
                 if (user.ResetPasswordToken != dto.Token ||
@@ -555,7 +562,7 @@ namespace Aceca.Adm.Controllers
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inativo" });
+                    return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
 
                 var hash = _helperController.GenerateHashPassword(dto.Senha);
 

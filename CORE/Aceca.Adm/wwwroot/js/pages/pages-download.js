@@ -233,7 +233,7 @@ function fn_GridList(formValid) {
 
                         if (type !== 'display') return '';                        
 
-                        let urlData = (data === null ? "#" : `${varResultFull.arqUrlBase}/${full?.downloadTipo?.descricao?.toLowerCase()}/${full?.nome}.${full?.extensao}`);
+                        let urlData = (data === null ? "#" : `${varResultFull.arqUrlBase}/${full?.downloadTipo?.toLowerCase()}/${full?.nome}.${full?.extensao}`);
                         //console.log("Ações urlData ::: ", urlData);
                         
                         //console.log("Ações nome ::: ", full?.nome);

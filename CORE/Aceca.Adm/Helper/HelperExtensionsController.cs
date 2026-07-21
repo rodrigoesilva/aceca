@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Net;
 using System.Net.Mail;
@@ -25,6 +26,7 @@ namespace Aceca.Adm.Helper
         private readonly AppDbContext _db;
 
         private static List<SelectListItem> _cacheMarcaFase;
+        private static readonly ConcurrentDictionary<int, List<SelectListItem>> _cacheMarcaFaseByAcervo = new();
         //
 
         #endregion
@@ -87,7 +89,8 @@ namespace Aceca.Adm.Helper
             Cadastro = 0,
             EsqueceuSenha = 1,
             ColecaoInteresse = 2,
-            AcessoImagemIndevido = 3
+            AcessoImagemIndevido = 3,
+            FinanceiroPendente = 4
         }
 
         public enum EColecaoAcao
@@ -170,6 +173,35 @@ namespace Aceca.Adm.Helper
             _cacheMarcaFase = data;
 
             return data;
+        }
+
+        // Retorna somente as fases que possuem ao menos um item de acervo (tabela marcas)
+        // cadastrado para o idMarcaAcervo informado. Resultado é cacheado em memória por
+        // acervo (poucos valores possíveis), evitando bater no banco a cada troca de combo.
+        public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFaseByAcervo(int id)
+        {
+            if (_cacheMarcaFaseByAcervo.TryGetValue(id, out var cached))
+                return cached;
+
+            var lstModelOrd = await _db.Marca
+                .AsNoTracking()
+                .Where(x => x.MarcaAcervoId == id && x.MarcaFase != null && x.MarcaFase.Ativo == true)
+                .Select(x => x.MarcaFase)
+                .Distinct()
+                .ToListAsync();
+
+            var lst = lstModelOrd
+                .OrderBy(x => x.Ordem)
+                .Select(x => new SelectListItem
+                {
+                    Value = x.Id.ToString(),
+                    Text = x.Descricao
+                })
+                .ToList();
+
+            _cacheMarcaFaseByAcervo[id] = lst;
+
+            return lst;
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFinalidade()
         {
@@ -775,8 +807,36 @@ namespace Aceca.Adm.Helper
             var displayName = _appConfiguration["Email:DisplayName"] ?? "ACECA - Área do Sócio";
 
             var strBody = string.Empty;
+            var strSubject = "Redefinição de senha - ACECA Área do Sócio";
 
-            if (eTipoMail.Equals(ETipoEmail.EsqueceuSenha))
+            if (eTipoMail.Equals(ETipoEmail.FinanceiroPendente))
+            {
+                strSubject = "Sua anuidade está a vencer - ACECA Área do Sócio";
+
+                strBody = $@"
+                    <!DOCTYPE html>
+                    <html lang=""pt-BR"">
+                        <head><meta charset=""UTF-8""></head>
+                        <body style=""font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;"">
+                            <div style=""max-width:520px;margin:0 auto;background:#fff;border-radius:10px;padding:36px 40px;box-shadow:0 2px 12px rgba(0,0,0,.08);"">
+                                <div style=""text-align:center;"">
+                                    <img src=""https://www.aceca.com.br/img/logo/logo02.png"" alt=""ACECA"" width=""250"" style=""max-width:100%;"">
+                                </div>
+                                <h2 style=""color:#47007b;margin-top:0;"">Sua anuidade está a vencer</h2>
+                                <p>Olá, {socioNome}</p>
+                                <p>A sua associação está com o pagamento a vencer nos próximos <strong>7 dias</strong>.
+                                   Não perca seu acesso, fazendo sua renovação com a ACECA.</p>
+                                <p>Queremos que você esteja conosco desfrutando de todo o nosso acervo.</p>
+                                <p><strong>Renove sua anuidade com a ACECA.</strong></p>
+                                <hr style=""border:none;border-top:1px solid #eee;margin:24px 0;"">
+                                <p style=""font-size:12px;color:#aaa;text-align:center;"">
+                                  © ACECA - Associação dos Colecionadores de Embalagens de Cigarros e Afins
+                                </p>
+                            </div>
+                        </body>
+                    </html>";
+            }
+            else if (eTipoMail.Equals(ETipoEmail.EsqueceuSenha))
             {
                 strBody = $@"
                     <!DOCTYPE html>
@@ -843,7 +903,7 @@ namespace Aceca.Adm.Helper
             var mailMessage = new MailMessage
             {
                 From = new MailAddress(smtpFrom, displayName),
-                Subject = "Redefinição de senha - ACECA Área do Sócio",
+                Subject = strSubject,
                 IsBodyHtml = true,
                 Body = strBody
             };

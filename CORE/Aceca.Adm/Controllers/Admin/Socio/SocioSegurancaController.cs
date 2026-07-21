@@ -135,7 +135,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(Models.SocioSeguranca model)
+        public async Task<IActionResult> Edit(Models.SocioSeguranca model, int? socioPerfilId, bool? ativo)
         {
             try
             {
@@ -152,71 +152,63 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                         });
 
-                    _db.Entry(model).State = EntityState.Modified;
-                    _db.SaveChanges();
-
-                    if (model?.Id <= 0)
+                    if (model?.Id is null || model.Id <= 0)
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
                             message = "Falha ao Atualizar Socio"
                         });
+
+                    // Atualiza somente os campos editáveis nesta tela.
+                    // Senha, SenhaAberta, ResetPasswordToken e ResetPasswordTokenExpiry
+                    // não fazem parte deste formulário e não devem ser tocados aqui.
+                    var trackedUser = await _db.SocioSeguranca
+                        .Include(x => x.Socio)
+                        .FirstOrDefaultAsync(x => x.Id == model.Id);
+
+                    if (trackedUser is null)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Atualizar Socio"
+                        });
+
+                    trackedUser.Email = model.Email.Trim().ToLowerInvariant();
+                    trackedUser.NomeUsuario = model.NomeUsuario;
 
                     #endregion
 
                     #region Socio
 
-                    if (model.SocioId < 1)
-                    {
+                    if (trackedUser.Socio is null)
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
-                            message = "Id deve ser maior que 0"
+                            message = "Sócio não identificado"
                         });
-                    }
 
-                    var newModelSocio = new Models.SocioSeguranca
-                    {
-                        Id = model?.Socio?.Id,
-                        Email = model?.Email,                        
-                        NomeUsuario = model?.Socio?.Nome,
-                        ResetPasswordToken = null,
-                        ResetPasswordTokenExpiry = null,
-                        UltimoLogin = DateTime.UtcNow.AddHours(-3),
-                    };
+                    if (socioPerfilId.HasValue && socioPerfilId.Value > 0)
+                        trackedUser.Socio.SocioPerfilId = socioPerfilId.Value;
 
-
-                    // Atualiza senha
-                    string strTempPass = _helperController.GenerateStringPassword(8);
-
-                        string hash = _helperController.GenerateHashPassword(strTempPass);
-                        newModelSocio.Senha = hash;
-                        newModelSocio.SenhaAberta = strTempPass;
-                        newModelSocio.SenhaAtualizada = false;
-
-                    _db.Entry(newModelSocio).State = EntityState.Modified;
-                    _db.SaveChanges();
-
-                    model?.Id = newModelSocio?.Id;
-
-                    if (newModelSocio?.Id <= 0)
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha ao Atualizar Socio"
-                        });
+                    // Ativo=false bloqueia o acesso do sócio de qualquer forma:
+                    // impede novo login (AuthController) e encerra sessão já autenticada
+                    // na próxima requisição (OnValidatePrincipal em Program.cs).
+                    if (ativo.HasValue)
+                        trackedUser.Socio.Ativo = ativo.Value;
 
                     #endregion
+
+                    await _db.SaveChangesAsync();
 
                     return Ok(new
                     {
                         bResult = true,
                         type = "OK",
                         message = "SUCESSO ::: ",
-                        data = model,
+                        data = trackedUser,
                     });
                 }
 

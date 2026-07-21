@@ -30,6 +30,9 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddScoped<HelperExtensionsController>();
 
+// Automação: verifica semanalmente vencimento/pendência financeira dos sócios (socio_financeiro)
+builder.Services.AddHostedService<Aceca.Adm.Services.SocioFinanceiroCheckService>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
@@ -142,6 +145,26 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 {
                     ctx.RejectPrincipal();
                     await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return;
+                }
+
+                // Sócio desativado (Ativo = false): encerra a sessão já autenticada
+                // imediatamente na próxima requisição, mesmo sem novo login.
+                var socioIdClaim = ctx.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+                if (int.TryParse(socioIdClaim, out var socioId))
+                {
+                    var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                    var ativo = await db.Socio.AsNoTracking()
+                        .Where(s => s.Id == socioId)
+                        .Select(s => s.Ativo)
+                        .FirstOrDefaultAsync();
+
+                    if (!ativo)
+                    {
+                        ctx.RejectPrincipal();
+                        await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    }
                 }
             },
 
