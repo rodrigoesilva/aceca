@@ -26,39 +26,12 @@ let var_Filtrado = false,
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
-const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-label-secondary waves-effect",
-        cancelButton: "btn btn-label-primary waves-effect",
-        // Apply a margin or flex gap via custom classes if needed
-        actions: 'd-flex justify-content-center align-content-center flex-wrap gap-4 pt-8'
-    },
-    buttonsStyling: false
-});
-
 let modalMarca = document.getElementById('ModalMarca'),
     objModalData;
 
 let strUrlImgInexistente = "https://www.aceca.com.br/assets/img/img_inexistente.jpg";
 
-let borderColor, bodyBg, headingColor;
-
 let idMarcaFase, strMarcaAcervo;
-
-if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-} else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
-};
-
-$.busyLoadSetup({
-    animation: "slide",
-    background: "rgba(71,0,123, 0.86)"
-});
 
 //#endregion
 
@@ -325,7 +298,6 @@ function fn_FiltrarDados() {
         varAjax_TypeData = 'JSON',
         varAjax_TypeContent = 'application/json; charset=utf-8';
 
-
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
         varCol_Exportar = [1, 2, 5, 6, 7, 8, 9],
@@ -446,7 +418,7 @@ function fn_FiltrarDados() {
             },
             // COLUNA - incluidoPor (avatar)
             {
-                data: 'IncluidoPor', className: 'text-center', responsivePriority: 10010,
+                data: 'IncluidoPor', visible: false, className: 'text-center', responsivePriority: 10010,
                 render: function (data, type, full) {
                     if (!data || full.Id === 0 || type !== 'display') return '';
                     var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
@@ -478,7 +450,6 @@ function fn_FiltrarDados() {
                     //console.log("Ações idColecaoStatus ::: ", idColecaoStatus);
 
                     var btn = '<div class="d-flex align-items-center">';
-
 
                     if (full?.possui) {
                         btn+= `<a href="javascript:fn_Pop(${itemObjJson});" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect" data-bs-toggle="tooltip" title="Editar Observação"><i class="ri-edit-box-line ri-22px"></i></a>
@@ -721,7 +692,6 @@ function fn_FiltrarDados() {
                     <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;margin-bottom:4px;">Descrição</div>
                     <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.Descricao || ''}</div>
                 </div>
-
 
                 
             </div>`;
@@ -1244,11 +1214,9 @@ function fn_Pop(obj) {
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.observacao)),
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.disponivel_negocio));
 
-
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = 'Alterar Registro');
     (popAddNewItem.querySelector('.data-submit').textContent = 'Alterar');
-
 
     // Open Pop
     popAddNewItemEl.show();

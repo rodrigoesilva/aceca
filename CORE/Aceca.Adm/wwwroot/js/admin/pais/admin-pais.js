@@ -21,31 +21,6 @@ let strUrlImgInexistente = "https://www.aceca.com.br/assets/img/img_inexistente.
 
 let strUrlImg = "https://www.aceca.com.br/midia";
 
-const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-label-secondary waves-effect",
-        cancelButton: "btn btn-label-primary waves-effect"
-    },
-    buttonsStyling: false
-});
-
-let borderColor, bodyBg, headingColor;
-
-if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-} else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
-};
-
-$.busyLoadSetup({
-    animation: "slide",
-    background: "rgba(71,0,123, 0.86)"
-});
-
 //#endregion
 
 //#region CARREGAMENTO INICIAL
@@ -471,7 +446,6 @@ function fn_GridComplete(grid) {
 
             });
 
-
         //Checkbox Filtar Ativos
         var elfilter = document.querySelector('.dataTables_filter'),
             divElement = document.createElement('div');
@@ -605,7 +579,6 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.descricao)),
         (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-1' : ((obj.paisCategoriaId === null || obj.paisCategoriaId === 0) ? '-1' : obj.paisCategoriaId)));
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
-
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -922,12 +895,10 @@ function fnItem_Add(varTbl_Obj) {
                             //console.log("YES :: ");
                             varTbl = varTbl_Obj.DataTable();
 
-
                             // Hide offcanvas using javascript method
                             popAddNewItemEl.hide();
 
                             $.busyLoadFull("hide");
-
 
                             Swal.fire({
                                 title: 'Dados Salvos!',

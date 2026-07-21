@@ -32,31 +32,6 @@ let var_Filtrado = false,
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
-const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-label-secondary waves-effect",
-        cancelButton: "btn btn-label-primary waves-effect"
-    },
-    buttonsStyling: false
-});
-
-let borderColor, bodyBg, headingColor;
-
-if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-} else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
-};
-
-$.busyLoadSetup({
-    animation: "slide",
-    background: "rgba(71,0,123, 0.86)"
-});
-
 //#endregion
 
 //#region CARREGAMENTO INICIAL

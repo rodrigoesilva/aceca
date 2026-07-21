@@ -63,6 +63,15 @@
 
   <script src='~/js/@ViewData["main"]main.js'></script>
 
+  @* Globais compartilhados por admin/negociação/auth: swalWithBootstrapButtons, borderColor/
+     bodyBg/headingColor, busyLoadSetup e o datepicker padrão. Depende de main.js (isDarkStyle/
+     config/isRtl) já carregado acima; carrega antes de PageScripts para as páginas poderem
+     usar esses globais sem declará-los de novo. Não roda em páginas front (main.js diferente). *@
+  @if (!isFront)
+  {
+    <script src="~/js/ui-common.js" asp-append-version="true"></script>
+  }
+
   @* Monitor de expiração de sessão (2h ocioso / 24h absoluto) — apenas para usuários autenticados *@
   @if (httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated == true)
   {

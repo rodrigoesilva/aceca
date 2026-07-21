@@ -25,38 +25,11 @@ let var_Filtrado = false,
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
-const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-label-secondary waves-effect",
-        cancelButton: "btn btn-label-primary waves-effect",
-        // Apply a margin or flex gap via custom classes if needed
-        actions: 'd-flex justify-content-center align-content-center flex-wrap gap-4 pt-8'
-    },
-    buttonsStyling: false
-});
-
 let modalMarca = document.getElementById('ModalMarca');
-
-let borderColor, bodyBg, headingColor;
 
 let idMarcaMes,idMarcaFase;
 
 let param_Data, param_DataIni, param_DataIniStrSel, param_DataIniSel, param_DataIniMes, param_DataIniAno;
-
-if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-} else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
-};
-
-$.busyLoadSetup({
-    animation: "slide",
-    background: "rgba(71,0,123, 0.86)"
-});
 
 //#endregion
 
@@ -65,7 +38,6 @@ $.busyLoadSetup({
 document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
-
 
         // Form validation
         const formAddNewItem = document.getElementById('form-pop-add-new-item');
@@ -486,7 +458,6 @@ function fn_GridList(formValid) {
                         <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.Descricao || ''}</div>
                     </div>
 
-
                 
                 </div>`;
 
@@ -629,7 +600,6 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.descricao)),
         (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-1' : ((obj.paisCategoriaId === null || obj.paisCategoriaId === 0) ? '-1' : obj.paisCategoriaId)));
     (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
-
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -946,12 +916,10 @@ function fnItem_Add(varTbl_Obj) {
                             //console.log("YES :: ");
                             varTbl = varTbl_Obj.DataTable();
 
-
                             // Hide offcanvas using javascript method
                             popAddNewItemEl.hide();
 
                             $.busyLoadFull("hide");
-
 
                             Swal.fire({
                                 title: 'Dados Salvos!',

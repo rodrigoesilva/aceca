@@ -24,39 +24,12 @@ let var_Filtrado = false,
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
-const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-label-secondary waves-effect",
-        cancelButton: "btn btn-label-primary waves-effect",
-        // Apply a margin or flex gap via custom classes if needed
-        actions: 'd-flex justify-content-center align-content-center flex-wrap gap-4 pt-8'
-    },
-    buttonsStyling: false
-});
-
 let modalMarca = document.getElementById('ModalMarca'),
     objModalData;
 
 let strUrlImgInexistente = "https://www.aceca.com.br/assets/img/img_inexistente.jpg";
 
-let borderColor, bodyBg, headingColor;
-
 let idMarcaFase, strMarcaAcervo;
-
-if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-} else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
-};
-
-$.busyLoadSetup({
-    animation: "slide",
-    background: "rgba(71,0,123, 0.86)"
-});
 
 let isPerfil = document.getElementById('hdIsPerfil').value;
 
@@ -103,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function () {
         fn_Zoom();
 
         fn_AuthSession();
-
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' || event.key === 'Enter') {
@@ -428,7 +400,6 @@ function fn_FiltrarDados() {
         varAjax_TypeAction = 'POST',
         varAjax_TypeData = 'JSON',
         varAjax_TypeContent = 'application/json; charset=utf-8';
-
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
@@ -900,7 +871,6 @@ function fn_FiltrarDados() {
                     <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;margin-bottom:4px;">Descrição</div>
                     <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.Descricao || ''}</div>
                 </div>
-
 
                 
             </div>`;

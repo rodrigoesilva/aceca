@@ -26,39 +26,12 @@ let var_Filtrado = false,
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
-const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-label-secondary waves-effect",
-        cancelButton: "btn btn-label-primary waves-effect",
-        // Apply a margin or flex gap via custom classes if needed
-        actions: 'd-flex justify-content-center align-content-center flex-wrap gap-4 pt-8'
-    },
-    buttonsStyling: false
-});
-
 let modalMarca = document.getElementById('ModalMarca'),
     objModalData;
 
 let strUrlImgInexistente = "https://www.aceca.com.br/assets/img/img_inexistente.jpg";
 
-let borderColor, bodyBg, headingColor;
-
 let idMarcaFase, strMarcaAcervo;
-
-if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-} else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
-};
-
-$.busyLoadSetup({
-    animation: "slide",
-    background: "rgba(71,0,123, 0.86)"
-});
 
 //#endregion
 
@@ -325,7 +298,6 @@ function fn_FiltrarDados() {
         varAjax_TypeData = 'JSON',
         varAjax_TypeContent = 'application/json; charset=utf-8';
 
-
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
         varCol_Exportar = [1, 2, 5, 6, 7, 8, 9],
@@ -445,15 +417,12 @@ function fn_FiltrarDados() {
             },
             // COLUNA - incluidoPor (avatar)
             {
-                data: 'IncluidoPor', className: 'text-center', responsivePriority: 10011,
+                data: 'IncluidoPor', visible: false, className: 'text-center', responsivePriority: 10010,
                 render: function (data, type, full) {
-
                     if (!data || full.Id === 0 || type !== 'display') return '';
                     var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
                     var items = data.split('/').map(function (nome, i) {
-                        //console.log("IncluidoPor nome ::: ", nome);
                         let pathAvatar = nome == "Aceca" ? `../img/avatars/socio/imgAvatarAceca` : `../img/avatars/${i}`;
-
                         return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
                             title="${nome}" style="z-index:1;">
                             <img src="${pathAvatar}.png" alt="Avatar" class="rounded-circle">
@@ -468,103 +437,39 @@ function fn_FiltrarDados() {
             {
                 //visible: false,
                 data: 'Id', targets: -1, searchable: false, orderable: false, responsivePriority: 4,
+
                 render: function (data, type, full, meta) {
-
-                    isPerfil = document.getElementById('hdIsPerfil').value;
-                    //console.log("Acao isPerfil ::: ", isPerfil);
-
-                    let btns = '';
-
-                    //console.log("Acao data ::: ", data);
-                    //console.log("Acao type ::: ", type);
                     //console.log("Acao full ::: ", full);
-                    //console.log("Acao meta ::: ", meta);
-                    if (type !== 'display') return '';
-
+                    let itemId = data;
+                    let itemDados = full;
                     let itemObjJson = encodeURIComponent(JSON.stringify(full));
 
-                    if (isPerfil === 'true') {
+                    let idColecaoStatus = $('#cmb_ColecaoStatus').find('option:selected').val();
 
-                        const socioId = document.getElementById('hdSocioLogadoId').value;
+                    //console.log("Ações idColecaoStatus ::: ", idColecaoStatus);
 
-                        if (socioId === '39') {
-                            btns = `<div class="d-inline-block">
-                                    <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="ri-more-2-line ri-22px"></i>
-                                    </a>
+                    var btn = '<div class="d-flex align-items-center">';
 
-                                    <ul class="dropdown-menu dropdown-menu-end m-0">
-                                            <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
-                                        <div class="dropdown-divider"></div>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Incluir na Coleção</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>                                            
-                                    </ul>
-                                </div>`;
+                    if (full?.possui) {
+                        btn += `<a href="javascript:fn_Pop(${itemObjJson});" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect" data-bs-toggle="tooltip" title="Editar Observação"><i class="ri-edit-box-line ri-22px"></i></a>
+                            <a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete');" class="btn btn-sm btn-icon btn-text-danger rounded-pill waves-effect delete-record" data-bs-toggle="tooltip" title="Remover da Coleção"><i class="ri-delete-bin-7-line ri-22px"></i></a>
+                            <a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNegociar');" class="btn btn-sm btn-icon btn-text-${(full?.disponivel_negocio ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Para Negociação"><i class="ri-shopping-cart-2-line ri-22px"></i></a>`
+                    };
 
-                            /*
-
-                              return (
-                                      '<div class="d-flex align-items-center">' +
-                                      '<a href="javascript:;" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect delete-record" data-bs-toggle="tooltip" title="Delete Invoice"><i class="ri-delete-bin-7-line ri-22px"></i></a>' +
-                                      '<a href="' +
-                                      userView +
-                                      '" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect" data-bs-toggle="tooltip" title="Preview"><i class="ri-eye-line ri-22px"></i></a>' +
-                                      '<button class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="ri-more-2-line ri-22px"></i></button>' +
-                                      '<div class="dropdown-menu dropdown-menu-end m-0">' +
-                                      '<a href="' +
-                                      userView +
-                                      '" class="dropdown-item"><i class="ri-eye-line me-2"></i><span>View</span></a>' +
-                                      '<a href="javascript:;" class="dropdown-item"><i class="ri-edit-box-line me-2"></i><span>Edit</span></a>' +
-                                      '<a href="javascript:;" class="dropdown-item delete-record"><i class="ri-delete-bin-7-line me-2"></i><span>Delete</span></a>' +
-                                      '</div>' +
-                                      '</div>'
-                                    );
-
-                            */
-                        } else {
-
-                            btns = `<div class="d-inline-block text-nowrap">
-                                <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
-                                    class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
-                                    <i class="ri-edit-box-line ri-22px"></i>
-                                </a>
-                            </div>`;
-                        }
+                    if (idColecaoStatus < 3 && !full?.possui) {
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Tenho Interesse"><i class="ri-eye-line ri-22px"></i></a>`
                     }
-                    /*
-                   else {
 
-                       btns = `<div class="d-inline-block">
-                                   <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                       <i class="ri-more-2-line ri-22px"></i>
-                                   </a>
+                    if (idColecaoStatus < 3 && full?.interesse) {
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-${(!full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
+                    }
+                    //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoInteresse' : 'ColecaoIncluir')});" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Tenho Interesse' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
 
-                                   <ul class="dropdown-menu dropdown-menu-end m-0">
-                                           <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
-                                       <div class="dropdown-divider"></div>
-                                           <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Tenho na Coleção</a></li>
-                                           <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>
-                                           <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNaoQuero');" class="dropdown-item edit-record"><i class="icon-base ri ri-information-off-line icon-md me-2"></i>Não Quero</a></li>
-                                           <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoTroca');" class="dropdown-item edit-record"><i class="icon-base ri ri-checkbox-multiple-line icon-md me-2"></i>Para Troca</a></li>
-                                           <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoVenda');" class="dropdown-item edit-record"><i class="icon-base ri ri-shopping-cart-2-line icon-md me-2"></i>Para Venda</a></li>
-                                       <div class="dropdown-divider"></div>
-                                           <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete');" class="dropdown-item text-danger delete-record"><i class="icon-base ri ri-delete-bin-7-line icon-md me-2"></i>Remover da Coleção</a></li>
-                                   </ul>
-                               </div>`;
-                   }
-                   
-                  
-                  
-                   btns = `<div class="d-inline-block text-nowrap">
-                       <a href="javascript:fn_Modal(${itemObjJson},'Edit');"
-                           class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1">
-                           <i class="ri-edit-box-line ri-22px"></i>
-                       </a>
-                   </div>`;
-                   */
+                    btn += '</div>'
 
+                    //console.log("Ações btn ::: ", btn);
 
-                    return (btns);
+                    return btn;
                 }
             }
         ],
@@ -786,7 +691,6 @@ function fn_FiltrarDados() {
                     <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;margin-bottom:4px;">Descrição</div>
                     <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.Descricao || ''}</div>
                 </div>
-
 
                 
             </div>`;
@@ -1309,11 +1213,9 @@ function fn_Pop(obj) {
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.observacao)),
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.disponivel_negocio));
 
-
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = 'Alterar Registro');
     (popAddNewItem.querySelector('.data-submit').textContent = 'Alterar');
-
 
     // Open Pop
     popAddNewItemEl.show();

@@ -17,31 +17,6 @@ let var_Nome = 'S&oacute;cio',
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
-const swalWithBootstrapButtons = Swal.mixin({
-    customClass: {
-        confirmButton: "btn btn-label-secondary waves-effect",
-        cancelButton: "btn btn-label-primary waves-effect"
-    },
-    buttonsStyling: false
-});
-
-let borderColor, bodyBg, headingColor;
-
-if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-} else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
-};
-
-$.busyLoadSetup({
-    animation: "slide",
-    background: "rgba(71,0,123, 0.86)"
-});
-
 //#endregion
 
 //#region CARREGAMENTO INICIAL
@@ -66,21 +41,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //#region DATA PICKERS
 
-
-$(function () {
-    var bsDatepickerFormat = $('.dt-calendar');
-
-    // Format
-    if (bsDatepickerFormat.length) {
-        bsDatepickerFormat.datepicker({
-            autoclose: true,
-            todayHighlight: true,
-            format: 'dd/mm',
-            language: 'pt-BR',
-            orientation: isRtl ? 'auto right' : 'auto left'
-        });
-    }
-});
 //#endregion
 
 //#region GRID
@@ -451,7 +411,6 @@ function fn_GridComplete(grid) {
 
             });
 
-
         //Checkbox Filtar Ativos
         var elfilter = document.querySelector('.dataTables_filter'),
             divElement = document.createElement('div');
@@ -607,7 +566,6 @@ function fn_Pop(obj, action) {
 
         //console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
     }
-
 
     //console.log("fn_Pop popAddNewItem ::: ", popAddNewItem);
 
@@ -908,7 +866,6 @@ function fnItem_Add(varTbl_Obj) {
                             popAddNewItemEl.hide();
 
                             $.busyLoadFull("hide");
-
 
                             Swal.fire({
                                 title: 'Dados Salvos!',
