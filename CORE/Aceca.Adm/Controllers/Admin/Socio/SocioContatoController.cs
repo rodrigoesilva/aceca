@@ -1,7 +1,9 @@
 ﻿using Aceca.Adm.Data;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using System.Text;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
@@ -44,55 +46,84 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
         #region GRID
 
-        [HttpGet]
-        public async Task<IActionResult> ListGrid()
+        // Paginação no servidor (Dapper + LIMIT/OFFSET) — antes carregava todos os contatos
+        // de uma vez (ver auditoria de performance / piloto SocioLogAcesso).
+        [HttpPost]
+        public async Task<IActionResult> FiltrarDados([FromBody] Models.FilterDataGridSimples request)
         {
             try
             {
+                if (request == null)
+                    return BadRequest("Request inválido");
 
-                var lstModel = await _db.SocioContato
-                     .Include(x => x.Socio)
-                     .AsNoTracking()
-                     .OrderBy(x => x.Socio.Nome)
-                     .ToListAsync();
+                var sqlFrom = new StringBuilder(@"
+                FROM socio_contato sc
+                INNER JOIN socios s ON sc.SocioId = s.id
+                WHERE 1=1
+                ");
 
-                if (lstModel.Count <= 0)
+                var parameters = new DynamicParameters();
+
+                if (request.SomenteAtivos)
                 {
-                    return Ok(new
-                    {
-                        bResult = true,
-                        type = "ERRO - VAZIO - lstResult",
-                        message = "listagem em branco",
-                        data = lstModel
-                    });
+                    sqlFrom.Append(" AND s.ativo = true");
                 }
 
+                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
+                {
+                    sqlFrom.Append(@"
+                        AND (
+                            s.nome LIKE @SearchLike
+                            OR sc.Email LIKE @SearchLike
+                            OR sc.Telefone LIKE @SearchLike
+                        )
+                    ");
+                    parameters.Add("@SearchLike", $"%{request.Search.Value.Trim()}%");
+                }
+
+                var totalSql = "SELECT COUNT(1) FROM socio_contato";
+                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
+
+                var dataSql = $@"
+                    SELECT
+                        sc.id AS Id,
+                        sc.SocioId AS SocioId,
+                        sc.DDI AS Ddi,
+                        sc.DDD AS Ddd,
+                        sc.Telefone AS Telefone,
+                        sc.Email AS Email,
+
+                        s.nome AS NomeSocio,
+                        s.ativo AS SocioAtivo
+
+                    {sqlFrom}
+
+                    ORDER BY s.nome
+                    LIMIT @Limit OFFSET @Offset
+                    ";
+
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
+                using var conn = _db.Database.GetDbConnection();
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
+
                 return Ok(new
-                {/*
-                    _logger.LogInformation(
-                    $"{lstModel} graus Fahrenheit = " +
-                    $"{resultado.Celsius} graus Celsius = " +
-                    $"{resultado.Kelvin} graus Kelvin");
-                return resultado;
-                    */
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = lstModel,
+                {
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data
                 });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(ex, "Erro FiltrarDados");
 
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
+                return BadRequest(new { error = true, message = ex.Message });
             }
         }
 

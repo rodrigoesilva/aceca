@@ -49,8 +49,9 @@ function fn_GridList(formValid) {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varAjax_UrlController = `${var_Controller}/ListGrid`,
-        varAjax_TypeAction = 'GET',
+        varAjax_UrlController = `${var_Controller}/FiltrarDados`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeContent = 'application/json; charset=utf-8',
 
         varCol_Exportar = [2, 3, 4],
         varCol_Ordenacao = [[2, 'asc']],
@@ -68,17 +69,36 @@ function fn_GridList(formValid) {
         $.busyLoadFull("show");
 
         varTbl_Data = varTbl_Obj.DataTable({
-            //serverSide: true,
+            serverSide: true,
             paging: true,
             scrollCollapse: true,
             ordering: true,
             destroy: true,
 
             ajax: {
-                crossDomain: true,
                 url: varAjax_UrlController,
                 type: varAjax_TypeAction,
-                //dataSrc: ''
+                contentType: varAjax_TypeContent,
+
+                data: function (d) {
+                    return JSON.stringify({
+                        draw: d.draw,
+                        start: d.start,
+                        length: d.length,
+
+                        search: d.search, // 🔥 OBRIGATÓRIO para server-side
+
+                        somenteAtivos: document.getElementById('chkFilterAtivo')?.checked === true
+                    });
+                },
+
+                beforeSend: function () {
+                    $.busyLoadFull("show");
+                },
+                complete: function () {
+                    $.busyLoadFull("hide");
+                },
+
                 dataSrc: function (result) {
                     //console.log("data fn :: ", result)
                     return result.data;
@@ -87,7 +107,7 @@ function fn_GridList(formValid) {
             columnDefs: [
                 // COLUNA - Responsive
                 {
-                    data: 'socio.id',
+                    data: 'Id',
                     targets: 0,
                     className: 'control',
                     visible: false,
@@ -97,7 +117,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - ID checkbox
                 {
-                    data: 'socio.id',
+                    data: 'Id',
                     targets: 1,
                     visible: false,
                     checkboxes: true,
@@ -110,23 +130,23 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'socio.nome',
+                    data: 'NomeSocio',
                     targets: 2,
                 },
                 // COLUNA - Tipo Socio
                 {
-                    data: 'socio.socioPerfilId',
+                    data: 'SocioPerfilId',
                     targets: 3,
                     className: "text-center",
                     render: function (data, type, full) {
 
-                        let id = full.id;
+                        let id = full.Id;
 
                         if (id != 0 && data !== undefined && data !== null) {
 
                             let statusClass,
                                 statusLayout,
-                                statusDescricao = full.socioPerfil.descricao,
+                                statusDescricao = full.SocioPerfilDescricao,
                                 socioPerfilId = data;
 
                             switch (socioPerfilId) {
@@ -161,10 +181,10 @@ function fn_GridList(formValid) {
                         }
                     }
                 },
-                // COLUNA - Status                    
+                // COLUNA - Status
                 {
                     targets: -2,
-                    data: 'socio.ativo',
+                    data: 'SocioAtivo',
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -191,7 +211,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Botoes Acoes
                 {
-                    data: 'socio.id',
+                    data: 'Id',
                     targets: -1,
                     className: "text-center",
                     orderable: false,
@@ -458,13 +478,13 @@ function fn_CheckVerAtivos() {
 
     const chkVerAtivos = document.querySelector('#chkFilterAtivo');
 
-    // //CHK VER ATIVOS
+    // Server-side: o filtro "somente ativos" agora é aplicado no banco (ver ajax.data
+    // em fn_GridList), então só precisamos redesenhar a tabela.
     if (chkVerAtivos) {
         chkVerAtivos.addEventListener('change', function () {
             var table = $('.datatables-basic').DataTable();
 
             if (this.checked) {
-                //console.log("Checkbox is checked..");
                 Swal.fire({
                     title: 'INFO!!',
                     icon: 'info',
@@ -475,22 +495,9 @@ function fn_CheckVerAtivos() {
                         confirmButton: 'btn btn-label-info waves-effect'
                     },
                 }).then((result) => {
-                    //console.log("result :: ", result);
-
-                    $.fn.dataTable.ext.search.push(
-                        function (settings, data, dataIndex) {
-
-                            var rowAtivo = $(table.row(dataIndex).node()).find('[name="spStatus"]').data("status") == true;
-
-                            return rowAtivo
-                        }
-                    );
-
                     table.draw();
                 });
             } else {
-                //console.log("Checkbox is not checked..");
-                $.fn.dataTable.ext.search.pop();
                 table.draw();
             }
         });
@@ -533,28 +540,25 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
     
         // Pop ID
-        (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.socio.id)),
-        (popAddNewItem.querySelector('#hdSocioContatoId').value = (obj === null ? 0 : obj.socioContato.id)),
-        (popAddNewItem.querySelector('#hdSocioEnderecoId').value = (obj === null ? 0 : obj.socioEndereco.id)),
-        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj.socioAniversario.id)),
-        (popAddNewItem.querySelector('#hdSocioPerfilId').value = (obj === null ? 0 : obj.socio.socioPerfilId)),
+        (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
+        (popAddNewItem.querySelector('#hdSocioContatoId').value = (obj === null ? 0 : obj.SocioContatoId)),
+        (popAddNewItem.querySelector('#hdSocioEnderecoId').value = (obj === null ? 0 : obj.SocioEnderecoId)),
+        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj.SocioAniversarioId)),
+        (popAddNewItem.querySelector('#hdSocioPerfilId').value = (obj === null ? 0 : obj.SocioPerfilId)),
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),        
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.socioContato.email)),
-        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : `(${obj.socioContato.ddd}) ${obj.socioContato.telefone}`)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : obj.socioEndereco.cep)),
-        (popAddNewItem.querySelector('.dt-line-05').value = (obj === null ? '' : obj.socioEndereco.endereco)),
-        (popAddNewItem.querySelector('.dt-line-06').value = (obj === null ? '' : obj.socioEndereco.numero)),
-        (popAddNewItem.querySelector('.dt-line-07').value = (obj === null ? '' : obj.socioEndereco.complemento)),
-        (popAddNewItem.querySelector('.dt-line-08').value = (obj === null ? '' : obj.socioEndereco.bairro)),
-        (popAddNewItem.querySelector('.dt-line-09').value = (obj === null ? '' : obj.socioEndereco.estado)),
-        (popAddNewItem.querySelector('.dt-line-10').value = (obj === null ? '' : obj.socioEndereco.cidade)),
-        (popAddNewItem.querySelector('.dt-line-11').value = (obj === null ? '' : `${obj.socioAniversario.dia} / ${obj.socioAniversario.mes}`)),
-        (popAddNewItem.querySelector('.dt-line-12').checked = (obj === null ? true : obj.socio.ativo));
-        (popAddNewItem.querySelector('.dt-line-13').checked = (obj === null ? true : obj.socio.mostrarSite));
-
-        //(popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.socioPerfilId));
-       
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.NomeSocio)),
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.Email)),
+        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : `(${obj.Ddd}) ${obj.Telefone}`)),
+        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : obj.Cep)),
+        (popAddNewItem.querySelector('.dt-line-05').value = (obj === null ? '' : obj.Endereco)),
+        (popAddNewItem.querySelector('.dt-line-06').value = (obj === null ? '' : obj.Numero)),
+        (popAddNewItem.querySelector('.dt-line-07').value = (obj === null ? '' : obj.Complemento)),
+        (popAddNewItem.querySelector('.dt-line-08').value = (obj === null ? '' : obj.Bairro)),
+        (popAddNewItem.querySelector('.dt-line-09').value = (obj === null ? '' : obj.Estado)),
+        (popAddNewItem.querySelector('.dt-line-10').value = (obj === null ? '' : obj.Cidade)),
+        (popAddNewItem.querySelector('.dt-line-11').value = (obj === null ? '' : `${obj.Dia} / ${obj.Mes}`)),
+        (popAddNewItem.querySelector('.dt-line-12').checked = (obj === null ? true : obj.SocioAtivo));
+        (popAddNewItem.querySelector('.dt-line-13').checked = (obj === null ? true : obj.MostrarSite));
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -562,7 +566,7 @@ function fn_Pop(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmb_SocioEstado").val(obj.socioEndereco.estado).change();
+        $("#cmb_SocioEstado").val(obj.Estado).change();
 
         //console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
     }

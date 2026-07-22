@@ -44,8 +44,9 @@ function fn_GridList(formValid) {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varAjax_UrlController = `${var_Controller}/ListGrid`,
-        varAjax_TypeAction = 'GET',
+        varAjax_UrlController = `${var_Controller}/FiltrarDados`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeContent = 'application/json; charset=utf-8',
 
         varCol_Exportar = [2, 3, 4, 5, 6, 7],
         varCol_Ordenacao = [[2, 'asc']],
@@ -63,17 +64,36 @@ function fn_GridList(formValid) {
         $.busyLoadFull("show");
 
         varTbl_Data = varTbl_Obj.DataTable({
-            //serverSide: true,
+            serverSide: true,
             paging: true,
             scrollCollapse: true,
             ordering: true,
             destroy: true,
 
             ajax: {
-                crossDomain: true,
                 url: varAjax_UrlController,
                 type: varAjax_TypeAction,
-                //dataSrc: ''
+                contentType: varAjax_TypeContent,
+
+                data: function (d) {
+                    return JSON.stringify({
+                        draw: d.draw,
+                        start: d.start,
+                        length: d.length,
+
+                        search: d.search, // 🔥 OBRIGATÓRIO para server-side
+
+                        somenteAtivos: document.getElementById('chkFilterAtivo')?.checked === true
+                    });
+                },
+
+                beforeSend: function () {
+                    $.busyLoadFull("show");
+                },
+                complete: function () {
+                    $.busyLoadFull("hide");
+                },
+
                 dataSrc: function (result) {
                     //console.log("fn_GridList :: ", result)
                     return result.data;
@@ -82,7 +102,7 @@ function fn_GridList(formValid) {
             columnDefs: [
                 // COLUNA - Responsive
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: 0,
                     className: 'control',
                     visible: false,
@@ -92,7 +112,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - ID checkbox
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: 1,
                     visible: false,
                     checkboxes: true,
@@ -105,40 +125,40 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'socio.nome',
+                    data: 'NomeSocio',
                     targets: 2,
                 },
                 // COLUNA - Login
                 {
-                    data: 'nomeUsuario',
+                    data: 'NomeUsuario',
                     targets: 3,
                     //className: "text-center",
                 },
                 // COLUNA - Email
                 {
-                    data: 'email',
+                    data: 'Email',
                     targets: 4,
                     //className: "text-center",
                 },
                 // COLUNA - Senha
                 {
-                    data: 'senhaAberta',
+                    data: 'SenhaAberta',
                     targets: 5,
                     //className: "text-center",
                 },
                 // COLUNA - Tipo Usuario
                 {
-                    data: 'socio.socioPerfilId',
+                    data: 'SocioPerfilId',
                     targets: 6,
                     className: "text-center",
                     render: function (data, type, full) {
-                        let id = full.id;
+                        let id = full.Id;
 
                         if (id != 0 && data !== undefined && data !== null) {
 
                             let statusClass,
                                 statusLayout,
-                                statusDescricao = full.socio.socioPerfil.descricao,
+                                statusDescricao = full.SocioPerfilDescricao,
                                 propostaStatusId = data;
 
                             switch (propostaStatusId) {
@@ -175,33 +195,25 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Ultimo Login
                 {
-                    data: 'ultimoLogin',
+                    data: 'UltimoLogin',
                     targets: 7,
                     className: "text-center",
                     render: function (data, type, full) {
-                        let id = full.id;
+                        let id = full.Id;
 
                         if (id != 0 && data !== undefined && data !== null) {
+                            let dataFormat = data ? moment.utc(data.toLocaleString()).format("DD/MM/YYYY[<br>]HH:mm:ss") : '-';
 
-                            var rowvalueallday = full["tm_mm_mitglieder.Geburtsdatum"];
-                            //console.log("fn_GridListFilterDataProposta rowvalueallday ::: ", rowvalueallday);
-                            if (rowvalueallday == '0000-00-00') {
-                                var gdat = '1900-01-01';
-                                return gdat;
-                            } else {
-                                let dataFormat = data ? moment.utc(data.toLocaleString()).format("DD/MM/YYYY[<br>]HH:mm:ss") : '-';
-
-                                return (dataFormat);
-                            }
+                            return (dataFormat);
                         } else {
                             return '';//'Data Indispon&iacute;vel';
                         }
                     }
                 },
-                // COLUNA - Status                    
+                // COLUNA - Status
                 {
                     targets: -2,
-                    data: 'socio.ativo',
+                    data: 'SocioAtivo',
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -228,7 +240,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Botoes Acoes
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: -1,
                     className: "text-center",
                     orderable: false,
@@ -484,13 +496,13 @@ function fn_CheckVerAtivos() {
 
     const chkVerAtivos = document.querySelector('#chkFilterAtivo');
 
-    // //CHK VER ATIVOS
+    // Server-side: o filtro "somente ativos" agora é aplicado no banco (ver ajax.data
+    // em fn_GridList), então só precisamos redesenhar a tabela.
     if (chkVerAtivos) {
         chkVerAtivos.addEventListener('change', function () {
             var table = $('.datatables-basic').DataTable();
 
             if (this.checked) {
-                //console.log("Checkbox is checked..");
                 Swal.fire({
                     title: 'INFO!!',
                     icon: 'info',
@@ -501,22 +513,9 @@ function fn_CheckVerAtivos() {
                         confirmButton: 'btn btn-label-info waves-effect'
                     },
                 }).then((result) => {
-                    //console.log("result :: ", result);
-
-                    $.fn.dataTable.ext.search.push(
-                        function (settings, data, dataIndex) {
-
-                            var rowAtivo = $(table.row(dataIndex).node()).find('[name="spStatus"]').data("status") == true;
-
-                            return rowAtivo
-                        }
-                    );
-
                     table.draw();
                 });
             } else {
-                //console.log("Checkbox is not checked..");
-                $.fn.dataTable.ext.search.pop();
                 table.draw();
             }
         });
@@ -562,15 +561,15 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
-        (popAddNewItem.querySelector('#hdSocioId').value = (obj === null ? 0 : obj.socioId)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
+        (popAddNewItem.querySelector('#hdSocioId').value = (obj === null ? 0 : obj.SocioId)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.socio.nome)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.nomeUsuario)),
-        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.email)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.socio.socioPerfilId));
-        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.ativo));
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.NomeSocio)),
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.NomeUsuario)),
+        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.Email)),
+        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.SocioPerfilId));
+        (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.SocioAtivo));
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -578,7 +577,7 @@ function fn_Pop(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmb_SocioPerfil").val(obj.socio.socioPerfilId).change();
+        $("#cmb_SocioPerfil").val(obj.SocioPerfilId).change();
 
         //console.log("fn_Pop ex val ::: ", $("#cmb_SocioPerfil").val());
     }

@@ -28,6 +28,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+// Compressão HTTP (gzip/brotli) — reduz ~60-80% do payload de HTML/CSS/JS/JSON.
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+});
+
 builder.Services.AddScoped<HelperExtensionsController>();
 
 // Automação: verifica semanalmente vencimento/pendência financeira dos sócios (socio_financeiro)
@@ -214,6 +222,7 @@ else {
 }
 
 app.UseHttpsRedirection();
+app.UseResponseCompression();
 //app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -237,6 +246,44 @@ app.Use(async (ctx, next) =>
     ctx.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
     await next();
 });
+
+// Índices de banco — preparação para escala em duas tabelas que ainda vão crescer bastante
+// (marcas ~65 mil linhas hoje; socio_colecao ainda pequena, mas vai passar de 100 mil).
+// Cobrem exatamente as colunas usadas em WHERE/JOIN nos FiltrarDados/upserts existentes
+// (AcervoController, SocioColecaoController, NegociacaoController). Idempotente: seguro
+// rodar em todo restart, "IF NOT EXISTS" evita erro se o índice já existir.
+using (var scope = app.Services.CreateScope())
+{
+    var dbIndex = scope.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var indexLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    var indices = new[]
+    {
+        ("marcas", "idx_marcas_marcaAcervoId", "marcaAcervoId"),
+        ("marcas", "idx_marcas_marcaFaseId", "marcaFaseId"),
+        ("marcas", "idx_marcas_marcafaseAcervoId", "marcafaseAcervoId"),
+        ("marcas", "idx_marcas_marcaSubTipoId", "marcaSubTipoId"),
+        ("marcas", "idx_marcas_CodigoAceca", "CodigoAceca"),
+        ("socio_colecao", "idx_socio_colecao_socio_marca", "SocioId, MarcaId"),
+        ("socio_colecao", "idx_socio_colecao_marca", "MarcaId"),
+    };
+
+    foreach (var (tabela, nomeIndice, colunas) in indices)
+    {
+        try
+        {
+            // Identificadores vêm só da lista constante acima (nunca de input externo),
+            // então a concatenação aqui é segura — DDL não aceita nomes de tabela/coluna
+            // como parâmetro bindado de qualquer forma.
+            string sqlDdl = "ALTER TABLE " + tabela + " ADD INDEX IF NOT EXISTS " + nomeIndice + " (" + colunas + ")";
+            await dbIndex.Database.ExecuteSqlRawAsync(sqlDdl);
+        }
+        catch (Exception ex)
+        {
+            indexLogger.LogWarning(ex, "Não foi possível garantir o índice {Indice} em {Tabela}", nomeIndice, tabela);
+        }
+    }
+}
 
 app.MapControllerRoute(
     name: "default",

@@ -2,11 +2,13 @@
 using Aceca.Adm.Helper;
 using Aceca.Adm.Models;
 using Aceca.Adm.VMModels;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Reflection;
+using System.Text;
 using static Aceca.Adm.Helper.HelperExtensionsController;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
@@ -50,61 +52,103 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             return View("~/Views/Admin/Socio/Socio.cshtml");
         }
 
-        [HttpGet]
-        public async Task<IActionResult> ListGrid()
+        // Paginação no servidor (Dapper + LIMIT/OFFSET) — antes carregava todos os sócios
+        // de uma vez, com 4 joins (ver auditoria de performance / piloto SocioLogAcesso).
+        [HttpPost]
+        public async Task<IActionResult> FiltrarDados([FromBody] Models.FilterDataGridSimples request)
         {
             try
             {
+                if (request == null)
+                    return BadRequest("Request inválido");
 
-                var result = from s in _db.Socio
-                             join sa in _db.SocioAniversario on s.Id equals sa.SocioId
-                             join sc in _db.SocioContato on s.Id equals sc.SocioId
-                             join se in _db.SocioEndereco on s.Id equals se.SocioId
-                             join sp in _db.SocioPerfil on s.SocioPerfilId equals sp.Id
-                             orderby s.Nome
-                             select new
-                             {
-                                 Socio = s,
-                                 SocioAniversario = sa,
-                                 SocioContato = sc,
-                                 SocioEndereco = se,
-                                 SocioPerfil = sp,
-                             };
+                var sqlFrom = new StringBuilder(@"
+                FROM socios s
+                INNER JOIN socio_aniversario sa ON s.id = sa.SocioId
+                INNER JOIN socio_contato sc ON s.id = sc.SocioId
+                INNER JOIN socio_endereco se ON s.id = se.SocioId
+                INNER JOIN socio_perfil sp ON s.socioPerfilId = sp.id
+                WHERE 1=1
+                ");
 
+                var parameters = new DynamicParameters();
 
-                var lstModel = await result.AsNoTracking().ToListAsync();
-
-                if (lstModel.Count <= 0)
+                if (request.SomenteAtivos)
                 {
-                    return Ok(new
-                    {
-                        bResult = true,
-                        type = "ERRO - VAZIO - lstResult",
-                        message = "listagem em branco",
-                        data = lstModel
-                    });
+                    sqlFrom.Append(" AND s.ativo = true");
                 }
+
+                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
+                {
+                    sqlFrom.Append(@"
+                        AND (
+                            s.nome LIKE @SearchLike
+                            OR sc.email LIKE @SearchLike
+                            OR se.cidade LIKE @SearchLike
+                        )
+                    ");
+                    parameters.Add("@SearchLike", $"%{request.Search.Value.Trim()}%");
+                }
+
+                var totalSql = "SELECT COUNT(1) FROM socios";
+                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
+
+                var dataSql = $@"
+                    SELECT
+                        s.id AS Id,
+                        s.nome AS NomeSocio,
+                        s.ativo AS SocioAtivo,
+                        s.mostrarSite AS MostrarSite,
+                        s.socioPerfilId AS SocioPerfilId,
+
+                        sp.descricao AS SocioPerfilDescricao,
+
+                        sc.id AS SocioContatoId,
+                        sc.email AS Email,
+                        sc.ddd AS Ddd,
+                        sc.telefone AS Telefone,
+
+                        se.id AS SocioEnderecoId,
+                        se.cep AS Cep,
+                        se.endereco AS Endereco,
+                        se.numero AS Numero,
+                        se.complemento AS Complemento,
+                        se.bairro AS Bairro,
+                        se.estado AS Estado,
+                        se.cidade AS Cidade,
+
+                        sa.id AS SocioAniversarioId,
+                        sa.dia AS Dia,
+                        sa.mes AS Mes
+
+                    {sqlFrom}
+
+                    ORDER BY s.nome
+                    LIMIT @Limit OFFSET @Offset
+                    ";
+
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
+                using var conn = _db.Database.GetDbConnection();
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
 
                 return Ok(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = lstModel,
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data
                 });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(ex, "Erro FiltrarDados");
 
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
+                return BadRequest(new { error = true, message = ex.Message });
             }
         }
 

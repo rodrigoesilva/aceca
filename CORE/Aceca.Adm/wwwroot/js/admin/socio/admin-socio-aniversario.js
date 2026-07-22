@@ -60,8 +60,9 @@ function fn_GridList(formValid) {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varAjax_UrlController = `${var_Controller}/ListGrid`,
-        varAjax_TypeAction = 'GET',
+        varAjax_UrlController = `${var_Controller}/FiltrarDados`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeContent = 'application/json; charset=utf-8',
 
         varCol_Exportar = [2, 3, 4],
         varCol_Ordenacao = [[2, 'asc']],
@@ -79,17 +80,36 @@ function fn_GridList(formValid) {
         $.busyLoadFull("show");
 
         varTbl_Data = varTbl_Obj.DataTable({
-            //serverSide: true,
+            serverSide: true,
             paging: true,
             scrollCollapse: true,
             ordering: true,
             destroy: true,
 
             ajax: {
-                crossDomain: true,
                 url: varAjax_UrlController,
                 type: varAjax_TypeAction,
-                //dataSrc: ''
+                contentType: varAjax_TypeContent,
+
+                data: function (d) {
+                    return JSON.stringify({
+                        draw: d.draw,
+                        start: d.start,
+                        length: d.length,
+
+                        search: d.search, // 🔥 OBRIGATÓRIO para server-side
+
+                        somenteAtivos: document.getElementById('chkFilterAtivo')?.checked === true
+                    });
+                },
+
+                beforeSend: function () {
+                    $.busyLoadFull("show");
+                },
+                complete: function () {
+                    $.busyLoadFull("hide");
+                },
+
                 dataSrc: function (result) {
                     //console.log("data fn :: ", result)
                     return result.data;
@@ -98,7 +118,7 @@ function fn_GridList(formValid) {
             columnDefs: [
                 // COLUNA - Responsive
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: 0,
                     className: 'control',
                     visible: false,
@@ -108,7 +128,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - ID checkbox
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: 1,
                     visible: false,
                     render: function () {
@@ -120,28 +140,28 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'socio.nome',
+                    data: 'NomeSocio',
                     targets: 2,
                 },
                 // COLUNA - Data Aniversario
                 {
-                    data: 'dia',
+                    data: 'Dia',
                     targets: 3,
                     className: "text-center",
                     render: function (data, type, full) {
-                        let id = full.id;
+                        let id = full.Id;
 
                         if (id != 0 && data !== undefined && data !== null) {
-                            return `${full.dia} / ${full.mes}`;
+                            return `${full.Dia} / ${full.Mes}`;
                         } else {
                             return '';//'Data Indispon&iacute;vel';
                         }
                     }
                 },
-                // COLUNA - Status                    
+                // COLUNA - Status
                 {
                     targets: -2,
-                    data: 'socio.ativo',
+                    data: 'SocioAtivo',
                     className: "text-center",
                     render: function (data, type, full, meta) {
 
@@ -169,7 +189,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Botoes Acoes
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: -1,
                     className: "text-center",
                     orderable: false,
@@ -423,13 +443,13 @@ function fn_CheckVerAtivos() {
 
     const chkVerAtivos = document.querySelector('#chkFilterAtivo');
 
-    // //CHK VER ATIVOS
+    // Server-side: o filtro "somente ativos" agora é aplicado no banco (ver ajax.data
+    // em fn_GridList), então só precisamos redesenhar a tabela.
     if (chkVerAtivos) {
         chkVerAtivos.addEventListener('change', function () {
             var table = $('.datatables-basic').DataTable();
 
             if (this.checked) {
-                //console.log("Checkbox is checked..");
                 Swal.fire({
                     title: 'INFO!!',
                     icon: 'info',
@@ -440,22 +460,9 @@ function fn_CheckVerAtivos() {
                         confirmButton: 'btn btn-label-info waves-effect'
                     },
                 }).then((result) => {
-                    //console.log("result :: ", result);
-
-                    $.fn.dataTable.ext.search.push(
-                        function (settings, data, dataIndex) {
-
-                            var rowAtivo = $(table.row(dataIndex).node()).find('[name="spStatus"]').data("status") == true;
-
-                            return rowAtivo
-                        }
-                    );
-
                     table.draw();
                 });
             } else {
-                //console.log("Checkbox is not checked..");
-                $.fn.dataTable.ext.search.pop();
                 table.draw();
             }
         });
@@ -475,13 +482,12 @@ function fn_Pop(obj, action) {
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
 
     // Pop ID
-    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj?.id)),
-        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj?.socioId)),
+    (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj?.Id)),
+        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj?.SocioId)),
 
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj?.socio.nome)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : `${obj?.dia} / ${obj?.mes}`)),
-        //(popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj?.socio.ativo));
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj?.NomeSocio)),
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : `${obj?.Dia} / ${obj?.Mes}`)),
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');

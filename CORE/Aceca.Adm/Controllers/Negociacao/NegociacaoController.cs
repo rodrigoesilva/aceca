@@ -98,6 +98,24 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     }
                 }
 
+                if ((int)filtroColecao.ColecaoStatus > 0)
+                {
+                    switch (filtroColecao.ColecaoStatus)
+                    {
+                        case EColecaoStatus.Possui:
+                            sqlFrom.Append(" AND sc.possui = true");
+                            break;
+                        case EColecaoStatus.Interesse:
+                            sqlFrom.Append(" AND sc.interesse = true");
+                            break;
+                        case EColecaoStatus.DisponivelNegocio:
+                            sqlFrom.Append(" AND sc.disponivel_negocio = true");
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
                 if (filtro.MarcaAcervoId > 0)
                 {
                     if (filtro.MarcaAcervoId != 1 || !filtro.ExibirGeral)
@@ -296,60 +314,101 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             return View("~/Views/Admin/Negociacao/NegociacaoSocio.cshtml");
         }
 
-        [HttpGet]
-        public async Task<IActionResult> ListGrid_PorSocio()
+        // Paginação no servidor (Dapper + LIMIT/OFFSET + GROUP BY) — antes trazia TODAS as
+        // linhas de socios x socio_colecao x socio_contato pro C# só para agrupar e contar
+        // (um sócio com 500 itens na coleção gerava 500 linhas pra virar 1 no resultado final).
+        // Também corrige o agrupamento: era feito por Nome (dois sócios com nome igual eram
+        // fundidos em um só resultado); agora agrupa por s.id, que é o identificador real.
+        [HttpPost]
+        public async Task<IActionResult> FiltrarDados_PorSocio([FromBody] Models.FilterDataGridSimples request)
         {
             try
             {
-                // 1. Executa os JOINs trazendo apenas as colunas necessárias do banco de forma assíncrona
-                var dadosBrutos = await _db.Socio
-                    .AsNoTracking()
-                    .Join(_db.SocioColecao,
-                          socio => socio.Id,
-                          colecao => colecao.SocioId,
-                          (socio, colecao) => new { socio.Id, socio.Nome, ColecaoPossui = colecao.Possui })
-                    .Join(_db.SocioContato,
-                          combinado => combinado.Id,
-                          contato => contato.SocioId,
-                          (combinado, contato) => new { combinado.Id, combinado.Nome, combinado.ColecaoPossui, contato.DDI, contato.DDD, contato.Telefone, contato.Email })
-                    .ToListAsync();
+                if (request == null)
+                    return BadRequest("Request inválido");
 
-                // 2. Agrupa pelo Nome, calcula a quantidade de itens possuídos e ordena
-                var lstModel = dadosBrutos
-                    .GroupBy(x => x.Nome)
-                    .Select(grupo => new
-                    {
-                        SocioNome = grupo.Key, // Como agrupamos por Nome, usamos o grupo.Key
-                        SocioId = grupo.FirstOrDefault()?.Id,// Pegamos o Id do primeiro registro do grupo (já que possuem o mesmo Nome)
-                        SocioDDI = grupo.FirstOrDefault()?.DDI,
-                        SocioDDD = grupo.FirstOrDefault()?.DDD,
-                        SocioTelefone = grupo.FirstOrDefault()?.Telefone,
-                        SocioEmail = grupo.FirstOrDefault()?.Email,
-                        QuantidadePossui = grupo.Count(x => x.ColecaoPossui)
-                    })
-                    .OrderBy(r => r.SocioNome)
-                    .ToList();
+                var sqlFrom = new StringBuilder(@"
+                FROM socios s
+                INNER JOIN socio_contato sc ON s.id = sc.SocioId
+                INNER JOIN socio_colecao col ON s.id = col.SocioId
+                WHERE 1=1
+                ");
+
+                var parameters = new DynamicParameters();
+
+                if (request.SomenteAtivos)
+                {
+                    sqlFrom.Append(" AND s.ativo = true");
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
+                {
+                    sqlFrom.Append(@"
+                        AND (
+                            s.nome LIKE @SearchLike
+                            OR sc.email LIKE @SearchLike
+                        )
+                    ");
+                    parameters.Add("@SearchLike", $"%{request.Search.Value.Trim()}%");
+                }
+
+                var totalSql = @"
+                    SELECT COUNT(*) FROM (
+                        SELECT s.id
+                        FROM socios s
+                        INNER JOIN socio_contato sc ON s.id = sc.SocioId
+                        INNER JOIN socio_colecao col ON s.id = col.SocioId
+                        GROUP BY s.id
+                    ) t
+                    ";
+
+                var filteredSql = $@"
+                    SELECT COUNT(*) FROM (
+                        SELECT s.id
+                        {sqlFrom}
+                        GROUP BY s.id
+                    ) t
+                    ";
+
+                var dataSql = $@"
+                    SELECT
+                        s.id AS socioId,
+                        s.nome AS socioNome,
+                        sc.ddi AS socioDDI,
+                        sc.ddd AS socioDDD,
+                        sc.telefone AS socioTelefone,
+                        sc.email AS socioEmail,
+                        COUNT(CASE WHEN col.possui = 1 THEN 1 END) AS quantidadePossui
+
+                    {sqlFrom}
+
+                    GROUP BY s.id, s.nome, sc.ddi, sc.ddd, sc.telefone, sc.email
+                    ORDER BY s.nome
+                    LIMIT @Limit OFFSET @Offset
+                    ";
+
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
+                using var conn = _db.Database.GetDbConnection();
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
 
                 return Ok(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = lstModel
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data
                 });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(ex, "Erro FiltrarDados_PorSocio");
 
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
+                return BadRequest(new { error = true, message = ex.Message });
             }
         }
 

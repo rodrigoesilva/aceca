@@ -387,7 +387,6 @@ namespace Aceca.Adm.Controllers
 
                 var strToken = _helperController.GenerateSecuretToken();
 
-                // Armazena no usuário (campos que precisam existir no model Usuario)
                 user.ResetPasswordToken = strToken;
                 user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
 

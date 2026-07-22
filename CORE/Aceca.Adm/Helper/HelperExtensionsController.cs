@@ -2,6 +2,7 @@ using Aceca.Adm.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
@@ -24,22 +25,31 @@ namespace Aceca.Adm.Helper
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
+        private readonly IMemoryCache _cache;
 
         private static List<SelectListItem> _cacheMarcaFase;
         private static readonly ConcurrentDictionary<int, List<SelectListItem>> _cacheMarcaFaseByAcervo = new();
+
+        // TTL dos combos de referência (AsyncCmb_*) cacheados via IMemoryCache: dados quase
+        // estáticos (fases, tipos, categorias etc.), mas com expiração — não indefinido como
+        // _cacheMarcaFase acima — para que um item recém-cadastrado pelo admin apareça nos
+        // combos em poucos minutos, sem precisar reiniciar o processo.
+        private static readonly TimeSpan _cacheComboTtl = TimeSpan.FromMinutes(15);
         //
 
         #endregion
 
-        public HelperExtensionsController(ILogger<HelperExtensionsController> logger, 
-            IConfiguration cfg, 
+        public HelperExtensionsController(ILogger<HelperExtensionsController> logger,
+            IConfiguration cfg,
             AppDbContext db,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            IMemoryCache cache)
         {
             _logger = logger;
             _appEnvironment = env;
             _appConfiguration = cfg;
             _db = db;
+            _cache = cache;
         }
 
 
@@ -144,16 +154,21 @@ namespace Aceca.Adm.Helper
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaAcervo()
         {
-            return await _db.MarcaAcervo
-                .AsNoTracking()
-                .Where(x => (bool)x.Ativo)
-                .OrderBy(x => x.Id)
-                .Select(x => new SelectListItem
-                {
-                    Value = x.Id.ToString(),
-                    Text = x.Descricao
-                })                
-                .ToListAsync();
+            return await _cache.GetOrCreateAsync("cmb_MarcaAcervo", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
+                return await _db.MarcaAcervo
+                    .AsNoTracking()
+                    .Where(x => (bool)x.Ativo)
+                    .OrderBy(x => x.Id)
+                    .Select(x => new SelectListItem
+                    {
+                        Value = x.Id.ToString(),
+                        Text = x.Descricao
+                    })
+                    .ToListAsync();
+            });
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFase()
         {
@@ -206,111 +221,79 @@ namespace Aceca.Adm.Helper
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFinalidade()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_MarcaFinalidade", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.MarcaFinalidade
                     .AsNoTracking()
-                        ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Descricao)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaFabrica()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_MarcaFabrica", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.MarcaFabrica
                     .AsNoTracking()
-                        ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Nome)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Nome)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Nome
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Nome
+                }).ToList();
+            });
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaDimensao()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_MarcaDimensao", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.MarcaDimensao
                     .AsNoTracking()
-                        ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Descricao)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaTipo()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_MarcaTipo", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.MarcaTipo
                     .AsNoTracking()
-                      ?.Where(s => s.Ativo == true)
-                      .OrderBy(m => m.Descricao)
-                      .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
 
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaTipoByFase(int id)
@@ -345,30 +328,22 @@ namespace Aceca.Adm.Helper
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaSubTipo()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_MarcaSubTipo", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.MarcaSubTipo
                     .AsNoTracking()
-                      ?.Where(s => s.Ativo == true)
-                      .OrderBy(m => m.Descricao)
-                      .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaSubTipoByTipo(int id)
         {
@@ -399,85 +374,61 @@ namespace Aceca.Adm.Helper
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaImpressora()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_MarcaImpressora", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.MarcaImpressora
                     .AsNoTracking()
-                        ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Descricao)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaQualidadeImagem()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_MarcaQualidadeImagem", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.MarcaQualidadeImagem
                     .AsNoTracking()
-                        ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Descricao)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
 
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_MarcaRaridade()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_MarcaRaridade", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.MarcaRaridade
                     .AsNoTracking()
-                        ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Descricao)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
 
         #endregion
@@ -485,86 +436,62 @@ namespace Aceca.Adm.Helper
         #region Combos
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_AgendaImagem()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_AgendaImagem", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.AgendaImagem
                     .AsNoTracking()
-                    ?.Where(s => s.Ativo == true)
+                    .Where(s => s.Ativo == true)
                     .OrderBy(m => m.Descricao)
                     .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
 
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_FabricaFase()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_FabricaFase", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.FabricaFase
                     .AsNoTracking()
-                    ?.Where(s => s.Ativo == true)
+                    .Where(s => s.Ativo == true)
                     .OrderBy(m => m.Descricao)
                     .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
 
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_PaisCategoria()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_PaisCategoria", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.PaisCategoria
                     .AsNoTracking()
-                       ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Descricao)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
 
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_Socio()
@@ -597,58 +524,42 @@ namespace Aceca.Adm.Helper
 
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_SocioPerfil()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_SocioPerfil", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.SocioPerfil
                     .AsNoTracking()
-                        ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Descricao)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
 
         public async Task<IEnumerable<SelectListItem>> AsyncCmb_SocioTipoPagamento()
         {
-            var lst = new List<SelectListItem>();
-
-            try
+            return await _cache.GetOrCreateAsync("cmb_SocioTipoPagamento", async entry =>
             {
+                entry.AbsoluteExpirationRelativeToNow = _cacheComboTtl;
+
                 var lstModel = await _db.TipoPagamento
                     .AsNoTracking()
-                       ?.Where(s => s.Ativo == true)
-                       .OrderBy(m => m.Descricao)
-                       .ToListAsync();
+                    .Where(s => s.Ativo == true)
+                    .OrderBy(m => m.Descricao)
+                    .ToListAsync();
 
-                foreach (var element in lstModel)
-                    lst.Add(new SelectListItem
-                    {
-                        Value = element.Id.ToString(),
-                        Text = element.Descricao
-                    });
-            }
-            catch (Exception ex)
-            {
-                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
-                throw;
-            }
-
-            return lst;
+                return lstModel.Select(element => new SelectListItem
+                {
+                    Value = element.Id.ToString(),
+                    Text = element.Descricao
+                }).ToList();
+            });
         }
 
         #endregion

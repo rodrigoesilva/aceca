@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Reflection;
+using System.Text;
 
 namespace Aceca.Adm.Controllers.Pages.Download
 {
@@ -65,56 +66,92 @@ namespace Aceca.Adm.Controllers.Pages.Download
 
         #region GRID
 
-        [HttpGet]
-        public async Task<IActionResult> ListGrid()
+        // Paginação no servidor (Dapper + LIMIT/OFFSET) — antes carregava todos os downloads
+        // de uma vez (ver auditoria de performance / piloto SocioLogAcesso). Mantém a mesma
+        // forma de SELECT (d.*, aliases em camelCase) para não precisar mudar o JS existente.
+        [HttpPost]
+        public async Task<IActionResult> FiltrarDados([FromBody] Models.FilterDataGridSimples request)
         {
             try
             {
+                if (request == null)
+                    return BadRequest("Request inválido");
+
+                var sqlFrom = new StringBuilder(@"
+                FROM download d
+                INNER JOIN download_tipo dt ON d.downloadTipoId = dt.id
+                WHERE 1=1
+                ");
+
+                var parameters = new DynamicParameters();
+
+                if (request.SomenteAtivos)
+                {
+                    sqlFrom.Append(" AND d.ativo = true");
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
+                {
+                    sqlFrom.Append(@"
+                        AND (
+                            d.titulo LIKE @SearchLike
+                            OR d.nome LIKE @SearchLike
+                            OR d.descricao LIKE @SearchLike
+                            OR dt.descricao LIKE @SearchLike
+                        )
+                    ");
+                    parameters.Add("@SearchLike", $"%{request.Search.Value.Trim()}%");
+                }
+
+                var totalSql = "SELECT COUNT(1) FROM download";
+                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
+
                 var dataSql = $@"
-                        SELECT 
-                            d.*, 
-                            dt.descricao AS downloadTipo,
-                            COALESCE(
-                                (
-                                    SELECT GROUP_CONCAT(ss.nome_usuario 
-                                                         ORDER BY FIND_IN_SET(s.id, REPLACE(d.socioId, ' ', '')) 
-                                                         SEPARATOR ' / ')
-                                    FROM socios s
-                                     INNER JOIN socio_seguranca ss ON ss.socioId = s.id
-                                    WHERE FIND_IN_SET(s.id, REPLACE(d.socioId, ' ', '')) > 0
-                                ),
-                                'Aceca'
-                            ) AS incluidoPor
-                        FROM download d
-                        INNER JOIN download_tipo dt ON d.downloadTipoId = dt.id 
-                        ORDER BY d.downloadTipoId, d.nome;
+                    SELECT
+                        d.*,
+                        dt.descricao AS downloadTipo,
+                        COALESCE(
+                            (
+                                SELECT GROUP_CONCAT(ss.nome_usuario
+                                                     ORDER BY FIND_IN_SET(s.id, REPLACE(d.socioId, ' ', ''))
+                                                     SEPARATOR ' / ')
+                                FROM socios s
+                                 INNER JOIN socio_seguranca ss ON ss.socioId = s.id
+                                WHERE FIND_IN_SET(s.id, REPLACE(d.socioId, ' ', '')) > 0
+                            ),
+                            'Aceca'
+                        ) AS incluidoPor
+
+                    {sqlFrom}
+
+                    ORDER BY d.downloadTipoId, d.nome
+                    LIMIT @Limit OFFSET @Offset
                     ";
 
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
                 using var conn = _db.Database.GetDbConnection();
-                var lstModel = await conn.QueryAsync(dataSql);
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
 
                 return Ok(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = lstModel,
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data,
                     arqUrlBase = $"{_urlBaseSite}/arquivos",
                     imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg"
                 });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(ex, "Erro FiltrarDados");
 
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
+                return BadRequest(new { error = true, message = ex.Message });
             }
         }
 

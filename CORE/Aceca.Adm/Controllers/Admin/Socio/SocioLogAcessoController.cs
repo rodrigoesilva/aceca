@@ -1,7 +1,9 @@
 ﻿using Aceca.Adm.Data;
+using Aceca.Adm.Models;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
+using System.Text;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
@@ -41,50 +43,98 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             return View("~/Views/Admin/Socio/SocioLogAcesso.cshtml");
         }
 
-        [HttpGet]
-        public async Task<IActionResult> ListGrid()
+        // Piloto de paginação no servidor (ver auditoria de performance): antes carregava
+        // a tabela inteira (só cresce, um registro por login) e paginava no navegador.
+        [HttpPost]
+        public async Task<IActionResult> FiltrarDados([FromBody] FilterDataGridSimples request)
         {
             try
             {
-                var lstModel = await _db.SocioLogAcesso
-                    .Include(x => x.SocioEndereco)
-                    .Include(x => x.SocioEndereco.Socio)
-                    .Include(x => x.SocioEndereco.Socio.SocioPerfil)
-                    .AsNoTracking()
-                    .OrderByDescending(x => x.UltimoLogin)
-                    .ToListAsync();
+                if (request == null)
+                    return BadRequest("Request inválido");
 
-                if (lstModel.Count <= 0)
+                var sqlFrom = new StringBuilder(@"
+                FROM socio_log_acesso sla
+                INNER JOIN socio_endereco se ON sla.socioEnderecoId = se.id
+                INNER JOIN socios s ON se.socioId = s.id
+                WHERE 1=1
+                ");
+
+                var parameters = new DynamicParameters();
+
+                if (request.SomenteAtivos)
                 {
-                    return Ok(new
-                    {
-                        bResult = true,
-                        type = "ERRO - VAZIO - lstResult",
-                        message = "listagem em branco",
-                        data = lstModel
-                    });
+                    sqlFrom.Append(" AND s.ativo = true");
                 }
+
+                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
+                {
+                    sqlFrom.Append(@"
+                        AND (
+                            s.nome LIKE @SearchLike
+                            OR sla.ip LIKE @SearchLike
+                            OR sla.operadora LIKE @SearchLike
+                            OR sla.cidade LIKE @SearchLike
+                            OR sla.estado LIKE @SearchLike
+                            OR se.cidade LIKE @SearchLike
+                            OR se.estado LIKE @SearchLike
+                            OR sla.browser LIKE @SearchLike
+                            OR sla.os LIKE @SearchLike
+                            OR sla.device LIKE @SearchLike
+                        )
+                    ");
+                    parameters.Add("@SearchLike", $"%{request.Search.Value.Trim()}%");
+                }
+
+                var totalSql = "SELECT COUNT(1) FROM socio_log_acesso";
+                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
+
+                var dataSql = $@"
+                    SELECT
+                        sla.id AS Id,
+                        sla.ip AS Ip,
+                        sla.os AS Os,
+                        sla.browser AS Browser,
+                        sla.device AS Device,
+                        sla.operadora AS Operadora,
+                        sla.cidade AS OrigemCidade,
+                        sla.estado AS OrigemEstado,
+                        sla.last_login AS UltimoLogin,
+
+                        s.nome AS NomeSocio,
+                        s.ativo AS SocioAtivo,
+
+                        se.cidade AS EnderecoCidade,
+                        se.estado AS EnderecoEstado
+
+                    {sqlFrom}
+
+                    ORDER BY sla.last_login DESC
+                    LIMIT @Limit OFFSET @Offset
+                    ";
+
+                parameters.Add("@Limit", request.Length);
+                parameters.Add("@Offset", request.Start);
+
+                using var conn = _db.Database.GetDbConnection();
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var data = await conn.QueryAsync(dataSql, parameters);
 
                 return Ok(new
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = lstModel,
+                    draw = request.Draw,
+                    recordsTotal = total,
+                    recordsFiltered = filtered,
+                    data
                 });
             }
             catch (Exception ex)
             {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+                _logger.LogError(ex, "Erro FiltrarDados");
 
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
+                return BadRequest(new { error = true, message = ex.Message });
             }
         }
         #endregion

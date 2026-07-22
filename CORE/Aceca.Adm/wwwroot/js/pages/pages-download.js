@@ -57,8 +57,9 @@ function fn_GridList(formValid) {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varAjax_UrlController = `${var_Controller}/ListGrid`,
-        varAjax_TypeAction = 'GET',
+        varAjax_UrlController = `${var_Controller}/FiltrarDados`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeContent = 'application/json; charset=utf-8',
 
         varCol_Exportar = [2, 3, 4, 5],
         varCol_Ordenacao = [[2, 'asc']],
@@ -78,17 +79,36 @@ function fn_GridList(formValid) {
         $('.datatables-basic').DataTable().clear().destroy();
 
         varTbl_Data = varTbl_Obj.DataTable({
-            //serverSide: true,
+            serverSide: true,
             paging: true,
             scrollCollapse: true,
             ordering: true,
             destroy: true,
 
             ajax: {
-                crossDomain: true,
                 url: varAjax_UrlController,
                 type: varAjax_TypeAction,
-                //dataSrc: ''
+                contentType: varAjax_TypeContent,
+
+                data: function (d) {
+                    return JSON.stringify({
+                        draw: d.draw,
+                        start: d.start,
+                        length: d.length,
+
+                        search: d.search, // 🔥 OBRIGATÓRIO para server-side
+
+                        somenteAtivos: document.getElementById('chkFilterAtivo')?.checked === true
+                    });
+                },
+
+                beforeSend: function () {
+                    $.busyLoadFull("show");
+                },
+                complete: function () {
+                    $.busyLoadFull("hide");
+                },
+
                 dataSrc: function (result) {
                     //console.log("data result :: ", result)
                     varResultFull = result;

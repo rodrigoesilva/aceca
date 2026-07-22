@@ -42,8 +42,9 @@ function fn_GridList() {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varAjax_UrlController = `${var_Controller}/ListGrid_PorSocio`,
-        varAjax_TypeAction = 'GET',
+        varAjax_UrlController = `${var_Controller}/FiltrarDados_PorSocio`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeContent = 'application/json; charset=utf-8',
 
         varCol_Exportar = [2, 3, 4],
         varCol_Ordenacao = [[2, 'asc']],
@@ -61,17 +62,36 @@ function fn_GridList() {
         $.busyLoadFull("show");
 
         varTbl_Data = varTbl_Obj.DataTable({
-            //serverSide: true,
+            serverSide: true,
             paging: true,
             scrollCollapse: true,
             ordering: true,
             destroy: true,
 
             ajax: {
-                crossDomain: true,
                 url: varAjax_UrlController,
                 type: varAjax_TypeAction,
-                //dataSrc: ''
+                contentType: varAjax_TypeContent,
+
+                data: function (d) {
+                    return JSON.stringify({
+                        draw: d.draw,
+                        start: d.start,
+                        length: d.length,
+
+                        search: d.search, // 🔥 OBRIGATÓRIO para server-side
+
+                        somenteAtivos: document.getElementById('chkFilterAtivo')?.checked === true
+                    });
+                },
+
+                beforeSend: function () {
+                    $.busyLoadFull("show");
+                },
+                complete: function () {
+                    $.busyLoadFull("hide");
+                },
+
                 dataSrc: function (result) {
                     //console.log("data fn :: ", result)
                     return result.data;
@@ -112,7 +132,7 @@ function fn_GridList() {
                     targets: 3,
                     className: "text-center",
                     render: function (data, type, full) {
-                        let id = full.id;
+                        let id = full.socioId;
 
                         if (id != 0 && data !== undefined && data !== null) {
 
@@ -176,7 +196,7 @@ function fn_GridList() {
                 },
                 // COLUNA - Botoes Acoes
                 {
-                    data: 'socio.id',
+                    data: 'socioId',
                     targets: -1,
                     className: "text-center",
                     orderable: false,

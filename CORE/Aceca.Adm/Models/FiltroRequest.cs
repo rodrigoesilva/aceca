@@ -55,4 +55,15 @@ namespace Aceca.Adm.Models
 
         public FiltroRequestColecao FiltrosColecao { get; set; }
     }
+
+    public class FilterDataGridSimples
+    {
+        public int Draw { get; set; }
+        public int Start { get; set; }
+        public int Length { get; set; }
+
+        public FilterDataSearchMarca Search { get; set; }
+
+        public bool SomenteAtivos { get; set; }
+    }
 }

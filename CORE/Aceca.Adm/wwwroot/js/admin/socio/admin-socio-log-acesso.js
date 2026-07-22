@@ -37,8 +37,9 @@ function fn_GridList(formValid) {
 
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
-        varAjax_UrlController = `${var_Controller}/ListGrid`,
-        varAjax_TypeAction = 'GET',
+        varAjax_UrlController = `${var_Controller}/FiltrarDados`,
+        varAjax_TypeAction = 'POST',
+        varAjax_TypeContent = 'application/json; charset=utf-8',
 
         varCol_Exportar = [2, 3, 4, 5, 6, 7, 8, 9, 10],
         varCol_Ordenacao = [[2, 'asc']],
@@ -56,17 +57,38 @@ function fn_GridList(formValid) {
         $.busyLoadFull("show");
 
         varTbl_Data = varTbl_Obj.DataTable({
-            //serverSide: true,
+            serverSide: true,
             paging: true,
             scrollCollapse: true,
             ordering: true,
             destroy: true,
 
             ajax: {
-                crossDomain: true,
                 url: varAjax_UrlController,
                 type: varAjax_TypeAction,
-                //dataSrc: ''
+                contentType: varAjax_TypeContent,
+
+                data: function (d) {
+                    return JSON.stringify({
+                        draw: d.draw,
+                        start: d.start,
+                        length: d.length,
+
+                        search: d.search, // 🔥 OBRIGATÓRIO para server-side
+
+                        somenteAtivos: document.getElementById('chkFilterAtivo')?.checked === true
+                    });
+                },
+
+                // server-side: cada página/ordenação/busca dispara uma nova requisição —
+                // mostra o overlay durante a ida ao servidor, não só no carregamento inicial
+                beforeSend: function () {
+                    $.busyLoadFull("show");
+                },
+                complete: function () {
+                    $.busyLoadFull("hide");
+                },
+
                 dataSrc: function (result) {
                     console.log("fn_GridList :: ", result)
                     return result.data;
@@ -75,7 +97,7 @@ function fn_GridList(formValid) {
             columnDefs: [
                 // COLUNA - Responsive
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: 0,
                     className: 'control',
                     visible: false,
@@ -85,7 +107,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - ID checkbox
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: 1,
                     visible: false,
                     checkboxes: true,
@@ -98,28 +120,20 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Nome
                 {
-                    data: 'socioEndereco.socio.nome',
+                    data: 'NomeSocio',
                     targets: 2,
-                    /*
-                    render: function (data, type, row) {
-                        return `(${data}) - ${row.socio.nome}`;
-                    }
-                    */
                 },
-                // COLUNA - Endereco socio 
+                // COLUNA - Endereco socio
                 {
-                    data: 'socioEndereco.cidade',
+                    data: 'EnderecoCidade',
                     targets: 3,
                     className: "text-center",
                     render: function (data, type, full) {
-                        let id = full.id;
+                        let id = full.Id;
 
                         if (id != 0 && data !== undefined && data !== null) {
 
-                            let socioEnderecoCidade = full.socioEndereco.cidade;
-                            let socioEnderecoUF = full.socioEndereco.estado;
-
-                            let socioEndereco = `${socioEnderecoUF}<br>${socioEnderecoCidade}`;
+                            let socioEndereco = `${full.EnderecoEstado}<br>${full.EnderecoCidade}`;
 
                             return socioEndereco;
 
@@ -127,21 +141,18 @@ function fn_GridList(formValid) {
                             return '';
                         }
                     }
-                },                
+                },
                 // COLUNA - Origem Acesso
                 {
-                    data: 'cidade',
+                    data: 'OrigemCidade',
                     targets: 4,
                     className: "text-center",
                     render: function (data, type, full) {
-                        let id = full.id;
+                        let id = full.Id;
 
                         if (id != 0 && data !== undefined && data !== null) {
 
-                            let origemCidade = full.cidade;
-                            let origemUF = full.estado;
-
-                            let origemAcesso = `${origemUF}<br>${origemCidade}`;
+                            let origemAcesso = `${full.OrigemEstado}<br>${full.OrigemCidade}`;
 
                             return origemAcesso;
 
@@ -152,20 +163,16 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Tipo Acesso
                 {
-                    data: 'browser',
+                    data: 'Browser',
                     targets: 5,
                     className: "text-center",
-                   
+
                     render: function (data, type, full) {
-                        let id = full.id;
+                        let id = full.Id;
 
                         if (id != 0 && data !== undefined && data !== null) {
 
-                            let socioBrowser = full.browser;
-                            let socioOS = full.os;
-                            let socioDevice = full.device;
-
-                            let socioTipoAcesso = `${socioBrowser}<br>${socioDevice}<br>${socioOS}`;
+                            let socioTipoAcesso = `${full.Browser}<br>${full.Device}<br>${full.Os}`;
 
                             return socioTipoAcesso;
 
@@ -176,46 +183,37 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - IP
                 {
-                    data: 'ip',
+                    data: 'Ip',
                     targets: 6,
                     className: "text-center",
                 },
                 // COLUNA - Operadora
                 {
-                    data: 'operadora',
+                    data: 'Operadora',
                     targets: 7,
                     className: "text-center",
                 },
                 // COLUNA - Ultimo Login
                 {
-                    data: 'ultimoLogin',
+                    data: 'UltimoLogin',
                     targets: 8,
                     className: "text-center",
                     render: function (data, type, full) {
-                        let id = full.id;
+                        let id = full.Id;
 
                         if (id != 0 && data !== undefined && data !== null) {
+                            let dataFormat = data ? moment.utc(data.toLocaleString()).subtract(6, 'hours').format("DD/MM/YYYY[<br>]HH:mm:ss") : '-';
 
-                            var rowvalueallday = full["tm_mm_mitglieder.Geburtsdatum"];
-                            //console.log("fn_GridListFilterDataProposta rowvalueallday ::: ", rowvalueallday);
-                            if (rowvalueallday == '0000-00-00') {
-                                var gdat = '1900-01-01';
-                                return gdat;
-                            } else {
-                                //let dataFormat = data ? moment.utc(data.toLocaleString()).subtract(3, 'hours').format("DD/MM/YYYY[<br>]HH:mm:ss") : '-';
-                                let dataFormat = data ? moment.utc(data.toLocaleString()).format("DD/MM/YYYY[<br>]HH:mm:ss") : '-';
-
-                                return (dataFormat);
-                            }
+                            return (dataFormat);
                         } else {
                             return '';//'Data Indispon&iacute;vel';
                         }
                     }
                 },
-                // COLUNA - Status                    
+                // COLUNA - Status
                 {
                     targets: -2,
-                    data: 'socioEndereco.socio.ativo',
+                    data: 'SocioAtivo',
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -242,7 +240,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Botoes Acoes
                 {
-                    data: 'id',
+                    data: 'Id',
                     targets: -1,
                     className: "text-center",
                     orderable: false,
@@ -475,13 +473,14 @@ function fn_CheckVerAtivos() {
 
     const chkVerAtivos = document.querySelector('#chkFilterAtivo');
 
-    // //CHK VER ATIVOS
+    // Server-side: o filtro "somente ativos" agora é aplicado no banco (ver ajax.data
+    // em fn_GridList), então só precisamos redesenhar a tabela — o novo valor do
+    // checkbox é lido na hora do request seguinte.
     if (chkVerAtivos) {
         chkVerAtivos.addEventListener('change', function () {
             var table = $('.datatables-basic').DataTable();
 
             if (this.checked) {
-                //console.log("Checkbox is checked..");
                 Swal.fire({
                     title: 'INFO!!',
                     icon: 'info',
@@ -492,22 +491,9 @@ function fn_CheckVerAtivos() {
                         confirmButton: 'btn btn-label-info waves-effect'
                     },
                 }).then((result) => {
-                    //console.log("result :: ", result);
-
-                    $.fn.dataTable.ext.search.push(
-                        function (settings, data, dataIndex) {
-
-                            var rowAtivo = $(table.row(dataIndex).node()).find('[name="spStatus"]').data("status") == true;
-
-                            return rowAtivo
-                        }
-                    );
-
                     table.draw();
                 });
             } else {
-                //console.log("Checkbox is not checked..");
-                $.fn.dataTable.ext.search.pop();
                 table.draw();
             }
         });

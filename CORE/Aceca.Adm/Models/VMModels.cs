@@ -337,46 +337,4 @@ namespace Aceca.Adm.VMModels
     }
 
     #endregion
-
-    #region Usuario
-
-    [Table("usuarios")]
-    public class Usuario : VMBaseModel
-    {
-        [Key] public int? Id { get; set; }
-
-        public int? socioId { get; set; }
-        [MaxLength(180)] public string? Email { get; set; } = string.Empty;
-        [MaxLength(255)] public string? Senha { get; set; } = string.Empty;
-        [MaxLength(255)][Column("senha_aberta")] public string? SenhaAberta { get; set; }
-        [MaxLength(255)][Column("_senha")] public string? Senha1 { get; set; }
-        [MaxLength(255)][Column("_usuario")] public string? NomeUsuario { get; set; }
-        [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
-
-        public VMSocio? Socio { get; set; }
-
-        [NotMapped] public string? Token { get; set; }
-    }
-
-    [Table("usuarios_log")]
-    public class UsuarioLog
-    {
-        [Key] public int? Id { get; set; }
-
-        public int? UsuarioId { get; set; }
-        [MaxLength(255)] public string? IP { get; set; } = string.Empty;
-        [MaxLength(255)] public string? OS { get; set; } = string.Empty;
-        [MaxLength(255)] public string? Browser { get; set; }
-        [MaxLength(255)] public string? Device { get; set; }
-        [MaxLength(255)] public string? Operadora { get; set; }
-        [MaxLength(50)] public string? Estado { get; set; }
-        [MaxLength(255)] public string? Cidade { get; set; }
-        [MaxLength(50)] public string? Latitude { get; set; }
-        [MaxLength(50)] public string? Longitude { get; set; }
-        [Column("last_login")] public DateTime? UltimoLogin { get; set; } = DateTime.UtcNow;
-
-        public Usuario? Usuario { get; set; }
-    }
-
-    #endregion
 }
