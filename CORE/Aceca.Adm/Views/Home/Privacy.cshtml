@@ -1,10 +1,4 @@
 @{
-    var pageApp = "ACECA";
-    var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
-    var pageTipo = string.Empty; //" - Listagem - ";
-
-    ViewData["Title"] = string.Format("{0} | {1} | {2}", pageApp, pageName, pageTipo);
-
     Layout = $"~/Views/Shared/_BlankLayout.cshtml";
 }
 

@@ -1,27 +1,5 @@
 @{
-    var pageApp = "ACECA";
-    var pageName = ViewContext?.RouteData?.Values["controller"] as string ?? "";
-    var pageTipo = string.Empty;
-
-    ViewData["Title"] = string.Format("{0} | {1} | {2}", pageApp, pageName, pageTipo);
-
     Layout = $"~/Views/Shared/_BlankLayout.cshtml";
-}
-
-@section VendorStyles {
-    <link rel="stylesheet" href="~/vendor/libs/@@form-validation/form-validation.css" />
-
-    <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
-    <link rel="stylesheet" href="~/vendor/libs/busy-load/app.min.css" />
-}
-
-@section VendorScripts {
-    <script src="~/vendor/libs/@@form-validation/popular.js"></script>
-    <script src="~/vendor/libs/@@form-validation/bootstrap5.js"></script>
-    <script src="~/vendor/libs/@@form-validation/auto-focus.js"></script>
-
-    <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
-    <script src="~/vendor/libs/busy-load/app.min.js"></script>
 }
 
 @section PageStyles {
@@ -91,7 +69,6 @@
                                         <div class="login-opts">
                                             <a href="/Auth/ForgotPassword" class="link-senha">Esqueceu a senha?</a>
                                         </div>
-                                        
 
                                         <!--{{!-- Botão de submit --}}-->
                                         <button type="submit" class="btn-entrar" id="btnEntrar">

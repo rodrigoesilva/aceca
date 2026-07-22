@@ -20,12 +20,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
   @{
-        string title = ViewData["title"] as string ?? "";
-        string appName = TempData.Peek("appName") as string ?? "";
+        @* Título: cada view pode sobrescrever setando ViewData["Title"]; sem isso, cai no
+           padrão "ACECA | {Controller}" — sem precisar repetir esse bloco em toda view. *@
+        string customTitle = ViewData["title"] as string ?? "";
+        string controllerName = ViewContext.RouteData.Values["controller"] as string ?? "";
+        string title = !string.IsNullOrWhiteSpace(customTitle) ? customTitle : $"ACECA | {controllerName}";
         string productPage = TempData.Peek("productPage") as string ?? "";
     }
-@*   <title>@title | @appName - Asp.Net Core MVC Admin Template</title> *@
-  <title>@title | @appName ACECA — Associação dos Colecionadores de Embalagens de Cigarros e Afins</title>
+  <title>@title — Associação dos Colecionadores de Embalagens de Cigarros e Afins</title>
   <meta name="description" content="— Associação dos Colecionadores de Embalagens de Cigarros e Afins" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache"> <!-- For HTTP/1.0 compatibility -->
