@@ -6,6 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Globalization;
 using System.Net;
 using System.Net.Mail;
 using System.Reflection;
@@ -75,6 +76,44 @@ namespace Aceca.Adm.Helper
         }
 
         #endregion
+
+        #region Enum Fases
+
+        public enum EFase
+        {
+            Pre = 10,
+            Reis = 11,
+            Pi1 = 12,
+            Pi2 = 13,
+            SA = 14,
+            ams20 = 15,
+            amc20 = 16,
+            AM = 17,
+            AMI = 18,
+            Av6 = 19,
+            Av5 = 20,
+            Av9 = 21,
+            AvDPF10 = 22,
+            AvDS10 = 23,
+            Av10_2009 = 24,
+            Av136 = 25,
+            Frontal136 = 26,
+            Palheiros = 27,
+            Fumos_Cigarrilhas_RP = 28,
+            Exportacao = 29,
+            Cortadas = 32,
+            Outros = 33,
+            Quarentena = 34,
+            Amarelo136 = 35,
+            Comemorativas = 36,
+            Vitrine = 38,
+            Clandestinas = 39,
+            Exterior = 40,
+            MC = 41,
+            QRCode136 = 42
+        }
+        #endregion
+
 
         #region Enums
         public enum ESimNao
@@ -639,10 +678,13 @@ namespace Aceca.Adm.Helper
         {
             if (string.IsNullOrEmpty(inputPassword) || string.IsNullOrEmpty(hashedPassword)) return false;
 
-            if (!IsMD5Hash(inputPassword))
+            // O que decide o algoritmo é o formato do hash SALVO no banco, não da senha digitada
+            // (que é sempre texto puro). Enquanto a migração para BCrypt não roda, hashedPassword
+            // continua em MD5 (32 hex chars).
+            if (!IsMD5Hash(hashedPassword))
                 return VerifyHashPassword(inputPassword, hashedPassword);
 
-            //somenet se senha ainda MD5
+            //somente se senha ainda MD5
             string hashOfInput = GenerateMD5HashPassword(md5Hash, inputPassword);
 
             StringComparer comparer = StringComparer.OrdinalIgnoreCase;
@@ -667,7 +709,20 @@ namespace Aceca.Adm.Helper
         // Returns true if the password matches, false otherwise
         public bool VerifyHashPassword(string cleanPassword, string storedHash)
         {
-            return Verify(cleanPassword, storedHash);
+            if (string.IsNullOrWhiteSpace(storedHash))
+                return false;
+
+            try
+            {
+                return Verify(cleanPassword, storedHash);
+            }
+            catch (BCrypt.Net.SaltParseException)
+            {
+                // storedHash nulo/vazio ou em formato que não é um BCrypt válido
+                // (ex.: registro legado ainda não migrado) — trata como credencial inválida
+                // em vez de deixar a exceção "Invalid salt version" vazar para o usuário.
+                return false;
+            }
         }
         #endregion
 
@@ -850,7 +905,7 @@ namespace Aceca.Adm.Helper
         /// </summary>
         public async Task EnviarAlertaImagemAsync(
             string socioId, string socioNome,
-            string codigoAceca, string imagemSrc,
+            string codigoAceca, string imagemSrc, string urlAcesso,
             string acao, string timestamp)
         {
             var smtpHost     = _appConfiguration["Email:Host"]        ?? "smtp.gmail.com";
@@ -860,6 +915,12 @@ namespace Aceca.Adm.Helper
             var smtpUser     = _appConfiguration["Email:User"]        ?? smtpFrom;
             var smtpPassword = _appConfiguration["Email:Password"]    ?? "";
             var displayName  = _appConfiguration["Email:DisplayName"] ?? "ACECA - Área do Sócio";
+
+            // Timestamp enviado pelo browser (UTC) convertido para horário de Brasília (UTC-3)
+            var timestampBrasil = timestamp;
+            if (DateTimeOffset.TryParse(timestamp, CultureInfo.InvariantCulture,
+                    DateTimeStyles.AssumeUniversal, out var dtoTimestamp))
+                timestampBrasil = dtoTimestamp.ToOffset(TimeSpan.FromHours(-3)).ToString("dd/MM/yyyy HH:mm:ss") + " (Brasília)";
 
             var body = $@"
                 <!DOCTYPE html>
@@ -878,7 +939,7 @@ namespace Aceca.Adm.Helper
                     <table style=""width:100%;border-collapse:collapse;margin-top:16px;"">
                       <tr style=""background:#f9f0ff;"">
                         <td style=""padding:10px 14px;font-weight:bold;width:40%;border:1px solid #e0d0f0;"">Timestamp</td>
-                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{timestamp}</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{timestampBrasil}</td>
                       </tr>
                       <tr>
                         <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Sócio (Nome)</td>
@@ -893,10 +954,14 @@ namespace Aceca.Adm.Helper
                         <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{codigoAceca}</td>
                       </tr>
                       <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">URL do Acesso</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;word-break:break-all;"">{urlAcesso}</td>
+                      </tr>
+                      <tr>
                         <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">URL da Imagem</td>
                         <td style=""padding:10px 14px;border:1px solid #e0d0f0;word-break:break-all;"">{imagemSrc}</td>
                       </tr>
-                      <tr>
+                      <tr style=""background:#f9f0ff;"">
                         <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Ação Detectada</td>
                         <td style=""padding:10px 14px;border:1px solid #e0d0f0;color:#cc0000;
                                     font-weight:bold;"">{acao}</td>
@@ -913,7 +978,7 @@ namespace Aceca.Adm.Helper
             var mailMessage = new MailMessage
             {
                 From       = new MailAddress(smtpFrom, displayName),
-                Subject    = $"⚠️ ALERTA: Acesso indevido a imagem [{codigoAceca}] — {socioNome}",
+                Subject    = $"⚠️ ALERTA: Acesso indevido do Sócio —  [{socioNome}]",
                 IsBodyHtml = true,
                 Body       = body
             };

@@ -209,6 +209,7 @@ namespace Aceca.Adm.Models
         public int? MarcaRaridadeId { get; set; }
         public int? MarcaSubTipoId { get; set; }
         public string? CodigoAceca { get; set; } = null;
+        public string? CodigoAcecaNew { get; set; } = null;
         [Column("codigoSC")] public string? CodigoFabrica { get; set; } = null;
         public string? ImgPrincipal { get; set; } = null;
         public string? ImgDetalhe { get; set; } = null;
@@ -497,6 +498,7 @@ namespace Aceca.Adm.Models
     }
 
     #endregion
+
     #region tipos
 
     [Table("tipo_pagamento")]

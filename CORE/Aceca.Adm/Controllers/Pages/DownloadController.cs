@@ -103,8 +103,14 @@ namespace Aceca.Adm.Controllers.Pages.Download
                     parameters.Add("@SearchLike", $"%{request.Search.Value.Trim()}%");
                 }
 
-                var totalSql = "SELECT COUNT(1) FROM download";
-                var filteredSql = "SELECT COUNT(1) " + sqlFrom;
+                // total + filtered em uma única ida ao banco (antes eram 2 SELECTs
+                // sequenciais na mesma conexão, cada um pagando o round-trip de rede)
+                var countSql = $@"
+                    SELECT
+                        (SELECT COUNT(1) FROM download) AS Total,
+                        COUNT(1) AS Filtered
+                    {sqlFrom}
+                    ";
 
                 var dataSql = $@"
                     SELECT
@@ -133,8 +139,10 @@ namespace Aceca.Adm.Controllers.Pages.Download
 
                 using var conn = _db.Database.GetDbConnection();
 
-                var total = await conn.ExecuteScalarAsync<int>(totalSql);
-                var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
+                var countRow = await conn.QueryFirstOrDefaultAsync(countSql, parameters);
+                int total = (int)countRow.Total;
+                int filtered = (int)countRow.Filtered;
+
                 var data = await conn.QueryAsync(dataSql, parameters);
 
                 return Ok(new

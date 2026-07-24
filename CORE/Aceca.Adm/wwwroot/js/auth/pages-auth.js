@@ -11,11 +11,7 @@ const VERSION = "1.0.2";
 //console.log("Auth JS version:", VERSION);
 
 let var_Nome = 'Auth',
-    var_Controller = '/Auth',
-    var_ControllerCmb = '/HelperExtensions',
-
-    varTbl_Obj = $('.datatables-basic'),
-    varTbl_Data;
+    var_Controller = '/Auth';
 
 let _sessionDataAuth = null;
 const _cka = "aceca_cookie";

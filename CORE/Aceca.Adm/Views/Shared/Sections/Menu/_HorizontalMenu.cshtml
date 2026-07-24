@@ -17,29 +17,14 @@
             <ul class="menu-inner" style="margin-left: 25%;">
 
                  <!-- Colecao -->
-                <li class='menu-item@(currentPage.StartsWith("/SocioColecao") ? " active" : "")'>
-                    @* <a href="javascript:void(0)" class="menu-link menu-toggle">
-                        <i class='menu-icon icon-base ri ri-map-2-line'></i>
-                        <div data-i18n="Minha Coleção">Minha Colecao</div>
-                    </a> *@
-
-
+                <li class='menu-item@(currentPage.StartsWith("/Colecao") ? " active" : "")'>
                     <a asp-controller="SocioColecao" asp-action="Index" class="menu-link">
                         <i class='menu-icon icon-base ri ri-map-2-line'></i>
                         <div data-i18n="Cole&ccedil;&atilde;o">Cole&ccedil;&atilde;o</div>
                     </a>
-
-                    @* <ul class="menu-sub">
-                        <li class='menu-item@(currentPage == "/SocioColecao/Index" ? " active" : "")'>
-                            <a asp-controller="SocioColecao" asp-action="Index" class="menu-link">
-                                <i class="menu-icon icon-base ri ri-article-line"></i>
-                                <div data-i18n="Listagem">Listagem</div>
-                            </a>
-                        </li>
-                    </ul> *@
                 </li>
 
-                <!-- Negociacoes -->
+                <!-- Negociacoes 
                 <li class='menu-item@(currentPage.StartsWith("/Negociacao") ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">
                         <i class='menu-icon icon-base ri ri-money-dollar-circle-line'></i>
@@ -68,8 +53,7 @@
                             </a>
                         </li>
                     </ul>
-                </li>
-
+                </li>-->
                 <!-- Agenda -->
                 <li class='menu-item@(currentPage.StartsWith("/Agenda") ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">

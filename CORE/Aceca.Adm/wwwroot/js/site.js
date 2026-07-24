@@ -39,9 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
         var pgLogin = document.querySelector(".pg-login");
 
         if (pgLogin === null) {
-            fn_AuthSession();
+            // fn_ImageProtect só roda depois que a sessão for confirmada, pois
+            // ela precisa saber o ID do sócio logado (bypass do ID 39 / dev).
+            fn_AuthSession(fn_ImageProtect);
             setInterval(fn_CheckSession, 1000);
-            fn_ImageProtect();
         }
 
         $('.btn-logout').on('click', function () {
@@ -198,6 +199,16 @@ function fn_CkRemove(_ck) {
 
 function fn_ImageProtect() {
 
+    // ID 39 é o desenvolvedor do sistema — mesmo bypass já aplicado no login
+    // (AuthController.LoginValidacao). Total liberdade: nenhum listener,
+    // watermark, troca de imagem ou monitoramento é aplicado nessa conta.
+    // O mesmo vale para qualquer usuário do perfil Administracao (hdIsPerfil),
+    // que fica isento da proteção de imagem por ser equipe interna de gestão do acervo.
+    var _socioId  = varSessionDataSite?.nameIdentifier ?? document.getElementById('hdSocioLogadoId')?.value;
+    var _isPerfil = (varSessionDataSite?.isPerfil ?? document.getElementById('hdIsPerfil')?.value) === true
+        || String(varSessionDataSite?.isPerfil ?? document.getElementById('hdIsPerfil')?.value) === 'true';
+    if (String(_socioId) === '39' || _isPerfil) return;
+
     // Seletor unificado: imagens do acervo na grid e no modal de zoom
     var SEL = '.cmyImg, #imgZoomTarget';
 
@@ -226,6 +237,7 @@ function fn_ImageProtect() {
         var fd   = new FormData();
         fd.append('codigoAceca', meta.codigoAceca || '');
         fd.append('imagemSrc',   meta.src         || '');
+        fd.append('urlAcesso',   window.location.href);
         fd.append('acao',        acao);
         fd.append('timestamp',   ts);
         fetch('/Auth/ReportImageAccess', { method: 'POST', body: fd }).catch(function () {});
@@ -272,6 +284,39 @@ function fn_ImageProtect() {
         return function () { overlay.remove(); };
     }
 
+    // PrintScreen captura a TELA INTEIRA, não só a última imagem clicada —
+    // por isso, diferente do watermark (que é um overlay parcialmente
+    // transparente sobre 1 imagem), aqui trocamos o src de TODAS as imagens
+    // protegidas visíveis pela própria aceca_plagio.jpeg. É best-effort: só
+    // funciona se o JS reagir antes do SO terminar de compor o screenshot,
+    // mas é o mais rápido que dá pra fazer (troca síncrona, sem esperar rede).
+    var _plagioSwapActive = false;
+
+    function _swapAllToPlagio() {
+        if (_plagioSwapActive) return;
+        _plagioSwapActive = true;
+
+        document.querySelectorAll(SEL).forEach(function (el) {
+            if (el.tagName !== 'IMG') return;
+            el.setAttribute('data-src-original', el.getAttribute('src') || '');
+            el.src = '/img/aceca_plagio.jpeg';
+        });
+    }
+
+    function _restoreAllFromPlagio() {
+        if (!_plagioSwapActive) return;
+        _plagioSwapActive = false;
+
+        document.querySelectorAll(SEL).forEach(function (el) {
+            if (el.tagName !== 'IMG') return;
+            var original = el.getAttribute('data-src-original');
+            if (original !== null) {
+                el.src = original;
+                el.removeAttribute('data-src-original');
+            }
+        });
+    }
+
     // ── CSS base: impede seleção e arraste nativo em todas as imagens protegidas ──
 
     (function () {
@@ -281,21 +326,28 @@ function fn_ImageProtect() {
     })();
 
     // ── detecção de DevTools aberto ───────────────────────────────────────────
-    // Compara outerWidth/Height vs innerWidth/Height. Quando DevTools está
-    // encaixado (docked), ele reduz o innerWidth ou innerHeight. Threshold de
-    // 160px é conservador: a UI do browser (barra de endereços + abas) ocupa
-    // ~70–90px; DevTools ocupa no mínimo 200px.
+    // Duas heurísticas combinadas (nenhuma é 100% à prova de falhas sozinha):
+    //
+    // 1) outerWidth/Height vs innerWidth/Height — quando o DevTools está
+    //    encaixado (docked), ele reduz o innerWidth ou innerHeight. Threshold
+    //    de 160px é conservador: a UI do browser (barra de endereços + abas)
+    //    ocupa ~70–90px; DevTools ocupa no mínimo 200px.
+    //    Não detecta DevTools destacado em janela própria (undocked).
+    //
+    // 2) 'debugger' — quando o DevTools está aberto (docked OU destacado), o
+    //    statement 'debugger' pausa a thread; medimos o tempo decorrido para
+    //    inferir isso. Cobre o caso que a heurística de tamanho não cobre.
+    //
+    // IMPORTANTE: nenhuma das duas *impede* o DevTools de abrir — apenas
+    // detecta e reage (blur nas imagens + alerta silencioso por e-mail).
+    // Não existe API de browser que permita a uma página bloquear F12.
 
     var _devOpen = false;
 
-    function _devCheck() {
-        var wDiff = window.outerWidth  - window.innerWidth;
-        var hDiff = window.outerHeight - window.innerHeight;
-        var open  = wDiff > 160 || hDiff > 160;
-
+    function _setDevToolsOpen(open) {
         if (open && !_devOpen) {
             _devOpen = true;
-            _reportar(null, 'devtools-open');
+            _reportar(_lastImg, 'devtools-open');
             document.querySelectorAll(SEL).forEach(function (el) {
                 el.style.filter = 'blur(14px)';
             });
@@ -307,16 +359,37 @@ function fn_ImageProtect() {
         }
     }
 
+    function _devCheck() {
+        var wDiff  = window.outerWidth  - window.innerWidth;
+        var hDiff  = window.outerHeight - window.innerHeight;
+        var bySize = wDiff > 160 || hDiff > 160;
+
+        var t0        = performance.now();
+        // eslint-disable-next-line no-debugger
+        debugger;
+        var byTiming  = (performance.now() - t0) > 100;
+
+        _setDevToolsOpen(bySize || byTiming);
+    }
+
     setInterval(_devCheck, 800);
 
     // ── variáveis de controle ─────────────────────────────────────────────────
 
     var _removeWatermark = null;
     var _lastImg         = null;
+    var _lastPrintTs     = 0;
 
     // ── rastrear última imagem clicada ────────────────────────────────────────
 
     $(document).on('click', SEL, function () {
+        _lastImg = this;
+    });
+
+    // touchstart (mobile): garante que _lastImg fique setado antes de um
+    // long-press disparar 'contextmenu' (Android) ou do watermark ser
+    // aplicado em resposta a alguma tecla externa (teclado bluetooth, etc.)
+    $(document).on('touchstart', SEL, function () {
         _lastImg = this;
     });
 
@@ -369,10 +442,18 @@ function fn_ImageProtect() {
         var isCtrlSrc    = e.ctrlKey && !e.shiftKey && (key === 'u' || key === 'U');
         var isCtrlPrint  = e.ctrlKey && !e.shiftKey && (key === 'p' || key === 'P');
 
-        var isDevTools = false;// isF12 || isCtrlShiftI || isCtrlShiftJ || isCtrlShiftC || isCtrlShiftK;
+        // Nota: e.preventDefault() aqui é best-effort. Navegadores modernos
+        // (Chrome/Firefox/Edge) ignoram preventDefault() para F12 e
+        // Ctrl+Shift+I/J/C/K de propósito — é uma restrição de segurança do
+        // próprio browser, não algo que uma página web possa contornar.
+        // O valor real deste bloco é DETECTAR a tentativa e reagir (alerta +
+        // e-mail silencioso), não impedir a tecla.
+        var isDevTools = isF12 || isCtrlShiftI || isCtrlShiftJ || isCtrlShiftC || isCtrlShiftK;
         var isBlocked  = isPrint || isDevTools || isCtrlSave || isCtrlSrc || isCtrlPrint;
 
         if (!isBlocked) return;
+
+        if (isPrint) _lastPrintTs = Date.now();
 
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -388,9 +469,17 @@ function fn_ImageProtect() {
                   : isCtrlSrc     ? 'ctrl+u'
                   :                 'ctrl+p';
 
-        if (img) _reportar(img, label);
+        // Sempre reporta, mesmo sem imagem previamente clicada (img pode ser
+        // null — _reportar/_imgMeta tratam isso). Antes só reportava quando
+        // "img" existia, então F12/PrintScreen sem clique prévio em imagem
+        // não gerava nenhum alerta.
+        _reportar(img, label);
 
         if (isDevTools) {
+            _swalAviso();
+        } else if (isPrint) {
+            _swapAllToPlagio();
+            setTimeout(_restoreAllFromPlagio, 4000);
             _swalAviso();
         } else if (img) {
             if (_removeWatermark) _removeWatermark();
@@ -399,7 +488,31 @@ function fn_ImageProtect() {
                 if (_removeWatermark) { _removeWatermark(); _removeWatermark = null; }
             }, 4000);
             _swalAviso();
+        } else {
+            _swalAviso();
         }
+    }, true);
+
+    // ── PrintScreen fallback via keyup ────────────────────────────────────────
+    // Alguns browsers só disparam 'keyup' (não 'keydown') para PrintScreen.
+    // Guard de 1s contra _lastPrintTs evita reportar duas vezes o mesmo toque
+    // quando o browser dispara os dois eventos.
+
+    document.addEventListener('keyup', function (e) {
+        var key  = e.key  || '';
+        var code = e.code || '';
+        var isPrint = (key === 'PrintScreen' || code === 'PrintScreen');
+
+        if (!isPrint || (Date.now() - _lastPrintTs < 1000)) return;
+        _lastPrintTs = Date.now();
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        _reportar(_lastImg, 'printscreen');
+        _swapAllToPlagio();
+        setTimeout(_restoreAllFromPlagio, 4000);
+        _swalAviso();
     }, true);
 
     // ── beforeprint / afterprint ──────────────────────────────────────────────

@@ -131,7 +131,11 @@ function fn_GridList(formValid) {
                         let imgData = (data === null ? `${varResultFull.arqUrlBase}/img/${imgDefault}` : `${varResultFull.arqUrlBase}/img/${data}`);
                         //console.log("imagem imgData ::: ", imgData);
 
-                        return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${full.titulo}" src="${imgData}">`;
+                        // sem loading="lazy": grid paginado (10/25 linhas), a imagem já está
+                        // visível na página atual — lazy só atrasava o disparo do request
+                        // até depois do grid inteiro estar montado. fetchpriority="low" evita
+                        // competir com o XHR do DataTables/demais recursos da página.
+                        return `<img name="myImg" decoding="async" fetchpriority="low" class="td-img cmyImg" alt="${full.titulo}" src="${imgData}">`;
                     }
                 },
                 // COLUNA - Tipo (2ª a aparecer no mobile)
@@ -167,14 +171,14 @@ function fn_GridList(formValid) {
 
                                 switch (data) {
                                     case "pdf":
-                                        iconClass = "ri-file-pdf-2-line";
+                                        iconClass = "ri-file-pdf-2-line text-danger";
                                         break;
                                     case "xls":
                                     case "xlsx":
-                                        iconClass = "ri-file-excel-2-line";
+                                        iconClass = "ri-file-excel-2-line text-success";
                                         break;
                                     case "zip":
-                                        iconClass = "ri-folder-zip-line";
+                                        iconClass = "ri-folder-zip-line text-warning";
                                         break;
                                     default:
                                         iconClass = "ri-file-2-fill";

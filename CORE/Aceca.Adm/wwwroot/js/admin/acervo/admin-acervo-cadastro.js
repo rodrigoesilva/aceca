@@ -20,6 +20,8 @@ var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 let objVariante, strMarcaAcervo;
 
 const combosLoaded = {};
+let fasesCache = null;
+let xhrMarcaFase = null;
 
 //#endregion
 
@@ -260,7 +262,7 @@ function fn_Modal(obj, action) {
         $("#cmbPop_MarcaTipo").val(((obj.idMarcaTipo === undefined || obj.idMarcaTipo === null || obj.idMarcaTipo <= 0) ? '-1' : obj.idMarcaTipo)).change();
         $("#cmbPop_MarcaSubTipo").val(((obj.idMarcaSubTipo === undefined || obj.idMarcaSubTipo === null || obj.idMarcaSubTipo <= 0) ? '-1' : obj.idMarcaSubTipo)).change();
         $("#cmbPop_MarcaImpressora").val(((obj.idMarcaImpressora === undefined || obj.idMarcaImpressora === null || obj.idMarcaImpressora <= 0) ? '-1' : obj.idMarcaImpressora)).change();
-        $("#cmbPop_MarcaQualidadeImagem").val(((obj.idQualidadeImagem === undefined || obj.idQualidadeImagem === null || obj.idQualidadeImagem <= 0) ? '-1' : obj.idQualidadeImagem)).change();
+        $("#cmbPop_MarcaQualidadeImagem").val(((obj.idMarcaQualidadeImagem === undefined || obj.idMarcaQualidadeImagem === null || obj.idMarcaQualidadeImagem <= 0) ? '-1' : obj.idMarcaQualidadeImagem)).change();
         $("#cmbPop_Raridade").val(((obj.idRaridade === undefined || obj.idRaridade === null || obj.idRaridade <= 0) ? '-1' : obj.idRaridade)).change();
 
         (obj.valor !== null || obj.valor1PI !== null || obj.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
@@ -502,20 +504,15 @@ function fn_ChangeCombos() {
 
     $('#cmbPop_MarcaAcervo').on('change', function () {
 
-        let strNovoNomeParaCadastro = document.querySelector('#txt_Nome');
         let idMarcaAcervo = Number($(this).find('option:selected').val());
 
-        //console.log("cmbPop_MarcaAcervo change strNovoNomeParaCadastro ::: ", strNovoNomeParaCadastro);
         //console.log("cmbPop_MarcaAcervo change idMarcaAcervo ::: ", idMarcaAcervo);
 
         fn_CamposHide("cmbPop_MarcaAcervo");
 
         if (idMarcaAcervo > 0) {
 
-            fn_MenuAcervo(); 
-
-            document.querySelectorAll('#cmbPop_MarcaFase option').forEach(option => option.remove());
-            $("#cmbPop_MarcaFase").append($("<option></option>").val(0).html("-- Selecionar --"));
+            fn_MenuAcervo();
 
             fn_LoadCmb_MarcaFase();
 
@@ -701,7 +698,7 @@ function fn_PopLoadCombos() {
 function fn_LoadCmb_MarcaAcervo() {
     // console.log("fn_LoadCmb_MarcaAcervo ::: ");
 
-    if ($('#cmb_MarcaFase').length <= 1) {
+    if ($('#cmbPop_MarcaAcervo option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -727,7 +724,7 @@ function fn_LoadCmb_MarcaAcervo() {
 function fn_LoadCmb_MarcaExPaisDestino() {
     //console.log("fn_LoadCmb_MarcaExPaisDestino ::: ");
 
-    if ($('#cmbPop_MarcaExTemPaisDestino').length <= 1) {
+    if ($('#cmbPop_MarcaExTemPaisDestino option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -752,7 +749,7 @@ function fn_LoadCmb_MarcaExPaisDestino() {
 function fn_LoadCmb_MarcaVariante() {
     //console.log("fn_LoadCmb_MarcaVariante ::: ");
 
-    if ($('#cmbPop_MarcaVariante').length <= 1) {
+    if ($('#cmbPop_MarcaVariante option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -778,7 +775,7 @@ function fn_LoadCmb_MarcaVariante() {
 function fn_LoadCmb_IncluidoSocio() {
     //console.log("fn_LoadCmb_IncluidoSocio ::: ");
 
-    if ($('#cmbPop_IncluidoSocio').length <= 1) {
+    if ($('#cmbPop_IncluidoSocio option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -802,36 +799,58 @@ function fn_LoadCmb_IncluidoSocio() {
 
 function fn_LoadCmb_MarcaFase() {
     //console.log("fn_LoadCmb_MarcaFase ::: ");
-    
-       
 
-    if ($('#cmbPop_MarcaFase').length <= 1) {
-        $.ajax(
-            {
-                crossDomain: true,
-                url: `${var_ControllerCmb}/AsyncCmb_MarcaFase`,
-                type: 'GET',
-                success: function (data) {
-                    //console.log("fn_LoadCmb_MarcaFase  data ::: ", data);
+    const $cmb = $('#cmbPop_MarcaFase');
 
-                    $.each(data, function (id, result) {
-                        //console.log("fn_LoadCmb_MarcaFase  result id ::: ", id);
+    const montarOptions = function (data) {
+        let options = '<option value="0">-- Selecionar --</option>';
 
-                        $("#cmbPop_MarcaFase").append($("<option></option>").val(result.value).html(`${strMarcaAcervo} - ${result.text}`));
-                    });
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            }
-        );
+        data.forEach(function (item) {
+            options += `<option value="${item.value}">${strMarcaAcervo} - ${item.text}</option>`;
+        });
+
+        $cmb.html(options).prop('disabled', false);
+    };
+
+    // Nessa tela o combo traz TODAS as Fases (sem filtro por Acervo) - reaproveita
+    // o resultado ja carregado (apenas reetiqueta com o Acervo atual), evitando nova ida ao servidor
+    if (fasesCache !== null) {
+        montarOptions(fasesCache);
+        return;
     }
+
+    // Cancela uma requisicao anterior ainda pendente
+    if (xhrMarcaFase !== null) {
+        xhrMarcaFase.abort();
+    }
+
+    $cmb.prop('disabled', true);
+
+    xhrMarcaFase = $.ajax(
+        {
+            crossDomain: true,
+            url: `${var_ControllerCmb}/AsyncCmb_MarcaFase`,
+            type: 'GET',
+            success: function (data) {
+                //console.log("fn_LoadCmb_MarcaFase  data ::: ", data);
+
+                fasesCache = data;
+                montarOptions(data);
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                if (textStatus === 'abort') return;
+
+                $cmb.prop('disabled', false);
+                fn_ModalErro(xhr, textStatus, errorThrown);
+            },
+        }
+    );
 }
 
 function fn_LoadCmb_MarcaFinalidade() {
     //console.log("fn_LoadCmb_MarcaFinalidade ::: ");
 
-    if ($('#cmbPop_MarcaFinalidade').length <= 1) {
+    if ($('#cmbPop_MarcaFinalidade option').length <= 1) {
 
         $.ajax(
             {
@@ -860,7 +879,7 @@ function fn_LoadCmb_MarcaFinalidade() {
 function fn_LoadCmb_MarcaFabrica() {
     //console.log("fn_LoadCmb_MarcaFabrica ::: ");
 
-    if ($('#cmbPop_MarcaFabrica').length <= 1) {
+    if ($('#cmbPop_MarcaFabrica option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -886,7 +905,7 @@ function fn_LoadCmb_MarcaFabrica() {
 function fn_LoadCmb_MarcaDimensao() {
     //console.log("fn_LoadCmb_MarcaDimensao ::: ");
 
-    if ($('#cmbPop_MarcaDimensao').length <= 1) {
+    if ($('#cmbPop_MarcaDimensao option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -912,7 +931,7 @@ function fn_LoadCmb_MarcaDimensao() {
 function fn_LoadCmb_MarcaTipo() {
     //console.log("fn_LoadCmb_MarcaTipo ::: ");
 
-    if ($('#cmbPop_MarcaTipo').length <= 1) {
+    if ($('#cmbPop_MarcaTipo option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -941,7 +960,7 @@ function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
 
     let urlLoad = `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`; // idMarcaTipo > 0 ? `${var_ControllerCmb}/AsyncCmb_MarcaSubTipoByTipo` : `${var_ControllerCmb}/AsyncCmb_MarcaSubTipo`;
 
-    if ($('#cmbPop_MarcaSubTipo').length <= 1) {
+    if ($('#cmbPop_MarcaSubTipo option').length <= 1) {
 
         $.ajax(
             {
@@ -971,7 +990,7 @@ function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
 function fn_LoadCmb_MarcaImpressora() {
     //console.log("fn_LoadCmb_MarcaImpressora ::: ");
 
-    if ($('#cmbPop_MarcaImpressora').length <= 1) {
+    if ($('#cmbPop_MarcaImpressora option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -997,7 +1016,7 @@ function fn_LoadCmb_MarcaImpressora() {
 function fn_LoadCmb_MarcaQualidadeImagem() {
     //console.log("fn_LoadCmb_MarcaQualidadeImagem ::: ");
 
-    if ($('#cmbPop_MarcaQualidadeImagem').length <= 1) {
+    if ($('#cmbPop_MarcaQualidadeImagem option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,
@@ -1023,7 +1042,7 @@ function fn_LoadCmb_MarcaQualidadeImagem() {
 function fn_LoadCmb_MarcaRaridade() {
     //console.log("fn_LoadCmb_MarcaRaridade ::: ");
 
-    if ($('#cmbPop_MarcaRaridade').length <= 1) {
+    if ($('#cmbPop_MarcaRaridade option').length <= 1) {
         $.ajax(
             {
                 crossDomain: true,

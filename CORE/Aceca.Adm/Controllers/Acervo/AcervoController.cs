@@ -9,10 +9,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using static Aceca.Adm.Helper.HelperExtensionsController;
 
 namespace Aceca.Adm.Controllers.Acervo
 {
@@ -900,6 +902,8 @@ namespace Aceca.Adm.Controllers.Acervo
                 42  136QRCode
                 */
 
+            
+
             string strNovoCodigoAceca = string.Empty;
 
             if (idFase < 1 || string.IsNullOrEmpty(strNovoNomeParaCadastro))
@@ -915,6 +919,8 @@ namespace Aceca.Adm.Controllers.Acervo
             {
                 var model = new Marcas();
 
+                var bMarcaSemCadastro = false;
+
                 var queryExistsTermo = false;
 
                 var msgErroData = $"idMarcaFase :: {idFase} , strNovoNomeParaCadastro :: {strNovoNomeParaCadastro}";
@@ -925,24 +931,9 @@ namespace Aceca.Adm.Controllers.Acervo
 
                 var query = Enumerable.Empty<Marcas>().AsQueryable();
 
-                if (idFase != 29)
-                {                    
-                    query = _db.Marca
-                       .Include(x => x.MarcaSubTipo.MarcaTipo)
-                       .Include(x => x.MarcaFabrica)
-                       .Include(x => x.MarcaImpressora)
-                       .AsNoTracking()
-                       .Where(x => x.CodigoAceca != null
-                            && (bvariante
-                                ? (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
-                                : (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)))
-                                )
-                            )
-                        .OrderByDescending(x => x.CodigoAceca)                    
-                        .Take(5);
+                EFase FaseSel = (EFase)idFase;
 
-                }
-                else
+                if (FaseSel.Equals(EFase.Exportacao))
                 {
                     // 29 Exportacao
                     //Se tem país de destino inicia com EA, Se não tem é EX (minusculos).
@@ -956,7 +947,31 @@ namespace Aceca.Adm.Controllers.Acervo
                         .AsNoTracking()
                         .Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
                         .OrderByDescending(x => x.CodigoAceca)
-                        .Take(5);
+                        .Take(1);
+                }
+                else
+                {
+                    query = _db.Marca
+                       .Include(x => x.MarcaSubTipo.MarcaTipo)
+                       .Include(x => x.MarcaFabrica)
+                       .Include(x => x.MarcaImpressora)
+                       .AsNoTracking()
+                        /*
+                        .Where(x => x.CodigoAceca != null
+                             && (bvariante
+                                 ? (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
+                                 : (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)))
+                                 )
+                             )
+                        */
+                        .Where(x => x.CodigoAceca != null
+                            && (x.MarcaAcervoId.Equals(idMarcaAcervo)
+                                && (idMarcaAcervo > 1 ? x.MarcaAcervoId.Equals(idMarcaAcervo) : x.MarcaFaseId.Equals(idFase))
+                                && (idMarcaAcervo == 1 ? x.CodigoAceca.StartsWith(strLetraInicial) : true)
+                                )
+                        )
+                        .OrderByDescending(x => x.MarcaFaseAcervoId > 1 ? x.CodigoAcecaNew : x.CodigoAceca)
+                        .Take(1);
                 }
 
                 var queryExists = query.Any();
@@ -973,6 +988,7 @@ namespace Aceca.Adm.Controllers.Acervo
                         });
                     }
 
+                    /*
                     if (model?.Id == null)
                     {
                         return Ok(new
@@ -983,128 +999,138 @@ namespace Aceca.Adm.Controllers.Acervo
                             data = strNovoNomeParaCadastro
                         });
                     }
+                    */
                 }
 
                 model = await query
                           .AsQueryable()
                           .FirstOrDefaultAsync();
 
-                strCodigoAceca = model?.CodigoAceca?.ToString()?.Trim()?.ToUpper();
-
-                string strNumCodigoAceca = string.Empty;
-
-                switch (idFase)
+                if (model == null)
                 {
-                    //////Fases que as inciiam com numero e tem letras no meio
-                    case 12: //1PI 1942 - 1949 (1PI1251)
-                    case 13: //2PI 1945 - 1965 (2pi3999)
-                        strNumCodigoAceca = new string(strCodigoAceca?.Split("PI")[1]?.Where(char.IsDigit).ToArray());
-                        break;
-                    case 42: // 136QRCode
-                        strNumCodigoAceca = new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
-                        break;
-                    default:
-                        strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
-                        break;
+                    bMarcaSemCadastro = true;
+                    strNovoCodigoAceca = strNovoNomeParaCadastro?.ToString()?.Trim()?.ToUpper();
                 }
-
-                if (string.IsNullOrEmpty(strNumCodigoAceca))
+                else
                 {
-                    return BadRequest(new
+                    strCodigoAceca = idMarcaAcervo > 1 ? model?.CodigoAcecaNew?.ToString()?.Trim()?.ToUpper() : model?.CodigoAceca?.ToString()?.Trim()?.ToUpper();
+
+                    string strNumCodigoAceca = string.Empty;
+
+                    switch (FaseSel)
                     {
-                        bResult = true,
-                        type = "ERRO - GetCodigoAceca - lstModel",
-                        message = "strNumCodigoAceca Nula",
-                        data = msgErroData
-                    });
-                }
-
-                var strUltimaLetraCodigoAceca = 'B';
-
-                if (int.TryParse(strNumCodigoAceca, out int intNumCodigoAceca))
-                    if (!bvariante)
-                    {
-                        strNovoCodigoAceca = idFase != 42 
-                            ? strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString())
-                            : string.Concat("136QR-", strNumCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString()));
-
-                        if (Char.IsLetter(strNovoCodigoAceca[^1]))
-                            strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1])
-                                ? strNovoCodigoAceca.Remove(strNovoCodigoAceca.Length - 1)
-                                : string.Concat(strNovoCodigoAceca, strUltimaLetraCodigoAceca);
+                        //////Fases que as inciiam com numero e tem letras no meio
+                        case EFase.Pi1:
+                        case EFase.Pi2:
+                            strNumCodigoAceca = new string(strCodigoAceca?.Split("PI")[1]?.Where(char.IsDigit).ToArray());
+                            break;
+                        case EFase.QRCode136:
+                            strNumCodigoAceca = new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
+                            break;
+                        default:
+                            strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
+                            break;
                     }
-                    else
+
+                    if (string.IsNullOrEmpty(strNumCodigoAceca))
                     {
-                        if (Char.IsLetter(strCodigoAceca[^1]))
+                        return BadRequest(new
                         {
-                            strUltimaLetraCodigoAceca = strCodigoAceca[^1];
+                            bResult = true,
+                            type = "ERRO - GetCodigoAceca - lstModel",
+                            message = "strNumCodigoAceca Nula",
+                            data = msgErroData
+                        });
+                    }
 
-                            char charProximaLetraCodigoAceca = (char)(strUltimaLetraCodigoAceca + 1);
+                    var strUltimaLetraCodigoAceca = 'B';
 
-                            strNovoCodigoAceca = ReplaceInPosition(strCodigoAceca.ToString(), strCodigoAceca.Length - 1, charProximaLetraCodigoAceca);
+                    if (int.TryParse(strNumCodigoAceca, out int intNumCodigoAceca))
+                        if (!bvariante)
+                        {
+                            strNovoCodigoAceca = !FaseSel.Equals(EFase.QRCode136)
+                                ? strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString())
+                                : string.Concat("136QR-", strNumCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString()));
+
+                            if (Char.IsLetter(strNovoCodigoAceca[^1]))
+                                strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1])
+                                    ? strNovoCodigoAceca.Remove(strNovoCodigoAceca.Length - 1)
+                                    : string.Concat(strNovoCodigoAceca, strUltimaLetraCodigoAceca);
                         }
                         else
                         {
-                            strNovoCodigoAceca = string.Concat(strCodigoAceca, strUltimaLetraCodigoAceca);
+                            if (Char.IsLetter(strCodigoAceca[^1]))
+                            {
+                                strUltimaLetraCodigoAceca = strCodigoAceca[^1];
+
+                                char charProximaLetraCodigoAceca = (char)(strUltimaLetraCodigoAceca + 1);
+
+                                strNovoCodigoAceca = ReplaceInPosition(strCodigoAceca.ToString(), strCodigoAceca.Length - 1, charProximaLetraCodigoAceca);
+                            }
+                            else
+                            {
+                                strNovoCodigoAceca = string.Concat(strCodigoAceca, strUltimaLetraCodigoAceca);
+                            }
                         }
+
+                    if (string.IsNullOrEmpty(strNovoCodigoAceca))
+                    {
+                        return BadRequest(new
+                        {
+                            bResult = true,
+                            type = "ERRO - GetFullByIdFase - lstModel",
+                            message = "strNovoCodigoAceca Nula",
+                            data = msgErroData
+                        });
                     }
 
-                if (string.IsNullOrEmpty(strNovoCodigoAceca))
-                {
-                    return BadRequest(new
-                    {
-                        bResult = true,
-                        type = "ERRO - GetFullByIdFase - lstModel",
-                        message = "strNovoCodigoAceca Nula",
-                        data = msgErroData
-                    });
+                    if (model?.MarcaImpressoraId == null || model?.MarcaImpressoraId <= 0)
+                        if (!string.IsNullOrEmpty(model?.TxtImpressora))
+                        {
+                            var objImpressora = await _db.MarcaImpressora
+                                .AsNoTracking()
+                                .Where(i => i.Descricao.Equals(model.TxtImpressora.Trim()))
+                                .FirstOrDefaultAsync();
+
+                            if (objImpressora != null)
+                            {
+                                model?.MarcaImpressora = new MarcaImpressora
+                                {
+                                    Id = objImpressora?.Id,
+                                    Descricao = objImpressora?.Descricao
+                                };
+
+                                model?.MarcaImpressoraId = objImpressora?.Id;
+                            }
+                        }
+
+
+                    if (model?.MarcaFabricaId == null || model?.MarcaFabricaId <= 0)
+                        if (!string.IsNullOrEmpty(model?.TxtFabrica))
+                        {
+                            var objFabrica = _db.MarcaFabrica
+                                .AsNoTracking()
+                                .Where(i => i.Nome.Equals(model.TxtFabrica.Trim()))
+                                .FirstOrDefault();
+
+                            if (objFabrica != null)
+                            {
+                                model?.MarcaFabrica = new MarcaFabrica
+                                {
+                                    Id = objFabrica?.Id,
+                                    Nome = objFabrica?.Nome,
+                                    Descricao = objFabrica?.Descricao
+                                };
+
+                                model?.MarcaFabricaId = objFabrica?.Id;
+                            }
+                        }
                 }
-
-                if (model?.MarcaImpressoraId == null || model?.MarcaImpressoraId <= 0)
-                    if (!string.IsNullOrEmpty(model?.TxtImpressora))
-                    {
-                        var objImpressora = await _db.MarcaImpressora
-                            .AsNoTracking()
-                            .Where(i => i.Descricao.Equals(model.TxtImpressora.Trim()))
-                            .FirstOrDefaultAsync();
-
-                        if (objImpressora != null)
-                        {
-                            model?.MarcaImpressora = new MarcaImpressora
-                            {
-                                Id = objImpressora?.Id,
-                                Descricao = objImpressora?.Descricao
-                            };
-
-                            model?.MarcaImpressoraId = objImpressora?.Id;
-                        }
-                    }
-
-
-                if (model?.MarcaFabricaId == null || model?.MarcaFabricaId <= 0)
-                    if (!string.IsNullOrEmpty(model?.TxtFabrica))
-                    {
-                        var objFabrica = _db.MarcaFabrica
-                            .AsNoTracking()
-                            .Where(i => i.Nome.Equals(model.TxtFabrica.Trim()))
-                            .FirstOrDefault();
-
-                        if(objFabrica != null)
-                        {
-                            model?.MarcaFabrica = new MarcaFabrica
-                            {
-                                Id = objFabrica?.Id,
-                                Nome = objFabrica?.Nome,
-                                Descricao = objFabrica?.Descricao
-                            };
-
-                            model?.MarcaFabricaId = objFabrica?.Id;
-                        }
-                    }
 
                 return Ok(new
                 {
                     bResult = true,
+                    bSemCadastro = bMarcaSemCadastro,
                     type = "OK",
                     message = "SUCESSO ::: ",
                     data = model,
