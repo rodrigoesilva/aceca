@@ -819,6 +819,39 @@ namespace Aceca.Adm.Helper
                         </body>
                     </html>";
             }
+            else if (eTipoMail.Equals(ETipoEmail.Cadastro))
+            {
+                strSubject = "Seja bem-vindo(a) à ACECA - Complete seu cadastro";
+
+                strBody = $@"
+                    <!DOCTYPE html>
+                    <html lang=""pt-BR"">
+                        <head><meta charset=""UTF-8""></head>
+                        <body style=""font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;"">
+                            <div style=""max-width:520px;margin:0 auto;background:#fff;border-radius:10px;padding:36px 40px;box-shadow:0 2px 12px rgba(0,0,0,.08);"">
+                                <div style=""text-align:center;"">
+                                    <img src=""https://www.aceca.com.br/img/logo/logo02.png"" alt=""ACECA"" width=""250"" style=""max-width:100%;"">
+                                </div>
+                                <h2 style=""color:#47007b;margin-top:0;"">Seja bem-vindo(a) à ACECA!</h2>
+                                <p>Olá, {socioNome}</p>
+                                <p>É um prazer ter você com a gente! Seu cadastro na <strong>ACECA Área do Sócio</strong> foi criado com sucesso.</p>
+                                <p>Para concluir seu ingresso e liberar seu acesso, falta só um passo: confirme seus dados e crie sua senha de acesso clicando no botão abaixo.</p>
+                                <p><em>Este link é válido por <strong>24 horas</strong>.</em></p>
+                                <div style=""text-align:center;margin:32px 0;"">
+                                    <a href=""{resetLink}"" style=""background:#47007b;color:#fff;padding:14px 32px;border-radius:6px; text-decoration:none;font-size:16px;display:inline-block;"">
+                                        Completar meu cadastro
+                                    </a>
+                                </div>
+                                <p style=""font-size:13px;color:#888;"">Você só conseguirá acessar a Área do Sócio depois de concluir esta etapa.
+                                   Se você não reconhece este cadastro, entre em contato conosco.</p>
+                                <hr style=""border:none;border-top:1px solid #eee;margin:24px 0;"">
+                                <p style=""font-size:12px;color:#aaa;text-align:center;"">
+                                  © ACECA - Associação dos Colecionadores de Embalagens de Cigarros e Afins
+                                </p>
+                            </div>
+                        </body>
+                    </html>";
+            }
             else if (eTipoMail.Equals(ETipoEmail.EsqueceuSenha))
             {
                 strBody = $@"

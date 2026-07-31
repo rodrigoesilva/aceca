@@ -54,6 +54,7 @@ async function fn_RegUpdtAuth() {
     const senha = document.getElementById('password').value;
     const confirmSenha = document.getElementById('confirmPassword').value;
     const chkTermo = document.getElementById('terms-conditions').checked; //$('#chk_PesquisarDescricao')[0].checked,
+    const token = document.getElementById('hdToken')?.value || null;
     const btn = document.getElementById('btnRegisterUpdate');
 
     btn.disabled = true;
@@ -82,7 +83,7 @@ async function fn_RegUpdtAuth() {
                 headers: {
                     "Content-Type": 'application/json',
                 },
-                body: JSON.stringify({ userNameCPF, email, senha, confirmSenha, chkTermo }),
+                body: JSON.stringify({ username: userNameCPF, email, senha, confirmSenha, chkTermo, token }),
             });
 
             if (response.ok) {
@@ -129,6 +130,29 @@ async function fn_RegUpdtAuth() {
                         });
                     }
 
+                } else if (token && user?.message?.toLowerCase().includes('expirado')) {
+
+                    // Link de cadastro (com token) vencido - oferece reenviar um novo,
+                    // em vez de só mostrar erro genérico e deixar o sócio sem saída.
+                    Swal.fire({
+                        title: 'Link expirado',
+                        icon: 'warning',
+                        html: `<b>${user.message}</b><br><br>Podemos enviar um novo link para o seu e-mail.`,
+                        showCancelButton: true,
+                        focusConfirm: false,
+                        confirmButtonText: `Reenviar e-mail`,
+                        cancelButtonText: `Fechar`,
+                        customClass: {
+                            confirmButton: 'btn btn-primary waves-effect waves-light',
+                            cancelButton: 'btn btn-label-secondary waves-effect'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            fn_RegUpdtResendCadastro(email);
+                        } else {
+                            fn_RegUpdtLimpar();
+                        }
+                    });
                 } else {
 
                     Swal.fire({
@@ -189,6 +213,33 @@ async function fn_RegUpdtAuth() {
         });
     }
 
+}
+
+async function fn_RegUpdtResendCadastro(email) {
+    try {
+        const response = await fetch(`${var_Controller}/ResendCadastroEmail`, {
+            method: 'POST',
+            headers: { "Content-Type": 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+
+        const result = await response.json();
+
+        Swal.fire({
+            icon: result.bResult ? 'success' : 'error',
+            title: result.bResult ? 'E-mail enviado!' : 'Ops!!',
+            html: `<b>${result.message}</b>`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: `btn ${result.bResult ? 'btn-label-success' : 'btn-label-danger'} waves-effect`
+            }
+        }).then(() => {
+            fn_RegUpdtLimpar();
+        });
+    } catch (ex) {
+        console.log(`fn_RegUpdtResendCadastro ex :: ${ex}`);
+    }
 }
 
 function fn_RegUpdtAuthIni() {

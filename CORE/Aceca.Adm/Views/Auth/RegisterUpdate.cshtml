@@ -37,7 +37,8 @@
           <p class="mb-5">Sua nova senha deve ser diferente das senhas usadas anteriormente e conter 8 ou mais caracteres, incluindo pelo menos um número...</p>
           
             <form id="frmRegisterUpdate" class="mb-5" action="#" autocomplete="off">
-            
+                <input type="hidden" id="hdToken" name="hdToken" value="@ViewBag.Token" />
+
                 <div class="mb-5 form-username-cpf">
                     <div class="input-group">
                         <div class="form-floating form-floating-outline">
@@ -52,7 +53,8 @@
                 <div class="mb-5 form-email">
                       <div class="input-group">
                         <div class="form-floating form-floating-outline">
-                          <input type="text" class="form-control" id="email" name="email" placeholder="Entre com seu email" required>
+                          <input type="text" class="form-control" id="email" name="email" placeholder="Entre com seu email"
+                                 value="@ViewBag.Email" @(string.IsNullOrWhiteSpace(ViewBag.Email as string) ? "" : "readonly") required>
                           <label for="email">E-mail</label>
                         </div>
                      </div>

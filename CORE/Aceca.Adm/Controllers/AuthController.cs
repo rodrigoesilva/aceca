@@ -72,7 +72,7 @@ namespace Aceca.Adm.Controllers
         }
 
         public record LoginIn(string Email, string Senha);
-        public record LoginUpdt(string Username, string Email, string Senha, string ConfirmSenha, bool ChkTermo);
+        public record LoginUpdt(string Username, string Email, string Senha, string ConfirmSenha, bool ChkTermo, string Token = null);
 
         // DTO para ForgotPassword
         public record ForgotPasswordIn(string Email);
@@ -421,6 +421,76 @@ namespace Aceca.Adm.Controllers
         #endregion
 
         // ──────────────────────────────────────────────
+        // REENVIO DO E-MAIL DE CADASTRO (link de boas-vindas expirado)
+        // ──────────────────────────────────────────────
+
+        #region ResendCadastroEmail
+
+        /// <summary>
+        /// Gera um novo token (24h) e reenvia o e-mail de boas-vindas/cadastro, para o caso
+        /// do sócio não ter concluído o cadastro dentro do prazo do link original. Diferente
+        /// do ForgotPassword (que é para quem já tem acesso e esqueceu a senha), este só se
+        /// aplica a quem ainda não concluiu o primeiro acesso (SenhaAtualizada = false) -
+        /// evita virar um jeito alternativo de reset de senha para quem já está com a conta ativa.
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> ResendCadastroEmail([FromBody] ForgotPasswordIn dto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto?.Email))
+                    return Ok(new { bResult = false, message = "E-mail inválido." });
+
+                var user = await _db.SocioSeguranca
+                   .Include(x => x.Socio)
+                   .FirstOrDefaultAsync(x => x.Email == dto.Email.Trim().ToLowerInvariant());
+
+                // Por segurança, retorna sucesso mesmo se o e-mail não existir ou já ter
+                // concluído o cadastro, para não expor quais e-mails estão cadastrados nem
+                // em que etapa cada sócio está.
+                if (user is null || user.SenhaAtualizada)
+                    return Ok(new { bResult = true, message = "Se o e-mail existir e o cadastro estiver pendente, você receberá um novo link." });
+
+                if (user.Socio.SocioPerfilId.Equals((int)EPerfil.Banido))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
+
+                if (!user.Socio.Ativo)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
+
+                var strToken = _helperController.GenerateSecuretToken();
+
+                user.ResetPasswordToken = strToken;
+                user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
+
+                _db.Entry(user).State = EntityState.Modified;
+                await _db.SaveChangesAsync();
+
+                var resetLink = $"{_urlBaseApp}/Auth/NewRegistration?token={Uri.EscapeDataString(strToken)}&email={Uri.EscapeDataString(user.Email)}";
+
+                var resultSendMail = await _helperController.EnviarEmailAsync(ETipoEmail.Cadastro, user.Email, user.Socio.Nome, resetLink);
+
+                if (resultSendMail.GetType() == typeof(NotFoundObjectResult) ||
+                    resultSendMail.GetType() == typeof(BadRequestObjectResult))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Falha no envido do E-mail",
+                        data = user.Email
+                    });
+
+                return Ok(new { bResult = true, message = "E-mail enviado com sucesso." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(ResendCadastroEmail), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        #endregion
+
+        // ──────────────────────────────────────────────
         // RESET DE SENHA  (página com e-mail + senha + confirmação)
         // ──────────────────────────────────────────────
 
@@ -542,17 +612,25 @@ namespace Aceca.Adm.Controllers
         #region LOGIN Update Data
 
         [HttpPost]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
         public async Task<IActionResult> LoginUpdate([FromBody] LoginUpdt dto)
         {
             try
             {
-                var newModel = new Models.SocioSeguranca();
+                if (string.IsNullOrWhiteSpace(dto?.Email) ||
+                    string.IsNullOrWhiteSpace(dto?.Senha) ||
+                    string.IsNullOrWhiteSpace(dto?.ConfirmSenha))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Todos os campos são obrigatórios." });
+
+                if (dto.Senha != dto.ConfirmSenha)
+                    return Ok(new { bResult = false, type = "ERRO", message = "As senhas não coincidem." });
+
+                if (dto.Senha.Length < 8 || !dto.Senha.Any(char.IsDigit))
+                    return Ok(new { bResult = false, type = "ERRO", message = "A senha deve ter no mínimo 8 caracteres e conter pelo menos 1 número." });
 
                 var user = await _db.SocioSeguranca
                     .Include(x => x.Socio)
-                    .Include(x => x.Socio.SocioPerfil)
-                    .FirstOrDefaultAsync(x => x.Email == dto.Email.ToLower());
+                    .ThenInclude(s => s.SocioPerfil)
+                    .FirstOrDefaultAsync(x => x.Email == dto.Email.Trim().ToLowerInvariant());
 
                 if (user is null)
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
@@ -563,27 +641,44 @@ namespace Aceca.Adm.Controllers
                 if (!user.Socio.Ativo)
                     return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
 
+                // Dois caminhos possíveis para chegar aqui:
+                // 1) Sócio novo (ou sem sessão) veio pelo link do e-mail com token - precisa
+                //    provar que tem acesso à caixa de entrada, já que ainda não tem senha
+                //    nenhuma para se autenticar.
+                // 2) Sócio já autenticado, com senha expirada (SenhaAtualizada=false) sendo
+                //    forçado a trocá-la - a sessão já prova quem ele é.
+                // Sem essa checagem, QUALQUER usuário autenticado podia trocar a senha de
+                // QUALQUER outro sócio só enviando o e-mail dele (sequestro de conta).
+                if (!string.IsNullOrWhiteSpace(dto.Token))
+                {
+                    if (user.ResetPasswordToken != dto.Token ||
+                        user.ResetPasswordTokenExpiry == null ||
+                        user.ResetPasswordTokenExpiry < DateTime.UtcNow)
+                        return Ok(new { bResult = false, type = "ERRO", message = "Link inválido ou expirado. Solicite um novo cadastro." });
+                }
+                else
+                {
+                    var emailAutenticado = User.FindFirstValue(ClaimTypes.Email);
+
+                    if (!User.Identity.IsAuthenticated || !string.Equals(emailAutenticado, user.Email, StringComparison.OrdinalIgnoreCase))
+                        return Ok(new { bResult = false, type = "ERRO", message = "Sessão inválida para atualizar esses dados." });
+                }
+
                 var hash = _helperController.GenerateHashPassword(dto.Senha);
 
-                newModel = new Models.SocioSeguranca
-                {
-                    Id = user.Id,
-                    SocioId = user.SocioId,
-                    Email = dto.Email,
-                    Senha = hash,
-                    SenhaAberta = dto.Senha,
-                    SenhaAtualizada = true,
-                    NomeUsuario = dto.Username,
-                    UltimoLogin = DateTime.UtcNow.AddHours(-3),
+                user.Senha = hash;
+                user.SenhaAberta = dto.Senha;
+                user.SenhaAtualizada = true;
+                user.NomeUsuario = dto.Username;
+                user.UltimoLogin = DateTime.UtcNow.AddHours(-3);
 
-                    Socio = new Socio
-                    {
-                        MostrarSite = dto.ChkTermo,
-                        Ativo = true,
-                    }
-                };
+                // Invalida o token após uso (mesmo padrão do ResetPassword)
+                user.ResetPasswordToken = null;
+                user.ResetPasswordTokenExpiry = null;
 
-                _db.Entry(newModel).State = EntityState.Modified;
+                user.Socio.MostrarSite = dto.ChkTermo;
+                user.Socio.Ativo = true;
+
                 await _db.SaveChangesAsync();
 
                 return Ok(new
