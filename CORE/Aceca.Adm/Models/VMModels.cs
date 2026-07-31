@@ -118,6 +118,7 @@ namespace Aceca.Adm.VMModels
         public int? MarcaSubTipoId { get; set; }
 
         public string? CodigoAceca { get; set; }
+        public string? CodigoAcecaNew { get; set; }
         public string? CodigoVariante { get; set; }
         public string? CodigoFabrica { get; set; }        
         public string? ImgPrincipal { get; set; }

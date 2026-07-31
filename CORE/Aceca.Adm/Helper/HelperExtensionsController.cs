@@ -77,6 +77,22 @@ namespace Aceca.Adm.Helper
 
         #endregion
 
+
+
+        #region Enum Acervo
+        public enum EAcervo
+        {
+            Nenhum = 0,
+            Geral = 1,
+            Amostra = 2,
+            Palheiro = 3,
+            Cigarrilha = 4,
+            Charutos = 5,
+            FumosDiversos = 6,
+            Afins = 7
+        }
+        #endregion
+
         #region Enum Fases
 
         public enum EFase
@@ -95,7 +111,7 @@ namespace Aceca.Adm.Helper
             Av9 = 21,
             AvDPF10 = 22,
             AvDS10 = 23,
-            Av10_2009 = 24,
+            Av10 = 24,
             Av136 = 25,
             Frontal136 = 26,
             Palheiros = 27,

@@ -15,7 +15,7 @@ namespace Aceca.Adm.Data
                    .AddJsonFile("appsettings.json")
                    .Build();
                 var conn = configuration.GetConnectionString("MySqlConnection");
-                options.UseMySql(conn, ServerVersion.AutoDetect(conn),
+                options.UseMySql(conn, new MySqlServerVersion(new Version(8, 0, 36)),
                         mySqlOptions =>
                         {
                             mySqlOptions.EnableRetryOnFailure(

@@ -388,55 +388,52 @@ namespace Aceca.Adm.Controllers.Pages
         {
             try
             {
-                using (var context = new AppDbContext())
+                var model = await _db.SocioColecao
+                     .Where(x =>
+                        x.SocioId == socioId &&
+                        x.MarcaId == marcaId)
+                     .FirstOrDefaultAsync();
+
+                if (model == null)
                 {
-                    var model = await context.SocioColecao
-                         .Where(x =>
-                            x.SocioId == socioId &&
-                            x.MarcaId == marcaId)
-                         .FirstOrDefaultAsync();
-
-                    if (model == null)
+                    model = new SocioColecao
                     {
-                        model = new SocioColecao
-                        {
-                            SocioId = socioId,
-                            MarcaId = marcaId,
-                            Possui = acao == EColecaoAcao.ColecaoIncluir,
-                            Interesse = acao == EColecaoAcao.ColecaoInteresse,
-                            DisponivelNegocio = acao == EColecaoAcao.ColecaoNegociar
-                                || (acao == EColecaoAcao.ColecaoObs && disponivelNegocio),
-                            Observacao = !string.IsNullOrWhiteSpace(itemColecaoObs) ? itemColecaoObs.Trim() : null
-                        };
+                        SocioId = socioId,
+                        MarcaId = marcaId,
+                        Possui = acao == EColecaoAcao.ColecaoIncluir,
+                        Interesse = acao == EColecaoAcao.ColecaoInteresse,
+                        DisponivelNegocio = acao == EColecaoAcao.ColecaoNegociar
+                            || (acao == EColecaoAcao.ColecaoObs && disponivelNegocio),
+                        Observacao = !string.IsNullOrWhiteSpace(itemColecaoObs) ? itemColecaoObs.Trim() : null
+                    };
 
-                        context.SocioColecao.Add(model);
-                    }
-                    else
-                    {
-                        switch (acao)
-                        {
-                            case EColecaoAcao.ColecaoIncluir:
-                                model.Possui = !model.Possui;
-                                break;
-                            case EColecaoAcao.ColecaoInteresse:
-                                model.Interesse = !model.Interesse;
-                                break;
-                            case EColecaoAcao.ColecaoNegociar:
-                                model.DisponivelNegocio = !model.DisponivelNegocio;
-                                break;
-                            case EColecaoAcao.ColecaoObs:
-                                model.DisponivelNegocio = disponivelNegocio;
-                                break;
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(itemColecaoObs))
-                            model.Observacao = itemColecaoObs.Trim();
-
-                        context.SocioColecao.Update(model);
-                    }
-
-                    await context.SaveChangesAsync();
+                    _db.SocioColecao.Add(model);
                 }
+                else
+                {
+                    switch (acao)
+                    {
+                        case EColecaoAcao.ColecaoIncluir:
+                            model.Possui = !model.Possui;
+                            break;
+                        case EColecaoAcao.ColecaoInteresse:
+                            model.Interesse = !model.Interesse;
+                            break;
+                        case EColecaoAcao.ColecaoNegociar:
+                            model.DisponivelNegocio = !model.DisponivelNegocio;
+                            break;
+                        case EColecaoAcao.ColecaoObs:
+                            model.DisponivelNegocio = disponivelNegocio;
+                            break;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(itemColecaoObs))
+                        model.Observacao = itemColecaoObs.Trim();
+
+                    _db.SocioColecao.Update(model);
+                }
+
+                await _db.SaveChangesAsync();
 
                 return Ok(new
                 {
@@ -473,23 +470,19 @@ namespace Aceca.Adm.Controllers.Pages
                     });
                 }
 
-                using (var context = new AppDbContext())
-                {
+                var model = await _db.SocioColecao.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
-                    var model = await context.SocioColecao.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+                if (model == null)
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "ERRO - ID nao localizado",
+                        message = "ID nao localizado",
+                        data = id
+                    });
 
-                    if (model == null)
-                        return Ok(new
-                        {
-                            bResult = true,
-                            type = "ERRO - ID nao localizado",
-                            message = "ID nao localizado",
-                            data = id
-                        });
-
-                    context.SocioColecao.Remove(model);
-                    await context.SaveChangesAsync();
-                }
+                _db.SocioColecao.Remove(model);
+                await _db.SaveChangesAsync();
 
                 return Ok(new
                 {

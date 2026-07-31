@@ -12,8 +12,13 @@ var conn = builder.Configuration.GetConnectionString("MySqlConnection")
                 ?? throw new InvalidOperationException("Connection string não localizada");
 
 // Configure DB Context with MySql
+// Versão fixa (em vez de ServerVersion.AutoDetect): AutoDetect abre uma conexão síncrona
+// extra durante o startup só para descobrir a versão — se houver qualquer instabilidade
+// de rede até o servidor MySQL nesse instante, a aplicação inteira falha ao subir.
+var mySqlServerVersion = new MySqlServerVersion(new Version(8, 0, 36));
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(conn, ServerVersion.AutoDetect(conn),
+    options.UseMySql(conn, mySqlServerVersion,
         mySqlOptions =>
         {
             mySqlOptions.EnableRetryOnFailure(
