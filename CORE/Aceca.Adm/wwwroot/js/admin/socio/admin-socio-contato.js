@@ -465,6 +465,20 @@ function fn_CheckVerAtivos() {
 
 //#endregion
 
+function fn_MaskTelefone(input) {
+    // Remove tudo que não for dígito
+    let value = input.value.replace(/\D/g, '');
+
+    // Limita a 11 dígitos (DDD + 9 dígitos)
+    value = value.substring(0, 11);
+
+    // Aplica a máscara: (00) 00000-0000 / (00) 0000-0000
+    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+
+    input.value = value;
+}
+
 //#region COMBO
 
 function fn_LoadCmb_Socio() {
@@ -521,11 +535,19 @@ function fn_Pop(obj, action) {
 
 function fn_PopGetObj() {
 
+    // Campo único "(DDD) telefone" - extrai DDD e telefone separados, que é o
+    // formato que o model SocioContato espera (DDI/DDD/Telefone). Sem esse parse,
+    // o valor era reenviado como uma única string e o model binding falhava
+    // (Telefone é long?), zerando DDD/Telefone a cada edição.
+    let contatoDigitos = ($('.form-add-new-item .dt-line-02').val() || '').replace(/\D/g, '');
+
     const objFormData = {
         Id: $('#hdId').val(),
         SocioId: $('#hdSocioContatoId').val(),
         Nome: $('.form-add-new-item .dt-line-01').val(),
-        Telefone: $('.form-add-new-item .dt-line-02').val(),
+        DDI: 55,
+        DDD: contatoDigitos.length >= 2 ? parseInt(contatoDigitos.substring(0, 2), 10) : null,
+        Telefone: contatoDigitos.length > 2 ? parseInt(contatoDigitos.substring(2), 10) : null,
         Email: $('.form-add-new-item .dt-line-03').val(),
         //Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
     };

@@ -132,10 +132,12 @@ function fn_GridList(formValid) {
                     data: 'NomeSocio',
                     targets: 2,
                 },
-                // COLUNA - Endereco
+                // COLUNA - Endereco (render.text() escapa HTML - evita XSS armazenado
+                // em campo de texto livre preenchido pelo admin no cadastro)
                 {
                     data: 'Endereco',
                     targets: 3,
+                    render: $.fn.dataTable.render.text(),
                 },
                 // COLUNA - numero
                 {
@@ -147,16 +149,19 @@ function fn_GridList(formValid) {
                 {
                     data: 'Complemento',
                     targets: 5,
+                    render: $.fn.dataTable.render.text(),
                 },
                 // COLUNA - bairro
                 {
                     data: 'Bairro',
                     targets: 6,
+                    render: $.fn.dataTable.render.text(),
                 },
                 // COLUNA - cidade
                 {
                     data: 'Cidade',
                     targets: 7,
+                    render: $.fn.dataTable.render.text(),
                 },
                 // COLUNA - estado
                 {
@@ -222,6 +227,7 @@ function fn_GridList(formValid) {
                             btns =
                                 '<div class="d-inline-block text-nowrap">' +
                                 '<a href="javascript:fn_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
+                                '<a href="javascript:fnItem_Delete(' + itemObjJson + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body"><i class="ri-delete-bin-line ri-22px"></i></a>' +
                                 '</div>'
                         }
 
@@ -483,6 +489,19 @@ function fn_CheckVerAtivos() {
 }
 
 //#endregion
+
+function fn_MaskCEP(input) {
+    // Remove tudo que não for dígito
+    let value = input.value.replace(/\D/g, '');
+
+    // Limita a 8 dígitos
+    value = value.substring(0, 8);
+
+    // Aplica a máscara: 00000-000
+    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+
+    input.value = value;
+}
 
 //#region COMBO
 

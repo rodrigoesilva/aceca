@@ -144,12 +144,16 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             {
                 if (ModelState.IsValid)
                 {
-                    return Ok(new
+                    // Sem implementação: credenciais de acesso (SocioSeguranca) só devem
+                    // ser criadas junto do cadastro do sócio (SocioController.Create), para
+                    // não haver como existir um SocioSeguranca sem o Socio correspondente.
+                    // O botão "Adicionar Novo" desta tela está desativado no JS por esse
+                    // motivo - este endpoint antes retornava sucesso sem gravar nada.
+                    return BadRequest(new
                     {
-                        bResult = true,
-                        type = "OK",
-                        message = "SUCESSO ::: ",
-                        data = model,
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Cadastro de credenciais deve ser feito pela tela de Sócio"
                     });
                 }
 

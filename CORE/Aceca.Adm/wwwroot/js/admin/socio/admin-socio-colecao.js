@@ -759,7 +759,7 @@ function fn_GridComplete(grid) {
 
         //console.log("fn_GridComplete - idMarcaFase ::: ", idMarcaFase);
         if (idMarcaFase > 0) {
-            thisApi.column(9).visible(false); // coluna fase
+            thisApi.column(8).visible(false); // coluna fase
         }
 
         fn_Zoom();

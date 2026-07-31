@@ -229,6 +229,14 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             {
                 if (ModelState.IsValid)
                 {
+                    // Cadastro toca 5 tabelas (Socio + Seguranca + Contato + Endereco +
+                    // Aniversario) via SaveChanges separados; sem transação, uma falha no
+                    // meio do caminho (ex.: telefone mal formatado) deixava um sócio com
+                    // login já criado mas sem contato/endereço, e o cliente via só um erro
+                    // genérico como se nada tivesse sido salvo. Dispose sem Commit reverte
+                    // tudo automaticamente em qualquer "return" antecipado.
+                    using var transaction = await _db.Database.BeginTransactionAsync();
+
                     #region Socio
 
                     if (string.IsNullOrEmpty(model.Nome))
@@ -393,6 +401,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         });
 
                     #endregion
+
+                    await transaction.CommitAsync();
 
                     return Ok(new
                     {
@@ -612,8 +622,20 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         data = id
                     });
 
+                // Remove os registros relacionados explicitamente - sem FK cascade
+                // configurada no banco, excluir só a linha de "socios" falhava por
+                // violação de FK (ou deixava órfãos, se a constraint fosse permissiva).
+                using var transaction = await _db.Database.BeginTransactionAsync();
+
+                _db.SocioContato.RemoveRange(_db.SocioContato.Where(x => x.SocioId == id));
+                _db.SocioEndereco.RemoveRange(_db.SocioEndereco.Where(x => x.SocioId == id));
+                _db.SocioAniversario.RemoveRange(_db.SocioAniversario.Where(x => x.SocioId == id));
+                _db.SocioFinanceiro.RemoveRange(_db.SocioFinanceiro.Where(x => x.SocioId == id));
+                _db.SocioSeguranca.RemoveRange(_db.SocioSeguranca.Where(x => x.SocioId == id));
                 _db.Socio.Remove(model);
-                _db.SaveChanges();
+
+                await _db.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 return Ok(new
                 {
@@ -641,7 +663,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         #endregion
 
         #region Socio Derivacao
-        public async Task<IActionResult> Create_SocioSeguranca(VMSocio model)
+        private async Task<IActionResult> Create_SocioSeguranca(VMSocio model)
         {
             try
             {
@@ -690,7 +712,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 });
             }
         }
-        public async Task<IActionResult> Create_SocioContato(VMSocio model)
+        private async Task<IActionResult> Create_SocioContato(VMSocio model)
         {
             try
             {
@@ -738,7 +760,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 });
             }
         }
-        public async Task<IActionResult> Create_SocioEndereco(VMSocio model)
+        private async Task<IActionResult> Create_SocioEndereco(VMSocio model)
         {
             try
             {
@@ -787,7 +809,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 });
             }
         }
-        public async Task<IActionResult> Create_SocioAniversario(VMSocio model)
+        private async Task<IActionResult> Create_SocioAniversario(VMSocio model)
         {
             try
             {

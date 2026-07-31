@@ -119,7 +119,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     var newModel = new Models.SocioPerfil
                     {
-                        Descricao = !string.IsNullOrEmpty(model.Descricao) ? model.Descricao : null,
+                        Descricao = model.Descricao,
+                        Ativo = model.Ativo,
                     };
 
                     _db.SocioPerfil.Add(newModel);

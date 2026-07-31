@@ -566,9 +566,11 @@ function fn_Pop(obj, action) {
 
     if (obj !== null) {
 
-        $("#cmb_SocioEstado").val(obj.Estado).change();
+        $("#cmb_SocioEstado").val(obj.Estado).trigger('change');
 
         //console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
+    } else {
+        $("#cmb_SocioEstado").val('').trigger('change');
     }
 
     //console.log("fn_Pop popAddNewItem ::: ", popAddNewItem);

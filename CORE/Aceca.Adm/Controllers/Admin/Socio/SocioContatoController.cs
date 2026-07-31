@@ -13,6 +13,9 @@ namespace Aceca.Adm.Controllers.Admin.Socio
     {
         #region variaveis
 
+        private static readonly System.Text.RegularExpressions.Regex RegexEmailValido =
+            new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+
         private readonly ILogger<SocioContatoController> _logger;
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
@@ -149,7 +152,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             message = "Sócio deve ser selecionado"
                         });
 
-                    if (string.IsNullOrEmpty(model?.Email))
+                    if (string.IsNullOrWhiteSpace(model?.Email) || !RegexEmailValido.IsMatch(model.Email.Trim()))
                         return BadRequest(new
                         {
                             bResult = false,
@@ -227,7 +230,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             message = "Sócio não identificado"
                         });
 
-                    if (string.IsNullOrEmpty(model?.Email))
+                    if (string.IsNullOrWhiteSpace(model?.Email) || !RegexEmailValido.IsMatch(model.Email.Trim()))
                         return BadRequest(new
                         {
                             bResult = false,
