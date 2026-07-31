@@ -48,7 +48,7 @@ function fn_GridList(formValid) {
         varAjax_TypeAction = 'POST',
         varAjax_TypeContent = 'application/json; charset=utf-8',
 
-        varCol_Exportar = [2, 3, 4, 5, 6, 7],
+        varCol_Exportar = [2, 3, 4, 5, 6],
         varCol_Ordenacao = [[2, 'asc']],
 
         varItems_QtdPorPage = 50,
@@ -140,16 +140,10 @@ function fn_GridList(formValid) {
                     targets: 4,
                     //className: "text-center",
                 },
-                // COLUNA - Senha
-                {
-                    data: 'SenhaAberta',
-                    targets: 5,
-                    //className: "text-center",
-                },
                 // COLUNA - Tipo Usuario
                 {
                     data: 'SocioPerfilId',
-                    targets: 6,
+                    targets: 5,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.Id;
@@ -196,7 +190,7 @@ function fn_GridList(formValid) {
                 // COLUNA - Ultimo Login
                 {
                     data: 'UltimoLogin',
-                    targets: 7,
+                    targets: 6,
                     className: "text-center",
                     render: function (data, type, full) {
                         let id = full.Id;

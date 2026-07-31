@@ -3,6 +3,7 @@ using Aceca.Adm.Helper;
 using Aceca.Adm.Models;
 using Aceca.Adm.VMModels;
 using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -13,6 +14,7 @@ using static Aceca.Adm.Helper.HelperExtensionsController;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
+    [Authorize(Roles = "Administracao")]
     public class SocioController : Controller
     {
         #region variaveis
@@ -220,6 +222,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(VMSocio model)
         {
             try
@@ -424,6 +427,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(VMSocio model)
         {
             try
@@ -440,29 +444,29 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             message = "Nome deve ser preenchido"
                         });
 
-                    var newModel = new Models.Socio
-                    {
-                        //public class Socio : BaseModel
-                        Id = model.Id,
-                        SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
-                        Nome = model.Nome,
-                        ImgAvatar = model.ImgAvatar,
-                        MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
-                        Ativo = model.Ativo,
-                    };
+                    // Atualiza somente os campos editáveis nesta tela - marcar um objeto novo
+                    // (só com os campos vindos do form) como EntityState.Modified regravava
+                    // TODAS as colunas, inclusive DataCriacao (zerada para "agora" a cada edição,
+                    // pois BaseModel inicializa essa propriedade com DateTime.Now por padrão).
+                    var newModel = await _db.Socio.FirstOrDefaultAsync(x => x.Id == model.Id);
 
-                    _db.Entry(newModel).State = EntityState.Modified;
-                    _db.SaveChanges();
-
-                    model.Id = newModel?.Id;
-
-                    if (newModel?.Id <= 0)
+                    if (newModel is null)
                         return BadRequest(new
                         {
                             bResult = false,
                             type = "ERRO",
                             message = "Falha ao Atualizar Socio"
                         });
+
+                    newModel.SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5; //socio
+                    newModel.Nome = model.Nome;
+                    newModel.ImgAvatar = model.ImgAvatar;
+                    newModel.MostrarSite = model.MostrarSite != null ? model.MostrarSite : true;
+                    newModel.Ativo = model.Ativo;
+
+                    await _db.SaveChangesAsync();
+
+                    model.Id = newModel?.Id;
 
                     #endregion
 
@@ -582,6 +586,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpDelete]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             if (id < 1)

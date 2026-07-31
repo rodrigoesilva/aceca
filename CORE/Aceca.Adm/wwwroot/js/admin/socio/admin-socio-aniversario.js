@@ -32,6 +32,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Carrega Dados Grid
         fn_GridList(formValid);
+
+        fn_LoadCmb_Socio();
+
+        $('#cmb_Socio').on('change', function () {
+            $('#hdSocioAniversarioId').val($(this).val());
+        });
     })();
 });
 
@@ -471,6 +477,28 @@ function fn_CheckVerAtivos() {
 
 //#endregion
 
+//#region COMBO
+
+function fn_LoadCmb_Socio() {
+    if ($('#cmb_Socio option').length <= 1) {
+        $.ajax({
+            crossDomain: true,
+            url: `${var_ControllerCmb}/AsyncCmb_Socio`,
+            type: 'GET',
+            success: function (data) {
+                $.each(data, function (id, result) {
+                    $("#cmb_Socio").append($("<option></option>").val(result.value).html(result.text));
+                });
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                fn_ModalErro(xhr, textStatus, errorThrown);
+            },
+        });
+    }
+}
+
+//#endregion
+
 //#region POP
 
 function fn_Pop(obj, action) {
@@ -487,7 +515,12 @@ function fn_Pop(obj, action) {
 
         // Pop Dados
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj?.NomeSocio)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : `${obj?.Dia} / ${obj?.Mes}`)),
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : `${String(obj?.Dia).padStart(2, '0')}/${String(obj?.Mes).padStart(2, '0')}`)),
+
+    // Criar: exige escolher o sócio via combo. Editar: sócio já definido, só mostra o nome.
+    (obj === null) ? $('.div_cmb_Socio').show() : $('.div_cmb_Socio').hide();
+    (obj === null) ? $('.div_txt_Socio').hide() : $('.div_txt_Socio').show();
+    $('#cmb_Socio').val('-1').trigger('change.select2');
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -499,12 +532,14 @@ function fn_Pop(obj, action) {
 
 function fn_PopGetObj() {
 
+    let dataAniversario = $('.form-add-new-item .dt-line-02').val();
+    let partesData = dataAniversario ? dataAniversario.split('/') : [];
+
     const objFormData = {
         Id: $('#hdId').val(),
         SocioId: $('#hdSocioAniversarioId').val(),
-        Nome: $('.form-add-new-item .dt-line-01').val(),
-        DataAniversario: moment.utc($('.form-add-new-item .dt-line-02').val(), 'DD/MM')?.format('YYYY-MM-DD'),
-        //Ativo: $('.form-add-new-item .dt-line-05').is(':checked')
+        Dia: partesData.length === 2 ? parseInt(partesData[0], 10) : null,
+        Mes: partesData.length === 2 ? parseInt(partesData[1], 10) : null,
     };
 
     console.log("fn_PopGetObj !", objFormData);

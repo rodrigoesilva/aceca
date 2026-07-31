@@ -9,6 +9,9 @@
 }
 
 @section PageScripts {
+    <!-- Select Dropdownlist -->
+    <script src="~/js/forms-selects.js" asp-append-version="true"></script>
+
     <script src="~/js/admin/socio/admin-socio-endereco.js" asp-append-version="true"></script>
 }
 
@@ -47,7 +50,15 @@
     </div>
     <div class="offcanvas-body flex-grow-1">
         <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
-            <div class="col-sm-12">
+            <div class="col-sm-12 div_cmb_Socio">
+                <div class="form-floating form-floating-outline">
+                    <select id="cmb_Socio" name="cmb_Socio" class="form-select select2">
+                        <option value="-1">-- Selecionar --</option>
+                    </select>
+                    <label for="cmb_Socio">S&oacute;cio</label>
+                </div>
+            </div>
+            <div class="col-sm-12 div_txt_Socio">
                 <div class="input-group input-group-merge">
                     <span id="line_item_01" class="input-group-text"></span>
                     <div class="form-floating form-floating-outline">

@@ -1,12 +1,14 @@
 ﻿using Aceca.Adm.Data;
 using Aceca.Adm.Models;
 using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
+    [Authorize(Roles = "Administracao")]
     public class SocioLogAcessoController : Controller
     {
         #region variaveis

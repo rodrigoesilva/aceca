@@ -53,6 +53,11 @@
 </head>
 
 <body>
+  @* Token CSRF único por página, lido pelo ui-common.js e enviado como header
+     (X-CSRF-TOKEN) em toda chamada AJAX - ver [ValidateAntiForgeryToken] nos
+     controllers de escrita. *@
+  @Html.AntiForgeryToken()
+
   <!-- Layout Content -->
   @RenderBody()
   <!--/ Layout Content -->

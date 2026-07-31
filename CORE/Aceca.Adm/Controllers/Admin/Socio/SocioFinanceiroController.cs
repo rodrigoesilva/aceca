@@ -1,5 +1,6 @@
 ﻿using Aceca.Adm.Data;
 using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -7,6 +8,7 @@ using System.Text;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
+    [Authorize(Roles = "Administracao")]
     public class SocioFinanceiroController : Controller
     {
         #region variaveis
@@ -130,12 +132,33 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         #region CRUD JS
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Models.SocioFinanceiro model)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
+                    if (model?.SocioId is null || model.SocioId <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Sócio deve ser selecionado",
+                            data = model,
+                            modelState = ModelState
+                        });
+
+                    if (model?.TipoPagamentoId is null || model.TipoPagamentoId <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Tipo Pagamento deve ser selecionado",
+                            data = model,
+                            modelState = ModelState
+                        });
+
                     if (string.IsNullOrEmpty(model?.DataUltimoPagamento?.ToString()))
                         return BadRequest(new
                         {
@@ -211,6 +234,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Models.SocioFinanceiro model)
         {
             try
@@ -237,10 +261,13 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             modelState = ModelState
                         });
 
-                    _db.Entry(model).State = EntityState.Modified;
-                    _db.SaveChanges();
+                    // Atualiza somente os campos editáveis nesta tela - marcar a entidade
+                    // inteira como Modified a partir de um objeto parcial zerava
+                    // DataAvisoVencimento7Dias/2Dias (controle da automação de e-mail
+                    // de vencimento), pois esses campos não vêm no payload do form.
+                    var trackedModel = await _db.SocioFinanceiro.FirstOrDefaultAsync(x => x.Id == model.Id);
 
-                    if (model?.Id <= 0)
+                    if (trackedModel is null)
                         return BadRequest(new
                         {
                             bResult = false,
@@ -249,6 +276,14 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             data = model,
                             modelState = ModelState
                         });
+
+                    trackedModel.TipoPagamentoId = model.TipoPagamentoId;
+                    trackedModel.PagamentoEmDia = model.PagamentoEmDia;
+                    trackedModel.DataUltimoPagamento = model.DataUltimoPagamento;
+
+                    await _db.SaveChangesAsync();
+
+                    model = trackedModel;
 
                     return Ok(new
                     {
@@ -292,6 +327,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpDelete]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             try

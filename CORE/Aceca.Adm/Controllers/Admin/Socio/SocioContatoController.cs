@@ -1,5 +1,6 @@
 ﻿using Aceca.Adm.Data;
 using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -7,6 +8,7 @@ using System.Text;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
+    [Authorize(Roles = "Administracao")]
     public class SocioContatoController : Controller
     {
         #region variaveis
@@ -132,12 +134,21 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         #region CRUD JS
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Models.SocioContato model)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
+                    if (model?.SocioId is null || model.SocioId <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Sócio deve ser selecionado"
+                        });
+
                     if (string.IsNullOrEmpty(model?.Email))
                         return BadRequest(new
                         {
@@ -201,6 +212,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Models.SocioContato model)
         {
             try
@@ -267,6 +279,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpDelete]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             try

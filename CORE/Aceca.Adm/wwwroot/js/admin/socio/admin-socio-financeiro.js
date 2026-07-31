@@ -30,6 +30,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fn_LoadCmb_SocioTipoPagamento();
 
+        fn_LoadCmb_Socio();
+
+        $('#cmb_Socio').on('change', function () {
+            $('#hdSocioFinanceiroId').val($(this).val());
+        });
+
         // Form validation
         const formAddNewItem = document.getElementById('form-pop-add-new-item');
 
@@ -597,6 +603,28 @@ function fn_LoadCmb_SocioTipoPagamento() {
 
 //#endregion
 
+//#region COMBO
+
+function fn_LoadCmb_Socio() {
+    if ($('#cmb_Socio option').length <= 1) {
+        $.ajax({
+            crossDomain: true,
+            url: `${var_ControllerCmb}/AsyncCmb_Socio`,
+            type: 'GET',
+            success: function (data) {
+                $.each(data, function (id, result) {
+                    $("#cmb_Socio").append($("<option></option>").val(result.value).html(result.text));
+                });
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                fn_ModalErro(xhr, textStatus, errorThrown);
+            },
+        });
+    }
+}
+
+//#endregion
+
 //#region POP
 
 function fn_Pop(obj, action) {
@@ -616,6 +644,11 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '-1' : ((obj?.TipoPagamentoId === null || obj?.TipoPagamentoId === 0) ? '-1' : obj?.TipoPagamentoId)));
         (popAddNewItem.querySelector('.dt-line-03').checked = (obj === null ? false : (obj?.PagamentoEmDia === 0 ? false : true))),
         (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : (obj?.DataUltimoPagamento === null ? '' : moment.utc(obj?.DataUltimoPagamento?.toLocaleString())?.format("DD/MM/YYYY")))),
+
+    // Criar: exige escolher o sócio via combo. Editar: sócio já definido, só mostra o nome.
+    (obj === null) ? $('.div_cmb_Socio').show() : $('.div_cmb_Socio').hide();
+    (obj === null) ? $('.div_txt_Socio').hide() : $('.div_txt_Socio').show();
+    $('#cmb_Socio').val('-1').trigger('change.select2');
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');

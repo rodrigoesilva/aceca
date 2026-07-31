@@ -1,10 +1,12 @@
 ﻿using Aceca.Adm.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
+    [Authorize(Roles = "Administracao")]
     public class SocioPerfilController : Controller
     {
         #region variaveis
@@ -100,6 +102,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         #region CRUD JS
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Models.SocioPerfil model)
         {
             try
@@ -165,6 +168,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Models.SocioPerfil model)
         {
             try
@@ -187,10 +191,13 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             message = "Descricao deve ser preenchido"
                         });
 
-                    _db.Entry(model).State = EntityState.Modified;
-                    _db.SaveChanges();
+                    // Atualiza somente os campos editáveis nesta tela - marcar o objeto
+                    // vindo do form como EntityState.Modified regravava TODAS as colunas,
+                    // inclusive DataCriacao (zerada para "agora" a cada edição, pois
+                    // BaseModel inicializa essa propriedade com DateTime.Now por padrão).
+                    var trackedModel = await _db.SocioPerfil.FirstOrDefaultAsync(x => x.Id == model.Id);
 
-                    if (model?.Id <= 0)
+                    if (trackedModel is null)
                         return BadRequest(new
                         {
                             bResult = false,
@@ -198,12 +205,17 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             message = "Falha ao Atualizar"
                         });
 
+                    trackedModel.Descricao = model.Descricao;
+                    trackedModel.Ativo = model.Ativo;
+
+                    await _db.SaveChangesAsync();
+
                     return Ok(new
                     {
                         bResult = true,
                         type = "OK",
                         message = "SUCESSO ::: ",
-                        data = model,
+                        data = trackedModel,
                     });
                 }
 
@@ -231,6 +243,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpDelete]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             try

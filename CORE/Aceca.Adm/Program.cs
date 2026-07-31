@@ -49,6 +49,14 @@ builder.Services.AddHostedService<Aceca.Adm.Services.SocioFinanceiroCheckService
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+// Chamadas AJAX enviam o token via header (JSON body, não form-encoded) -
+// ver @Html.AntiForgeryToken() em _CommonMasterLayout.cshtml + injeção do
+// header em ui-common.js.
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+});
+
 // 1. Add Distributed Memory Cache (required as a backing store for session)
 builder.Services.AddDistributedMemoryCache(); //
 builder.Services.AddMemoryCache();

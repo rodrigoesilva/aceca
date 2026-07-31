@@ -32,6 +32,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Carrega Dados Grid
         fn_GridList(formValid);
+
+        fn_LoadCmb_Socio();
+
+        $('#cmb_Socio').on('change', function () {
+            $('#hdSocioContatoId').val($(this).val());
+        });
     })();
 });
 
@@ -459,6 +465,28 @@ function fn_CheckVerAtivos() {
 
 //#endregion
 
+//#region COMBO
+
+function fn_LoadCmb_Socio() {
+    if ($('#cmb_Socio option').length <= 1) {
+        $.ajax({
+            crossDomain: true,
+            url: `${var_ControllerCmb}/AsyncCmb_Socio`,
+            type: 'GET',
+            success: function (data) {
+                $.each(data, function (id, result) {
+                    $("#cmb_Socio").append($("<option></option>").val(result.value).html(result.text));
+                });
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                fn_ModalErro(xhr, textStatus, errorThrown);
+            },
+        });
+    }
+}
+
+//#endregion
+
 //#region POP
 
 function fn_Pop(obj, action) {
@@ -477,6 +505,11 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.NomeSocio)),
         (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : `(${obj.Ddd}) ${obj.Telefone}`)),
         (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.Email)),
+
+    // Criar: exige escolher o sócio via combo. Editar: sócio já definido, só mostra o nome.
+    (obj === null) ? $('.div_cmb_Socio').show() : $('.div_cmb_Socio').hide();
+    (obj === null) ? $('.div_txt_Socio').hide() : $('.div_txt_Socio').show();
+    $('#cmb_Socio').val('-1').trigger('change.select2');
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');

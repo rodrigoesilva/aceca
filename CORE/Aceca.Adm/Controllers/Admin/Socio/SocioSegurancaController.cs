@@ -1,6 +1,7 @@
 ﻿using Aceca.Adm.Data;
 using Aceca.Adm.Helper;
 using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -9,6 +10,7 @@ using System.Text;
 
 namespace Aceca.Adm.Controllers.Admin.Socio
 {
+    [Authorize(Roles = "Administracao")]
     public class SocioSegurancaController : Controller
     {
         #region variaveis
@@ -94,7 +96,6 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         sg.SocioId AS SocioId,
                         sg.nome_usuario AS NomeUsuario,
                         sg.Email AS Email,
-                        sg.senha_aberta AS SenhaAberta,
                         sg.last_login AS UltimoLogin,
 
                         s.nome AS NomeSocio,
@@ -136,6 +137,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
         
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Models.SocioSeguranca model)
         {
             try
@@ -175,6 +177,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Models.SocioSeguranca model, int? socioPerfilId, bool? ativo)
         {
             try
@@ -276,6 +279,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         [HttpDelete]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             if (id < 1)

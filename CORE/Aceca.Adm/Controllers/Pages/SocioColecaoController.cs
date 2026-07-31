@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Data;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using static Aceca.Adm.Helper.HelperExtensionsController;
@@ -60,6 +61,15 @@ namespace Aceca.Adm.Controllers.Pages
             _ftpBaseUrl = _appConfiguration["Ftp:Path"]!;
         }
 
+        // O socioId enviado pelo cliente (hidden field / body do POST) não é confiável -
+        // sempre derivar o dono real da coleção a partir da claim de autenticação.
+        private int GetSocioIdAutenticado()
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return int.TryParse(claim, out var socioId) ? socioId : 0;
+        }
+
         #region Index
         public ActionResult Index()
         {
@@ -107,14 +117,16 @@ namespace Aceca.Adm.Controllers.Pages
                 // =========================
                 // FILTROS
                 // =========================
-                if (filtroColecao.SocioId > 0)
-                {
-                    if (filtroColecao.SocioId != 1 || !filtro.ExibirGeral)
-                    {
-                        sqlFrom.Append(" AND sc.socioId = @SocioId");
-                        parameters.Add("@SocioId", filtroColecao.SocioId);
-                    }
-                }
+
+                // Esta tela é "Minha Coleção" - o socioId do request nunca é confiável
+                // (hidden field editável no client); sempre usa o sócio autenticado.
+                var socioIdAutenticado = GetSocioIdAutenticado();
+
+                if (socioIdAutenticado <= 0)
+                    return BadRequest("Sessão inválida");
+
+                sqlFrom.Append(" AND sc.socioId = @SocioId");
+                parameters.Add("@SocioId", socioIdAutenticado);
 
                 if ((int)filtroColecao.ColecaoStatus > 0)
                 {
@@ -333,6 +345,7 @@ namespace Aceca.Adm.Controllers.Pages
         #endregion
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ActionColecao(int itemColecaoId, int marcaId, int actionId, int socioId, bool isPerfil, string itemColecaoObs, bool disponivelNegocio = false)
         {
             try
@@ -340,18 +353,25 @@ namespace Aceca.Adm.Controllers.Pages
                 if (actionId < 0)
                     return BadRequest("ActionId inválido");
 
+                // socioId do parâmetro vem do cliente e não é confiável (IDOR) - o dono da
+                // ação é sempre o sócio autenticado, nunca um valor informado pelo request.
+                var socioIdAutenticado = GetSocioIdAutenticado();
+
+                if (socioIdAutenticado <= 0)
+                    return BadRequest("Sessão inválida");
+
                 IActionResult response = Ok();
 
                 switch ((EColecaoAcao)actionId)
                 {
                     case EColecaoAcao.ColecaoDelete:
-                        response = await RemoverItemAsync(itemColecaoId);
+                        response = await RemoverItemAsync(itemColecaoId, socioIdAutenticado);
                         break;
                     case EColecaoAcao.ColecaoIncluir:
                     case EColecaoAcao.ColecaoInteresse:
                     case EColecaoAcao.ColecaoNegociar:
                     case EColecaoAcao.ColecaoObs:
-                        response = await AdicionarOuAtualizarItemAsync(marcaId, socioId, (EColecaoAcao)actionId, disponivelNegocio, itemColecaoObs);
+                        response = await AdicionarOuAtualizarItemAsync(marcaId, socioIdAutenticado, (EColecaoAcao)actionId, disponivelNegocio, itemColecaoObs);
                         break;
                     default:
                         break;
@@ -384,7 +404,7 @@ namespace Aceca.Adm.Controllers.Pages
         /// ColecaoObs apenas atualiza Observação/DisponivelNegocio (edição do modal), sem alternar
         /// nenhum outro estado da coleção.
         /// </summary>
-        public async Task<IActionResult> AdicionarOuAtualizarItemAsync(int marcaId, int socioId, EColecaoAcao acao, bool disponivelNegocio, string itemColecaoObs)
+        private async Task<IActionResult> AdicionarOuAtualizarItemAsync(int marcaId, int socioId, EColecaoAcao acao, bool disponivelNegocio, string itemColecaoObs)
         {
             try
             {
@@ -456,7 +476,7 @@ namespace Aceca.Adm.Controllers.Pages
                 });
             }
         }
-        public async Task<IActionResult> RemoverItemAsync(int id)
+        private async Task<IActionResult> RemoverItemAsync(int id, int socioIdAutenticado)
         {
             try
             {
@@ -479,6 +499,14 @@ namespace Aceca.Adm.Controllers.Pages
                         type = "ERRO - ID nao localizado",
                         message = "ID nao localizado",
                         data = id
+                    });
+
+                if (model.SocioId != socioIdAutenticado)
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Item não pertence ao sócio autenticado"
                     });
 
                 _db.SocioColecao.Remove(model);

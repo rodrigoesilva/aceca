@@ -15,6 +15,20 @@
 
 'use strict';
 
+// CSRF: anexa o token antifalsificação (renderizado uma vez por página em
+// _CommonMasterLayout.cshtml) em toda chamada $.ajax, via header - as chamadas
+// deste projeto enviam JSON no body, então o token não viaja como campo de
+// formulário e precisa ir pelo header configurado em Program.cs (AddAntiforgery).
+(function () {
+    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+
+    if (tokenInput) {
+        $.ajaxSetup({
+            headers: { 'X-CSRF-TOKEN': tokenInput.value }
+        });
+    }
+})();
+
 const swalWithBootstrapButtons = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-label-secondary waves-effect",
