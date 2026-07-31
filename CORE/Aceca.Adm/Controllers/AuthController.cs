@@ -245,7 +245,7 @@ namespace Aceca.Adm.Controllers
                 if (user is null)
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
 
-                if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
+                if (user.Socio.SocioPerfilId.Equals((int)EPerfil.Banido))
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
@@ -379,7 +379,7 @@ namespace Aceca.Adm.Controllers
                 if (user is null)
                     return Ok(new { bResult = true, message = "Se o e-mail existir, você receberá as instruções." });
 
-                if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
+                if (user.Socio.SocioPerfilId.Equals((int)EPerfil.Banido))
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
@@ -458,7 +458,7 @@ namespace Aceca.Adm.Controllers
                 if (user is null)
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
 
-                if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
+                if (user.Socio.SocioPerfilId.Equals((int)EPerfil.Banido))
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)
@@ -557,7 +557,7 @@ namespace Aceca.Adm.Controllers
                 if (user is null)
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
 
-                if (user.Socio.SocioPerfilId.Equals(EPerfil.Banido))
+                if (user.Socio.SocioPerfilId.Equals((int)EPerfil.Banido))
                     return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
 
                 if (!user.Socio.Ativo)

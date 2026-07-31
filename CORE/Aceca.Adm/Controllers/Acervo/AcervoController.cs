@@ -9,9 +9,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Diagnostics.Eventing.Reader;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Text.RegularExpressions;
 using static Aceca.Adm.Helper.HelperExtensionsController;
@@ -40,6 +40,13 @@ namespace Aceca.Adm.Controllers.Acervo
 
         private readonly bool _bIsLocalHost = false;
         //
+
+        // Mesma regra aplicada no client (admin-acervo-cadastro.js :: fn_ValidarCodigoVariante):
+        // letras/números no início e fim, podendo ter espaço, traço ou underline no meio.
+        private static readonly Regex RegexNomeCodigoValido = new(@"^[\p{L}\p{N}]([\p{L}\p{N} _-]*[\p{L}\p{N}])?$", RegexOptions.Compiled);
+
+        // Usado para montar nome/caminho de arquivo — bloqueia separadores de path e "..".
+        private static readonly Regex RegexCodigoArquivoValido = new(@"^[A-Za-z0-9_-]+$", RegexOptions.Compiled);
 
         #endregion
 
@@ -329,7 +336,7 @@ namespace Aceca.Adm.Controllers.Acervo
         {
             string strNovoCodigoAceca = string.Empty;
 
-            if (id < 1 || string.IsNullOrEmpty(nome))
+            if (id < 1 || string.IsNullOrWhiteSpace(nome))
                 return BadRequest(new
                 {
                     bResult = false,
@@ -417,7 +424,7 @@ namespace Aceca.Adm.Controllers.Acervo
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
-                    data = strNovoCodigoAceca?.ToUpper()
+                    data = strNovoCodigoAceca
                 });
             }
             catch (Exception ex)
@@ -500,6 +507,7 @@ namespace Aceca.Adm.Controllers.Acervo
 
         [HttpPost]
         [Authorize(Roles = "Administracao")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string strObjModel, IFormFile iFileImgPrincipal, IFormFile iFileImgDetalhe)
         {
             try
@@ -523,6 +531,22 @@ namespace Aceca.Adm.Controllers.Acervo
                         bResult = false,
                         type = "ERRO",
                         message = "Nome deve ser preenchido"
+                    });
+
+                if (!RegexNomeCodigoValido.IsMatch(vmModel.Nome.Trim()))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Caracter inválido no nome preenchido"
+                    });
+
+                if (string.IsNullOrWhiteSpace(vmModel?.CodigoAceca))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Código Aceca deve ser gerado antes de salvar"
                     });
 
                 if (string.IsNullOrEmpty(vmModel?.Descricao))
@@ -613,18 +637,19 @@ namespace Aceca.Adm.Controllers.Acervo
                 {
                     Ativo = true,
 
-                    MarcaAcervoId = (vmModel?.MarcaAcervoId < 0 || vmModel?.MarcaAcervoId == null) ? 0 : vmModel?.MarcaAcervoId,
-                    MarcaDimensaoId = (vmModel?.MarcaDimensaoId < 0 || vmModel?.MarcaDimensaoId == null) ? 0 : vmModel?.MarcaDimensaoId,
-                    MarcaFabricaId = (vmModel?.MarcaFabricaId < 0 || vmModel?.MarcaFabricaId == null) ? 0 : vmModel?.MarcaFabricaId,
-                    MarcaFaseId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? 0 : vmModel?.MarcaFaseId,
-                    MarcaFaseAcervoId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? 0 : vmModel?.MarcaFaseId,
-                    MarcaFinalidadeId = (vmModel?.MarcaFinalidadeId < 0 || vmModel?.MarcaFinalidadeId == null) ? 0 : vmModel?.MarcaFinalidadeId,
-                    MarcaImpressoraId = (vmModel?.MarcaImpressoraId < 0 || vmModel?.MarcaImpressoraId == null) ? 0 : vmModel?.MarcaImpressoraId,
-                    MarcaQualidadeImagemId = (vmModel?.MarcaQualidadeImagemId < 0 || vmModel?.MarcaQualidadeImagemId == null) ? 0 : vmModel?.MarcaQualidadeImagemId,
-                    MarcaRaridadeId = (vmModel?.MarcaRaridadeId < 0 || vmModel?.MarcaRaridadeId == null) ? 0 : vmModel?.MarcaRaridadeId,
+                    MarcaAcervoId = (vmModel?.MarcaAcervoId < 0 || vmModel?.MarcaAcervoId == null) ? null : vmModel?.MarcaAcervoId,
+                    MarcaDimensaoId = (vmModel?.MarcaDimensaoId < 0 || vmModel?.MarcaDimensaoId == null) ? null : vmModel?.MarcaDimensaoId,
+                    MarcaFabricaId = (vmModel?.MarcaFabricaId < 0 || vmModel?.MarcaFabricaId == null) ? null : vmModel?.MarcaFabricaId,
+                    MarcaFaseId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId,
+                    MarcaFaseAcervoId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId,
+                    MarcaFinalidadeId = (vmModel?.MarcaFinalidadeId < 0 || vmModel?.MarcaFinalidadeId == null) ? null : vmModel?.MarcaFinalidadeId,
+                    MarcaImpressoraId = (vmModel?.MarcaImpressoraId < 0 || vmModel?.MarcaImpressoraId == null) ? null : vmModel?.MarcaImpressoraId,
+                    MarcaQualidadeImagemId = (vmModel?.MarcaQualidadeImagemId < 0 || vmModel?.MarcaQualidadeImagemId == null) ? null : vmModel?.MarcaQualidadeImagemId,
+                    MarcaRaridadeId = (vmModel?.MarcaRaridadeId < 0 || vmModel?.MarcaRaridadeId == null) ? null : vmModel?.MarcaRaridadeId,
                     MarcaSubTipoId = (vmModel?.MarcaSubTipoId < 0 || vmModel?.MarcaSubTipoId == null) ? 5 : vmModel?.MarcaSubTipoId,
 
                     CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca?.Trim() : null,
+                    CodigoAcecaNew = !string.IsNullOrEmpty(vmModel?.CodigoAcecaNew) ? vmModel?.CodigoAcecaNew?.Trim() : null,
                     CodigoFabrica = !string.IsNullOrEmpty(vmModel?.CodigoFabrica) ? vmModel?.CodigoFabrica?.Trim() : null,
                     ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? vmModel?.ImgPrincipal : null,
                     ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? vmModel?.ImgDetalhe : null,
@@ -884,7 +909,7 @@ namespace Aceca.Adm.Controllers.Acervo
                 21  9av 2001 - 2005
                 22  10avDPF 2004 - 2008
                 23  10avDS 2007 - 2009
-                24  10av2009 - 2015
+                24  10av 2009 - 2015
                 25  10av136 2013 - 2016
                 26  136Frontal 2016 - 2019
                 27  Palheiros - Artesanais
@@ -902,11 +927,7 @@ namespace Aceca.Adm.Controllers.Acervo
                 42  136QRCode
                 */
 
-            
-
-            string strNovoCodigoAceca = string.Empty;
-
-            if (idFase < 1 || string.IsNullOrEmpty(strNovoNomeParaCadastro))
+            if (idFase < 1 || string.IsNullOrWhiteSpace(strNovoNomeParaCadastro))
                 return BadRequest(new
                 {
                     bResult = false,
@@ -915,120 +936,207 @@ namespace Aceca.Adm.Controllers.Acervo
                     data = idFase
                 });
 
+            if (!RegexNomeCodigoValido.IsMatch(strNovoNomeParaCadastro.Trim()))
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Caracter inválido no nome preenchido",
+                    data = strNovoNomeParaCadastro
+                });
+
             try
             {
+                #region variaveis
+
                 var model = new Marcas();
 
-                var bMarcaSemCadastro = false;
+                string strOldCodigoAceca = string.Empty;
+                string strCodigoAceca = string.Empty;
 
+                string strVelhoCodigoAceca = string.Empty;
+                string strNovoCodigoAceca = string.Empty;
+               
+                string strNumOldCodigoAceca = string.Empty;
+                string strNumCodigoAceca = string.Empty;
+
+                var strUltimaLetraCodigoAceca = 'B';
+
+                var bMarcaSemCadastro = false;
                 var queryExistsTermo = false;
 
                 var msgErroData = $"idMarcaFase :: {idFase} , strNovoNomeParaCadastro :: {strNovoNomeParaCadastro}";
 
-                var strCodigoAceca = string.Empty;
-
                 var strLetraInicial = strNovoNomeParaCadastro?.Trim()[0].ToString();
+
+                var strCodigoPaiVariante = strNovoNomeParaCadastro.Trim();
 
                 var query = Enumerable.Empty<Marcas>().AsQueryable();
 
                 EFase FaseSel = (EFase)idFase;
 
-                if (FaseSel.Equals(EFase.Exportacao))
+                #endregion
+
+                if (!idMarcaAcervo.Equals((int)EAcervo.Geral))
                 {
-                    // 29 Exportacao
-                    //Se tem país de destino inicia com EA, Se não tem é EX (minusculos).
-
-                    var strLetraInicialBusca = bExTemPaisDestino ? "EA" : "EX";
-
                     query = _db.Marca
-                        .Include(x => x.MarcaSubTipo.MarcaTipo)
-                        .Include(x => x.MarcaFabrica)
-                        .Include(x => x.MarcaImpressora)
-                        .AsNoTracking()
-                        .Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
-                        .OrderByDescending(x => x.CodigoAceca)
-                        .Take(1);
+                                   .Include(x => x.MarcaSubTipo.MarcaTipo)
+                                   .Include(x => x.MarcaFabrica)
+                                   .Include(x => x.MarcaImpressora)
+                                   .AsNoTracking()
+                                   .Where(x => x.CodigoAceca != null 
+                                                && (!bvariante ? x.MarcaAcervoId.Equals(idMarcaAcervo) : x.CodigoAceca.Equals(strCodigoPaiVariante))
+                                          )
+                                   .OrderByDescending(x => x.MarcaFaseAcervoId > 1 ? x.CodigoAcecaNew : x.CodigoAceca)
+                                   .Take(1);
                 }
                 else
                 {
-                    query = _db.Marca
-                       .Include(x => x.MarcaSubTipo.MarcaTipo)
-                       .Include(x => x.MarcaFabrica)
-                       .Include(x => x.MarcaImpressora)
-                       .AsNoTracking()
-                        /*
-                        .Where(x => x.CodigoAceca != null
-                             && (bvariante
-                                 ? (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)) && x.CodigoAceca.StartsWith(strNovoNomeParaCadastro.Trim().ToString()))
-                                 : (x.MarcaAcervoId.Equals(idMarcaAcervo) && (idMarcaAcervo > 1 ? x.MarcaFaseAcervoId.Equals(idFase) : x.MarcaFaseId.Equals(idFase)))
-                                 )
-                             )
-                        */
-                        .Where(x => x.CodigoAceca != null
-                            && (x.MarcaAcervoId.Equals(idMarcaAcervo)
-                                && (idMarcaAcervo > 1 ? x.MarcaAcervoId.Equals(idMarcaAcervo) : x.MarcaFaseId.Equals(idFase))
-                                && (idMarcaAcervo == 1 ? x.CodigoAceca.StartsWith(strLetraInicial) : true)
-                                )
-                        )
-                        .OrderByDescending(x => x.MarcaFaseAcervoId > 1 ? x.CodigoAcecaNew : x.CodigoAceca)
-                        .Take(1);
+                    switch (FaseSel)
+                    {
+                        case EFase.Exportacao:
+                            {
+                                // 29 Exportacao
+                                //Se tem país de destino inicia com EA, Se não tem é EX (minusculos).
+
+                                var strLetraInicialBusca = bExTemPaisDestino ? "EA" : "EX";
+
+                                query = _db.Marca
+                                    .Include(x => x.MarcaSubTipo.MarcaTipo)
+                                    .Include(x => x.MarcaFabrica)
+                                    .Include(x => x.MarcaImpressora)
+                                    .AsNoTracking()
+                                    .Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
+                                    .OrderByDescending(x => x.CodigoAceca)
+                                    .Take(2);
+                            }
+                            break;
+                        case EFase.QRCode136:
+                            {
+                                query = _db.Marca
+                                    .Include(x => x.MarcaSubTipo.MarcaTipo)
+                                    .Include(x => x.MarcaFabrica)
+                                    .Include(x => x.MarcaImpressora)
+                                    .AsNoTracking()
+                                    .Where(x => x.CodigoAceca != null && x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
+                                    .OrderByDescending(x => x.CodigoAceca)
+                                    .Take(2);
+                            }
+                            break;
+                        case EFase.SA:
+                            {
+
+                                query = _db.Marca
+                                   .Include(x => x.MarcaSubTipo.MarcaTipo)
+                                   .Include(x => x.MarcaFabrica)
+                                   .Include(x => x.MarcaImpressora)
+                                   .AsNoTracking()
+                                   .Where(x => x.CodigoAceca != null
+                                                && (!bvariante 
+                                                        ? x.MarcaAcervoId.Equals(idMarcaAcervo)
+                                                            && x.MarcaFaseId.Equals(idFase) 
+                                                            && (strLetraInicial.ToUpper().Equals("N") 
+                                                                    ? x.CodigoAceca.StartsWith(strLetraInicial) && !x.CodigoAceca.ToUpper().StartsWith("NO") 
+                                                                    : x.CodigoAceca.StartsWith(strLetraInicial)
+                                                               )
+                                                        : x.CodigoAceca.Equals(strCodigoPaiVariante)
+                                                    )
+                                          )
+                                   .OrderByDescending(x => x.CodigoAceca)
+                                   .Take(2);
+                            }
+                            break;
+                        default:
+                            {
+
+                                query = _db.Marca
+                                   .Include(x => x.MarcaSubTipo.MarcaTipo)
+                                   .Include(x => x.MarcaFabrica)
+                                   .Include(x => x.MarcaImpressora)
+                                   .AsNoTracking()
+                                   .Where(x => x.CodigoAceca != null
+                                                && (!bvariante 
+                                                        ? x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase) 
+                                                        : x.CodigoAceca.Equals(strCodigoPaiVariante)
+                                                   )
+                                          )
+                                   .OrderByDescending(x => x.CodigoAceca)
+                                   .Take(2);
+                            }
+                            break;
+                    }
                 }
 
-                var queryExists = query.Any();
+                model = await query.AsQueryable().FirstOrDefaultAsync();
 
-                if (!queryExists) {
-                    if (bvariante && model?.Id == null)
-                    {
-                        return Ok(new
-                        {
-                            bResult = false,
-                            type = "ERRO - listagem Nula",
-                            message = "Variante Pai Inexistente",
-                            data = strNovoNomeParaCadastro
-                        });
-                    }
-
-                    /*
-                    if (model?.Id == null)
-                    {
-                        return Ok(new
-                        {
-                            bResult = false,
-                            type = "ERRO - listagem Nula",
-                            message = "Erro ao recuperar novo codigo",
-                            data = strNovoNomeParaCadastro
-                        });
-                    }
-                    */
-                }
-
-                model = await query
-                          .AsQueryable()
-                          .FirstOrDefaultAsync();
-
-                if (model == null)
+                if (model == null || model?.Id == null)
                 {
-                    bMarcaSemCadastro = true;
-                    strNovoCodigoAceca = strNovoNomeParaCadastro?.ToString()?.Trim()?.ToUpper();
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO - listagem Nula",
+                        message = "Erro ao recuperar novo codigo",
+                        data = strNovoNomeParaCadastro
+                    });
                 }
                 else
                 {
-                    strCodigoAceca = idMarcaAcervo > 1 ? model?.CodigoAcecaNew?.ToString()?.Trim()?.ToUpper() : model?.CodigoAceca?.ToString()?.Trim()?.ToUpper();
+                    strCodigoAceca = idMarcaAcervo > 1 || (idMarcaAcervo.Equals((int)EAcervo.Geral) && !idFase.Equals((int)EFase.SA))
+                        ? model?.CodigoAcecaNew?.ToString()?.Trim() 
+                        : model?.CodigoAceca?.ToString()?.Trim();
 
-                    string strNumCodigoAceca = string.Empty;
+                    strOldCodigoAceca = model?.CodigoAceca?.ToString()?.Trim();
 
                     switch (FaseSel)
                     {
                         //////Fases que as inciiam com numero e tem letras no meio
                         case EFase.Pi1:
                         case EFase.Pi2:
-                            strNumCodigoAceca = new string(strCodigoAceca?.Split("PI")[1]?.Where(char.IsDigit).ToArray());
+                            {
+                                strNumCodigoAceca = idMarcaAcervo > 1
+                                    ? new string(strCodigoAceca?.Where(char.IsDigit).ToArray())
+                                    : new string(strCodigoAceca?.Split("PI")[1]?.Where(char.IsDigit).ToArray());
+
+                                strNumOldCodigoAceca = idMarcaAcervo > 1
+                                    ? new string(strOldCodigoAceca?.Where(char.IsDigit).ToArray())
+                                    : new string(strOldCodigoAceca?.Split("PI")[1]?.Where(char.IsDigit).ToArray());
+                            }
+                            break;
+                        case EFase.ams20:
+                        case EFase.amc20:
+                        case EFase.AM:
+                        case EFase.AMI:
+                        case EFase.Av6:
+                        case EFase.Av5:
+                        case EFase.Av9:
+                        case EFase.AvDPF10:
+                        case EFase.AvDS10:
+                        case EFase.Av10:
+                        case EFase.Av136:
+                        case EFase.Frontal136:
+                        case EFase.Amarelo136:
+                            {
+                                strNumCodigoAceca = idMarcaAcervo > 1
+                                    ? new string(strCodigoAceca?.Where(char.IsDigit).ToArray())
+                                    : new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
+
+                                strNumOldCodigoAceca = new string(strOldCodigoAceca?.Where(char.IsDigit).ToArray());
+                            }
                             break;
                         case EFase.QRCode136:
-                            strNumCodigoAceca = new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
+                            {
+                                strNumCodigoAceca = idMarcaAcervo > 1
+                                    ? new string(strCodigoAceca?.Where(char.IsDigit).ToArray())
+                                    : new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
+
+                                strNumOldCodigoAceca = new string(strCodigoAceca?.Split("-")[1]?.Where(char.IsDigit).ToArray());
+                            }
                             break;
                         default:
-                            strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
+                            {
+                                strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
+                                strNumOldCodigoAceca = new string(strOldCodigoAceca?.Where(char.IsDigit).ToArray());
+                            }
                             break;
                     }
 
@@ -1043,19 +1151,23 @@ namespace Aceca.Adm.Controllers.Acervo
                         });
                     }
 
-                    var strUltimaLetraCodigoAceca = 'B';
+
+                    #region New
 
                     if (int.TryParse(strNumCodigoAceca, out int intNumCodigoAceca))
+                    {
                         if (!bvariante)
                         {
-                            strNovoCodigoAceca = !FaseSel.Equals(EFase.QRCode136)
+                            /*
+                            strNovoCodigoAceca = (!FaseSel.Equals(EFase.QRCode136) || idMarcaAcervo > 1)
                                 ? strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString())
                                 : string.Concat("136QR-", strNumCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString()));
+                            */
+
+                            strNovoCodigoAceca = strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString());
 
                             if (Char.IsLetter(strNovoCodigoAceca[^1]))
-                                strNovoCodigoAceca = Char.IsLetter(strNovoCodigoAceca[^1])
-                                    ? strNovoCodigoAceca.Remove(strNovoCodigoAceca.Length - 1)
-                                    : string.Concat(strNovoCodigoAceca, strUltimaLetraCodigoAceca);
+                                strNovoCodigoAceca = strNovoCodigoAceca.Remove(strNovoCodigoAceca.Length - 1);
                         }
                         else
                         {
@@ -1072,6 +1184,39 @@ namespace Aceca.Adm.Controllers.Acervo
                                 strNovoCodigoAceca = string.Concat(strCodigoAceca, strUltimaLetraCodigoAceca);
                             }
                         }
+                    }
+
+                    #endregion
+
+                    #region Old
+
+                    if (int.TryParse(strNumOldCodigoAceca, out int intNumOldCodigoAceca))
+                    {
+                        if (!bvariante)
+                        {
+                            strVelhoCodigoAceca = strOldCodigoAceca?.Replace(intNumOldCodigoAceca.ToString(), (intNumOldCodigoAceca + 1).ToString());
+
+                            if (Char.IsLetter(strVelhoCodigoAceca[^1]))
+                                strVelhoCodigoAceca = strVelhoCodigoAceca.Remove(strVelhoCodigoAceca.Length - 1);
+                        }
+                        else
+                        {
+                            if (Char.IsLetter(strOldCodigoAceca[^1]))
+                            {
+                                strUltimaLetraCodigoAceca = strOldCodigoAceca[^1];
+
+                                char charProximaLetraCodigoAceca = (char)(strUltimaLetraCodigoAceca + 1);
+
+                                strVelhoCodigoAceca = ReplaceInPosition(strOldCodigoAceca.ToString(), strOldCodigoAceca.Length - 1, charProximaLetraCodigoAceca);
+                            }
+                            else
+                            {
+                                strVelhoCodigoAceca = string.Concat(strOldCodigoAceca, strUltimaLetraCodigoAceca);
+                            }
+                        }
+                    }
+
+                    #endregion
 
                     if (string.IsNullOrEmpty(strNovoCodigoAceca))
                     {
@@ -1104,7 +1249,6 @@ namespace Aceca.Adm.Controllers.Acervo
                             }
                         }
 
-
                     if (model?.MarcaFabricaId == null || model?.MarcaFabricaId <= 0)
                         if (!string.IsNullOrEmpty(model?.TxtFabrica))
                         {
@@ -1134,7 +1278,8 @@ namespace Aceca.Adm.Controllers.Acervo
                     type = "OK",
                     message = "SUCESSO ::: ",
                     data = model,
-                    dataNovoCodigo = strNovoCodigoAceca
+                    dataVelhoCodigo = strVelhoCodigoAceca,
+                    dataNovoCodigo = strNovoCodigoAceca,
                 });
             }
             catch (Exception ex)
@@ -1192,6 +1337,31 @@ namespace Aceca.Adm.Controllers.Acervo
 
         #region Upload Img
 
+        // Confere a assinatura binária (magic bytes) do arquivo, já que a extensão informada
+        // pelo cliente pode ser forjada (ex.: um executável renomeado para ".jpg").
+        private static bool IsValidImageContent(Stream stream, string extension)
+        {
+            Span<byte> header = stackalloc byte[12];
+
+            stream.Position = 0;
+            int read = stream.Read(header);
+            stream.Position = 0;
+
+            if (read < 4)
+                return false;
+
+            return extension switch
+            {
+                ".jpg" or ".jpeg" => header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+                ".png" => header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
+                ".gif" => header[0] == (byte)'G' && header[1] == (byte)'I' && header[2] == (byte)'F' && header[3] == (byte)'8',
+                ".webp" => read >= 12
+                    && header[0] == (byte)'R' && header[1] == (byte)'I' && header[2] == (byte)'F' && header[3] == (byte)'F'
+                    && header[8] == (byte)'W' && header[9] == (byte)'E' && header[10] == (byte)'B' && header[11] == (byte)'P',
+                _ => false
+            };
+        }
+
         [Authorize(Roles = "Administracao")]
         public async Task<IActionResult> UploadImg(VMMarca vmModel, IFormFile iFileImg, bool bIsImgPrincipal)
         {
@@ -1217,6 +1387,29 @@ namespace Aceca.Adm.Controllers.Acervo
                     data = iFileImg?.FileName
                 });
 
+            // CodigoAceca é usado para montar nome/caminho do arquivo em disco/FTP — precisa ser
+            // restrito a caracteres seguros para não permitir path traversal (ex.: "../../").
+            if (string.IsNullOrWhiteSpace(vmModel?.CodigoAceca) || !RegexCodigoArquivoValido.IsMatch(vmModel.CodigoAceca.Trim()))
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Código Aceca inválido para nome de arquivo",
+                    data = vmModel?.CodigoAceca
+                });
+
+            using (var checkStream = iFileImg.OpenReadStream())
+            {
+                if (!IsValidImageContent(checkStream, fileExtension))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Conteúdo do arquivo não corresponde à extensão informada",
+                        data = iFileImg?.FileName
+                    });
+            }
+
            //Recupera Nome Original da imagem
             var fileImgOriginalName = string.Concat(iFileImg?.FileName?.Trim()?.ToLower(), (!(bool)iFileImg?.FileName.Contains(fileExtension) ? fileExtension : String.Empty));
 
@@ -1224,9 +1417,7 @@ namespace Aceca.Adm.Controllers.Acervo
             string strImgNomeBase ="aceca_"; //string.Empty; //
             string strImgDetalheNomeBase = "detalhe_";
 
-            string strSaveFileName = $"{strImgNomeBase}{vmModel?.CodigoAceca?.Trim()?.ToLower()}";          
-            
-            fileExtension = (fileExtension.Equals(".jpg") ? fileExtension : ".jpg");
+            string strSaveFileName = $"{strImgNomeBase}{vmModel?.CodigoAceca?.Trim()?.ToLower()}";
 
             // monta o caminho onde vamos salvar o arquivo:
             var strPathSaveFolder = string.Empty;
@@ -1272,7 +1463,15 @@ namespace Aceca.Adm.Controllers.Acervo
                 if (!Directory.Exists(strPathSaveFolder))
                     Directory.CreateDirectory(strPathSaveFolder);
 
-                var fileTempPath = Path.GetTempFileName();
+                //Verifica arquivo ja existe (mesmo comportamento do modo FTP)
+                if (System.IO.File.Exists(fileDetails.FilePath))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = $"Arquivo de imagem já existente ::: <br><br> {strSaveFileName}",
+                        data = strSaveFileName,
+                    });
 
                 using (var stream = new FileStream(fileDetails.FilePath, FileMode.Create))
                 {
@@ -1282,16 +1481,14 @@ namespace Aceca.Adm.Controllers.Acervo
                     stream.Close();
                 }
 
-                var fi = new FileInfo(fileTempPath);
-
-                // Checa se arquivo existe
-                if (!fi.Exists)
+                // Checa se o arquivo foi realmente salvo
+                if (!System.IO.File.Exists(fileDetails.FilePath))
                     return BadRequest(new
                     {
                         bResult = false,
                         type = "ERRO",
-                        message = "Arquivo Temporario ::: " + fileTempPath + " inexistente",
-                        data = fileTempPath
+                        message = "Arquivo ::: " + fileDetails.FilePath + " não foi salvo",
+                        data = fileDetails.FilePath
                     });
             }
             else

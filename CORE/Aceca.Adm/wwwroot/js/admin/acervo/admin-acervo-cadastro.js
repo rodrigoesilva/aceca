@@ -41,51 +41,29 @@ document.addEventListener('DOMContentLoaded', function () {
         $('#txt_Nome').blur(function () {
             //console.log("tecla pressionada campo txt_Nome ::: ", e.key);
 
-            let txtNome = $(this).val();
+            fn_ProcessaNome();
+        });
 
-            //console.log("txtNome ::", txtNome);
-
-            if (txtNome !== null && txtNome !== undefined && txtNome !== '') {
-
-                $('.div_codigo').hide();
-                
-                $('.div_dados').hide();
-                $('.div_imagem').hide();
-                $('.div_botoes').hide();
-                $('.div_variante').hide();
-                $('.div_tem_pais_destino').hide();
-                $('.div_variante_codigo').hide();
-                $('.div_original_variante').hide();
-
-                $('#cmbPop_MarcaAcervo').prop('selectedIndex', 0).change();
-                $('#cmbPop_MarcaFase').prop('selectedIndex', 0).change();
-                
-
-                $('.div_acervo').show();
-            }else {
-                fn_Limpar();
+        $('#txt_Nome').on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $(this).trigger('blur');
             }
-            /*
-            if (e.key === 'Enter' || e.keyCode === 13) {
-                console.log("tecla enter pressionada campo marca ::: ");
-            }*/
+            //// Tab dispara o blur nativamente, sem necessidade de tratamento adicional aqui.
         });
 
         $('#txt_CodigoVariante').blur(function (e) {
-            console.log("tecla pressionada campo txt_CodigoVariante ::: ", e.key);
+            //console.log("tecla pressionada campo txt_CodigoVariante ::: ", e.key);
 
-            let txtCodigoVariante = $(this).val();
-            //console.log("txtCodigoVariante ::", txtCodigoVariante);
+            fn_ProcessaCodigoVariante();
+        });
 
-            if (txtCodigoVariante !== null && txtCodigoVariante !== undefined && txtCodigoVariante !== '') {
-                fn_GetCodigoAceca();
-            } else {
-                //fn_Limpar();
+        $('#txt_CodigoVariante').on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                $(this).trigger('blur');
             }
-            /*
-            if (e.key === 'Enter' || e.keyCode === 13) {
-                console.log("tecla enter pressionada campo marca ::: ");
-            }*/
+            //// Tab dispara o blur nativamente, sem necessidade de tratamento adicional aqui.
         });
 
         //// FORM
@@ -98,6 +76,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('btCadastrar').addEventListener('click', function (e) {
             //   this.closest('form').submit();
             fn_ModalSalvar(e);
+        });
+
+        document.getElementById('btCancelar').addEventListener('click', function (e) {
+            window.location.reload();
         });
     })();
 });
@@ -155,6 +137,26 @@ function fn_Limpar() {
 
 //#region MODAL
 
+
+
+function fn_ModalCaracterInvalido(idCampo) {
+    Swal.fire({
+        title: 'Aten&ccedil;&atilde;o !!!',
+        icon: 'warning',
+        html: `Caracter Inv&aacute;lido no nome preenchido!`,
+        imageUrl: `${urlImgModaltext}`,
+        imageWidth: 400,
+        imageAlt: `${var_ImgAlt}`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-primary waves-effect waves-light'
+        },
+    }).then((result) => {
+        $(idCampo).val('').focus();
+    })
+}
+
 function fn_ModalOpcaoInvalida() {
     Swal.fire({
         title: 'Aten&ccedil;&atilde;o !!!',
@@ -201,145 +203,6 @@ function fn_ModalErro(xhr, textStatus, errorThrown) {
     })
 }
 
-function fn_Modal(obj, action) {
-    //console.log("fn_Modal obj::: ", obj);
-    //console.log("fn_Modal action::: ", action);
-
-    //let resultLoad = fnItem_Edit_CarregarDados(obj, action)
-    // console.log("fn_Modal resultLoad::: ", resultLoad);
-
-    const popAddNewItem = document.querySelector('#ModalMarca');
-
-    // Pop ID
-        (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.id)),
-            (popAddNewItem.querySelector('#hdMarcaFaseId').value = (obj === null ? 0 : obj.idMarcaFase)),
-            (popAddNewItem.querySelector('#hdMarcaFinalidadeId').value = (obj === null ? 0 : obj.idMarcaFinalidade)),
-            (popAddNewItem.querySelector('#hdMarcaFabricaId').value = (obj === null ? 0 : obj.idMarcaFabrica)),
-            (popAddNewItem.querySelector('#hdMarcaDimensaoId').value = (obj === null ? 0 : obj.idMarcaDimensao)),
-            (popAddNewItem.querySelector('#hdMarcaTipoId').value = (obj === null ? 0 : obj.idMarcaTipo)),
-            (popAddNewItem.querySelector('#hdMarcaSubTipoId').value = (obj === null ? 0 : obj.idMarcaSubTipo)),
-            (popAddNewItem.querySelector('#hdMarcaImpressoraId').value = (obj === null ? 0 : obj.idMarcaImpressora)),
-            (popAddNewItem.querySelector('#hdMarcaQualidadeImagemId').value = (obj === null ? 0 : obj.idMarcaQualidadeImagem)),
-
-    // Pop Dados
-            (popAddNewItem.querySelector('#cmbPop_MarcaFase').value = (obj === null ? '-1' : obj.idMarcaFase));
-        (popAddNewItem.querySelector('#txt_Codigo').value = (obj === null ? '-1' : obj.codigoAceca));
-    (popAddNewItem.querySelector('#txt_Nome').value = (obj === null ? '' : obj.nomeMarca));
-        (popAddNewItem.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor)),
-            (popAddNewItem.querySelector('#cmbPop_MarcaFinalidade').value = (obj === null ? '-1' : obj.idMarcaFinalidade));
-    (popAddNewItem.querySelector('#cmbPop_MarcaFabrica').value = (obj === null ? '-1' : obj.idMarcaFabrica));
-    (popAddNewItem.querySelector('#txt_CodFabrica').value = (obj === null ? '-1' : obj.codigoFabrica));
-    (popAddNewItem.querySelector('#cmbPop_MarcaDimensao').value = (obj === null ? '-1' : obj.idMarcaDimensao));
-    (popAddNewItem.querySelector('#cmbPop_MarcaTipo').value = (obj === null ? '-1' : obj.idMarcaTipo));
-    (popAddNewItem.querySelector('#cmbPop_MarcaSubTipo').value = (obj === null ? '-1' : obj.idMarcaSubTipo));
-    (popAddNewItem.querySelector('#cmbPop_MarcaImpressora').value = (obj === null ? '-1' : obj.idMarcaImpressora));
-    (popAddNewItem.querySelector('#cmbPop_MarcaQualidadeImagem').value = (obj === null ? '-1' : obj.idMarcaQualidadeImagem));
-    (popAddNewItem.querySelector('#cmbPop_Raridade').value = (obj === null ? '-1' : obj.idRaridade));
-
-        (popAddNewItem.querySelector('#txt_Descricao').value = (obj === null ? '' : obj.descricao));
-
-        (popAddNewItem.querySelector('#txt_Valor').value = (obj === null ? '' : obj.valor));
-        (popAddNewItem.querySelector('#txt_Valor1PI').value = (obj === null ? '' : obj.valor1PI));
-        (popAddNewItem.querySelector('#txt_Valor2PI').value = (obj === null ? '' : obj.valor2PI));
-
-    //Pop Arquivos
-        (obj === null || obj?.imgPrincipal === null) ? (popAddNewItem.querySelector('#txt_ImgPrincipal').value = '') : fnItem_PopImgPrincipal(obj);
-        (obj === null || obj?.imgDetalhe === null) ? (popAddNewItem.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
-
-    // Pop Action
-        (popAddNewItem.querySelector('.address-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
-        (popAddNewItem.querySelector('.data-submit').textContent = (action === 'Edit') ? 'Alterar' : 'Adicionar');
-
-    // console.log("fn_Modal resultLoad::: ", resultLoad);
-    $.busyLoadFull("hide");
-
-    if (obj !== null) {
-
-        $("#cmbPop_MarcaFase").val(((obj.idMarcaFase === undefined || obj.idMarcaFase === null || obj.idMarcaFase <= 0) ? '-1' : obj.idMarcaFase)).change();
-        $("#cmbPop_MarcaFinalidade").val(((obj.idMarcaFinalidade === undefined || obj.idMarcaFinalidade === null || obj.idMarcaFinalidade <= 0) ? '-1' : obj.idMarcaFinalidade)).change();
-        $("#cmbPop_MarcaFabrica").val(((obj.idMarcaFabrica === undefined || obj.idMarcaFabrica === null || obj.idMarcaFabrica <= 0) ? '-1' : obj.idMarcaFabrica)).change();
-        $("#cmbPop_MarcaDimensao").val(((obj.idMarcaDimensao === undefined || obj.idMarcaDimensao === null || obj.idMarcaDimensao <= 0) ? '-1' : obj.idMarcaDimensao)).change();
-        $("#cmbPop_MarcaTipo").val(((obj.idMarcaTipo === undefined || obj.idMarcaTipo === null || obj.idMarcaTipo <= 0) ? '-1' : obj.idMarcaTipo)).change();
-        $("#cmbPop_MarcaSubTipo").val(((obj.idMarcaSubTipo === undefined || obj.idMarcaSubTipo === null || obj.idMarcaSubTipo <= 0) ? '-1' : obj.idMarcaSubTipo)).change();
-        $("#cmbPop_MarcaImpressora").val(((obj.idMarcaImpressora === undefined || obj.idMarcaImpressora === null || obj.idMarcaImpressora <= 0) ? '-1' : obj.idMarcaImpressora)).change();
-        $("#cmbPop_MarcaQualidadeImagem").val(((obj.idMarcaQualidadeImagem === undefined || obj.idMarcaQualidadeImagem === null || obj.idMarcaQualidadeImagem <= 0) ? '-1' : obj.idMarcaQualidadeImagem)).change();
-        $("#cmbPop_Raridade").val(((obj.idRaridade === undefined || obj.idRaridade === null || obj.idRaridade <= 0) ? '-1' : obj.idRaridade)).change();
-
-        (obj.valor !== null || obj.valor1PI !== null || obj.valor2PI !== null) ? $('.div_adicional').show() : $('.div_adicional').hide();
-    }
-
-    $('#ModalMarca').modal('show');
-}
-
-function fnItem_PopImgPrincipal(obj) {
-    //console.log("fnItem_PopImgPrincipal obj !", obj);
-
-    if (obj !== null) {
-        let objFile = {},
-            fileArq = obj?.imgPrincipal;
-
-        const fileInput = document.querySelector('#txt_ImgPrincipal');
-
-        if (fileArq !== undefined) {
-            objFile = {
-                NomeArquivo: fileArq.split('.')[0],
-                Extensao: fileArq.split('.').pop(),
-            };
-        }
-        // Create a new File object
-        const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
-            type: `application/${objFile.Extensao}`,
-            //type: 'text/plain',
-            lastModified: new Date(),
-        });
-
-        // Now let's create a DataTransfer to get a FileList
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(arqFile);
-        fileInput.files = dataTransfer.files;
-
-        // Help Safari out
-        if (fileInput.webkitEntries.length) {
-            fileInput.dataset.file = `${dataTransfer.files[0].name}`;
-        }
-    }
-}
-
-function fnItem_PopImgDetalhe(obj) {
-    //console.log("fnItem_PopImgDetalhe obj !", obj);
-
-    if (obj !== null) {
-        let objFile = {},
-            fileArq = obj?.imgDetalhe;
-
-        const fileInput = document.querySelector('#txt_ImgDetalhe');
-
-        if (fileArq !== undefined) {
-            objFile = {
-                NomeArquivo: fileArq.split('.')[0],
-                Extensao: fileArq.split('.').pop(),
-            };
-        }
-
-        // Create a new File object
-        const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
-            type: `application/${objFile.Extensao}`,
-            //type: 'text/plain',
-            lastModified: new Date(),
-        });
-
-        // Now let's create a DataTransfer to get a FileList
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(arqFile);
-        fileInput.files = dataTransfer.files;
-
-        // Help Safari out
-        if (fileInput.webkitEntries.length) {
-            fileInput.dataset.file = `${dataTransfer.files[0].name}`;
-        }
-    }
-}
-
 function fn_ModalGetObj() {
     //console.log("fn_ModalGetObj ::: ");
 
@@ -357,100 +220,34 @@ function fn_ModalGetObj() {
 
         MarcaAcervoId: $('#cmbPop_MarcaAcervo').find('option:selected').val(),
         MarcaFaseId: $('#cmbPop_MarcaFase').find('option:selected').val(),
-        CodigoVariante: $('#txt_CodigoVariante').val(),
-        CodigoAceca: document.getElementById("div_NovoCodigo").textContent, //$('#txt_Codigo').val(),
-        Nome: $('#txt_Nome').val(),
-        IncluidoPor: $('#cmbPop_IncluidoPor').find('option:selected').val() > 0 ? $('#cmbPop_IncluidoSocio').find('option:selected').text() : $('#txt_IncluidoPor').val(),
+        CodigoVariante: $('#txt_CodigoVariante').val().length > 0 ? $('#txt_CodigoVariante').val() : null,
+        CodigoAceca: document.getElementById("div_Codigo").textContent,
+        CodigoAcecaNew: document.getElementById("div_NovoCodigo").textContent,
+        Nome: $('#txt_Nome').val().length > 0 ? $('#txt_Nome').val() : null,
+        IncluidoPor: $('#cmbPop_IncluidoPor').find('option:selected').val() > 0 ? $('#cmbPop_IncluidoSocio').find('option:selected').text() : ($('#txt_IncluidoPor').val().length > 0 ? $('#txt_IncluidoPor').val() : null),
         IncluidoPorSocioId: $('#cmbPop_IncluidoSocio').find('option:selected').val(),
         MarcaFinalidadeId: $('#cmbPop_MarcaFinalidade').find('option:selected').val(),
         MarcaFabricaId: $('#cmbPop_MarcaFabrica').find('option:selected').val(),
-        CodigoFabrica: $('#txt_CodFabrica').val(),
+        CodigoFabrica: $('#txt_CodFabrica').val().length > 0 ? $('#txt_CodFabrica').val() : null,
         MarcaDimensaoId: $('#cmbPop_MarcaDimensao').find('option:selected').val(),
         MarcaTipoId: $('#cmbPop_MarcaTipo').find('option:selected').val(),
         MarcaSubTipoId: $('#cmbPop_MarcaSubTipo').find('option:selected').val(),
         MarcaImpressoraId: $('#cmbPop_MarcaImpressora').find('option:selected').val(),
         MarcaQualidadeImagemId: $('#cmbPop_MarcaQualidadeImagem').find('option:selected').val(),
         MarcaRaridadeId: $('#cmbPop_Raridade').find('option:selected').val(),
-        Descricao: $('#txt_Descricao').val(),
+        Descricao: $('#txt_Descricao').val().length > 0 ? $('#txt_Descricao').val() : null,
 
-        Valor: $('#txt_Valor').val(),
-        Valor1PI: $('#txt_Valor1PI').val(),
-        Valor2PI: $('#txt_Valor2PI').val(),
+        Valor: $('#txt_Valor').val().length > 0 ? $('#txt_Valor').val() : null,
+        Valor1PI: $('#txt_Valor1PI').val().length > 0 ? $('#txt_Valor1PI').val() : null,
+        Valor2PI: $('#txt_Valor2PI').val().length > 0 ? $('#txt_Valor2PI').val() : null,
 
         ImgPrincipal: $('#txt_ImgPrincipal').val().length > 0 ? $('#txt_ImgPrincipal').val() : null,
         ImgDetalhe: $('#txt_ImgDetalhe').val().length > 0 ? $('#txt_ImgDetalhe').val() : null,
-
-        //FileImgPrincipal: fileImgPrincipal !== undefined ? objFileImgPrincipal : null,
-       // FileImgDetalhe: fileImgDetalhe !== undefined ? objFileImgDetalhe : null,
     };
 
     //console.log("fn_ModalGetObj !", objFormData);
 
     return objFormData;
-}
-
-function fnItem_Edit_CarregarDados(obj, action) {
-    console.log("fnItem_Edit_CarregarDados obj ::: ", obj);
-    //var varPop_BtnAction = 'Edit';
-
-    //fn_Pop(obj, varPop_BtnAction);
-
-    var varAjax_UrlController = `${var_Controller}/GetFullById`,
-        varAjax_TypeAction = 'POST',
-        varAjax_TypeData = 'JSON',
-        varAjax_TypeContent = 'application/json; charset=utf-8';
-
-    if (obj === undefined || obj === null || obj.id === 0) {
-        Swal.fire({
-            title: 'OPS!!',
-            icon: 'error',
-            html: `Dados n&atilde;o identificados !!`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-danger waves-effect'
-            },
-        });
-    } else {
-
-        $.busyLoadFull("show");
-
-        $.ajax(
-            {
-                url: varAjax_UrlController,
-                type: varAjax_TypeAction,
-                dataType: varAjax_TypeData,
-                data: {
-                    id: obj.id
-                },
-                success: function (result) {
-                    console.log("result  :: ", result);
-
-                    if (result.bResult) {
-
-                        fn_Modal(result.data, action);
-
-                    } else {
-                        //console.log("result  :: ", result);
-                        $.busyLoadFull("hide");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> Erro ocorrido <br><br>` + result + `</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
-                    }
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
-                },
-            });
-    }
 }
 
 //#endregion
@@ -584,8 +381,6 @@ function fn_ChangeCombos() {
                 } else {
                     $('.div_variante_codigo').show();
                 }
-
-                $('.div_variante_codigo').show();
             }
             else {
                 //console.log("cmbPop_MarcaVariante change idMarcaVariante ::: ", idMarcaVariante);
@@ -1073,8 +868,7 @@ function fn_CamposHide(origem) {
     //console.log("fn_CamposHide origem ::: ", origem);
 
     $('.div_original_variante').hide();
-    document.getElementById("div_NomePaiVariante").innerHTML = '';
-    $('.div_NomePaiVariante').hide();    
+    document.getElementById("p_NomePaiVariante").innerHTML = '';
     
     $('#txt_Codigo').val('');
     $('.div_codigo').hide();
@@ -1177,6 +971,8 @@ function fn_CamposShow(result) {
     $('#txt_Codigo').css("font-size", "0.9375rem");
     $('#txt_Codigo').val(result.dataNovoCodigo);
     */
+
+    document.getElementById("div_Codigo").textContent = result.dataVelhoCodigo;
     document.getElementById("div_NovoCodigo").textContent = result.dataNovoCodigo;
     
 
@@ -1279,11 +1075,24 @@ function fn_GetCodigoAceca() {
 
                 if (result.bResult) {
                     objVariante = bNovaVariante ? result.data : null;
-                    //console.log("fn_GetCodigoAceca bNovaVariante ::: ", bNovaVariante);
+                    //console.log("fn_GetCodigoAceca objVariante ::: ", objVariante);
+
+                    if (objVariante?.incluidoPor !== undefined && objVariante?.incluidoPor !== null && objVariante?.incluidoPor !== '') {
+                        Swal.fire({
+                            title: 'ATENÇÃO !!',
+                            icon: 'warning',
+                            html: `N&atilde;o esqueça de selecionar quem está incluindo !!`,
+                            focusConfirm: false,
+                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                            customClass: {
+                                confirmButton: 'btn btn-label-success waves-effect'
+                            },
+                        });
+                    }
 
                     fn_PreencheDadosExistentes(objVariante);
                     //
-                    fn_CamposShow(result);                    
+                    fn_CamposShow(result);
                 } else {
                     //console.log("fn_GetCodigoAceca  result ::: ", result);
 
@@ -1328,18 +1137,13 @@ function fn_PreencheDadosExistentes(obj) {
 
     // Pop Variante
         (document.querySelector('#txt_CodigoVariante').value = (obj === null ? '' : obj.codigoAceca));
+        document.getElementById("p_NomePaiVariante").innerHTML = '';
 
-        const divVariante = document.getElementById("div_NomePaiVariante");
-        $('#div_NomePaiVariante').css('color', '#8c57ff');
-        $('#div_NomePaiVariante').css('background-color', '#ede4ff');
-        $('#div_NomePaiVariante').css('text-align', 'center');
-        $('#div_NomePaiVariante').css("font-weight", "500");
-        $('#div_NomePaiVariante').css("font-size", "0.9375rem");
-        divVariante.style.padding = "20px";
-        (document.getElementById("div_NomePaiVariante").innerHTML = (obj === null ? '' : `${obj.nome}<br><br>${obj.descricao}`));
+        (document.getElementById("p_NomePaiVariante").innerHTML = (obj === null ? '' : `${obj.nome}<br><br>${obj.descricao}`));
+
         (obj === null ? $('.div_original_variante').hide() : $('.div_original_variante').show());
 
-        // Pop Dados
+    // Pop Dados
         (document.querySelector('#txt_IncluidoPor').value = (obj === null ? '' : obj.incluidoPor));
         $("#cmbPop_MarcaFinalidade").val(obj === null ? '-1' : ((obj.marcaFinalidadeId === undefined || obj.marcaFinalidadeId === null || obj.marcaFinalidadeId <= 0) ? '-1' : obj.marcaFinalidadeId)).change();
         $("#cmbPop_MarcaFabrica").val(obj === null ? '-1' : ((obj.marcaFabricaId === undefined || obj.marcaFabricaId === null || obj.marcaFabricaId <= 0) ? '-1' : obj.marcaFabricaId)).change();
@@ -1425,6 +1229,57 @@ function fn_PreencheDadosDescricao() {
     console.log("fn_PreencheDadosDescricao strDescricao :: ", strDescricao);
 
     document.getElementById("txt_Descricao").value = strDescricao;
+}
+
+function fn_ValidarCodigoVariante(txtValue) {
+    const regexCaracteresValidos = /^[\p{L}\p{N}](?:[\p{L}\p{N} _-]*[\p{L}\p{N}])?$/u;
+
+    return regexCaracteresValidos.test(txtValue);
+}
+
+function fn_ProcessaNome() {
+    let txtNome = $('#txt_Nome').val();
+    //console.log("fn_ProcessaNome txtNome ::", txtNome);
+
+    if (txtNome !== null && txtNome !== undefined && txtNome !== '') {
+        if (!fn_ValidarCodigoVariante(txtNome)) {
+            fn_ModalCaracterInvalido('#txt_Nome');
+            return;
+        }
+
+        $('.div_codigo').hide();
+
+        $('.div_dados').hide();
+        $('.div_imagem').hide();
+        $('.div_botoes').hide();
+        $('.div_variante').hide();
+        $('.div_tem_pais_destino').hide();
+        $('.div_variante_codigo').hide();
+        $('.div_original_variante').hide();
+
+        $('#cmbPop_MarcaAcervo').prop('selectedIndex', 0).change();
+        $('#cmbPop_MarcaFase').prop('selectedIndex', 0).change();
+
+        $('.div_acervo').show();
+    } else {
+        fn_Limpar();
+    }
+}
+
+function fn_ProcessaCodigoVariante() {
+    let txtCodigoVariante = $('#txt_CodigoVariante').val();
+    //console.log("fn_ProcessaCodigoVariante txtCodigoVariante ::", txtCodigoVariante);
+
+    if (txtCodigoVariante !== null && txtCodigoVariante !== undefined && txtCodigoVariante !== '') {
+        if (!fn_ValidarCodigoVariante(txtCodigoVariante)) {
+            fn_ModalCaracterInvalido('#txt_CodigoVariante');
+            return;
+        }
+
+        fn_GetCodigoAceca();
+    } else {
+        fn_Limpar();
+    }
 }
 
 //#endregion
@@ -1573,6 +1428,75 @@ function fn_PreviewImage(input) {
             }
         };
         reader.readAsDataURL(input.files[0]); // Converts to Base64 string
+    }
+}
+
+function fnItem_PopImgPrincipal(obj) {
+    //console.log("fnItem_PopImgPrincipal obj !", obj);
+
+    if (obj !== null) {
+        let objFile = {},
+            fileArq = obj?.imgPrincipal;
+
+        const fileInput = document.querySelector('#txt_ImgPrincipal');
+
+        if (fileArq !== undefined) {
+            objFile = {
+                NomeArquivo: fileArq.split('.')[0],
+                Extensao: fileArq.split('.').pop(),
+            };
+        }
+        // Create a new File object
+        const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
+            type: `application/${objFile.Extensao}`,
+            //type: 'text/plain',
+            lastModified: new Date(),
+        });
+
+        // Now let's create a DataTransfer to get a FileList
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(arqFile);
+        fileInput.files = dataTransfer.files;
+
+        // Help Safari out
+        if (fileInput.webkitEntries.length) {
+            fileInput.dataset.file = `${dataTransfer.files[0].name}`;
+        }
+    }
+}
+
+function fnItem_PopImgDetalhe(obj) {
+    //console.log("fnItem_PopImgDetalhe obj !", obj);
+
+    if (obj !== null) {
+        let objFile = {},
+            fileArq = obj?.imgDetalhe;
+
+        const fileInput = document.querySelector('#txt_ImgDetalhe');
+
+        if (fileArq !== undefined) {
+            objFile = {
+                NomeArquivo: fileArq.split('.')[0],
+                Extensao: fileArq.split('.').pop(),
+            };
+        }
+
+        // Create a new File object
+        const arqFile = new File(['ARQUIVO'], `${objFile.NomeArquivo}.${objFile.Extensao}`, {
+            type: `application/${objFile.Extensao}`,
+            //type: 'text/plain',
+            lastModified: new Date(),
+        });
+
+        // Now let's create a DataTransfer to get a FileList
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(arqFile);
+        fileInput.files = dataTransfer.files;
+
+        // Help Safari out
+        if (fileInput.webkitEntries.length) {
+            fileInput.dataset.file = `${dataTransfer.files[0].name}`;
+        }
     }
 }
 

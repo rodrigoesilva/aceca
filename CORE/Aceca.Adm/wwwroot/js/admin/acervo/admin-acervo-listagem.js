@@ -194,7 +194,7 @@ function fn_Filtrar() {
         } else {
             //console.log("fn_Filtrar objFiltro NULO ::: ", objFiltro);
 
-            if (objFiltro.param_MarcaFaseId == 0) {
+            if (objFiltro.param_MarcaFaseId == 0 && objFiltro.param_MarcaTipoId <= 0) {
                 swalWithBootstrapButtons.fire({
                     title: "Tem certeza?",
                     html: `Essa opção aumentará o tempo  <br><br> de carregamento dos dados!`,
@@ -290,6 +290,17 @@ function fn_FiltrosChange() {
 
         if (idMarcaFase === undefined || idMarcaFase < 0) {
             fn_FiltrosHide();
+
+            // Reseta os combos dependentes sem disparar o 'change' deles
+            // (evita o popup de "selecione uma fase" do fn_ModalSelecionarFase)
+            $('#cmb_MarcaTipo').prop('selectedIndex', 0);
+            $('#cmb_MarcaSubTipo').prop('selectedIndex', 0);
+
+            // Sem fase selecionada não há o que exibir - limpa e esconde o grid
+            $(".card-datatable").hide();
+            $('.datatables-basic').DataTable().clear().draw();
+
+            var_Filtrado = false;
         } else {
             fn_LoadCmb_MarcaTipo();
             //console.log("cmb_MarcaFase change ::: ");
@@ -315,7 +326,7 @@ function fn_FiltrosChange() {
         if (idMarcaFase === undefined || idMarcaFase < 0) {
             fn_ModalSelecionarFase();
         } else {
-
+            console.log("cmb_MarcaTipo change idMarcaFase ::: ", idMarcaFase);
             if (idMarcaTipo <= 0) {
                 $('.div_MarcaSubTipo').attr('style', 'display: none !important');
                 fn_Filtrar();
@@ -450,7 +461,7 @@ function fn_FiltrarDados() {
             },
 
             dataSrc: function (json) {
-                console.log("fn_FiltrarDados json:: ", json);
+                //console.log("fn_FiltrarDados json:: ", json);
                 return json.data;
             }
         },
