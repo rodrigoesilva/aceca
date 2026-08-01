@@ -43,6 +43,12 @@ namespace Aceca.Adm.Models
         public bool Regex { get; set; }
     }
 
+    public class FilterDataOrderMarca
+    {
+        public int Column { get; set; }
+        public string Dir { get; set; }
+    }
+
     public class FilterDataMarca
     {
         public int Draw { get; set; }
@@ -50,6 +56,8 @@ namespace Aceca.Adm.Models
         public int Length { get; set; }
 
         public FilterDataSearchMarca Search { get; set; }
+
+        public List<FilterDataOrderMarca> Order { get; set; }
 
         public FiltroRequestMarca Filtros { get; set; }
 

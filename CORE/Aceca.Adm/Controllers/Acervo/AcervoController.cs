@@ -219,6 +219,44 @@ namespace Aceca.Adm.Controllers.Acervo
                 }
 
                 // =========================
+                // ORDENAÇÃO
+                // =========================
+
+                // Mapeia o índice de coluna enviado pelo DataTables (client) para a
+                // coluna SQL correspondente. Mantém alinhado com admin-acervo-listagem.js::columns.
+                var colunasOrdenaveis = new Dictionary<int, string>
+                {
+                    { 1, "m.CodigoAceca" },
+                    { 2, "m.Nome" },
+                    { 5, "m.Descricao" },
+                    { 6, "COALESCE(mfa.Nome, m.fabrica_txt)" },
+                    { 7, "mst.Descricao" },
+                    { 8, "mfi.Descricao" },
+                    { 9, "mf.Descricao" },
+                };
+
+                var orderByPartes = new List<string>();
+
+                if (request.Order != null)
+                {
+                    foreach (var ordem in request.Order)
+                    {
+                        if (colunasOrdenaveis.TryGetValue(ordem.Column, out var coluna))
+                        {
+                            var direcao = string.Equals(ordem.Dir, "desc", StringComparison.OrdinalIgnoreCase) ? "DESC" : "ASC";
+                            orderByPartes.Add($"{coluna} {direcao}");
+                        }
+                    }
+                }
+
+                if (orderByPartes.Count == 0)
+                {
+                    orderByPartes.Add("m.Nome ASC");
+                }
+
+                var orderBySql = string.Join(", ", orderByPartes);
+
+                // =========================
                 // COUNT
                 // =========================
 
@@ -295,8 +333,7 @@ namespace Aceca.Adm.Controllers.Acervo
 
                     {sqlFrom}
 
-                    -- ORDER BY mf.id, m.nome, m.CodigoAceca
-                        ORDER BY m.CodigoAceca, m.nome
+                        ORDER BY {orderBySql}
                     LIMIT @Limit OFFSET @Offset
                     ";
 

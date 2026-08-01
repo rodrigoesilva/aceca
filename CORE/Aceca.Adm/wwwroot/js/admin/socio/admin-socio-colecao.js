@@ -301,7 +301,7 @@ function fn_FiltrarDados() {
     var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
 
         varCol_Exportar = [1, 2, 5, 6, 7, 8, 9],
-        varCol_Ordenacao = [1, 'asc'], //set any columns order asc/desc
+        varCol_Ordenacao = [2, 'asc'], //set any columns order asc/desc (NomeMarca)
 
         varItems_QtdPorPage = 10,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
@@ -334,6 +334,8 @@ function fn_FiltrarDados() {
                     length: d.length,
 
                     search: d.search, // 🔥 OBRIGATÓRIO para server-side
+
+                    order: d.order, // 🔥 OBRIGATÓRIO para ordenação server-side (clique no header)
 
                     filtros: {
                         marcaAcervoId: parseInt($('#hdMarcaAcervoId').val()) || 0,
@@ -374,14 +376,14 @@ function fn_FiltrarDados() {
             { data: 'NomeMarca', className: 'text-center', width: '120px', responsivePriority: 3 },
             // COLUNA - imagem (some primeiro no mobile)
             {
-                data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004,
+                data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004, orderable: false,
                 render: function (data, type, row) {
                     return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row?.CodigoAceca}" src="${data}">`;
                 }
             },
             // COLUNA - imagemDetalhe
             {
-                data: 'ImgDetalheFull', className: 'text-center', responsivePriority: 10005,
+                data: 'ImgDetalheFull', className: 'text-center', responsivePriority: 10005, orderable: false,
                 render: function (data, type, row) {
                     return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row?.CodigoAceca}" src="${data}">`;
                 }
@@ -418,7 +420,7 @@ function fn_FiltrarDados() {
             },
             // COLUNA - incluidoPor (avatar)
             {
-                data: 'IncluidoPor', visible: false, className: 'text-center', responsivePriority: 10010,
+                data: 'IncluidoPor', visible: false, className: 'text-center', responsivePriority: 10010, orderable: false,
                 render: function (data, type, full) {
                     if (!data || full.Id === 0 || type !== 'display') return '';
                     var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
@@ -475,7 +477,7 @@ function fn_FiltrarDados() {
             }
         ],
 
-        order: varCol_Ordenacao, // garante base na coluna CodigoAceca
+        order: varCol_Ordenacao, // garante base na coluna NomeMarca
         autoWidth: false,
         dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
 

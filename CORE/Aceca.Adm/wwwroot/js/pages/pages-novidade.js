@@ -422,7 +422,7 @@ function fn_FiltrarDados() {
             }
         ],
 
-        order: [[1, 'asc']], // garante base na coluna CodigoAceca
+        order: varCol_Ordenacao, // garante base na coluna NomeMarca
         autoWidth: false,
 
         language: {
