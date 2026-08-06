@@ -476,6 +476,10 @@ namespace Aceca.Adm.Controllers.Pages
                     {
                         case EColecaoAcao.ColecaoIncluir:
                             model.Possui = !model.Possui;
+
+                            // Ao incluir na coleção, o item deixa de estar como "Tenho Interesse".
+                            if (model.Possui)
+                                model.Interesse = false;
                             break;
                         case EColecaoAcao.ColecaoInteresse:
                             model.Interesse = !model.Interesse;
