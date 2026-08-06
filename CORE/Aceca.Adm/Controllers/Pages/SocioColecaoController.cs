@@ -482,6 +482,18 @@ namespace Aceca.Adm.Controllers.Pages
                                 model.Interesse = false;
                             break;
                         case EColecaoAcao.ColecaoInteresse:
+                            // Item já incluído na coleção - não faz sentido marcar interesse
+                            // nele. Bloqueia antes de tocar no registro.
+                            if (model.Possui)
+                            {
+                                return BadRequest(new
+                                {
+                                    bResult = false,
+                                    type = "JA_POSSUI",
+                                    message = "Item já incluído na coleção."
+                                });
+                            }
+
                             model.Interesse = !model.Interesse;
                             break;
                         case EColecaoAcao.ColecaoNegociar:

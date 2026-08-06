@@ -1930,16 +1930,17 @@ function fnItem_Colecao(obj, action, $btnEl) {
     if (action === 'ColecaoIncluir' && (obj?.Possui === true || obj?.Possui === 1)) {
         if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
 
-        Swal.fire({
-            title: 'Item já incluído!',
-            icon: 'info',
-            html: `<b>Este item j&aacute; faz parte da sua Cole&ccedil;&atilde;o.</b>`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-info waves-effect'
-            }
-        });
+        fn_SwalItemJaIncluido();
+
+        return;
+    }
+
+    // Item já incluído na coleção não pode ser marcado como "Tenho Interesse" -
+    // mesmo swal do bloqueio acima, e interrompe a ação.
+    if (action === 'ColecaoInteresse' && (obj?.Possui === true || obj?.Possui === 1)) {
+        if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
+
+        fn_SwalItemJaIncluido();
 
         return;
     }
@@ -2051,11 +2052,34 @@ function fnItem_Colecao(obj, action, $btnEl) {
 
                 if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
 
+                // Estado desatualizado no cliente (ex.: outra aba já incluiu o item) - o
+                // backend recusou e devolve esse tipo específico; mesmo swal do bloqueio
+                // otimista, em vez do modal de erro genérico.
+                if (xhr?.responseJSON?.type === 'JA_POSSUI') {
+                    fn_SwalItemJaIncluido();
+                    return;
+                }
+
                 fn_ModalErro(xhr, status, error);
             }
         });
 
     }
+}
+
+// Swal padrão para quando o item já está incluído na coleção (bloqueia tanto
+// re-inclusão quanto marcar "Tenho Interesse" nele).
+function fn_SwalItemJaIncluido() {
+    Swal.fire({
+        title: 'Item já incluído!',
+        icon: 'info',
+        html: `<b>Este item j&aacute; faz parte da sua Cole&ccedil;&atilde;o.</b>`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-label-info waves-effect'
+        }
+    });
 }
 
 // Troca o item do dropdown de "Incluir na Coleção" para o estado "já incluído",
@@ -2091,16 +2115,7 @@ function fn_BindColecaoIncluirActions() {
     $(document).on('click', '.colecao-ja-incluida', function (e) {
         e.preventDefault();
 
-        Swal.fire({
-            title: 'Item já incluído!',
-            icon: 'info',
-            html: `<b>Este item j&aacute; faz parte da sua Cole&ccedil;&atilde;o.</b>`,
-            focusConfirm: false,
-            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-            customClass: {
-                confirmButton: 'btn btn-label-info waves-effect'
-            }
-        });
+        fn_SwalItemJaIncluido();
     });
 
     $(document).on('click', '.btn-colecao-incluir', function (e) {
