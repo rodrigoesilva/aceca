@@ -6,6 +6,7 @@ using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using static Aceca.Adm.Helper.HelperExtensionsController;
@@ -42,6 +43,15 @@ namespace Aceca.Adm.Controllers.Admin.Socio
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
             _urlBaseApp = _appConfiguration["Url:App"]!;
+        }
+
+        // O socioId autenticado é usado só para marcar quais itens já estão na
+        // coleção do usuário logado (flags Possui/Interesse) - nunca vem do cliente.
+        private int GetSocioIdAutenticado()
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return int.TryParse(claim, out var socioId) ? socioId : 0;
         }
 
         #region MeusNegocios
@@ -469,6 +479,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                 var filtro = request.Filtros ?? new FiltroRequestMarca();
 
+                var socioIdAutenticado = GetSocioIdAutenticado();
+
                 var imgBase = _urlBaseImg;
                 var imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg";
 
@@ -484,10 +496,13 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 LEFT JOIN marcas_raridade mq ON m.marcaQualidadeImagemId = mq.id
                 LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
                 LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
+                LEFT JOIN socio_colecao sc ON sc.marcaId = m.id AND sc.socioId = @SocioIdAutenticado
                 WHERE 1=1
                 ");
 
                 var parameters = new DynamicParameters();
+
+                parameters.Add("@SocioIdAutenticado", socioIdAutenticado);
 
                 // =========================
                 // FILTROS
@@ -685,7 +700,10 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         m.ImgDetalhe,
                         IF(m.ImgDetalhe IS NOT NULL,
                             CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
-                            @ImgDefault) AS ImgDetalheFull
+                            @ImgDefault) AS ImgDetalheFull,
+
+                        COALESCE(sc.possui, 0) AS possui,
+                        COALESCE(sc.interesse, 0) AS interesse
 
                     {sqlFrom}
 

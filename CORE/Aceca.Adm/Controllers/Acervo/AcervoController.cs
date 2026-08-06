@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.Intrinsics.X86;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using static Aceca.Adm.Helper.HelperExtensionsController;
@@ -50,7 +51,16 @@ namespace Aceca.Adm.Controllers.Acervo
 
         #endregion
 
-        public AcervoController(ILogger<AcervoController> logger, 
+        // O socioId autenticado é usado só para marcar quais itens já estão na
+        // coleção do usuário logado (flags Possui/Interesse) - nunca vem do cliente.
+        private int GetSocioIdAutenticado()
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return int.TryParse(claim, out var socioId) ? socioId : 0;
+        }
+
+        public AcervoController(ILogger<AcervoController> logger,
             AppDbContext db, 
             IWebHostEnvironment env, 
             IConfiguration cfg,
@@ -101,6 +111,8 @@ namespace Aceca.Adm.Controllers.Acervo
 
                 var filtro = request.Filtros ?? new FiltroRequestMarca();
 
+                var socioIdAutenticado = GetSocioIdAutenticado();
+
                 var imgBase = _urlBaseImg;
                 var imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg";
 
@@ -116,10 +128,13 @@ namespace Aceca.Adm.Controllers.Acervo
                 LEFT JOIN marcas_raridade mq ON m.marcaQualidadeImagemId = mq.id
                 LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
                 LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
+                LEFT JOIN socio_colecao sc ON sc.marcaId = m.id AND sc.socioId = @SocioIdAutenticado
                 WHERE 1=1
                 ");
 
                 var parameters = new DynamicParameters();
+
+                parameters.Add("@SocioIdAutenticado", socioIdAutenticado);
 
                 // =========================
                 // FILTROS
@@ -329,7 +344,10 @@ namespace Aceca.Adm.Controllers.Acervo
                            		    COALESCE(CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),@ImgDefault)
                                 )
                             ELSE @ImgDefault
-	                    END AS ImgDetalheFull
+	                    END AS ImgDetalheFull,
+
+                        COALESCE(sc.possui, 0) AS Possui,
+                        COALESCE(sc.interesse, 0) AS Interesse
 
                     {sqlFrom}
 
@@ -746,6 +764,8 @@ namespace Aceca.Adm.Controllers.Acervo
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administracao")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Models.Marcas model)
         {
             try
@@ -873,6 +893,8 @@ namespace Aceca.Adm.Controllers.Acervo
         }
 
         [HttpDelete]
+        [Authorize(Roles = "Administracao")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             try

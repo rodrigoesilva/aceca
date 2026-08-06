@@ -57,8 +57,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                 var sqlFrom = new StringBuilder(@"
                 FROM socio_log_acesso sla
-                INNER JOIN socio_endereco se ON sla.socioEnderecoId = se.id
-                INNER JOIN socios s ON se.socioId = s.id
+                INNER JOIN socios s ON sla.socioId = s.id
+                LEFT JOIN socio_endereco se ON se.socioId = s.id
                 WHERE 1=1
                 ");
 

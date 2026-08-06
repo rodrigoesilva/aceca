@@ -398,7 +398,7 @@ namespace Aceca.Adm.Controllers.Pages
                 if (socioIdAutenticado <= 0)
                     return BadRequest("Sessão inválida");
 
-                IActionResult response = Ok();
+                IActionResult response;
 
                 switch ((EColecaoAcao)actionId)
                 {
@@ -412,15 +412,18 @@ namespace Aceca.Adm.Controllers.Pages
                         response = await AdicionarOuAtualizarItemAsync(marcaId, socioIdAutenticado, (EColecaoAcao)actionId, disponivelNegocio, itemColecaoObs);
                         break;
                     default:
-                        break;
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "ActionId inválido"
+                        });
                 }
 
-                return Ok(new
-                {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: "
-                });
+                // Propaga o resultado real (sucesso ou erro) das rotinas internas -
+                // antes o retorno era sempre bResult:true, mesmo quando a operação
+                // falhava (exceção) ou era bloqueada (ex.: IDOR no delete).
+                return response;
             }
             catch (Exception ex)
             {

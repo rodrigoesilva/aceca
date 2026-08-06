@@ -418,7 +418,7 @@ namespace Aceca.Adm.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int? Id { get; set; }
-        public int? SocioEnderecoId { get; set; }
+        public int? SocioId { get; set; }
         public string? IP { get; set; }
         public string? OS { get; set; }
         public string? Browser { get; set; }
@@ -430,7 +430,7 @@ namespace Aceca.Adm.Models
         public string? Longitude { get; set; }
         [Column("last_login")] public DateTime? UltimoLogin { get; set; }
 
-        public SocioEndereco? SocioEndereco { get; set; }
+        public Socio? Socio { get; set; }
     }
 
     [Table("socio_perfil")]

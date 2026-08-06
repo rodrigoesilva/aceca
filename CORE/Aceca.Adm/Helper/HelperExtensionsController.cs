@@ -971,6 +971,57 @@ namespace Aceca.Adm.Helper
                     DateTimeStyles.AssumeUniversal, out var dtoTimestamp))
                 timestampBrasil = dtoTimestamp.ToOffset(TimeSpan.FromHours(-3)).ToString("dd/MM/yyyy HH:mm:ss") + " (Brasília)";
 
+            // Dados do último login do sócio, gravados por AuthController.LoginLog em SocioLogAcesso.
+            Models.SocioLogAcesso? ultimoAcesso = null;
+
+            if (int.TryParse(socioId, out var socioIdInt))
+            {
+                ultimoAcesso = await _db.SocioLogAcesso
+                    .AsNoTracking()
+                    .Where(x => x.SocioId == socioIdInt)
+                    .OrderByDescending(x => x.Id)
+                    .FirstOrDefaultAsync();
+            }
+
+            var linhasLogAcesso = "";
+
+            if (ultimoAcesso != null)
+            {
+                linhasLogAcesso = $@"
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">IP do Login</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.IP}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Sistema Operacional</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.OS}</td>
+                      </tr>
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Navegador</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.Browser}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Dispositivo</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.Device}</td>
+                      </tr>
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Operadora</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.Operadora}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Local do Login</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.Cidade} / {ultimoAcesso.Estado}</td>
+                      </tr>
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Coordenadas do Login</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.Latitude}, {ultimoAcesso.Longitude}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Último Login Registrado</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.UltimoLogin?.ToString("dd/MM/yyyy HH:mm:ss")}</td>
+                      </tr>";
+            }
+
             var body = $@"
                 <!DOCTYPE html>
                 <html lang=""pt-BR"">
@@ -1015,6 +1066,7 @@ namespace Aceca.Adm.Helper
                         <td style=""padding:10px 14px;border:1px solid #e0d0f0;color:#cc0000;
                                     font-weight:bold;"">{acao}</td>
                       </tr>
+                      {linhasLogAcesso}
                     </table>
                     <hr style=""border:none;border-top:1px solid #eee;margin:28px 0;"">
                     <p style=""font-size:12px;color:#aaa;text-align:center;"">

@@ -323,7 +323,7 @@ namespace Aceca.Adm.Controllers
 
                         var newModel = new Models.SocioLogAcesso
                         {
-                            SocioEnderecoId = userId,
+                            SocioId = userId,
                             IP         = nodeGeo["ip"]?.GetValue<string>(),
                             OS         = nodeAgent?["operating_system"]?["name"]?.GetValue<string>(),
                             Browser    = nodeAgent?["name"]?.GetValue<string>(),

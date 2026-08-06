@@ -14,8 +14,6 @@ let var_Nome = 'Listagem',
     varTbl_Data,
     objFiltro;
 
-let table = $('.datatables-basic').DataTable();
-
 let var_Filtrado = false,
     var_ImgAlt = "ACECA",
     urlImgModal = "../img/logo/logo.png",
@@ -76,6 +74,8 @@ document.addEventListener('DOMContentLoaded', function () {
         fn_Zoom();
 
         fn_AuthSession();
+
+        fn_BindColecaoIncluirActions();
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' || event.key === 'Enter') {
@@ -570,7 +570,21 @@ function fn_FiltrarDados() {
                     if (type !== 'display') return ''; 
 
                     let itemObjJson = encodeURIComponent(JSON.stringify(full));
-                    
+
+                    // Marca (do lado do servidor, escopado ao sócio autenticado) se o item já está na coleção
+                    let bPossuiColecao = (full?.Possui === true || full?.Possui === 1);
+                    let bInteresseColecao = (full?.Interesse === true || full?.Interesse === 1);
+
+                    let liColecaoIncluir = bPossuiColecao
+                        ? `<li><a href="javascript:void(0);" class="dropdown-item colecao-ja-incluida" data-bs-toggle="tooltip" title="Incluído na Coleção"><i class="icon-base ri ri-archive-2-fill text-success icon-md me-2"></i>Incluído na Coleção</a></li>`
+                        : `<li><a href="javascript:void(0);" class="dropdown-item edit-record btn-colecao-incluir" data-obj="${itemObjJson}"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Incluir na Coleção</a></li>`;
+
+                    // Mesma trava do "Incluir na Coleção", mas sem trocar o ícone - só marca
+                    // como text-success quando o interesse já estiver registrado.
+                    let liColecaoInteresse = bInteresseColecao
+                        ? `<li><a href="javascript:void(0);" class="dropdown-item colecao-interesse-ja-incluida" data-bs-toggle="tooltip" title="Já marcado como Tenho Interesse"><i class="icon-base ri ri-eye-line text-success icon-md me-2"></i>Tenho Interesse</a></li>`
+                        : `<li><a href="javascript:void(0);" class="dropdown-item edit-record btn-colecao-interesse" data-obj="${itemObjJson}"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>`;
+
                     if (isPerfil === 'true') {
 
                         const socioId = document.getElementById('hdSocioLogadoId').value;
@@ -584,8 +598,8 @@ function fn_FiltrarDados() {
                                     <ul class="dropdown-menu dropdown-menu-end m-0">
                                             <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
                                         <div class="dropdown-divider"></div>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Incluir na Coleção</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>                                            
+                                            ${liColecaoIncluir}
+                                            ${liColecaoInteresse}
                                     </ul>
                                 </div>`;
 
@@ -1902,7 +1916,7 @@ function fnItem_Edit(varItems_Row) {
 
 //#region COLECAO
 
-function fnItem_Colecao(obj, action) {
+function fnItem_Colecao(obj, action, $btnEl) {
 
     let marcaId = obj?.Id;
     let actionId = -1;
@@ -1911,9 +1925,48 @@ function fnItem_Colecao(obj, action) {
     //console.log("fnItem_Colecao obj ::: ", obj);
     //console.log("fnItem_Colecao action::: ", action);
 
+    // Guarda contra clique em item que já está na coleção (proteção extra além do
+    // bloqueio visual/estrutural do render - cobre estado desatualizado no DOM).
+    if (action === 'ColecaoIncluir' && (obj?.Possui === true || obj?.Possui === 1)) {
+        if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
+
+        Swal.fire({
+            title: 'Item já incluído!',
+            icon: 'info',
+            html: `<b>Este item j&aacute; faz parte da sua Cole&ccedil;&atilde;o.</b>`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-label-info waves-effect'
+            }
+        });
+
+        return;
+    }
+
+    // Mesma guarda para "Tenho Interesse".
+    if (action === 'ColecaoInteresse' && (obj?.Interesse === true || obj?.Interesse === 1)) {
+        if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
+
+        Swal.fire({
+            title: 'Item já marcado!',
+            icon: 'info',
+            html: `<b>Este item j&aacute; est&aacute; marcado como "Tenho Interesse" na sua Cole&ccedil;&atilde;o.</b>`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-label-info waves-effect'
+            }
+        });
+
+        return;
+    }
+
     if ((marcaId === undefined || marcaId === null || marcaId === '' || marcaId < 1)
         || (socioId === undefined || socioId === null || socioId === '' || socioId < 1)
     ) {
+        if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
+
         Swal.fire({
             title: 'Dados Inv&aacute;lidos!!',
             icon: 'error',
@@ -1957,10 +2010,20 @@ function fnItem_Colecao(obj, action) {
                 isPerfil: document.getElementById('hdIsPerfil').value
             },
             success: function (response) {
-                
+
                 console.log("Data received: ", response);
 
                 $.busyLoadFull("hide");
+
+                // Atualiza o ícone imediatamente (não espera o fechamento do Swal nem o
+                // reload da grid) para já travar o item contra novo clique/duplicidade.
+                if (action === 'ColecaoIncluir' && $btnEl && $btnEl.length) {
+                    fn_MarcarComoIncluidoNaColecao($btnEl);
+                }
+
+                if (action === 'ColecaoInteresse' && $btnEl && $btnEl.length) {
+                    fn_MarcarComoInteresseNaColecao($btnEl);
+                }
 
                 Swal.fire({
                     title: 'Dados Salvos!',
@@ -1972,18 +2035,132 @@ function fnItem_Colecao(obj, action) {
                 }).then((resultSucesso) => {
                     //window.location.reload();
                     console.log("resultSucesso  :: ", resultSucesso);
-                   
-                    table.ajax.reload(null, false); 
+
+                    // "table" (declarado no topo do arquivo) é a instância criada antes de
+                    // fn_FiltrarDados existir - depois que o grid é (re)criado com
+                    // serverSide/ajax, essa referência antiga fica órfã e derruba o reload.
+                    varTbl_Data.ajax.reload(null, false);
                 });
 
                 return true;
             },
             error: function (xhr, status, error) {
                 console.error("Error: " + error);
+
+                $.busyLoadFull("hide");
+
+                if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
+
+                fn_ModalErro(xhr, status, error);
             }
         });
-        
+
     }
+}
+
+// Troca o item do dropdown de "Incluir na Coleção" para o estado "já incluído",
+// travando cliques futuros (o novo elemento cai na classe .colecao-ja-incluida).
+function fn_MarcarComoIncluidoNaColecao($btnEl) {
+    $btnEl
+        .removeClass('btn-colecao-incluir edit-record')
+        .addClass('colecao-ja-incluida')
+        .attr('href', 'javascript:void(0);')
+        .removeAttr('data-obj')
+        .removeData('processing')
+        .attr('title', 'Incluído na Coleção')
+        .html('<i class="icon-base ri ri-archive-2-fill text-success icon-md me-2"></i>Incluído na Coleção');
+}
+
+// Troca o item do dropdown de "Tenho Interesse" para o estado "já marcado" - o
+// ícone (ri-eye-line) e o texto não mudam, só ganham a classe text-success.
+function fn_MarcarComoInteresseNaColecao($btnEl) {
+    $btnEl
+        .removeClass('btn-colecao-interesse edit-record')
+        .addClass('colecao-interesse-ja-incluida')
+        .attr('href', 'javascript:void(0);')
+        .removeAttr('data-obj')
+        .removeData('processing')
+        .attr('title', 'Já marcado como Tenho Interesse')
+        .find('i')
+        .addClass('text-success');
+}
+
+// Delegado (elementos são recriados a cada redraw do DataTable) - registrado uma
+// única vez para os dois estados de "Incluir na Coleção" e "Tenho Interesse".
+function fn_BindColecaoIncluirActions() {
+    $(document).on('click', '.colecao-ja-incluida', function (e) {
+        e.preventDefault();
+
+        Swal.fire({
+            title: 'Item já incluído!',
+            icon: 'info',
+            html: `<b>Este item j&aacute; faz parte da sua Cole&ccedil;&atilde;o.</b>`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-label-info waves-effect'
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-colecao-incluir', function (e) {
+        e.preventDefault();
+
+        const $btn = $(this);
+
+        // Trava contra duplo clique/duplo submit enquanto o AJAX ainda não respondeu.
+        if ($btn.data('processing')) return;
+
+        $btn.data('processing', true);
+
+        let obj;
+
+        try {
+            obj = JSON.parse(decodeURIComponent($btn.attr('data-obj')));
+        } catch (ex) {
+            $btn.removeData('processing');
+            return;
+        }
+
+        fnItem_Colecao(obj, 'ColecaoIncluir', $btn);
+    });
+
+    $(document).on('click', '.colecao-interesse-ja-incluida', function (e) {
+        e.preventDefault();
+
+        Swal.fire({
+            title: 'Item já marcado!',
+            icon: 'info',
+            html: `<b>Este item j&aacute; est&aacute; marcado como "Tenho Interesse" na sua Cole&ccedil;&atilde;o.</b>`,
+            focusConfirm: false,
+            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+            customClass: {
+                confirmButton: 'btn btn-label-info waves-effect'
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-colecao-interesse', function (e) {
+        e.preventDefault();
+
+        const $btn = $(this);
+
+        // Trava contra duplo clique/duplo submit enquanto o AJAX ainda não respondeu.
+        if ($btn.data('processing')) return;
+
+        $btn.data('processing', true);
+
+        let obj;
+
+        try {
+            obj = JSON.parse(decodeURIComponent($btn.attr('data-obj')));
+        } catch (ex) {
+            $btn.removeData('processing');
+            return;
+        }
+
+        fnItem_Colecao(obj, 'ColecaoInteresse', $btn);
+    });
 }
 
 //#endregion
