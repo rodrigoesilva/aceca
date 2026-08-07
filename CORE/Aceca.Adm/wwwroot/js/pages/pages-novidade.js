@@ -363,7 +363,7 @@ function fn_FiltrarDados() {
                 render: function (data, type, full) {
                     if (!data || full.Id === 0 || type !== 'display') return '';
 
-                    console.log("NomeFabrica data ::: ", data);
+                    //console.log("NomeFabrica data ::: ", data);
                     let nomeFabrica = (data === '' || data === null) ? full.TxtFabrica : data;
 
                     nomeFabrica = nomeFabrica?.trim()?.split(/\s+/).join("<br>");
