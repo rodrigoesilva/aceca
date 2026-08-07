@@ -372,7 +372,18 @@ function fn_ImageProtect() {
         _setDevToolsOpen(bySize || byTiming);
     }
 
-    setInterval(_devCheck, 800);
+    // Navegadores mobile "normais" (sem cabo + Web Inspector habilitado no Mac)
+    // não têm DevTools embutido — e as duas heurísticas acima disparam falso
+    // positivo justamente nesse ambiente: o teclado virtual encolhe o
+    // innerHeight (mesma assinatura de DevTools docked) e o iOS/Safari
+    // pausa/throttla a thread de JS em segundo plano, estourando o timing
+    // check sem nenhum DevTools envolvido. 'pointer: fine' só é true em
+    // dispositivos com mouse/trackpad — ambiente onde o F12 real existe.
+    var _isDesktopPointer = !!(window.matchMedia && window.matchMedia('(pointer: fine)').matches);
+
+    if (_isDesktopPointer) {
+        setInterval(_devCheck, 800);
+    }
 
     // ── variáveis de controle ─────────────────────────────────────────────────
 
