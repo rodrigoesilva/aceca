@@ -29,6 +29,7 @@ namespace Aceca.Adm.Controllers.Acervo
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
         private readonly IMemoryCache _cache;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         private readonly string _urlBaseImg = string.Empty;
         private readonly string _urlBaseSite = string.Empty;
@@ -61,16 +62,18 @@ namespace Aceca.Adm.Controllers.Acervo
         }
 
         public AcervoController(ILogger<AcervoController> logger,
-            AppDbContext db, 
-            IWebHostEnvironment env, 
+            AppDbContext db,
+            IWebHostEnvironment env,
             IConfiguration cfg,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IHttpClientFactory httpClientFactory)
         {
             _logger = logger;
             _db = db;
             _appEnvironment = env;
             _appConfiguration = cfg;
             _cache = cache;
+            _httpClientFactory = httpClientFactory;
 
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
@@ -330,21 +333,13 @@ namespace Aceca.Adm.Controllers.Acervo
                             @ImgDefault) AS ImgPrincipalFull,
 
                         m.ImgDetalhe,
-                        
-                        /*
+
+                        -- Caminho padrao (pasta /detalhes/ compartilhada). A resolucao do
+                        -- caminho especifico da fase (pasta {{MarcaFaseId}}/detalhes/) e feita
+                        -- em C# (FiltrarDados), checando se o arquivo realmente existe la.
                         IF(m.ImgDetalhe IS NOT NULL,
                             CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
-                            @ImgDefault) AS ImgDetalheFull
-                        */
-
-	                    CASE 
-                            WHEN m.ImgDetalhe IS NOT NULL THEN
-                                IF(mf.id = 36,
-                           		    COALESCE(CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),@ImgDefault),
-                           		    COALESCE(CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),@ImgDefault)
-                                )
-                            ELSE @ImgDefault
-	                    END AS ImgDetalheFull,
+                            @ImgDefault) AS ImgDetalheFull,
 
                         COALESCE(sc.possui, 0) AS Possui,
                         COALESCE(sc.interesse, 0) AS Interesse
@@ -364,14 +359,19 @@ namespace Aceca.Adm.Controllers.Acervo
 
                 var total = await conn.ExecuteScalarAsync<int>(totalSql);
                 var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
-                var data = await conn.QueryAsync(dataSql, parameters);
+
+                var lstData = (await conn.QueryAsync(dataSql, parameters))
+                    .Cast<IDictionary<string, object>>()
+                    .ToList();
+
+                await ResolverImgDetalheFasePorExistenciaAsync(lstData, imgBase);
 
                 return Ok(new
                 {
                     draw = request.Draw,
                     recordsTotal = total,
                     recordsFiltered = filtered,
-                    data
+                    data = lstData
                 });
             }
             catch (Exception ex)
@@ -382,39 +382,99 @@ namespace Aceca.Adm.Controllers.Acervo
             }
         }
 
+        // Para cada linha com ImgDetalhe, verifica se existe a imagem na pasta
+        // /{MarcaFaseId}/detalhes/ (padrão novo, por fase). Se existir, usa esse
+        // caminho; senão mantém o caminho padrão /detalhes/ já vindo do SQL.
+        private async Task ResolverImgDetalheFasePorExistenciaAsync(List<IDictionary<string, object>> lstData, string imgBase)
+        {
+            await Task.WhenAll(lstData.Select(async row =>
+            {
+                var imgDetalhe = row.TryGetValue("ImgDetalhe", out var imgDetalheObj) ? imgDetalheObj as string : null;
+
+                if (string.IsNullOrWhiteSpace(imgDetalhe))
+                    return;
+
+                var idMarcaFase = row.TryGetValue("IdMarcaFase", out var idMarcaFaseObj) ? idMarcaFaseObj : null;
+
+                if (idMarcaFase == null)
+                    return;
+
+                var urlImgDetalheFase = $"{imgBase}/{idMarcaFase}/detalhes/{imgDetalhe}";
+
+                if (await ExisteImagemAsync(urlImgDetalheFase))
+                    row["ImgDetalheFull"] = urlImgDetalheFase;
+            }));
+        }
+
+        // Checa (com cache) se a imagem existe no caminho informado via HTTP HEAD.
+        private async Task<bool> ExisteImagemAsync(string url)
+        {
+            var cacheKey = $"ImgExiste::{url}";
+
+            if (_cache.TryGetValue(cacheKey, out bool bExiste))
+                return bExiste;
+
+            try
+            {
+                using var client = _httpClientFactory.CreateClient();
+                using var request = new HttpRequestMessage(HttpMethod.Head, url);
+                using var response = await client.SendAsync(request);
+
+                bExiste = response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao checar existência de imagem em {Url}", url);
+
+                bExiste = false;
+            }
+
+            _cache.Set(cacheKey, bExiste, TimeSpan.FromMinutes(10));
+
+            return bExiste;
+        }
+
         #endregion
 
         #region Filtros
 
         [HttpPost]
-        public async Task<IActionResult> GetFullByIdFase(int id, string nome, bool bvariante)
+        public async Task<IActionResult> GetFullByIdFase(int idFase, string nome, bool bvariante)
         {
             string strNovoCodigoAceca = string.Empty;
 
-            if (id < 1 || string.IsNullOrWhiteSpace(nome))
+            if (idFase < 1 || string.IsNullOrWhiteSpace(nome))
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
                     message = "GetFullByIdFase - Id deve ser maior que 0",
-                    data = id
+                    data = idFase
                 });
 
             try
             {
-                var msgErroData = $"idMarcaFase :: {id} , NomeMarca :: {nome}";
+                EFase FaseSel = (EFase)idFase;
+
+                var msgErroData = $"idMarcaFase :: {idFase} , NomeMarca :: {nome}";
 
                 var strLetraInicial = nome.Trim()[0].ToString();
 
                 var query = _db.Marca
                     .AsNoTracking()
-                    .Where(x => x.MarcaFaseId.Equals(id));
+                    .Where(x => x.MarcaFaseId.Equals(idFase));
 
-                if (id.Equals(14) || (id >= 27 && id <= 29) || (id >= 32 && id <= 34) || id.Equals(36) || (id >= 39 && id <= 41))
-                    query = query.Where(x => x.CodigoAceca != null && x.Nome.Contains(nome.Trim().ToString()))
-                   // query = query.Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(nome.Trim()[0].ToString()))
+                if (FaseSel.Equals(EFase.SA)
+                    || (idFase >= 27 && idFase <= 29)
+                    || (idFase >= 32 && idFase <= 34)
+                    || FaseSel.Equals(EFase.Comemorativas)
+                    || (idFase >= 39 && idFase <= 41))
+                    {
+                        query = query.Where(x => x.CodigoAceca != null && x.Nome.Contains(nome.Trim().ToString()));
+                       // query = query.Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(nome.Trim()[0].ToString()))
+                   }
 
-                   .OrderByDescending(x => x.CodigoAceca);
+                query.OrderByDescending(x => x.CodigoAceca);
 
                 var lstModel = await query
                     .AsNoTracking()
@@ -1140,7 +1200,7 @@ namespace Aceca.Adm.Controllers.Acervo
                 }
                 else
                 {
-                    strCodigoAceca = idMarcaAcervo > 1 || (idMarcaAcervo.Equals((int)EAcervo.Geral) && !idFase.Equals((int)EFase.SA))
+                    strCodigoAceca = idMarcaAcervo > 1 || (idMarcaAcervo.Equals((int)EAcervo.Geral) && idFase > 14)
                         ? model?.CodigoAcecaNew?.ToString()?.Trim() 
                         : model?.CodigoAceca?.ToString()?.Trim();
 
