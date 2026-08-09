@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function fn_GridList(formValid) {
 
-    var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
+    var varLang_UrlTranslate = '/vendor/libs/datatables-bs5/i18n/pt-BR.json',
 
         varAjax_UrlController = `${var_Controller}/FiltrarDados`,
         varAjax_TypeAction = 'POST',
@@ -514,6 +514,24 @@ function fn_Masks() {
     $('.phone-mask').mask('(00) 00000-0000');
 }
 
+function fn_MaskDataAniversario(input) {
+    // Remove tudo que não for dígito (funciona tanto ao digitar quanto ao colar
+    // uma data completa, ex.: "23/02/1956", pois o evento "input" dispara nos dois casos)
+    let value = input.value.replace(/\D/g, '');
+
+    // Limita a 8 dígitos (DDMMYYYY)
+    value = value.substring(0, 8);
+
+    // Aplica a mascara DD/MM/YYYY
+    if (value.length > 4) {
+        value = value.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
+    } else if (value.length > 2) {
+        value = value.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+    }
+
+    input.value = value;
+}
+
 function fn_MaskCEP(input) {
     // Remove tudo que não for dígito
     let value = input.value.replace(/\D/g, '');
@@ -525,11 +543,73 @@ function fn_MaskCEP(input) {
     value = value.replace(/(\d{5})(\d)/, '$1-$2');
 
     input.value = value;
+
+    if (value.replace(/\D/g, '').length === 8) {
+        fn_BuscaEnderecoPorCep(value);
+    }
+}
+
+function fn_BuscaEnderecoPorCep(cep) {
+
+    const cepLimpo = cep.replace(/\D/g, '');
+
+    const popAddNewItem = document.querySelector('#pop-add-new-item');
+
+    // Usa fetch() nativo (nao $.ajax) de proposito: o ui-common.js faz
+    // $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': ... } }) globalmente para as
+    // chamadas do proprio backend, e esse header extra ia em toda chamada
+    // $.ajax - inclusive essa, para um dominio externo (viacep.com.br). Isso
+    // forcava um preflight CORS que a ViaCEP rejeita (nao libera esse header
+    // customizado), e a requisicao falhava com erro de CORS.
+    fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+        .then(function (response) {
+            if (!response.ok) throw new Error('Falha na consulta do CEP');
+
+            return response.json();
+        })
+        .then(function (result) {
+
+            if (!result || result.erro) {
+                Swal.fire({
+                    title: 'CEP n&atilde;o encontrado!!',
+                    icon: 'warning',
+                    html: `Preencha o endere&ccedil;o manualmente.`,
+                    focusConfirm: false,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: {
+                        confirmButton: 'btn btn-label-warning waves-effect'
+                    }
+                });
+
+                return;
+            }
+
+            popAddNewItem.querySelector('.dt-line-05').value = result.logradouro || '';
+            popAddNewItem.querySelector('.dt-line-08').value = result.bairro || '';
+            popAddNewItem.querySelector('.dt-line-10').value = result.localidade || '';
+
+            $("#cmb_SocioEstado").val(result.uf || '').trigger('change');
+
+            // Foca no numero para o usuario continuar o preenchimento
+            popAddNewItem.querySelector('.dt-line-06').focus();
+        })
+        .catch(function (erro) {
+            console.log("Falha ao consultar CEP via ViaCEP:", erro);
+        });
 }
 
 //#endregion
 
 //#region POP
+
+function fn_FormataDataAniversario(dia, mes, ano) {
+
+    if (!dia || !mes) return '';
+
+    const pad2 = (n) => String(n).padStart(2, '0');
+
+    return ano ? `${pad2(dia)}/${pad2(mes)}/${ano}` : `${pad2(dia)}/${pad2(mes)}`;
+}
 
 function fn_Pop(obj, action) {
     //console.log("fn_Pop varItems_Row !", obj);
@@ -556,7 +636,7 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-08').value = (obj === null ? '' : obj.Bairro)),
         (popAddNewItem.querySelector('.dt-line-09').value = (obj === null ? '' : obj.Estado)),
         (popAddNewItem.querySelector('.dt-line-10').value = (obj === null ? '' : obj.Cidade)),
-        (popAddNewItem.querySelector('.dt-line-11').value = (obj === null ? '' : `${obj.Dia} / ${obj.Mes}`)),
+        (popAddNewItem.querySelector('.dt-line-11').value = (obj === null ? '' : fn_FormataDataAniversario(obj.Dia, obj.Mes, obj.Ano))),
         (popAddNewItem.querySelector('.dt-line-12').checked = (obj === null ? true : obj.SocioAtivo));
         (popAddNewItem.querySelector('.dt-line-13').checked = (obj === null ? true : obj.MostrarSite));
 
@@ -841,7 +921,7 @@ function fnItem_Add(varTbl_Obj) {
         varAjax_TypeContent = 'application/json; charset=utf-8';
 
     const formData_newItem = fn_PopGetObj();
-    console.log("fnItem_Add formData_newItem ::: ", formData_newItem);
+    //console.log("fnItem_Add formData_newItem ::: ", formData_newItem);
 
     if (formData_newItem != '') {
 
@@ -856,7 +936,7 @@ function fnItem_Add(varTbl_Obj) {
                 // contentType: varAjax_TypeContent,
                 success: function (result) {
                     console.log("result  :: ", result);
-                    //console.log("result bResult :: ", result.bResult);
+                    console.log("result bResult :: ", result.bResult);
 
                     if (result.bResult) {
 
@@ -919,23 +999,33 @@ function fnItem_Add(varTbl_Obj) {
 //#region MODAL
 
 function fn_ModalErro(xhr, textStatus, errorThrown) {
-    const responseMessage = xhr.responseText;
-    console.log("Server Response:", responseMessage);
-
-    const objError = JSON.parse(xhr.responseText);
-    //console.log("Server msg:", obj.message);
-
+    console.log("Server Response:", xhr.responseText);
     console.log("XMLHttpRequest  :: ", xhr);
     console.log("textStatus  :: ", textStatus);
     console.log("errorThrown  :: ", errorThrown);
     console.log("result  :: Error while posting SendResult");
 
+    // Sempre esconde o loading e exibe o Swal, mesmo que a resposta de erro
+    // nao seja um JSON valido (ex.: pagina de erro HTML, timeout, requisicao
+    // abortada) - sem isso o JSON.parse podia estourar exception e travar o
+    // busyLoadFull aberto para sempre, sem nenhuma mensagem para o usuario.
     $.busyLoadFull("hide");
+
+    let mensagemErro = 'Ocorreu um erro inesperado, tente novamente.';
+
+    try {
+        const objError = JSON.parse(xhr.responseText);
+
+        if (objError?.message)
+            mensagemErro = objError.message;
+    } catch (e) {
+        console.log("Falha ao interpretar resposta de erro do servidor:", e);
+    }
 
     Swal.fire({
         title: 'OPS!!',
         icon: 'error',
-        html: `<b> Erro ocorrido <br><br>${objError.message}</b>`,
+        html: `<b> Erro ocorrido <br><br>${mensagemErro}</b>`,
         focusConfirm: false,
         confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
         customClass: {

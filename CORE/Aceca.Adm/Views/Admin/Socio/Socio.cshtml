@@ -140,7 +140,11 @@
             <div class="div-aniversario">
                 <h6 class="mb-3">Anivers&aacute;rio</h6>
                 <div class="div-aniversario-aniversario form-floating form-floating-outline">
-                    <input type="text" id="pop_line_item_11" class="form-control dt-calendar dt-line-11" name="pop_line_item_11" placeholder="DD/MM/YYYY" aria-label="Data de Anivers&aacute;rio" />
+                    @* data-date-format sobrescreve, só neste campo, o formato padrão
+                       "dd/mm" que o ui-common.js aplica a todo .dt-calendar do site -
+                       assim o datepicker (clique no calendário) continua funcionando e
+                       tanto a digitação quanto o paste reconhecem o ano. *@
+                    <input type="text" id="pop_line_item_11" class="form-control dt-calendar dt-line-11" name="pop_line_item_11" placeholder="DD/MM/YYYY" aria-label="Data de Anivers&aacute;rio" data-date-format="dd/mm/yyyy" maxlength="10" oninput="fn_MaskDataAniversario(this)" />
                     <label for="pop_line_item_11">Data de Anivers&aacute;rio</label>
                 </div>
             </div>

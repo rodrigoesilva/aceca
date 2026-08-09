@@ -121,7 +121,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                         sa.id AS SocioAniversarioId,
                         sa.dia AS Dia,
-                        sa.mes AS Mes
+                        sa.mes AS Mes,
+                        sa.ano AS Ano
 
                     {sqlFrom}
 
@@ -279,7 +280,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                         var newModel = new Models.Socio
                         {
-                            SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
+                            SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : (int)EPerfil.Socio,
                             Nome = model.Nome,
                             ImgAvatar = !string.IsNullOrEmpty(model.ImgAvatar) ? model.ImgAvatar : null,
                             MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
@@ -313,13 +314,13 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             {
                                 bResult = false,
                                 type = "ERRO",
-                                message = "Falha ao Cadastrar Socio Seguranca",
+                                message = ExtrairMensagemErro(resulCreateSocioSeguranca, "Falha ao Cadastrar Socio Seguranca"),
                                 data = model
                             });
 
                         var objJsonResulCreateSocioSegurancaReturnApi = ((ObjectResult)resulCreateSocioSeguranca).Value;
 
-                        var jObj = JObject.Parse(objJsonResulCreateSocioSegurancaReturnApi.ToString());
+                        var jObj = JObject.FromObject(objJsonResulCreateSocioSegurancaReturnApi);
 
                         var user = JsonConvert.DeserializeObject<SocioSeguranca>(jObj?.SelectToken("data")?.ToString());
 
@@ -337,7 +338,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             {
                                 bResult = false,
                                 type = "ERRO",
-                                message = "Falha ao Cadastrar Socio Contato",
+                                message = ExtrairMensagemErro(resulCreateSocioContato, "Falha ao Cadastrar Socio Contato"),
                                 data = model
                             });
 
@@ -357,7 +358,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             {
                                 bResult = false,
                                 type = "ERRO",
-                                message = "Falha ao Cadastrar Socio Contato",
+                                message = ExtrairMensagemErro(resulCreateSocioEndereco, "Falha ao Cadastrar Socio Endereco"),
                                 data = model
                             });
 
@@ -377,7 +378,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             {
                                 bResult = false,
                                 type = "ERRO",
-                                message = "Falha ao Cadastrar Socio Contato",
+                                message = ExtrairMensagemErro(resulCreateSocioAniversario, "Falha ao Cadastrar Socio Aniversario"),
                                 data = model
                             });
 
@@ -484,7 +485,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             message = "Falha ao Atualizar Socio"
                         });
 
-                    newModel.SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5; //socio
+                    newModel.SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : (int)EPerfil.Socio;
                     newModel.Nome = model.Nome;
                     newModel.ImgAvatar = model.ImgAvatar;
                     newModel.MostrarSite = model.MostrarSite != null ? model.MostrarSite : true;
@@ -564,12 +565,15 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     #region SocioAniversario
 
+                    var dataAniversarioEdit = ParseDataAniversario(model.DataAniversario);
+
                     var newModelSocioAniversario = new Models.SocioAniversario
                     {
                         Id = model.SocioAniversarioId,
                         SocioId = model.Id,
-                        Dia = !string.IsNullOrEmpty(model.DataAniversario) ? Convert.ToInt32(model.DataAniversario.Split("/")[0]) : null,
-                        Mes = !string.IsNullOrEmpty(model.DataAniversario) ? Convert.ToInt32(model.DataAniversario.Split("/")[1]) : null,
+                        Dia = dataAniversarioEdit.Dia,
+                        Mes = dataAniversarioEdit.Mes,
+                        Ano = dataAniversarioEdit.Ano,
                     };
 
                     _db.Entry(newModelSocioAniversario).State = EntityState.Modified;
@@ -687,6 +691,41 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         #endregion
 
         #region Socio Derivacao
+
+        // Os métodos Create_SocioXXX abaixo devolvem BadRequest com a mensagem real do
+        // erro (inclusive exceptions do banco) dentro de Value.message. Sem isso, o
+        // Create() principal mostrava sempre um texto genérico tipo "Falha ao Cadastrar
+        // Socio Contato", escondendo a causa real (ex.: violação de NOT NULL) do usuário.
+        private static string ExtrairMensagemErro(IActionResult resultado, string mensagemPadrao)
+        {
+            if (resultado is ObjectResult objResult && objResult.Value != null)
+            {
+                var mensagem = JObject.FromObject(objResult.Value)?["message"]?.ToString();
+
+                if (!string.IsNullOrEmpty(mensagem))
+                    return mensagem;
+            }
+
+            return mensagemPadrao;
+        }
+
+        // Aceita "DD/MM/YYYY" (e tambem "DD/MM" para nao quebrar dados antigos sem ano).
+        // TryParse em vez de Convert.ToInt32 direto no Split evita IndexOutOfRange/FormatException
+        // quando o campo vem parcialmente preenchido.
+        private static (int? Dia, int? Mes, int? Ano) ParseDataAniversario(string dataAniversario)
+        {
+            if (string.IsNullOrWhiteSpace(dataAniversario))
+                return (null, null, null);
+
+            var partes = dataAniversario.Split("/");
+
+            int? dia = partes.Length > 0 && int.TryParse(partes[0].Trim(), out var d) ? d : null;
+            int? mes = partes.Length > 1 && int.TryParse(partes[1].Trim(), out var m) ? m : null;
+            int? ano = partes.Length > 2 && int.TryParse(partes[2].Trim(), out var a) ? a : null;
+
+            return (dia, mes, ano);
+        }
+
         private async Task<IActionResult> Create_SocioSeguranca(VMSocio model)
         {
             try
@@ -752,7 +791,10 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 {
                     SocioId = model.Id,
                     DDI =  model.DDI > 0 ? model.DDI : 55,
-                    DDD =  !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt16(model.Telefone.Split(")")[0].Replace("(", string.Empty)) : null,
+                    // Coluna `ddd` e NOT NULL no banco (default 0) - manter null aqui
+                    // quando o telefone vem vazio faz o INSERT falhar com "Column 'ddd'
+                    // cannot be null".
+                    DDD =  !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt16(model.Telefone.Split(")")[0].Replace("(", string.Empty)) : 0,
                     Telefone = !string.IsNullOrEmpty(model.Telefone) ? Convert.ToInt32(model.Telefone.Split(")")[1].Replace("-", string.Empty)) : null,
                     Email = model?.Email?.Trim()?.ToLower(),
                 };
@@ -837,11 +879,14 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         {
             try
             {
+                var dataAniversario = ParseDataAniversario(model.DataAniversario);
+
                 var newModel = new SocioAniversario
                 {
                     SocioId = model.Id,
-                    Dia = !string.IsNullOrEmpty(model.DataAniversario) ? Convert.ToInt32(model.DataAniversario.Split("/")[0]) : null,
-                    Mes = !string.IsNullOrEmpty(model.DataAniversario) ? Convert.ToInt32(model.DataAniversario.Split("/")[1]) : null,
+                    Dia = dataAniversario.Dia,
+                    Mes = dataAniversario.Mes,
+                    Ano = dataAniversario.Ano,
                 };
 
                 _db.SocioAniversario.Add(newModel);

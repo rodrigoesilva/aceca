@@ -360,6 +360,7 @@ namespace Aceca.Adm.Models
         public int? SocioId { get; set; }
         public int? Dia { get; set; }
         public int? Mes { get; set; }
+        public int? Ano { get; set; }
 
         public Socio? Socio { get; set; }
     }

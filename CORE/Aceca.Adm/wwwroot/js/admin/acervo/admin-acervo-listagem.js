@@ -412,7 +412,7 @@ function fn_FiltrarDados() {
         varAjax_TypeData = 'JSON',
         varAjax_TypeContent = 'application/json; charset=utf-8';
 
-    var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
+    var varLang_UrlTranslate = '/vendor/libs/datatables-bs5/i18n/pt-BR.json',
 
         varCol_Exportar = [1, 2, 5, 6, 7, 8, 9],
         varCol_Ordenacao = [2, 'asc'], //set any columns order asc/desc (NomeMarca)
@@ -1557,23 +1557,33 @@ function fn_ModalSelecionarFase() {
 }
 
 function fn_ModalErro(xhr, textStatus, errorThrown) {
-    const responseMessage = xhr.responseText;
-    console.log("Server Response:", responseMessage);
-
-    const objError = JSON.parse(xhr.responseText);
-    //console.log("Server msg:", obj.message);
-
+    console.log("Server Response:", xhr.responseText);
     console.log("XMLHttpRequest  :: ", xhr);
     console.log("textStatus  :: ", textStatus);
     console.log("errorThrown  :: ", errorThrown);
     console.log("result  :: Error while posting SendResult");
 
+    // Sempre esconde o loading e exibe o Swal, mesmo que a resposta de erro
+    // nao seja um JSON valido (ex.: pagina de erro HTML, timeout, requisicao
+    // abortada) - sem isso o JSON.parse podia estourar exception e travar o
+    // busyLoadFull aberto para sempre, sem nenhuma mensagem para o usuario.
     $.busyLoadFull("hide");
+
+    let mensagemErro = 'Ocorreu um erro inesperado, tente novamente.';
+
+    try {
+        const objError = JSON.parse(xhr.responseText);
+
+        if (objError?.message)
+            mensagemErro = objError.message;
+    } catch (e) {
+        console.log("Falha ao interpretar resposta de erro do servidor:", e);
+    }
 
     Swal.fire({
         title: 'OPS!!',
         icon: 'error',
-        html: `<b> Erro ocorrido <br><br>${objError.message}</b>`,
+        html: `<b> Erro ocorrido <br><br>${mensagemErro}</b>`,
         focusConfirm: false,
         confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
         customClass: {

@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
 //#region GRID
 function fn_GridList(formValid) {
 
-    var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
+    var varLang_UrlTranslate = '/vendor/libs/datatables-bs5/i18n/pt-BR.json',
 
         varAjax_UrlController = `${var_Controller}/FiltrarDados`,
         varAjax_TypeAction = 'POST',

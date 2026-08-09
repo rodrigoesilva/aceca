@@ -57,14 +57,19 @@ $.busyLoadSetup({
 $(function () {
     var bsDatepickerFormat = $('.dt-calendar');
 
-    // Format
-    if (bsDatepickerFormat.length) {
-        bsDatepickerFormat.datepicker({
+    // Format - cada campo pode sobrescrever via atributo data-date-format
+    // (ex.: data-date-format="dd/mm/yyyy" para exibir/aceitar o ano). Sem isso
+    // o "format: 'dd/mm'" abaixo era aplicado a TODO campo .dt-calendar do site,
+    // sem chance de um campo específico usar um formato com ano.
+    bsDatepickerFormat.each(function () {
+        var elFormat = $(this).data('dateFormat') || 'dd/mm';
+
+        $(this).datepicker({
             autoclose: true,
             todayHighlight: true,
-            format: 'dd/mm',
+            format: elFormat,
             language: 'pt-BR',
             orientation: isRtl ? 'auto right' : 'auto left'
         });
-    }
+    });
 });
