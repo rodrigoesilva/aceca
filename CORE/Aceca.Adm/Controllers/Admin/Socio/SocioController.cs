@@ -235,182 +235,198 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     // login já criado mas sem contato/endereço, e o cliente via só um erro
                     // genérico como se nada tivesse sido salvo. Dispose sem Commit reverte
                     // tudo automaticamente em qualquer "return" antecipado.
-                    using var transaction = await _db.Database.BeginTransactionAsync();
+                    //
+                    // A transação precisa ser aberta dentro da execution strategy (o MySql
+                    // está com EnableRetryOnFailure) - abrir via BeginTransactionAsync direto
+                    // dispara "does not support user-initiated transactions", pois o EF não
+                    // sabe reexecutar uma transação manual em caso de retry.
+                    var strategy = _db.Database.CreateExecutionStrategy();
 
-                    #region Socio
-
-                    if (string.IsNullOrEmpty(model.Nome))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Nome deve ser preenchido"
-                        });
-
-                    if (string.IsNullOrEmpty(model?.Email))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Email deve ser preenchido"
-
-                        });
-
-                    if (!_helperController.IsValidEmailUsingMailAddress(model?.Email?.Trim()?.ToLower()))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Formato de E-mail Inválido"
-                        });
-
-                    var newModel = new Models.Socio
+                    // Tipo do delegate declarado explicitamente: com os vários "return
+                    // BadRequest(...)/Ok(...)" abaixo (tipos concretos diferentes), o
+                    // compilador não infere Task<IActionResult> sozinho e cai no overload
+                    // Func<Task> (erro CS8031: lambda async não pode retornar valor).
+                    Func<Task<IActionResult>> operation = async () =>
                     {
-                        SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
-                        Nome = model.Nome,
-                        ImgAvatar = !string.IsNullOrEmpty(model.ImgAvatar) ? model.ImgAvatar : null,
-                        MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
-                        Ativo = model.Ativo,
+                        using var transaction = await _db.Database.BeginTransactionAsync();
+
+                        #region Socio
+
+                        if (string.IsNullOrEmpty(model.Nome))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Nome deve ser preenchido"
+                            });
+
+                        if (string.IsNullOrEmpty(model?.Email))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Email deve ser preenchido"
+
+                            });
+
+                        if (!_helperController.IsValidEmailUsingMailAddress(model?.Email?.Trim()?.ToLower()))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Formato de E-mail Inválido"
+                            });
+
+                        var newModel = new Models.Socio
+                        {
+                            SocioPerfilId = model.SocioPerfilId = model.SocioPerfilId > 0 ? model.SocioPerfilId : 5, //socio
+                            Nome = model.Nome,
+                            ImgAvatar = !string.IsNullOrEmpty(model.ImgAvatar) ? model.ImgAvatar : null,
+                            MostrarSite = model.MostrarSite != null ? model.MostrarSite : true,
+                            Ativo = model.Ativo,
+                        };
+
+                        _db.Socio.Add(newModel);
+                        _db.SaveChanges();
+
+                        model.Id = newModel?.Id;
+
+                        if (newModel?.Id <= 0)
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Falha ao Cadastrar Socio"
+                            });
+
+                        #endregion
+
+                        #region SocioSeguranca
+
+                        var resulCreateSocioSeguranca = await Create_SocioSeguranca(model);
+
+                        if (resulCreateSocioSeguranca.GetType() == typeof(NotFoundObjectResult) ||
+                                   resulCreateSocioSeguranca.GetType() == typeof(NotFoundResult) ||
+                                   resulCreateSocioSeguranca.GetType() == typeof(BadRequestObjectResult) ||
+                                   resulCreateSocioSeguranca.GetType() == typeof(BadRequestResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Falha ao Cadastrar Socio Seguranca",
+                                data = model
+                            });
+
+                        var objJsonResulCreateSocioSegurancaReturnApi = ((ObjectResult)resulCreateSocioSeguranca).Value;
+
+                        var jObj = JObject.Parse(objJsonResulCreateSocioSegurancaReturnApi.ToString());
+
+                        var user = JsonConvert.DeserializeObject<SocioSeguranca>(jObj?.SelectToken("data")?.ToString());
+
+                        #endregion
+
+                        #region SocioContato
+
+                        var resulCreateSocioContato = await Create_SocioContato(model);
+
+                        if (resulCreateSocioContato.GetType() == typeof(NotFoundObjectResult) ||
+                                   resulCreateSocioContato.GetType() == typeof(NotFoundResult) ||
+                                   resulCreateSocioContato.GetType() == typeof(BadRequestObjectResult) ||
+                                   resulCreateSocioContato.GetType() == typeof(BadRequestResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Falha ao Cadastrar Socio Contato",
+                                data = model
+                            });
+
+                        var objJsonResulCreateSocioContatoReturnApi = ((ObjectResult)resulCreateSocioContato).Value;
+
+                        #endregion
+
+                        #region SocioEndereco
+
+                        var resulCreateSocioEndereco = await Create_SocioEndereco(model);
+
+                        if (resulCreateSocioEndereco.GetType() == typeof(NotFoundObjectResult) ||
+                                   resulCreateSocioEndereco.GetType() == typeof(NotFoundResult) ||
+                                   resulCreateSocioEndereco.GetType() == typeof(BadRequestObjectResult) ||
+                                   resulCreateSocioEndereco.GetType() == typeof(BadRequestResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Falha ao Cadastrar Socio Contato",
+                                data = model
+                            });
+
+                        var objJsonResulCreateSocioEnderecoReturnApi = ((ObjectResult)resulCreateSocioEndereco).Value;
+
+                        #endregion
+
+                        #region SocioAniversario
+
+                        var resulCreateSocioAniversario = await Create_SocioAniversario(model);
+
+                        if (resulCreateSocioAniversario.GetType() == typeof(NotFoundObjectResult) ||
+                                   resulCreateSocioAniversario.GetType() == typeof(NotFoundResult) ||
+                                   resulCreateSocioAniversario.GetType() == typeof(BadRequestObjectResult) ||
+                                   resulCreateSocioAniversario.GetType() == typeof(BadRequestResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Falha ao Cadastrar Socio Contato",
+                                data = model
+                            });
+
+                        var objJsonResulCreateSocioAniversarioReturnApi = ((ObjectResult)resulCreateSocioAniversario).Value;
+
+                        #endregion
+
+                        #region  Envio de Email
+
+                        var strToken = _helperController.GenerateSecuretToken();
+
+                        var trackedUser = await _db.SocioSeguranca.FirstOrDefaultAsync(x => x.Id == user.Id);
+                        if (trackedUser != null)
+                        {
+                            trackedUser.ResetPasswordToken = strToken;
+                            trackedUser.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
+                            await _db.SaveChangesAsync();
+                        }
+
+                        // Monta link de reset
+                        var resetLink = $"{_urlBaseApp}/Auth/NewRegistration?token={Uri.EscapeDataString(strToken)}&email={Uri.EscapeDataString(user.Email)}";
+
+                        // Envia e-mail
+                        var resultSendMail = await _helperController.EnviarEmailAsync(ETipoEmail.Cadastro, user.Email, model.Nome, resetLink);
+
+                        if (resultSendMail.GetType() == typeof(NotFoundObjectResult) ||
+                            resultSendMail.GetType() == typeof(BadRequestObjectResult))
+                            return BadRequest(new
+                            {
+                                bResult = false,
+                                type = "ERRO",
+                                message = "Falha no envido do E-mail",
+                                data = user.Email
+                            });
+
+                        #endregion
+
+                        await transaction.CommitAsync();
+
+                        return Ok(new
+                        {
+                            bResult = true,
+                            type = "OK",
+                            message = "E-mail enviado com sucesso",
+                            data = model,
+                        });
                     };
 
-                    _db.Socio.Add(newModel);
-                    _db.SaveChanges();
-
-                    model.Id = newModel?.Id;
-
-                    if (newModel?.Id <= 0)
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha ao Cadastrar Socio"
-                        });
-
-                    #endregion    
-
-                    #region SocioSeguranca
-
-                    var resulCreateSocioSeguranca = await Create_SocioSeguranca(model);
-
-                    if (resulCreateSocioSeguranca.GetType() == typeof(NotFoundObjectResult) ||
-                               resulCreateSocioSeguranca.GetType() == typeof(NotFoundResult) ||
-                               resulCreateSocioSeguranca.GetType() == typeof(BadRequestObjectResult) ||
-                               resulCreateSocioSeguranca.GetType() == typeof(BadRequestResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha ao Cadastrar Socio Seguranca",
-                            data = model
-                        });
-
-                    var objJsonResulCreateSocioSegurancaReturnApi = ((ObjectResult)resulCreateSocioSeguranca).Value;
-
-                    var jObj = JObject.Parse(objJsonResulCreateSocioSegurancaReturnApi.ToString());
-
-                    var user = JsonConvert.DeserializeObject<SocioSeguranca>(jObj?.SelectToken("data")?.ToString());
-
-                    #endregion
-
-                    #region SocioContato
-
-                    var resulCreateSocioContato = await Create_SocioContato(model);
-
-                    if (resulCreateSocioContato.GetType() == typeof(NotFoundObjectResult) ||
-                               resulCreateSocioContato.GetType() == typeof(NotFoundResult) ||
-                               resulCreateSocioContato.GetType() == typeof(BadRequestObjectResult) ||
-                               resulCreateSocioContato.GetType() == typeof(BadRequestResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha ao Cadastrar Socio Contato",
-                            data = model
-                        });
-
-                    var objJsonResulCreateSocioContatoReturnApi = ((ObjectResult)resulCreateSocioContato).Value;
-
-                    #endregion
-
-                    #region SocioEndereco
-
-                    var resulCreateSocioEndereco = await Create_SocioEndereco(model);
-
-                    if (resulCreateSocioEndereco.GetType() == typeof(NotFoundObjectResult) ||
-                               resulCreateSocioEndereco.GetType() == typeof(NotFoundResult) ||
-                               resulCreateSocioEndereco.GetType() == typeof(BadRequestObjectResult) ||
-                               resulCreateSocioEndereco.GetType() == typeof(BadRequestResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha ao Cadastrar Socio Contato",
-                            data = model
-                        });
-
-                    var objJsonResulCreateSocioEnderecoReturnApi = ((ObjectResult)resulCreateSocioEndereco).Value;
-
-                    #endregion
-
-                    #region SocioAniversario
-
-                    var resulCreateSocioAniversario = await Create_SocioAniversario(model);
-
-                    if (resulCreateSocioAniversario.GetType() == typeof(NotFoundObjectResult) ||
-                               resulCreateSocioAniversario.GetType() == typeof(NotFoundResult) ||
-                               resulCreateSocioAniversario.GetType() == typeof(BadRequestObjectResult) ||
-                               resulCreateSocioAniversario.GetType() == typeof(BadRequestResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha ao Cadastrar Socio Contato",
-                            data = model
-                        });
-
-                    var objJsonResulCreateSocioAniversarioReturnApi = ((ObjectResult)resulCreateSocioAniversario).Value;
-
-                    #endregion
-
-                    #region  Envio de Email
-
-                    var strToken = _helperController.GenerateSecuretToken();
-
-                    var trackedUser = await _db.SocioSeguranca.FirstOrDefaultAsync(x => x.Id == user.Id);
-                    if (trackedUser != null)
-                    {
-                        trackedUser.ResetPasswordToken = strToken;
-                        trackedUser.ResetPasswordTokenExpiry = DateTime.UtcNow.AddHours(24);
-                        await _db.SaveChangesAsync();
-                    }
-
-                    // Monta link de reset
-                    var resetLink = $"{_urlBaseApp}/Auth/NewRegistration?token={Uri.EscapeDataString(strToken)}&email={Uri.EscapeDataString(user.Email)}";
-
-                    // Envia e-mail
-                    var resultSendMail = await _helperController.EnviarEmailAsync(ETipoEmail.Cadastro, user.Email, model.Nome, resetLink);
-
-                    if (resultSendMail.GetType() == typeof(NotFoundObjectResult) ||
-                        resultSendMail.GetType() == typeof(BadRequestObjectResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha no envido do E-mail",
-                            data = user.Email
-                        });
-
-                    #endregion
-
-                    await transaction.CommitAsync();
-
-                    return Ok(new
-                    {
-                        bResult = true,
-                        type = "OK",
-                        message = "E-mail enviado com sucesso",
-                        data = model,
-                    });
+                    return await strategy.ExecuteAsync(operation);
                 }
 
                 return BadRequest(new
@@ -625,24 +641,32 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 // Remove os registros relacionados explicitamente - sem FK cascade
                 // configurada no banco, excluir só a linha de "socios" falhava por
                 // violação de FK (ou deixava órfãos, se a constraint fosse permissiva).
-                using var transaction = await _db.Database.BeginTransactionAsync();
+                //
+                // Transação aberta dentro da execution strategy (MySql com
+                // EnableRetryOnFailure) - ver comentário equivalente em Create().
+                var strategy = _db.Database.CreateExecutionStrategy();
 
-                _db.SocioContato.RemoveRange(_db.SocioContato.Where(x => x.SocioId == id));
-                _db.SocioEndereco.RemoveRange(_db.SocioEndereco.Where(x => x.SocioId == id));
-                _db.SocioAniversario.RemoveRange(_db.SocioAniversario.Where(x => x.SocioId == id));
-                _db.SocioFinanceiro.RemoveRange(_db.SocioFinanceiro.Where(x => x.SocioId == id));
-                _db.SocioSeguranca.RemoveRange(_db.SocioSeguranca.Where(x => x.SocioId == id));
-                _db.Socio.Remove(model);
-
-                await _db.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return Ok(new
+                return await strategy.ExecuteAsync(async () =>
                 {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = model,
+                    using var transaction = await _db.Database.BeginTransactionAsync();
+
+                    _db.SocioContato.RemoveRange(_db.SocioContato.Where(x => x.SocioId == id));
+                    _db.SocioEndereco.RemoveRange(_db.SocioEndereco.Where(x => x.SocioId == id));
+                    _db.SocioAniversario.RemoveRange(_db.SocioAniversario.Where(x => x.SocioId == id));
+                    _db.SocioFinanceiro.RemoveRange(_db.SocioFinanceiro.Where(x => x.SocioId == id));
+                    _db.SocioSeguranca.RemoveRange(_db.SocioSeguranca.Where(x => x.SocioId == id));
+                    _db.Socio.Remove(model);
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return (IActionResult)Ok(new
+                    {
+                        bResult = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = model,
+                    });
                 });
             }
             catch (Exception ex)
