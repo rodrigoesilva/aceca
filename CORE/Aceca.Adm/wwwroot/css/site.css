@@ -7,4 +7,33 @@
 .custom_text {
     font-family: 'AcecaFont', Arial, sans-serif;
 }
-		
+
+/* Larguras específicas do offcanvas de Agenda no desktop (Agenda.cshtml / AgendaImagem.cshtml).
+   Abaixo de 576px essas larguras somem por conta da regra de mobile abaixo. */
+@media (min-width: 576px) {
+    .offcanvas-w-50 {
+        width: 50%;
+    }
+
+    .offcanvas-w-25 {
+        width: 25%;
+    }
+}
+
+/* Painéis de Adicionar/Editar (offcanvas) legíveis em celular: o Bootstrap não limita
+   a largura de .offcanvas.offcanvas-end/-start a 100% da tela (só faz isso nas variantes
+   -sm/-md/-lg, que não são usadas aqui), então o padrão de 400px - e os overrides em % acima -
+   ultrapassam a viewport em qualquer aparelho com menos de 400px de largura útil. */
+@media (max-width: 575.98px) {
+    .offcanvas.offcanvas-end,
+    .offcanvas.offcanvas-start {
+        width: 100% !important;
+    }
+}
+
+/* Botão "Exportar" dos grids DataTables: perfil Administracao vê em qualquer tela; os demais
+   perfis (Fundador/MembroHonra/Socio) só veem na tela de SocioColecao. A classe .no-export é
+   decidida no servidor (Views/Shared/_CommonMasterLayout.cshtml) e aplicada ao <body>. */
+body.no-export .dt-export-btn {
+    display: none !important;
+}

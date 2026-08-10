@@ -110,6 +110,7 @@ function fn_GridList(formValid) {
                     targets: 0,
                     className: 'control',
                     visible: false,
+                    responsivePriority: 1,
                     render: function (data, type, full, meta) {
                         return '';
                     }
@@ -131,12 +132,14 @@ function fn_GridList(formValid) {
                 {
                     data: 'NomeSocio',
                     targets: 2,
+                    responsivePriority: 2,
                 },
                 // COLUNA - Endereco (render.text() escapa HTML - evita XSS armazenado
                 // em campo de texto livre preenchido pelo admin no cadastro)
                 {
                     data: 'Endereco',
                     targets: 3,
+                    responsivePriority: 10004,
                     render: $.fn.dataTable.render.text(),
                 },
                 // COLUNA - numero
@@ -144,23 +147,27 @@ function fn_GridList(formValid) {
                     data: 'Numero',
                     targets: 4,
                     className: "text-center",
+                    responsivePriority: 10005,
                 },
                 // COLUNA - complemento
                 {
                     data: 'Complemento',
                     targets: 5,
+                    responsivePriority: 10006,
                     render: $.fn.dataTable.render.text(),
                 },
                 // COLUNA - bairro
                 {
                     data: 'Bairro',
                     targets: 6,
+                    responsivePriority: 10007,
                     render: $.fn.dataTable.render.text(),
                 },
                 // COLUNA - cidade
                 {
                     data: 'Cidade',
                     targets: 7,
+                    responsivePriority: 10008,
                     render: $.fn.dataTable.render.text(),
                 },
                 // COLUNA - estado
@@ -168,18 +175,21 @@ function fn_GridList(formValid) {
                     data: 'Estado',
                     targets: 8,
                     className: "text-center",
+                    responsivePriority: 10009,
                 },
                 // COLUNA - cep
                 {
                     data: 'Cep',
                     targets: 9,
                     className: "text-center",
+                    responsivePriority: 10010,
                 },
                 // COLUNA - Status
                 {
                     targets: -2,
                     data: 'SocioAtivo',
                     className: "text-center",
+                    responsivePriority: 4,
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -211,6 +221,7 @@ function fn_GridList(formValid) {
                     className: "text-center",
                     orderable: false,
                     searchable: false,
+                    responsivePriority: 3,
                     render: function (data, type, full, meta) {
 
                         let btns = '';
@@ -250,7 +261,7 @@ function fn_GridList(formValid) {
             buttons: [
                 {
                     extend: 'collection',
-                    className: 'btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
+                    className: 'dt-export-btn btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
                     text: '<i class="ri-external-link-line me-sm-1"></i> <span class="d-none d-sm-inline-block">Exportar</span>',
                     buttons: [
                         // BOTAO CABECALHO - EXPORTAR - IMPRIMIR

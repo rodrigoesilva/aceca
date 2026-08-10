@@ -5,6 +5,15 @@
   ViewData["frontVar"] = isFront ? "Front" : "";
   @* Compact/Fluid class *@
     ViewData["contentType"] = ViewData["container"] is string container && container == "container-xxl" ? "layout-wide" : "layout-wide";
+
+    // Botão Exportar dos grids DataTables: só o perfil Administracao vê em qualquer tela;
+    // demais perfis (Fundador/MembroHonra/Socio) só o veem na tela de SocioColecao
+    // (Controllers/Pages/SocioColecaoController, aberto a todos os quatro perfis). Vira
+    // classe no body (ViewData, pois é usada em outra seção da página) e é lida via CSS (dt-export-btn).
+    string bodyControllerName = ViewContext.RouteData.Values["controller"] as string ?? "";
+    bool bCanExport = ViewContext.HttpContext.User?.IsInRole("Administracao") == true
+        || bodyControllerName.Equals("SocioColecao", StringComparison.OrdinalIgnoreCase);
+    ViewData["bodyExportClass"] = bCanExport ? "" : "no-export";
 }
 
 @inject IHttpContextAccessor httpContextAccessor
@@ -17,7 +26,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   @{
         @* Título: cada view pode sobrescrever setando ViewData["Title"]; sem isso, cai no
@@ -52,7 +61,7 @@
   @await Html.PartialAsync("Sections/_ScriptsIncludes" + ViewData["frontVar"])
 </head>
 
-<body>
+<body class="@ViewData["bodyExportClass"]">
   @* Token CSRF único por página, lido pelo ui-common.js e enviado como header
      (X-CSRF-TOKEN) em toda chamada AJAX - ver [ValidateAntiForgeryToken] nos
      controllers de escrita. *@

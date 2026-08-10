@@ -414,7 +414,7 @@ function fn_ImageProtect() {
         e.preventDefault();
         e.stopPropagation();
         if (tag === 'IMG' && $(e.target).is(SEL)) {
-            _reportar(e.target, 'contextmenu');
+            _reportar(e.target, 'Uso botão direito');
             _swalAviso();
         }
     }, true);

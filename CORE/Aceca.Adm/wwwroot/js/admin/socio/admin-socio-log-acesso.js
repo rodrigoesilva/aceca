@@ -101,6 +101,7 @@ function fn_GridList(formValid) {
                     targets: 0,
                     className: 'control',
                     visible: false,
+                    responsivePriority: 1,
                     render: function (data, type, full, meta) {
                         return '';
                     }
@@ -122,12 +123,14 @@ function fn_GridList(formValid) {
                 {
                     data: 'NomeSocio',
                     targets: 2,
+                    responsivePriority: 2,
                 },
                 // COLUNA - Endereco socio
                 {
                     data: 'EnderecoCidade',
                     targets: 3,
                     className: "text-center",
+                    responsivePriority: 10004,
                     render: function (data, type, full) {
                         let id = full.Id;
 
@@ -147,6 +150,7 @@ function fn_GridList(formValid) {
                     data: 'OrigemCidade',
                     targets: 4,
                     className: "text-center",
+                    responsivePriority: 10005,
                     render: function (data, type, full) {
                         let id = full.Id;
 
@@ -166,6 +170,7 @@ function fn_GridList(formValid) {
                     data: 'Browser',
                     targets: 5,
                     className: "text-center",
+                    responsivePriority: 10006,
 
                     render: function (data, type, full) {
                         let id = full.Id;
@@ -186,18 +191,21 @@ function fn_GridList(formValid) {
                     data: 'Ip',
                     targets: 6,
                     className: "text-center",
+                    responsivePriority: 10007,
                 },
                 // COLUNA - Operadora
                 {
                     data: 'Operadora',
                     targets: 7,
                     className: "text-center",
+                    responsivePriority: 10008,
                 },
                 // COLUNA - Ultimo Login
                 {
                     data: 'UltimoLogin',
                     targets: 8,
                     className: "text-center",
+                    responsivePriority: 3,
                     render: function (data, type, full) {
                         let id = full.Id;
 
@@ -217,6 +225,7 @@ function fn_GridList(formValid) {
                 {
                     targets: -2,
                     data: 'SocioAtivo',
+                    responsivePriority: 4,
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -256,7 +265,7 @@ function fn_GridList(formValid) {
             buttons: [
                 {
                     extend: 'collection',
-                    className: 'btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
+                    className: 'dt-export-btn btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
                     text: '<i class="ri-external-link-line me-sm-1"></i> <span class="d-none d-sm-inline-block">Exportar</span>',
                     buttons: [
                         // BOTAO CABECALHO - EXPORTAR - IMPRIMIR

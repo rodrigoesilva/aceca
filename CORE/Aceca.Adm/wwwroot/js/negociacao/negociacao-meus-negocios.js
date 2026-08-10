@@ -490,7 +490,7 @@ function fn_FiltrarDados() {
         buttons: [
             {
                 extend: 'collection',
-                className: 'btnExport export-data btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
+                className: 'dt-export-btn btnExport export-data btn btn-label-primary dropdown-toggle me-4 waves-effect waves-light border-none',
                 text: '<i class="ri-external-link-line me-sm-1"></i> <span class="d-none d-sm-inline-block">Exportar</span>',
                 buttons: [
                     // BOTAO CABECALHO - EXPORTAR - IMPRIMIR
