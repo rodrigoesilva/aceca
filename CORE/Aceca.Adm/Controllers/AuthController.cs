@@ -154,6 +154,48 @@ namespace Aceca.Adm.Controllers
         }
 
         /// <summary>
+        /// Situação financeira (socio_financeiro) da tela "Meus Dados" -&gt; Financeiro, sempre
+        /// do sócio autenticado. Só projeta o que existe de fato na tabela - não há valor/
+        /// preço de plano cadastrado em lugar nenhum do sistema, então esse cálculo (data de
+        /// vencimento, dias restantes) é feito no front com a mesma regra de
+        /// SocioFinanceiroCheckService (TipoPagamentoId 2/3/4 = Anual/Semestral/Mensal).
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetInfoFinanceira()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var financeiro = await _db.SocioFinanceiro
+                    .Where(f => f.SocioId == socioId)
+                    .Select(f => new
+                    {
+                        tipoPagamentoId = f.TipoPagamentoId,
+                        tipoPagamento = f.TipoPagamento.Descricao,
+                        pagamentoEmDia = f.PagamentoEmDia,
+                        dataUltimoPagamento = f.DataUltimoPagamento,
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (financeiro == null)
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Nenhuma informação financeira encontrada" });
+
+                return Ok(new { bResult = true, type = "OK", data = financeiro });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetInfoFinanceira));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Dados de "Sobre" da tela Meu Perfil - sempre do sócio autenticado (nunca de um id
         /// vindo do cliente, mesma trava de IDOR usada em SocioColecaoController), pra evitar
         /// que qualquer sócio logado consiga ler nome/telefone/e-mail/endereço de outro sócio

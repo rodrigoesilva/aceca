@@ -26,7 +26,6 @@
 }
 
 @section PageScripts {
-  <script src="~/js/pages-pricing.js"></script>
     <script src="~/js/auth/pages-auth-account-settings-financeiro.js"></script>
 }
 
@@ -47,36 +46,35 @@
         <div class="row">
           <div class="col-md-6 mb-1">
             <div class="mb-6">
-                            <h6 class="mb-1">Seu plano atual é o NOME DO PLANO</h6>
-                            <p>Um começo simples para todos</p>
+                            <h6 class="mb-1">Seu plano atual é o <span id="fin_TipoPagamento">-</span></h6>
+                            <p id="fin_Cadencia">-</p>
             </div>
             <div class="mb-6">
-              <h6 class="mb-1">Ativo Desde DATA DO ULTIMO PAGAMENTO</h6>
-                            <p>Enviaremos uma notificação assim que a assinatura expirar</p>
+              <h6 id="fin_AtivoDesde" class="mb-1">-</h6>
+                            <p id="fin_Vencimento">-</p>
             </div>
             <div>
-              <h6 class="mb-1"><span class="me-1">$199 Per Month</span> <span class="badge bg-label-primary rounded-pill">Popular</span></h6>
-                            <p class="mb-1">Plano padrão para pequenas e médias empresas</p>
+              <h6 class="mb-1"><span class="me-1">Situação do Pagamento</span> <span id="fin_StatusBadge" class="badge bg-label-secondary rounded-pill">-</span></h6>
+                            <p id="fin_UltimoPagamentoTexto" class="mb-1">-</p>
             </div>
           </div>
           <div class="col-md-6">
-            <div class="alert alert-warning mb-6 alert-dismissible" role="alert">
+            <div id="fin_AlertWrapper" class="alert alert-warning mb-6 alert-dismissible" role="alert">
               <h5 class="alert-heading mb-1 d-flex align-items-center">
                 <span class="alert-icon rounded"><i class="ri-alert-line ri-22px"></i></span>
-                                <span>Precisamos da sua atenção!</span>
+                                <span id="fin_AlertTitulo">Precisamos da sua atenção!</span>
               </h5>
-                            <span class="ms-11 ps-1">Seu plano precisa ser atualizado</span>
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="close"></button>
+                            <span id="fin_AlertTexto" class="ms-11 ps-1">-</span>
             </div>
-            <div class="plan-statistics">
+            <div id="fin_StatisticsWrapper" class="plan-statistics">
               <div class="d-flex justify-content-between">
                 <h6 class="mb-1">Dias</h6>
-                <h6 class="mb-1">12 of 30 Days</h6>
+                <h6 id="fin_DiasLabel" class="mb-1">-</h6>
               </div>
-              <div class="progress rounded mb-1">
-                <div class="progress-bar w-25 rounded" role="progressbar" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+              <div class="progress rounded mb-1" style="height: 38px;">
+                <div id="fin_ProgressBar" class="progress-bar rounded" role="progressbar" style="width: 0%; font-size: 0.9375rem; font-weight: 500; line-height: 1.375;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
               </div>
-                            <small>Faltam 18 dias para que seu plano precise ser atualizado</small>
+                            <small id="fin_DiasRestantesTexto">-</small>
             </div>
           </div>
           <div class="col-12 d-flex gap-2 mt-6 flex-wrap">
