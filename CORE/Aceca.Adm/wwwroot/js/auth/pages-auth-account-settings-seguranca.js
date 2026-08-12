@@ -4,16 +4,26 @@
 
 'use strict';
 
+//#region Declare
+
+let var_Nome = 'Auth',
+    var_Controller = '/Auth';
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
+
+//#endregion
+
+//#region CARREGAMENTO INICIAL
 
 document.addEventListener('DOMContentLoaded', function () {
     (function () {
-        // O toggle de mostrar/ocultar senha (.form-password-toggle) já é tratado
-        // globalmente por vendor/js/helpers.js, carregado em todas as páginas.
+        console.log(`AUTH USER SEGURANCA - Todos os recursos terminaram o carregamento!`);
+
         fn_WireTrocaSenha();
         fn_PopularGridAcessos();
     })();
 });
+
+//#endregion
 
 //#region TROCA DE SENHA
 
@@ -83,7 +93,7 @@ function fn_WireTrocaSenha() {
         $.busyLoadFull("show");
 
         $.ajax({
-            url: '/Auth/UpdatePassword',
+            url: `${var_Controller}/UpdatePassword`,
             type: 'POST',
             data: { currentPassword, newPassword, confirmPassword },
             success: function (response) {
