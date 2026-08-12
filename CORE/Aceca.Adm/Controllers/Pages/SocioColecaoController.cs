@@ -137,9 +137,9 @@ namespace Aceca.Adm.Controllers.Pages
                                 sqlFrom.Append(" AND sc.possui = true");
                             }
                             break;
-                        case EColecaoStatus.Interesse:
+                        case EColecaoStatus.Favorito:
                             {
-                                sqlFrom.Append(" AND sc.interesse  = true");
+                                sqlFrom.Append(" AND sc.favorito  = true");
                             }
                             break;
                         case EColecaoStatus.DisponivelNegocio:
@@ -303,7 +303,7 @@ namespace Aceca.Adm.Controllers.Pages
                         mf.id AS IdMarcaFase,
 
                         sc.possui, 
-                        sc.interesse,  
+                        sc.favorito,  
                         sc.disponivel_negocio,  
                         s.nome AS NomeSocio,
 
@@ -384,11 +384,18 @@ namespace Aceca.Adm.Controllers.Pages
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ActionColecao(int itemColecaoId, int marcaId, int actionId, int socioId, bool isPerfil, string itemColecaoObs, bool disponivelNegocio = false)
+        public async Task<IActionResult> ActionColecao(int itemColecaoId, int marcaId, string actionId, int socioId, bool isPerfil, string itemColecaoObs, bool disponivelNegocio = false)
         {
             try
             {
-                if (actionId < 0)
+                // actionId chega como o nome do membro do enum (ex.: "ColecaoFavorito"), não
+                // mais como número - o JS manda o mesmo texto usado nos data-attribute/CSS
+                // das telas, então não existe um segundo mapeamento texto->número duplicado
+                // em cada tela que precisaria ser mantido manualmente em sincronia com este
+                // enum (era exatamente esse mapeamento duplicado que, com o rename de
+                // Interesse para Favorito, gerou um "ColecaFavorito" digitado errado em uma
+                // das telas sem que nada avisasse).
+                if (!Enum.TryParse<EColecaoAcao>(actionId, ignoreCase: true, out var acao))
                     return BadRequest("ActionId inválido");
 
                 // socioId do parâmetro vem do cliente e não é confiável (IDOR) - o dono da
@@ -400,16 +407,16 @@ namespace Aceca.Adm.Controllers.Pages
 
                 IActionResult response;
 
-                switch ((EColecaoAcao)actionId)
+                switch (acao)
                 {
                     case EColecaoAcao.ColecaoDelete:
                         response = await RemoverItemAsync(itemColecaoId, socioIdAutenticado);
                         break;
                     case EColecaoAcao.ColecaoIncluir:
-                    case EColecaoAcao.ColecaoInteresse:
+                    case EColecaoAcao.ColecaoFavorito:
                     case EColecaoAcao.ColecaoNegociar:
                     case EColecaoAcao.ColecaoObs:
-                        response = await AdicionarOuAtualizarItemAsync(marcaId, socioIdAutenticado, (EColecaoAcao)actionId, disponivelNegocio, itemColecaoObs);
+                        response = await AdicionarOuAtualizarItemAsync(marcaId, socioIdAutenticado, acao, disponivelNegocio, itemColecaoObs);
                         break;
                     default:
                         return BadRequest(new
@@ -441,7 +448,7 @@ namespace Aceca.Adm.Controllers.Pages
         }
 
         /// <summary>
-        /// Cada ação altera exclusivamente o seu próprio flag (Possui / Interesse / DisponivelNegocio).
+        /// Cada ação altera exclusivamente o seu próprio flag (Possui / Favorito / DisponivelNegocio).
         /// ColecaoObs apenas atualiza Observação/DisponivelNegocio (edição do modal), sem alternar
         /// nenhum outro estado da coleção.
         /// </summary>
@@ -462,7 +469,7 @@ namespace Aceca.Adm.Controllers.Pages
                         SocioId = socioId,
                         MarcaId = marcaId,
                         Possui = acao == EColecaoAcao.ColecaoIncluir,
-                        Interesse = acao == EColecaoAcao.ColecaoInteresse,
+                        Favorito = acao == EColecaoAcao.ColecaoFavorito,
                         DisponivelNegocio = acao == EColecaoAcao.ColecaoNegociar
                             || (acao == EColecaoAcao.ColecaoObs && disponivelNegocio),
                         Observacao = !string.IsNullOrWhiteSpace(itemColecaoObs) ? itemColecaoObs.Trim() : null
@@ -477,12 +484,12 @@ namespace Aceca.Adm.Controllers.Pages
                         case EColecaoAcao.ColecaoIncluir:
                             model.Possui = !model.Possui;
 
-                            // Ao incluir na coleção, o item deixa de estar como "Tenho Interesse".
+                            // Ao incluir na coleção, o item deixa de estar como "Favorito".
                             if (model.Possui)
-                                model.Interesse = false;
+                                model.Favorito = false;
                             break;
-                        case EColecaoAcao.ColecaoInteresse:
-                            // Item já incluído na coleção - não faz sentido marcar interesse
+                        case EColecaoAcao.ColecaoFavorito:
+                            // Item já incluído na coleção - não faz sentido marcar Favorito
                             // nele. Bloqueia antes de tocar no registro.
                             if (model.Possui)
                             {
@@ -494,7 +501,7 @@ namespace Aceca.Adm.Controllers.Pages
                                 });
                             }
 
-                            model.Interesse = !model.Interesse;
+                            model.Favorito = !model.Favorito;
                             break;
                         case EColecaoAcao.ColecaoNegociar:
                             model.DisponivelNegocio = !model.DisponivelNegocio;

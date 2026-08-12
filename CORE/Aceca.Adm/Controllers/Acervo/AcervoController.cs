@@ -53,7 +53,7 @@ namespace Aceca.Adm.Controllers.Acervo
         #endregion
 
         // O socioId autenticado é usado só para marcar quais itens já estão na
-        // coleção do usuário logado (flags Possui/Interesse) - nunca vem do cliente.
+        // coleção do usuário logado (flags Possui/Favorito) - nunca vem do cliente.
         private int GetSocioIdAutenticado()
         {
             var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -342,7 +342,7 @@ namespace Aceca.Adm.Controllers.Acervo
                             @ImgDefault) AS ImgDetalheFull,
 
                         COALESCE(sc.possui, 0) AS Possui,
-                        COALESCE(sc.interesse, 0) AS Interesse
+                        COALESCE(sc.favorito, 0) AS Favorito
 
                     {sqlFrom}
 

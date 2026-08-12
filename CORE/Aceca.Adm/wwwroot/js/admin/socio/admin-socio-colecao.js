@@ -455,18 +455,19 @@ function fn_FiltrarDados() {
 
                     if (full?.possui) {
                         btn+= `<a href="javascript:fn_Pop(${itemObjJson});" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect" data-bs-toggle="tooltip" title="Editar Observação"><i class="ri-edit-box-line ri-22px"></i></a>
-                            <a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete');" class="btn btn-sm btn-icon btn-text-danger rounded-pill waves-effect delete-record" data-bs-toggle="tooltip" title="Remover da Coleção"><i class="ri-delete-bin-7-line ri-22px"></i></a>
-                            <a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNegociar');" class="btn btn-sm btn-icon btn-text-${(full?.disponivel_negocio ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Para Negociação"><i class="ri-shopping-cart-2-line ri-22px"></i></a>`
+                            <a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoDelete');" class="btn btn-sm btn-icon btn-text-danger rounded-pill waves-effect delete-record" data-bs-toggle="tooltip" title="Remover da Coleção"><i class="ri-delete-bin-7-line ri-22px"></i></a>`
+                            //<a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNegociar');" class="btn btn-sm btn-icon btn-text-${(full?.disponivel_negocio ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Para Negociação"><i class="ri-shopping-cart-2-line ri-22px"></i></a>`
+                            
                     };
 
                     if (idColecaoStatus < 3 && !full?.possui) {
-                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Tenho Interesse"><i class="ri-eye-line ri-22px"></i></a>`
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoFavorito');" class="btn btn-sm btn-icon btn-text-${(full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Meus Favoritos"><i class="ri-shield-star-line ri-22px"></i></a>`
                     }
 
-                    if (idColecaoStatus < 3 && full?.interesse) {
-                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-${(!full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
+                    if (idColecaoStatus < 3 && full?.favorito) {
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-${(!full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
                     }
-                            //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoInteresse' : 'ColecaoIncluir')});" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Tenho Interesse' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
+                            //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoFavorito' : 'ColecaoIncluir')});" class="btn btn-sm btn-icon btn-text-${(full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Favorito' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
                             
                     btn += '</div>'
 
@@ -1293,8 +1294,7 @@ function fnItem_Colecao(obj, action) {
 
     let itemColecaoId = obj?.Id;
     let itemColecaoObs = obj?.Observacao;
-    let marcaId = obj?.IdMarca;    
-    let actionId = -1;
+    let marcaId = obj?.IdMarca;
     const socioId = document.getElementById('hdSocioLogadoId').value;
 
     //console.log("fnItem_Colecao socioId::: ", socioId);
@@ -1317,26 +1317,6 @@ function fnItem_Colecao(obj, action) {
         });
     } else {
 
-        switch (action) {
-            case 'ColecaoDelete':
-                actionId = 0;
-                break;
-            case 'ColecaoIncluir':
-                actionId = 1;
-                break;
-            case 'ColecaoInteresse':
-                actionId = 2;
-                break;
-            case 'ColecaoNegociar':
-                actionId = 3;
-                break;
-            case 'ColecaoObs':
-                actionId = 4;
-                break;
-            default:
-                actionId = -1;
-        }
-
         $.busyLoadFull("show");
 
         $.ajax({
@@ -1346,7 +1326,10 @@ function fnItem_Colecao(obj, action) {
             data: {
                 itemColecaoId: itemColecaoId,
                 marcaId: marcaId,
-                actionId: actionId,
+                // Manda o nome da ação (bate com o enum EColecaoAcao no controller) em vez
+                // de traduzir pra um número aqui - evita manter, nesta e em cada outra tela,
+                // um mapeamento texto->número separado que pode ficar dessincronizado do enum.
+                actionId: action,
                 socioId: socioId,
                 isPerfil: document.getElementById('hdIsPerfil').value,
                 itemColecaoObs: itemColecaoObs,

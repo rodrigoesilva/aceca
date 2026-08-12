@@ -474,7 +474,7 @@ namespace Aceca.Adm.Models
         public int? SocioId { get; set; }
         public int? MarcaId { get; set; }
         public bool Possui { get; set; }
-        public bool Interesse { get; set; }
+        public bool Favorito { get; set; }
         [Column("disponivel_negocio")] public bool DisponivelNegocio { get; set; }
         public string? Observacao { get; set; } = null;
 

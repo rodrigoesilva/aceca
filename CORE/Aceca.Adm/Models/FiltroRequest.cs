@@ -8,7 +8,7 @@ namespace Aceca.Adm.Models
 
         public EColecaoStatus ColecaoStatus { get; set; }
         public bool Possui { get; set; }
-        public bool Interesse { get; set; }
+        public bool Favorito { get; set; }
         public bool DisponivelTroca { get; set; } = true;
         public bool DisponivelVenda { get; set; } = true;
         public decimal ValorVenda { get; set; }

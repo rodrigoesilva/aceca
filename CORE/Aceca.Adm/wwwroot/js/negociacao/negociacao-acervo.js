@@ -519,21 +519,21 @@ function fn_FiltrarDados() {
 
                     if (idColecaoStatus < 3 && !full?.possui) {
                         // Mesma trava do "Incluir na Coleção": não troca o ícone (ri-eye-line),
-                        // só marca como text-success quando o interesse já estiver registrado,
+                        // só marca como text-success quando o Favorito já estiver registrado,
                         // e bloqueia o clique/duplo submit nesse caso.
-                        btn += full?.interesse
-                            ? `<a href="javascript:void(0);" class="btn btn-sm btn-icon btn-text-success rounded-pill waves-effect colecao-interesse-ja-incluida" data-bs-toggle="tooltip" title="Já marcado como Tenho Interesse"><i class="ri-eye-line ri-22px"></i></a>`
-                            : `<a href="javascript:void(0);" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect btn-colecao-interesse" data-obj="${itemObjJson}" data-bs-toggle="tooltip" title="Tenho Interesse"><i class="ri-eye-line ri-22px"></i></a>`
+                        btn += full?.favorito
+                            ? `<a href="javascript:void(0);" class="btn btn-sm btn-icon btn-text-success rounded-pill waves-effect colecao-favorito-ja-incluido" data-bs-toggle="tooltip" title="Já marcado como Favorito"><i class="ri-shield-star-line ri-22px"></i></a>`
+                            : `<a href="javascript:void(0);" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect btn-colecao-favorito" data-obj="${itemObjJson}" data-bs-toggle="tooltip" title="Meus Favoritos"><i class="ri-shield-star-line ri-22px"></i></a>`
                     }
 
-                    if (idColecaoStatus < 3 && full?.interesse) {
+                    if (idColecaoStatus < 3 && full?.favorito) {
                         // Mesma trava do "Incluir na Coleção" da listagem do Acervo: ícone vira
                         // ri-archive-2-fill text-success quando já incluído, e bloqueia o clique.
                         btn += full?.possui
                             ? `<a href="javascript:void(0);" class="btn btn-sm btn-icon btn-text-success rounded-pill waves-effect colecao-ja-incluida" data-bs-toggle="tooltip" title="Incluído na Coleção"><i class="ri-archive-2-fill ri-22px"></i></a>`
                             : `<a href="javascript:void(0);" class="btn btn-sm btn-icon btn-text-secondary rounded-pill waves-effect btn-colecao-incluir" data-obj="${itemObjJson}" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
                     }
-                    //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoInteresse' : 'ColecaoIncluir')});" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Tenho Interesse' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
+                    //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoFavorito' : 'ColecaoIncluir')});" class="btn btn-sm btn-icon btn-text-${(full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Favorito' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
 
                     btn += '</div>'
 
@@ -1780,7 +1780,6 @@ function fnItem_Edit(varItems_Row) {
 function fnItem_Colecao(obj, action, $btnEl) {
 
     let marcaId = obj?.Id;
-    let actionId = -1;
     const socioId = document.getElementById('hdSocioLogadoId').value;
 
     //console.log("fnItem_Colecao obj ::: ", obj);
@@ -1796,9 +1795,9 @@ function fnItem_Colecao(obj, action, $btnEl) {
         return;
     }
 
-    // Item já incluído na coleção não pode ser marcado como "Tenho Interesse" -
+    // Item já incluído na coleção não pode ser marcado como "Favorito" -
     // mesmo swal do bloqueio acima, e interrompe a ação.
-    if (action === 'ColecaoInteresse' && obj?.possui) {
+    if (action === 'ColecaoFavorito' && obj?.possui) {
         if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
 
         fn_SwalItemJaIncluido();
@@ -1806,14 +1805,14 @@ function fnItem_Colecao(obj, action, $btnEl) {
         return;
     }
 
-    // Mesma guarda para "Tenho Interesse".
-    if (action === 'ColecaoInteresse' && obj?.interesse) {
+    // Mesma guarda para "Favorito".
+    if (action === 'ColecaoFavorito' && obj?.favorito) {
         if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
 
         Swal.fire({
             title: 'Item já marcado!',
             icon: 'info',
-            html: `<b>Este item j&aacute; est&aacute; marcado como "Tenho Interesse" na sua Cole&ccedil;&atilde;o.</b>`,
+            html: `<b>Este item j&aacute; est&aacute; marcado como "Favorito" na sua Cole&ccedil;&atilde;o.</b>`,
             focusConfirm: false,
             confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
             customClass: {
@@ -1842,23 +1841,6 @@ function fnItem_Colecao(obj, action, $btnEl) {
             //fn_Limpar();
         });
     } else {
-        switch (action) {
-            case 'ColecaoDelete':
-                actionId = 0;
-                break;
-            case 'ColecaoIncluir':
-                actionId = 1;
-                break;
-            case 'ColecaoInteresse':
-                actionId = 2;
-                break;
-            case 'ColecaoNegociar':
-                actionId = 3;
-                break;
-            default:
-                actionId = -1;
-        }
-
         $.busyLoadFull("show");
 
         $.ajax({
@@ -1867,7 +1849,10 @@ function fnItem_Colecao(obj, action, $btnEl) {
             data: {
                 itemColecaoId: 0,
                 marcaId: marcaId,
-                actionId: actionId,
+                // Manda o nome da ação (bate com o enum EColecaoAcao no controller) em vez
+                // de traduzir pra um número aqui - evita manter, nesta e em cada outra tela,
+                // um mapeamento texto->número separado que pode ficar dessincronizado do enum.
+                actionId: action,
                 socioId: socioId,
                 isPerfil: document.getElementById('hdIsPerfil').value
             },
@@ -1883,8 +1868,8 @@ function fnItem_Colecao(obj, action, $btnEl) {
                     fn_MarcarComoIncluidoNaColecao($btnEl);
                 }
 
-                if (action === 'ColecaoInteresse' && $btnEl && $btnEl.length) {
-                    fn_MarcarComoInteresseNaColecao($btnEl);
+                if (action === 'ColecaoFavorito' && $btnEl && $btnEl.length) {
+                    fn_MarcarComoFavoritoNaColecao($btnEl);
                 }
 
                 Swal.fire({
@@ -1929,7 +1914,7 @@ function fnItem_Colecao(obj, action, $btnEl) {
 }
 
 // Swal padrão para quando o item já está incluído na coleção (bloqueia tanto
-// re-inclusão quanto marcar "Tenho Interesse" nele).
+// re-inclusão quanto marcar "Favorito" nele).
 function fn_SwalItemJaIncluido() {
     Swal.fire({
         title: 'Item já incluído!',
@@ -1944,11 +1929,11 @@ function fn_SwalItemJaIncluido() {
 }
 
 // Troca o botão de "Incluir na Coleção" para o estado "já incluído", trocando o
-// ícone para ri-archive-2-fill text-success e travando cliques futuros.
+// ícone para ri-archive-2-fill text-primary e travando cliques futuros.
 function fn_MarcarComoIncluidoNaColecao($btnEl) {
     $btnEl
         .removeClass('btn-colecao-incluir btn-text-secondary')
-        .addClass('colecao-ja-incluida btn-text-success')
+        .addClass('colecao-ja-incluida btn-text-primary')
         .attr('href', 'javascript:void(0);')
         .removeAttr('data-obj')
         .removeData('processing')
@@ -1958,20 +1943,20 @@ function fn_MarcarComoIncluidoNaColecao($btnEl) {
         .addClass('ri-archive-2-fill');
 }
 
-// Troca o botão de "Tenho Interesse" para o estado "já marcado" - o ícone
-// (ri-eye-line) não muda, só ganha a classe btn-text-success.
-function fn_MarcarComoInteresseNaColecao($btnEl) {
+// Troca o botão de "Favorito" para o estado "já marcado" - o ícone
+// (ri-shield-star-line) não muda, só ganha a classe btn-text-primary.
+function fn_MarcarComoFavoritoNaColecao($btnEl) {
     $btnEl
-        .removeClass('btn-colecao-interesse btn-text-secondary')
-        .addClass('colecao-interesse-ja-incluida btn-text-success')
+        .removeClass('btn-colecao-favorito btn-text-secondary')
+        .addClass('colecao-favorito-ja-incluido btn-text-primary')
         .attr('href', 'javascript:void(0);')
         .removeAttr('data-obj')
         .removeData('processing')
-        .attr('title', 'Já marcado como Tenho Interesse');
+        .attr('title', 'Já marcado como Favorito');
 }
 
 // Delegado (elementos são recriados a cada redraw do DataTable) - registrado uma
-// única vez para os dois estados de "Incluir na Coleção" e "Tenho Interesse".
+// única vez para os dois estados de "Incluir na Coleção" e "Favorito".
 function fn_BindColecaoIncluirActions() {
     $(document).on('click', '.colecao-ja-incluida', function (e) {
         e.preventDefault();
@@ -2001,13 +1986,13 @@ function fn_BindColecaoIncluirActions() {
         fnItem_Colecao(obj, 'ColecaoIncluir', $btn);
     });
 
-    $(document).on('click', '.colecao-interesse-ja-incluida', function (e) {
+    $(document).on('click', '.colecao-favorito-ja-incluido', function (e) {
         e.preventDefault();
 
         Swal.fire({
             title: 'Item já marcado!',
             icon: 'info',
-            html: `<b>Este item j&aacute; est&aacute; marcado como "Tenho Interesse" na sua Cole&ccedil;&atilde;o.</b>`,
+            html: `<b>Este item j&aacute; est&aacute; marcado como "Favorito" na sua Cole&ccedil;&atilde;o.</b>`,
             focusConfirm: false,
             confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
             customClass: {
@@ -2016,7 +2001,7 @@ function fn_BindColecaoIncluirActions() {
         });
     });
 
-    $(document).on('click', '.btn-colecao-interesse', function (e) {
+    $(document).on('click', '.btn-colecao-favorito', function (e) {
         e.preventDefault();
 
         const $btn = $(this);
@@ -2035,7 +2020,7 @@ function fn_BindColecaoIncluirActions() {
             return;
         }
 
-        fnItem_Colecao(obj, 'ColecaoInteresse', $btn);
+        fnItem_Colecao(obj, 'ColecaoFavorito', $btn);
     });
 }
 

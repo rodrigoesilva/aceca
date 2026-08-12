@@ -573,17 +573,21 @@ function fn_FiltrarDados() {
 
                     // Marca (do lado do servidor, escopado ao sócio autenticado) se o item já está na coleção
                     let bPossuiColecao = (full?.Possui === true || full?.Possui === 1);
-                    let bInteresseColecao = (full?.Interesse === true || full?.Interesse === 1);
+                    let bFavoritoColecao = (full?.Favorito === true || full?.Favorito === 1);
 
                     let liColecaoIncluir = bPossuiColecao
-                        ? `<li><a href="javascript:void(0);" class="dropdown-item colecao-ja-incluida" data-bs-toggle="tooltip" title="Incluído na Coleção"><i class="icon-base ri ri-archive-2-fill text-success icon-md me-2"></i>Incluído na Coleção</a></li>`
+                        ? `<li><a href="javascript:void(0);" class="dropdown-item colecao-ja-incluida" data-bs-toggle="tooltip" title="Incluído na Coleção"><i class="icon-base ri ri-archive-2-fill text-success icon-md me-2"></i>Já na Coleção</a></li>`
                         : `<li><a href="javascript:void(0);" class="dropdown-item edit-record btn-colecao-incluir" data-obj="${itemObjJson}"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Incluir na Coleção</a></li>`;
 
-                    // Mesma trava do "Incluir na Coleção", mas sem trocar o ícone - só marca
-                    // como text-success quando o interesse já estiver registrado.
-                    let liColecaoInteresse = bInteresseColecao
-                        ? `<li><a href="javascript:void(0);" class="dropdown-item colecao-interesse-ja-incluida" data-bs-toggle="tooltip" title="Já marcado como Tenho Interesse"><i class="icon-base ri ri-eye-line text-success icon-md me-2"></i>Tenho Interesse</a></li>`
-                        : `<li><a href="javascript:void(0);" class="dropdown-item edit-record btn-colecao-interesse" data-obj="${itemObjJson}"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>`;
+                    // Item já incluído na Coleção não pode (nem faz sentido) ser marcado como
+                    // Favorito - o próprio backend zera o flag Favorito ao incluir na Coleção -
+                    // então a opção nem aparece no menu nesse caso, em vez de aparecer e travar
+                    // no clique.
+                    let liColecaoFavorito = bPossuiColecao
+                        ? ''
+                        : (bFavoritoColecao
+                            ? `<li><a href="javascript:void(0);" class="dropdown-item colecao-favorito-ja-incluido" data-bs-toggle="tooltip" title="Já marcado como Favorito"><i class="icon-base ri ri-shield-star-line text-success icon-md me-2"></i>Já nos Favoritos</a></li>`
+                            : `<li><a href="javascript:void(0);" class="dropdown-item edit-record btn-colecao-favorito" data-obj="${itemObjJson}"><i class="icon-base ri ri-shield-star-line icon-md me-2"></i>Incluir nos Favoritos</a></li>`);
 
                     if (isPerfil === 'true') {
 
@@ -599,7 +603,7 @@ function fn_FiltrarDados() {
                                             <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
                                         <div class="dropdown-divider"></div>
                                             ${liColecaoIncluir}
-                                            ${liColecaoInteresse}
+                                            ${liColecaoFavorito}
                                     </ul>
                                 </div>`;
 
@@ -615,7 +619,7 @@ function fn_FiltrarDados() {
                                             <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
                                         <div class="dropdown-divider"></div>
                                             <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Incluir na Coleção</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>                                            
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoFavorito');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Favorito</a></li>                                            
                                     </ul>
                                 </div>`;
 
@@ -663,7 +667,7 @@ function fn_FiltrarDados() {
                                             <li><a href="javascript:fn_Modal(${itemObjJson},'Edit');" class="dropdown-item edit-record"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>
                                         <div class="dropdown-divider"></div>
                                             <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="dropdown-item edit-record"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Tenho na Coleção</a></li>
-                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Tenho Interesse</a></li>
+                                            <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoFavorito');" class="dropdown-item edit-record"><i class="icon-base ri ri-eye-line icon-md me-2"></i>Favorito</a></li>
                                             <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoNaoQuero');" class="dropdown-item edit-record"><i class="icon-base ri ri-information-off-line icon-md me-2"></i>Não Quero</a></li>
                                             <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoTroca');" class="dropdown-item edit-record"><i class="icon-base ri ri-checkbox-multiple-line icon-md me-2"></i>Para Troca</a></li>
                                             <li><a href="javascript:fnItem_Colecao(${itemObjJson},'ColecaoVenda');" class="dropdown-item edit-record"><i class="icon-base ri ri-shopping-cart-2-line icon-md me-2"></i>Para Venda</a></li>
@@ -1929,7 +1933,6 @@ function fnItem_Edit(varItems_Row) {
 function fnItem_Colecao(obj, action, $btnEl) {
 
     let marcaId = obj?.Id;
-    let actionId = -1;
     const socioId = document.getElementById('hdSocioLogadoId').value;
 
     //console.log("fnItem_Colecao obj ::: ", obj);
@@ -1945,9 +1948,9 @@ function fnItem_Colecao(obj, action, $btnEl) {
         return;
     }
 
-    // Item já incluído na coleção não pode ser marcado como "Tenho Interesse" -
+    // Item já incluído na coleção não pode ser marcado como "Favorito" -
     // mesmo swal do bloqueio acima, e interrompe a ação.
-    if (action === 'ColecaoInteresse' && (obj?.Possui === true || obj?.Possui === 1)) {
+    if (action === 'ColecaoFavorito' && (obj?.Possui === true || obj?.Possui === 1)) {
         if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
 
         fn_SwalItemJaIncluido();
@@ -1955,14 +1958,14 @@ function fnItem_Colecao(obj, action, $btnEl) {
         return;
     }
 
-    // Mesma guarda para "Tenho Interesse".
-    if (action === 'ColecaoInteresse' && (obj?.Interesse === true || obj?.Interesse === 1)) {
+    // Mesma guarda para "Favorito".
+    if (action === 'ColecaoFavorito' && (obj?.Favorito === true || obj?.Favorito === 1)) {
         if ($btnEl && $btnEl.length) $btnEl.removeData('processing');
 
         Swal.fire({
             title: 'Item já marcado!',
             icon: 'info',
-            html: `<b>Este item j&aacute; est&aacute; marcado como "Tenho Interesse" na sua Cole&ccedil;&atilde;o.</b>`,
+            html: `<b>Este item j&aacute; est&aacute; marcado como "Favorito" na sua Cole&ccedil;&atilde;o.</b>`,
             focusConfirm: false,
             confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
             customClass: {
@@ -1991,23 +1994,6 @@ function fnItem_Colecao(obj, action, $btnEl) {
             //fn_Limpar();
         });
     } else {
-        switch (action) {
-            case 'ColecaoDelete':
-                actionId = 0;
-                break;
-            case 'ColecaoIncluir':
-                actionId = 1;
-                break;
-            case 'ColecaoInteresse':
-                actionId = 2;
-                break;
-            case 'ColecaoNegociar':
-                actionId = 3;
-                break;
-            default:
-                actionId = -1;
-        }
-
         $.busyLoadFull("show");
 
         $.ajax({
@@ -2016,7 +2002,10 @@ function fnItem_Colecao(obj, action, $btnEl) {
             data: {
                 itemColecaoId: 0,
                 marcaId: marcaId,
-                actionId: actionId,
+                // Manda o nome da ação (bate com o enum EColecaoAcao no controller) em vez
+                // de traduzir pra um número aqui - evita manter, nesta e em cada outra tela,
+                // um mapeamento texto->número separado que pode ficar dessincronizado do enum.
+                actionId: action,
                 socioId: socioId,
                 isPerfil: document.getElementById('hdIsPerfil').value
             },
@@ -2032,8 +2021,8 @@ function fnItem_Colecao(obj, action, $btnEl) {
                     fn_MarcarComoIncluidoNaColecao($btnEl);
                 }
 
-                if (action === 'ColecaoInteresse' && $btnEl && $btnEl.length) {
-                    fn_MarcarComoInteresseNaColecao($btnEl);
+                if (action === 'ColecaoFavorito' && $btnEl && $btnEl.length) {
+                    fn_MarcarComoFavoritoNaColecao($btnEl);
                 }
 
                 Swal.fire({
@@ -2078,7 +2067,7 @@ function fnItem_Colecao(obj, action, $btnEl) {
 }
 
 // Swal padrão para quando o item já está incluído na coleção (bloqueia tanto
-// re-inclusão quanto marcar "Tenho Interesse" nele).
+// re-inclusão quanto marcar "Favorito" nele).
 function fn_SwalItemJaIncluido() {
     Swal.fire({
         title: 'Item já incluído!',
@@ -2105,22 +2094,22 @@ function fn_MarcarComoIncluidoNaColecao($btnEl) {
         .html('<i class="icon-base ri ri-archive-2-fill text-success icon-md me-2"></i>Incluído na Coleção');
 }
 
-// Troca o item do dropdown de "Tenho Interesse" para o estado "já marcado" - o
-// ícone (ri-eye-line) e o texto não mudam, só ganham a classe text-success.
-function fn_MarcarComoInteresseNaColecao($btnEl) {
+// Troca o item do dropdown de "Favorito" para o estado "já marcado" - o
+// ícone (ri-shield-star-line) e o texto não mudam, só ganham a classe text-success.
+function fn_MarcarComoFavoritoNaColecao($btnEl) {
     $btnEl
-        .removeClass('btn-colecao-interesse edit-record')
-        .addClass('colecao-interesse-ja-incluida')
+        .removeClass('btn-colecao-favorito edit-record')
+        .addClass('colecao-favorito-ja-incluido')
         .attr('href', 'javascript:void(0);')
         .removeAttr('data-obj')
         .removeData('processing')
-        .attr('title', 'Já marcado como Tenho Interesse')
+        .attr('title', 'Já marcado como Favorito')
         .find('i')
         .addClass('text-success');
 }
 
 // Delegado (elementos são recriados a cada redraw do DataTable) - registrado uma
-// única vez para os dois estados de "Incluir na Coleção" e "Tenho Interesse".
+// única vez para os dois estados de "Incluir na Coleção" e "Favorito".
 function fn_BindColecaoIncluirActions() {
     $(document).on('click', '.colecao-ja-incluida', function (e) {
         e.preventDefault();
@@ -2150,13 +2139,13 @@ function fn_BindColecaoIncluirActions() {
         fnItem_Colecao(obj, 'ColecaoIncluir', $btn);
     });
 
-    $(document).on('click', '.colecao-interesse-ja-incluida', function (e) {
+    $(document).on('click', '.colecao-favorito-ja-incluido', function (e) {
         e.preventDefault();
 
         Swal.fire({
             title: 'Item já marcado!',
             icon: 'info',
-            html: `<b>Este item j&aacute; est&aacute; marcado como "Tenho Interesse" na sua Cole&ccedil;&atilde;o.</b>`,
+            html: `<b>Este item j&aacute; est&aacute; marcado como "Favorito" na sua Cole&ccedil;&atilde;o.</b>`,
             focusConfirm: false,
             confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
             customClass: {
@@ -2165,7 +2154,7 @@ function fn_BindColecaoIncluirActions() {
         });
     });
 
-    $(document).on('click', '.btn-colecao-interesse', function (e) {
+    $(document).on('click', '.btn-colecao-favorito', function (e) {
         e.preventDefault();
 
         const $btn = $(this);
@@ -2184,7 +2173,7 @@ function fn_BindColecaoIncluirActions() {
             return;
         }
 
-        fnItem_Colecao(obj, 'ColecaoInteresse', $btn);
+        fnItem_Colecao(obj, 'ColecaoFavorito', $btn);
     });
 }
 
