@@ -475,35 +475,6 @@ function fn_GridComplete(grid) {
 
 //#region FUNCOES
 
-function fn_CheckVerAtivos() {
-
-    const chkVerAtivos = document.querySelector('#chkFilterAtivo');
-
-    // Server-side: o filtro "somente ativos" agora é aplicado no banco (ver ajax.data
-    // em fn_GridList), então só precisamos redesenhar a tabela — o novo valor do
-    // checkbox é lido na hora do request seguinte.
-    if (chkVerAtivos) {
-        chkVerAtivos.addEventListener('change', function () {
-            var table = $('.datatables-basic').DataTable();
-
-            if (this.checked) {
-                Swal.fire({
-                    title: 'INFO!!',
-                    icon: 'info',
-                    html: 'Essa op&ccedil;&atilde;o <br> exbir&aacute; somente os itens ativos !!',
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-info waves-effect'
-                    },
-                }).then((result) => {
-                    table.draw();
-                });
-            } else {
-                table.draw();
-            }
-        });
-    }
-}
+// fn_CheckVerAtivos é comum (ui-common.js).
 
 //#endregion

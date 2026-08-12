@@ -149,3 +149,171 @@ function fn_CarregarUltimosAcessos(callback) {
 }
 
 //#endregion
+
+//#region MASCARAS - antes duplicadas em admin-socio.js, admin-socio-contato.js,
+// admin-socio-endereco.js, negociacao-socio.js e pages-auth-account-settings.js.
+
+function fn_MaskTelefone(input) {
+    // Remove tudo que não for dígito
+    let value = input.value.replace(/\D/g, '');
+
+    // Limita a 11 dígitos (DDD + 9 dígitos)
+    value = value.substring(0, 11);
+
+    // Aplica a máscara: (00) 00000-0000 / (00) 0000-0000
+    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+
+    input.value = value;
+}
+
+function fn_MaskDataAniversario(input) {
+    // Remove tudo que não for dígito (funciona tanto ao digitar quanto ao colar
+    // uma data completa, ex.: "23/02/1956", pois o evento "input" dispara nos dois casos)
+    let value = input.value.replace(/\D/g, '');
+
+    // Limita a 8 dígitos (DDMMYYYY)
+    value = value.substring(0, 8);
+
+    // Aplica a mascara DD/MM/YYYY
+    if (value.length > 4) {
+        value = value.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
+    } else if (value.length > 2) {
+        value = value.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+    }
+
+    input.value = value;
+}
+
+// onEncontrado é opcional - só telas que querem autocompletar o endereço passam esse
+// callback (ex.: fn_MaskCEP(this, fn_PreencherEndereco)); sem ele, só aplica a máscara
+// (mesmo comportamento de telas como SocioEndereco.cshtml, que preenchem manualmente).
+function fn_MaskCEP(input, onEncontrado) {
+    // Remove tudo que não for dígito
+    let value = input.value.replace(/\D/g, '');
+
+    // Limita a 8 dígitos
+    value = value.substring(0, 8);
+
+    // Aplica a máscara: 00000-000
+    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+
+    input.value = value;
+
+    if (onEncontrado && value.replace(/\D/g, '').length === 8) {
+        fn_BuscaEnderecoPorCep(value, onEncontrado);
+    }
+}
+
+// onEncontrado recebe o objeto retornado pela ViaCEP ({logradouro, bairro, localidade,
+// uf, ...}) já validado (nunca chamado se não encontrar) - cada tela decide em quais
+// campos preencher esses dados.
+function fn_BuscaEnderecoPorCep(cep, onEncontrado) {
+    const cepLimpo = cep.replace(/\D/g, '');
+
+    // fetch() nativo (não $.ajax) de propósito: o $.ajaxSetup acima injeta o header
+    // X-CSRF-TOKEN em toda chamada $.ajax - inclusive pra um domínio externo como a
+    // ViaCEP, que não libera esse header customizado e forçava um preflight CORS que
+    // sempre falhava.
+    fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
+        .then(function (response) {
+            if (!response.ok) throw new Error('Falha na consulta do CEP');
+
+            return response.json();
+        })
+        .then(function (result) {
+            if (!result || result.erro) {
+                Swal.fire({
+                    title: 'CEP n&atilde;o encontrado!!',
+                    icon: 'warning',
+                    html: `Preencha o endere&ccedil;o manualmente.`,
+                    focusConfirm: false,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: { confirmButton: 'btn btn-label-warning waves-effect' }
+                });
+
+                return;
+            }
+
+            onEncontrado(result);
+        })
+        .catch(function (erro) {
+            console.log("Falha ao consultar CEP via ViaCEP:", erro);
+        });
+}
+
+//#endregion
+
+//#region GRID - antes duplicadas em praticamente todo admin-*.js/negociacao-*.js
+// (fn_ModalErro em 32 arquivos, fn_CheckVerAtivos em 25 - cópias idênticas).
+
+// Handler padrão de erro de $.ajax (error: fn_ModalErro) usado em quase toda tela
+// admin/negociação. Sempre fecha o busyLoad e mostra a mensagem do servidor, se a
+// resposta de erro vier em JSON - senão cai numa mensagem genérica.
+function fn_ModalErro(xhr, textStatus, errorThrown) {
+    console.log("Server Response:", xhr.responseText);
+    console.log("XMLHttpRequest  :: ", xhr);
+    console.log("textStatus  :: ", textStatus);
+    console.log("errorThrown  :: ", errorThrown);
+    console.log("result  :: Error while posting SendResult");
+
+    // Sempre esconde o loading e exibe o Swal, mesmo que a resposta de erro
+    // nao seja um JSON valido (ex.: pagina de erro HTML, timeout, requisicao
+    // abortada) - sem isso o JSON.parse podia estourar exception e travar o
+    // busyLoadFull aberto para sempre, sem nenhuma mensagem para o usuario.
+    $.busyLoadFull("hide");
+
+    let mensagemErro = 'Ocorreu um erro inesperado, tente novamente.';
+
+    try {
+        const objError = JSON.parse(xhr.responseText);
+
+        if (objError?.message)
+            mensagemErro = objError.message;
+    } catch (e) {
+        console.log("Falha ao interpretar resposta de erro do servidor:", e);
+    }
+
+    Swal.fire({
+        title: 'OPS!!',
+        icon: 'error',
+        html: `<b> Erro ocorrido <br><br>${mensagemErro}</b>`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-label-danger waves-effect'
+        }
+    });
+}
+
+// Liga o checkbox "Exibir Somente Ativos" (#chkFilterAtivo, injetado no DOM pela
+// própria grid ao carregar) ao redraw da DataTable - o filtro em si já é aplicado
+// no servidor (ver ajax.data em cada fn_GridList), aqui só redesenha.
+function fn_CheckVerAtivos() {
+    const chkVerAtivos = document.querySelector('#chkFilterAtivo');
+
+    if (chkVerAtivos) {
+        chkVerAtivos.addEventListener('change', function () {
+            var table = $('.datatables-basic').DataTable();
+
+            if (this.checked) {
+                Swal.fire({
+                    title: 'INFO!!',
+                    icon: 'info',
+                    html: 'Essa op&ccedil;&atilde;o <br> exbir&aacute; somente os itens ativos !!',
+                    focusConfirm: false,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: {
+                        confirmButton: 'btn btn-label-info waves-effect'
+                    },
+                }).then((result) => {
+                    table.draw();
+                });
+            } else {
+                table.draw();
+            }
+        });
+    }
+}
+
+//#endregion

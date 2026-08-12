@@ -413,18 +413,7 @@ function fn_Masks() {
     $('.phone-mask').mask('(00) 00000-0000');
 }
 
-function fn_MaskCEP(input) {
-    // Remove tudo que não for dígito
-    let value = input.value.replace(/\D/g, '');
-
-    // Limita a 8 dígitos
-    value = value.substring(0, 8);
-
-    // Aplica a máscara: 00000-000
-    value = value.replace(/(\d{5})(\d)/, '$1-$2');
-
-    input.value = value;
-}
+// fn_MaskCEP é comum (ui-common.js).
 
 //#endregion
 
@@ -693,41 +682,7 @@ function fn_ModalSelecionarFase() {
     })
 }
 
-function fn_ModalErro(xhr, textStatus, errorThrown) {
-    console.log("Server Response:", xhr.responseText);
-    console.log("XMLHttpRequest  :: ", xhr);
-    console.log("textStatus  :: ", textStatus);
-    console.log("errorThrown  :: ", errorThrown);
-    console.log("result  :: Error while posting SendResult");
-
-    // Sempre esconde o loading e exibe o Swal, mesmo que a resposta de erro
-    // nao seja um JSON valido (ex.: pagina de erro HTML, timeout, requisicao
-    // abortada) - sem isso o JSON.parse podia estourar exception e travar o
-    // busyLoadFull aberto para sempre, sem nenhuma mensagem para o usuario.
-    $.busyLoadFull("hide");
-
-    let mensagemErro = 'Ocorreu um erro inesperado, tente novamente.';
-
-    try {
-        const objError = JSON.parse(xhr.responseText);
-
-        if (objError?.message)
-            mensagemErro = objError.message;
-    } catch (e) {
-        console.log("Falha ao interpretar resposta de erro do servidor:", e);
-    }
-
-    Swal.fire({
-        title: 'OPS!!',
-        icon: 'error',
-        html: `<b> Erro ocorrido <br><br>${mensagemErro}</b>`,
-        focusConfirm: false,
-        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-        customClass: {
-            confirmButton: 'btn btn-label-danger waves-effect'
-        }
-    });
-}
+// fn_ModalErro é comum (ui-common.js).
 
 //#endregion
 

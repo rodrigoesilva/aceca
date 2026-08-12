@@ -474,35 +474,7 @@ function fn_GridComplete(grid) {
 
 //#region FUNCOES
 
-function fn_CheckVerAtivos() {
-
-    const chkVerAtivos = document.querySelector('#chkFilterAtivo');
-
-    // Server-side: o filtro "somente ativos" agora é aplicado no banco (ver ajax.data
-    // em fn_GridList), então só precisamos redesenhar a tabela.
-    if (chkVerAtivos) {
-        chkVerAtivos.addEventListener('change', function () {
-            var table = $('.datatables-basic').DataTable();
-
-            if (this.checked) {
-                Swal.fire({
-                    title: 'INFO!!',
-                    icon: 'info',
-                    html: 'Essa op&ccedil;&atilde;o <br> exbir&aacute; somente os itens ativos !!',
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-info waves-effect'
-                    },
-                }).then((result) => {
-                    table.draw();
-                });
-            } else {
-                table.draw();
-            }
-        });
-    }
-}
+// fn_CheckVerAtivos é comum (ui-common.js).
 
 //#endregion
 
@@ -514,88 +486,22 @@ function fn_Masks() {
     $('.phone-mask').mask('(00) 00000-0000');
 }
 
-function fn_MaskDataAniversario(input) {
-    // Remove tudo que não for dígito (funciona tanto ao digitar quanto ao colar
-    // uma data completa, ex.: "23/02/1956", pois o evento "input" dispara nos dois casos)
-    let value = input.value.replace(/\D/g, '');
+// fn_MaskDataAniversario, fn_MaskCEP e fn_BuscaEnderecoPorCep são comuns (ui-common.js).
+// fn_MaskCEP(this, fn_PreencherEnderecoPopup) é quem dispara o autocompletar abaixo.
 
-    // Limita a 8 dígitos (DDMMYYYY)
-    value = value.substring(0, 8);
-
-    // Aplica a mascara DD/MM/YYYY
-    if (value.length > 4) {
-        value = value.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
-    } else if (value.length > 2) {
-        value = value.replace(/(\d{2})(\d{1,2})/, '$1/$2');
-    }
-
-    input.value = value;
-}
-
-function fn_MaskCEP(input) {
-    // Remove tudo que não for dígito
-    let value = input.value.replace(/\D/g, '');
-
-    // Limita a 8 dígitos
-    value = value.substring(0, 8);
-
-    // Aplica a máscara: 00000-000
-    value = value.replace(/(\d{5})(\d)/, '$1-$2');
-
-    input.value = value;
-
-    if (value.replace(/\D/g, '').length === 8) {
-        fn_BuscaEnderecoPorCep(value);
-    }
-}
-
-function fn_BuscaEnderecoPorCep(cep) {
-
-    const cepLimpo = cep.replace(/\D/g, '');
-
+// Callback de fn_MaskCEP (via ui-common.js/fn_BuscaEnderecoPorCep) específico do popup
+// de cadastro - cada tela decide em quais campos preencher o retorno da ViaCEP.
+function fn_PreencherEnderecoPopup(result) {
     const popAddNewItem = document.querySelector('#pop-add-new-item');
 
-    // Usa fetch() nativo (nao $.ajax) de proposito: o ui-common.js faz
-    // $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': ... } }) globalmente para as
-    // chamadas do proprio backend, e esse header extra ia em toda chamada
-    // $.ajax - inclusive essa, para um dominio externo (viacep.com.br). Isso
-    // forcava um preflight CORS que a ViaCEP rejeita (nao libera esse header
-    // customizado), e a requisicao falhava com erro de CORS.
-    fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
-        .then(function (response) {
-            if (!response.ok) throw new Error('Falha na consulta do CEP');
+    popAddNewItem.querySelector('.dt-line-05').value = result.logradouro || '';
+    popAddNewItem.querySelector('.dt-line-08').value = result.bairro || '';
+    popAddNewItem.querySelector('.dt-line-10').value = result.localidade || '';
 
-            return response.json();
-        })
-        .then(function (result) {
+    $("#cmb_SocioEstado").val(result.uf || '').trigger('change');
 
-            if (!result || result.erro) {
-                Swal.fire({
-                    title: 'CEP n&atilde;o encontrado!!',
-                    icon: 'warning',
-                    html: `Preencha o endere&ccedil;o manualmente.`,
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-warning waves-effect'
-                    }
-                });
-
-                return;
-            }
-
-            popAddNewItem.querySelector('.dt-line-05').value = result.logradouro || '';
-            popAddNewItem.querySelector('.dt-line-08').value = result.bairro || '';
-            popAddNewItem.querySelector('.dt-line-10').value = result.localidade || '';
-
-            $("#cmb_SocioEstado").val(result.uf || '').trigger('change');
-
-            // Foca no numero para o usuario continuar o preenchimento
-            popAddNewItem.querySelector('.dt-line-06').focus();
-        })
-        .catch(function (erro) {
-            console.log("Falha ao consultar CEP via ViaCEP:", erro);
-        });
+    // Foca no numero para o usuario continuar o preenchimento
+    popAddNewItem.querySelector('.dt-line-06').focus();
 }
 
 //#endregion
@@ -997,40 +903,6 @@ function fnItem_Add(varTbl_Obj) {
 
 //#region MODAL
 
-function fn_ModalErro(xhr, textStatus, errorThrown) {
-    console.log("Server Response:", xhr.responseText);
-    console.log("XMLHttpRequest  :: ", xhr);
-    console.log("textStatus  :: ", textStatus);
-    console.log("errorThrown  :: ", errorThrown);
-    console.log("result  :: Error while posting SendResult");
-
-    // Sempre esconde o loading e exibe o Swal, mesmo que a resposta de erro
-    // nao seja um JSON valido (ex.: pagina de erro HTML, timeout, requisicao
-    // abortada) - sem isso o JSON.parse podia estourar exception e travar o
-    // busyLoadFull aberto para sempre, sem nenhuma mensagem para o usuario.
-    $.busyLoadFull("hide");
-
-    let mensagemErro = 'Ocorreu um erro inesperado, tente novamente.';
-
-    try {
-        const objError = JSON.parse(xhr.responseText);
-
-        if (objError?.message)
-            mensagemErro = objError.message;
-    } catch (e) {
-        console.log("Falha ao interpretar resposta de erro do servidor:", e);
-    }
-
-    Swal.fire({
-        title: 'OPS!!',
-        icon: 'error',
-        html: `<b> Erro ocorrido <br><br>${mensagemErro}</b>`,
-        focusConfirm: false,
-        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-        customClass: {
-            confirmButton: 'btn btn-label-danger waves-effect'
-        }
-    });
-}
+// fn_ModalErro é comum (ui-common.js).
 
 //#endregion

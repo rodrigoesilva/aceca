@@ -387,48 +387,7 @@ function fn_GridComplete(grid) {
 
 //#region FUNCOES
 
-function fn_CheckVerAtivos() {
-
-    const chkVerAtivos = document.querySelector('#chkFilterAtivo');
-
-    // //CHK VER ATIVOS
-    if (chkVerAtivos) {
-        chkVerAtivos.addEventListener('change', function () {
-            var table = $('.datatables-basic').DataTable();
-
-            if (this.checked) {
-                //console.log("Checkbox is checked..");
-                Swal.fire({
-                    title: 'INFO!!',
-                    icon: 'info',
-                    html: 'Essa op&ccedil;&atilde;o <br> exbir&aacute; somente os itens ativos !!',
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-info waves-effect'
-                    },
-                }).then((result) => {
-                    //console.log("result :: ", result);
-
-                    $.fn.dataTable.ext.search.push(
-                        function (settings, data, dataIndex) {
-
-                            var rowAtivo = $(table.row(dataIndex).node()).find('[name="spStatus"]').data("status") == true;
-
-                            return rowAtivo
-                        }
-                    );
-
-                    table.draw();
-                });
-            } else {
-                //console.log("Checkbox is not checked..");
-                $.fn.dataTable.ext.search.pop();
-                table.draw();
-            }
-        });
-    }
-}
+// fn_CheckVerAtivos é comum (ui-common.js).
 
 //#endregion
 
@@ -820,39 +779,5 @@ function fnItem_Add(varTbl_Obj) {
 //#endregion
 
 //#region MODAL
-function fn_ModalErro(xhr, textStatus, errorThrown) {
-    console.log("Server Response:", xhr.responseText);
-    console.log("XMLHttpRequest  :: ", xhr);
-    console.log("textStatus  :: ", textStatus);
-    console.log("errorThrown  :: ", errorThrown);
-    console.log("result  :: Error while posting SendResult");
-
-    // Sempre esconde o loading e exibe o Swal, mesmo que a resposta de erro
-    // nao seja um JSON valido (ex.: pagina de erro HTML, timeout, requisicao
-    // abortada) - sem isso o JSON.parse podia estourar exception e travar o
-    // busyLoadFull aberto para sempre, sem nenhuma mensagem para o usuario.
-    $.busyLoadFull("hide");
-
-    let mensagemErro = 'Ocorreu um erro inesperado, tente novamente.';
-
-    try {
-        const objError = JSON.parse(xhr.responseText);
-
-        if (objError?.message)
-            mensagemErro = objError.message;
-    } catch (e) {
-        console.log("Falha ao interpretar resposta de erro do servidor:", e);
-    }
-
-    Swal.fire({
-        title: 'OPS!!',
-        icon: 'error',
-        html: `<b> Erro ocorrido <br><br>${mensagemErro}</b>`,
-        focusConfirm: false,
-        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-        customClass: {
-            confirmButton: 'btn btn-label-danger waves-effect'
-        }
-    });
-}
+// fn_ModalErro é comum (ui-common.js).
 //#endregion

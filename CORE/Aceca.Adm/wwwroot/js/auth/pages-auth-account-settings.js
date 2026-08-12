@@ -48,7 +48,7 @@ function fn_CarregarMeusDados() {
     $.busyLoadFull("show");
 
     $.ajax({
-        url: '/Auth/GetFullById',
+        url: `${var_Controller}/GetFullById`,
         type: 'POST',
         success: function (response) {
             $.busyLoadFull("hide");
@@ -124,7 +124,7 @@ function fn_WireSalvar() {
         $.busyLoadFull("show");
 
         $.ajax({
-            url: '/Auth/UpdateProfile',
+            url: `${var_Controller}/UpdateProfile`,
             type: 'POST',
             data: {
                 nome: nome,
@@ -177,86 +177,20 @@ function fn_WireSalvar() {
 
 //#region CEP
 
-function fn_MaskCEP(input) {
-    let value = input.value.replace(/\D/g, '');
+// fn_MaskCEP e fn_BuscaEnderecoPorCep são comuns (ui-common.js). Callback específico
+// desta tela - decide em quais campos preencher o retorno da ViaCEP.
+function fn_PreencherEnderecoMeusDados(result) {
+    document.getElementById('endereco').value = result.logradouro || '';
+    document.getElementById('bairro').value = result.bairro || '';
+    document.getElementById('cidade').value = result.localidade || '';
+    $('#estado').val(result.uf || '').trigger('change');
 
-    value = value.substring(0, 8);
-    value = value.replace(/(\d{5})(\d)/, '$1-$2');
-
-    input.value = value;
-
-    if (value.replace(/\D/g, '').length === 8) {
-        fn_BuscaEnderecoPorCep(value);
-    }
-}
-
-function fn_BuscaEnderecoPorCep(cep) {
-    const cepLimpo = cep.replace(/\D/g, '');
-
-    // fetch() nativo (não $.ajax) de propósito - ver admin-socio.js/fn_BuscaEnderecoPorCep:
-    // o header X-CSRF-TOKEN que o ui-common.js injeta em todo $.ajax forca preflight CORS
-    // que a ViaCEP rejeita.
-    fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`)
-        .then(function (response) {
-            if (!response.ok) throw new Error('Falha na consulta do CEP');
-
-            return response.json();
-        })
-        .then(function (result) {
-            if (!result || result.erro) {
-                Swal.fire({
-                    title: 'CEP n&atilde;o encontrado!!',
-                    icon: 'warning',
-                    html: `Preencha o endere&ccedil;o manualmente.`,
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: { confirmButton: 'btn btn-label-warning waves-effect' }
-                });
-
-                return;
-            }
-
-            document.getElementById('endereco').value = result.logradouro || '';
-            document.getElementById('bairro').value = result.bairro || '';
-            document.getElementById('cidade').value = result.localidade || '';
-            $('#estado').val(result.uf || '').trigger('change');
-
-            document.getElementById('numero').focus();
-        })
-        .catch(function (erro) {
-            console.log("Falha ao consultar CEP via ViaCEP:", erro);
-        });
+    document.getElementById('numero').focus();
 }
 
 //#endregion
 
-//#region MASCARAS
-
-function fn_MaskTelefone(input) {
-    let value = input.value.replace(/\D/g, '');
-
-    value = value.substring(0, 11);
-    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
-    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-
-    input.value = value;
-}
-
-function fn_MaskDataAniversario(input) {
-    let value = input.value.replace(/\D/g, '');
-
-    value = value.substring(0, 8);
-
-    if (value.length > 4) {
-        value = value.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
-    } else if (value.length > 2) {
-        value = value.replace(/(\d{2})(\d{1,2})/, '$1/$2');
-    }
-
-    input.value = value;
-}
-
-//#endregion
+// fn_MaskTelefone e fn_MaskDataAniversario são comuns (ui-common.js).
 
 //#region AVATAR
 
@@ -281,7 +215,7 @@ function fn_WireUploadAvatar() {
         $.busyLoadFull("show");
 
         $.ajax({
-            url: '/Auth/UploadAvatar',
+            url: `${var_Controller}/UploadAvatar`,
             type: 'POST',
             data: formData,
             processData: false,

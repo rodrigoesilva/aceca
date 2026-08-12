@@ -433,51 +433,11 @@ function fn_GridComplete(grid) {
 
 //#region FUNCOES
 
-function fn_CheckVerAtivos() {
-
-    const chkVerAtivos = document.querySelector('#chkFilterAtivo');
-
-    // Server-side: o filtro "somente ativos" agora é aplicado no banco (ver ajax.data
-    // em fn_GridList), então só precisamos redesenhar a tabela.
-    if (chkVerAtivos) {
-        chkVerAtivos.addEventListener('change', function () {
-            var table = $('.datatables-basic').DataTable();
-
-            if (this.checked) {
-                Swal.fire({
-                    title: 'INFO!!',
-                    icon: 'info',
-                    html: 'Essa op&ccedil;&atilde;o <br> exbir&aacute; somente os itens ativos !!',
-                    focusConfirm: false,
-                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                    customClass: {
-                        confirmButton: 'btn btn-label-info waves-effect'
-                    },
-                }).then((result) => {
-                    table.draw();
-                });
-            } else {
-                table.draw();
-            }
-        });
-    }
-}
+// fn_CheckVerAtivos é comum (ui-common.js).
 
 //#endregion
 
-function fn_MaskTelefone(input) {
-    // Remove tudo que não for dígito
-    let value = input.value.replace(/\D/g, '');
-
-    // Limita a 11 dígitos (DDD + 9 dígitos)
-    value = value.substring(0, 11);
-
-    // Aplica a máscara: (00) 00000-0000 / (00) 0000-0000
-    value = value.replace(/^(\d{2})(\d)/, '($1) $2');
-    value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-
-    input.value = value;
-}
+// fn_MaskTelefone é comum (ui-common.js).
 
 //#region COMBO
 
@@ -907,39 +867,5 @@ function fnItem_Add(varTbl_Obj) {
 //#endregion
 
 //#region MODAL
-function fn_ModalErro(xhr, textStatus, errorThrown) {
-    console.log("Server Response:", xhr.responseText);
-    console.log("XMLHttpRequest  :: ", xhr);
-    console.log("textStatus  :: ", textStatus);
-    console.log("errorThrown  :: ", errorThrown);
-    console.log("result  :: Error while posting SendResult");
-
-    // Sempre esconde o loading e exibe o Swal, mesmo que a resposta de erro
-    // nao seja um JSON valido (ex.: pagina de erro HTML, timeout, requisicao
-    // abortada) - sem isso o JSON.parse podia estourar exception e travar o
-    // busyLoadFull aberto para sempre, sem nenhuma mensagem para o usuario.
-    $.busyLoadFull("hide");
-
-    let mensagemErro = 'Ocorreu um erro inesperado, tente novamente.';
-
-    try {
-        const objError = JSON.parse(xhr.responseText);
-
-        if (objError?.message)
-            mensagemErro = objError.message;
-    } catch (e) {
-        console.log("Falha ao interpretar resposta de erro do servidor:", e);
-    }
-
-    Swal.fire({
-        title: 'OPS!!',
-        icon: 'error',
-        html: `<b> Erro ocorrido <br><br>${mensagemErro}</b>`,
-        focusConfirm: false,
-        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-        customClass: {
-            confirmButton: 'btn btn-label-danger waves-effect'
-        }
-    });
-}
+// fn_ModalErro é comum (ui-common.js).
 //#endregion
