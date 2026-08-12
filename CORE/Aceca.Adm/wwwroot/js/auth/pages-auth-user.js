@@ -2,6 +2,7 @@
  * profile - user (jquery)
  */
 'use strict';
+
 //#region Declare
 
 let var_Nome = 'Auth',
@@ -284,6 +285,10 @@ function fn_CarregarSobre() {
             $('#sp_Telefone').text(fn_FormatarTelefone(d.contatoDDI, d.contatoDDD, d.contatoTelefone));
             $('#sp_Email').text(d.email || '-');
             $('#sp_Endereco').text(fn_FormatarEndereco(d));
+
+            // Atividade (div_atividade) - mesmos dados de socio_log_acesso da grid de
+            // Últimos Acessos em AccountSettingsSecurity.cshtml
+            fn_PopularTimelineAtividade(d);
         },
         error: function (xhr, status, error) {
             console.error("fn_CarregarSobre error: " + error);
@@ -319,13 +324,7 @@ function fn_FormatarSocioDesde(dataCriacao) {
     return `Sócio desde ${MESES_PT[data.getMonth()]} de ${data.getFullYear()}`;
 }
 
-// Foto cadastrada em imgAvatar (coluna socio.imgAvatar) fica em
-// img/avatars/socio/imgAvatar{id}.png; sem cadastro, usa o avatar padrão da ACECA.
-function fn_UrlAvatar(id, imgAvatar) {
-    return imgAvatar
-        ? `${assetsPath}img/avatars/socio/imgAvatar${id}.png`
-        : `${assetsPath}img/avatars/socio/imgAvatarAceca.png`;
-}
+// fn_UrlAvatar é comum (ui-common.js) - usada aqui e em pages-auth-account-settings.js.
 
 function fn_FormatarEndereco(d) {
     if (!d.endereco) return '-';
@@ -338,6 +337,43 @@ function fn_FormatarEndereco(d) {
     if (d.cep) strEndereco += ' - ' + d.cep;
 
     return strEndereco;
+}
+
+//#endregion
+
+//#region ATIVIDADE
+
+// Timeline de div_atividade: mesmos 3 slots já existentes no layout, preenchidos com
+// os últimos acessos reais (socio_log_acesso) - fn_CarregarUltimosAcessos/fn_IconeAcesso/
+// fn_FormatarDataAcesso/fn_TextoBrowserOs vêm de ui-common.js (comuns com a grid de
+// Últimos Acessos em AccountSettingsSecurity.cshtml). O bloco de avatar é o mesmo sócio
+// autenticado nos 3 itens - troca a foto/nome fixos do template pelos dados reais, com
+// fallback pro avatar padrão da ACECA quando não há imgAvatar cadastrado.
+function fn_PopularTimelineAtividade(dadosPerfil) {
+    const urlAvatar = fn_UrlAvatar(dadosPerfil.id, dadosPerfil.imgAvatar);
+
+    $('.tl-avatar-img').attr('src', urlAvatar);
+    $('.tl-avatar-nome').text(dadosPerfil.nome || '-');
+    $('.tl-avatar-perfil').text(dadosPerfil.perfil || '-');
+
+    fn_CarregarUltimosAcessos(function (acessos) {
+        for (let i = 1; i <= 3; i++) {
+            const acesso = acessos[i - 1];
+
+            if (!acesso) {
+                $(`#tl_Titulo_${i}`).text('Nenhum acesso registrado');
+                $(`#tl_Data_${i}`).text('-');
+                $(`#tl_Local_${i}`).text('-');
+                continue;
+            }
+
+            const local = [acesso.cidade, acesso.estado].filter(Boolean).join(' - ') || '-';
+
+            $(`#tl_Titulo_${i}`).text(fn_TextoBrowserOs(acesso.browser, acesso.os));
+            $(`#tl_Data_${i}`).text(fn_FormatarDataAcesso(acesso.ultimoLogin));
+            $(`#tl_Local_${i}`).text(`Acesso via ${fn_TextoDispositivo(acesso.device)} - ${local}`);
+        }
+    });
 }
 
 //#endregion

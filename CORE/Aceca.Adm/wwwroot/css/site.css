@@ -37,3 +37,25 @@
 body.no-export .dt-export-btn {
     display: none !important;
 }
+
+/* Avatar do sócio no Swal "Seja bem-vindo novamente" (pages-auth.js) - mesma estrutura
+   e estilo do círculo da logo na tela de login (.lc-circle em style.css: div círculo +
+   img 100% dentro), só maior (120px em vez de 52px). */
+.swal-avatar-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid rgba(163, 43, 255, .2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(163, 43, 255, .18);
+}
+
+.swal-avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

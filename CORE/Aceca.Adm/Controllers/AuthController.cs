@@ -15,6 +15,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using static Aceca.Adm.Helper.HelperExtensionsController;
 
 namespace Aceca.Adm.Controllers
@@ -113,6 +114,45 @@ namespace Aceca.Adm.Controllers
 
         public IActionResult AccountSettings() => View();
 
+        public IActionResult AccountSettingsSecurity() => View();
+
+        public IActionResult AccountSettingsBilling() => View();
+
+        /// <summary>
+        /// Só id + ImgAvatar do sócio autenticado - usado pra atualizar o avatar do navbar
+        /// (site.js/fn_SetSessionData) e o Swal de boas-vindas do login (pages-auth.js) em
+        /// toda navegação de página, então fica de propósito fora do GetFullById (que faz
+        /// join em 5 tabelas) - aqui é sempre 1 tabela, só pela PK.
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetAvatarInfo()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var socio = await _db.Socio
+                    .Where(s => s.Id == socioId)
+                    .Select(s => new { id = s.Id, imgAvatar = s.ImgAvatar })
+                    .FirstOrDefaultAsync();
+
+                if (socio == null)
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
+
+                return Ok(new { bResult = true, type = "OK", data = socio });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetAvatarInfo));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
         /// <summary>
         /// Dados de "Sobre" da tela Meu Perfil - sempre do sócio autenticado (nunca de um id
         /// vindo do cliente, mesma trava de IDOR usada em SocioColecaoController), pra evitar
@@ -175,6 +215,298 @@ namespace Aceca.Adm.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ERRO :: {Method}", nameof(GetFullById));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Salva as alterações da tela "Meus Dados" - sempre no sócio autenticado, nunca em um
+        /// id vindo do cliente (mesma trava de IDOR do GetFullById acima). Atualiza Socio,
+        /// SocioSeguranca.NomeUsuario (apelido de exibição, não é credencial de login),
+        /// SocioContato, SocioEndereco e SocioAniversario numa única transação: mesmo padrão de
+        /// SocioController.Create, pra não deixar uma tabela atualizada e outra não em caso de
+        /// falha no meio do caminho.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> UpdateProfile(string nome, string usuario, int? telefoneDDD, string telefoneNumero,
+            string email, string aniversario, string cep, string endereco, string numero, string complemento,
+            string bairro, string cidade, string estado)
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                if (string.IsNullOrWhiteSpace(nome))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nome deve ser preenchido" });
+
+                if (!string.IsNullOrWhiteSpace(email) && !_helperController.IsValidEmailUsingMailAddress(email.Trim().ToLower()))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Formato de E-mail inválido" });
+
+                var strategy = _db.Database.CreateExecutionStrategy();
+
+                Func<Task<IActionResult>> operation = async () =>
+                {
+                    using var transaction = await _db.Database.BeginTransactionAsync();
+
+                    var socio = await _db.Socio.FirstOrDefaultAsync(s => s.Id == socioId);
+
+                    if (socio == null)
+                        return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
+
+                    socio.Nome = nome.Trim();
+
+                    var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(ss => ss.SocioId == socioId);
+
+                    if (seguranca != null)
+                        seguranca.NomeUsuario = !string.IsNullOrWhiteSpace(usuario) ? usuario.Trim() : null;
+
+                    var contato = await _db.SocioContato.FirstOrDefaultAsync(c => c.SocioId == socioId);
+
+                    if (contato != null)
+                    {
+                        contato.DDD = telefoneDDD;
+                        contato.Telefone = long.TryParse(telefoneNumero, out var telefoneNum) ? telefoneNum : null;
+                        contato.Email = !string.IsNullOrWhiteSpace(email) ? email.Trim() : null;
+                    }
+
+                    var socioEndereco = await _db.SocioEndereco.FirstOrDefaultAsync(e => e.SocioId == socioId);
+
+                    if (socioEndereco != null)
+                    {
+                        socioEndereco.CEP = cep;
+                        socioEndereco.Endereco = endereco;
+                        socioEndereco.Numero = numero;
+                        socioEndereco.Complemento = complemento;
+                        socioEndereco.Bairro = bairro;
+                        socioEndereco.Cidade = cidade;
+                        socioEndereco.Estado = estado;
+                    }
+
+                    var socioAniversario = await _db.SocioAniversario.FirstOrDefaultAsync(a => a.SocioId == socioId);
+
+                    if (socioAniversario != null)
+                    {
+                        var (dia, mes, ano) = ParseDataAniversario(aniversario);
+
+                        socioAniversario.Dia = dia;
+                        socioAniversario.Mes = mes;
+                        socioAniversario.Ano = ano;
+                    }
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Ok(new { bResult = true, type = "OK", message = "Dados atualizados com sucesso" });
+                };
+
+                return await strategy.ExecuteAsync(operation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(UpdateProfile));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        private static (int? Dia, int? Mes, int? Ano) ParseDataAniversario(string dataAniversario)
+        {
+            if (string.IsNullOrWhiteSpace(dataAniversario))
+                return (null, null, null);
+
+            var partes = dataAniversario.Split("/");
+
+            int? dia = partes.Length > 0 && int.TryParse(partes[0].Trim(), out var d) ? d : null;
+            int? mes = partes.Length > 1 && int.TryParse(partes[1].Trim(), out var m) ? m : null;
+            int? ano = partes.Length > 2 && int.TryParse(partes[2].Trim(), out var a) ? a : null;
+
+            return (dia, mes, ano);
+        }
+
+        /// <summary>
+        /// Foto de perfil do sócio autenticado. Salva sempre como img/avatars/socio/imgAvatar{id}.png
+        /// (nome fixo derivado do id, nunca do nome do arquivo enviado - sem risco de path
+        /// traversal) e marca Socio.ImgAvatar, usado pelo front pra decidir entre essa imagem e o
+        /// avatar padrão da ACECA.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> UploadAvatar(IFormFile arquivo)
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                if (arquivo == null || arquivo.Length == 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nenhuma imagem enviada" });
+
+                if (arquivo.Length > 800 * 1024)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Imagem maior que 800K" });
+
+                var extensao = Path.GetExtension(arquivo.FileName)?.ToLowerInvariant();
+                var extensoesValidas = new[] { ".png", ".jpg", ".jpeg" };
+
+                if (string.IsNullOrEmpty(extensao) || !extensoesValidas.Contains(extensao))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Formato de imagem inválido - use PNG ou JPG" });
+
+                using (var checkStream = arquivo.OpenReadStream())
+                {
+                    if (!IsValidImageContent(checkStream, extensao))
+                        return BadRequest(new { bResult = false, type = "ERRO", message = "Conteúdo do arquivo não corresponde à extensão informada" });
+                }
+
+                var pastaAvatares = Path.Combine(_appEnvironment.WebRootPath, "img", "avatars", "socio");
+
+                Directory.CreateDirectory(pastaAvatares);
+
+                var nomeArquivo = $"imgAvatar{socioId}.png";
+                var caminhoCompleto = Path.Combine(pastaAvatares, nomeArquivo);
+
+                using (var stream = new FileStream(caminhoCompleto, FileMode.Create))
+                {
+                    await arquivo.CopyToAsync(stream);
+                }
+
+                var socio = await _db.Socio.FirstOrDefaultAsync(s => s.Id == socioId);
+
+                if (socio != null)
+                {
+                    socio.ImgAvatar = nomeArquivo;
+                    await _db.SaveChangesAsync();
+                }
+
+                return Ok(new { bResult = true, type = "OK", message = "Foto atualizada com sucesso", data = new { imgAvatar = nomeArquivo } });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(UploadAvatar));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        private static bool IsValidImageContent(Stream stream, string extension)
+        {
+            Span<byte> header = stackalloc byte[12];
+
+            stream.Position = 0;
+            int read = stream.Read(header);
+            stream.Position = 0;
+
+            if (read < 4)
+                return false;
+
+            return extension switch
+            {
+                ".jpg" or ".jpeg" => header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+                ".png" => header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Troca a senha do sócio autenticado (tela "Meus Dados" -&gt; Segurança). Sempre no
+        /// sócio da claim, nunca de um id vindo do cliente. Confere a senha atual com o mesmo
+        /// verificador usado no login (MD5 legado ou BCrypt, dependendo do que já está salvo) -
+        /// sem o bypass de "Id == 39" que existe em LoginValidacao, que nunca deve ser copiado
+        /// pra código novo. Só grava o hash (Senha); não grava SenhaAberta em texto puro.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> UpdatePassword(string currentPassword, string newPassword, string confirmPassword)
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Preencha a senha atual e a nova senha" });
+
+                // Mesmas 3 regras exibidas em tempo real na tela (fn_ValidarRequisitosSenha em
+                // pages-auth-account-settings-seguranca.js) - reforçadas aqui pois validação de
+                // front-end nunca é garantia.
+                if (newPassword.Length < 8
+                    || !Regex.IsMatch(newPassword, "[A-Z]")
+                    || !Regex.IsMatch(newPassword, @"[0-9\W]"))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "A nova senha não atende aos requisitos mínimos (8 caracteres, 1 maiúscula, 1 número/símbolo)" });
+
+                if (newPassword != confirmPassword)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "A nova senha e a confirmação não coincidem" });
+
+                var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(s => s.SocioId == socioId);
+
+                if (seguranca == null)
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
+
+                using var md5Hash = MD5.Create();
+
+                if (!_helperController.VerifyMd5HashWithMySecurity(md5Hash, currentPassword, seguranca.Senha))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Senha atual incorreta" });
+
+                seguranca.Senha = _helperController.GenerateHashPassword(newPassword);
+                seguranca.SenhaAtualizada = true;
+
+                await _db.SaveChangesAsync();
+
+                return Ok(new { bResult = true, type = "OK", message = "Senha atualizada com sucesso" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(UpdatePassword));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Últimos 5 acessos do sócio autenticado (tela "Meus Dados" -&gt; Segurança), sempre
+        /// escopado pela claim - nunca por um socioId vindo do cliente.
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetUltimosAcessos()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var acessos = await _db.SocioLogAcesso
+                    .Where(a => a.SocioId == socioId)
+                    .OrderByDescending(a => a.UltimoLogin)
+                    .Take(5)
+                    .Select(a => new
+                    {
+                        browser = a.Browser,
+                        os = a.OS,
+                        device = a.Device,
+                        cidade = a.Cidade,
+                        estado = a.Estado,
+                        ultimoLogin = a.UltimoLogin,
+                    })
+                    .ToListAsync();
+
+                return Ok(new { bResult = true, type = "OK", data = acessos });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetUltimosAcessos));
 
                 return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }

@@ -73,3 +73,79 @@ $(function () {
         });
     });
 });
+
+//#region MEU PERFIL - comum a ProfileUser (timeline de atividade) e
+// AccountSettingsSecurity (grid de últimos acessos) - antes duplicado nos dois
+// arquivos de página.
+
+// Foto cadastrada em imgAvatar (coluna socio.imgAvatar) fica em
+// img/avatars/socio/imgAvatar{id}.png; sem cadastro, usa o avatar padrão da ACECA.
+function fn_UrlAvatar(id, imgAvatar) {
+    return imgAvatar
+        ? `${assetsPath}img/avatars/socio/imgAvatar${id}.png`
+        : `${assetsPath}img/avatars/socio/imgAvatarAceca.png`;
+}
+
+// Mesmos ícones/cores do layout original do template de "Últimos Acessos" (um
+// por tipo de dispositivo), escolhidos a partir do OS/Device reais gravados em
+// socio_log_acesso.
+function fn_IconeAcesso(os, device) {
+    const strOs = (os || '').toLowerCase();
+    const strDevice = (device || '').toLowerCase();
+
+    if (strOs.includes('android'))
+        return { icone: 'ri-android-line', cor: 'text-success' };
+
+    if (strOs.includes('mac'))
+        return { icone: 'ri-mac-line', cor: 'text-info' };
+
+    if (strOs.includes('ios'))
+        return { icone: 'ri-smartphone-line', cor: 'text-info' };
+
+    if (strDevice.includes('mobile') || strDevice.includes('phone'))
+        return { icone: 'ri-smartphone-line', cor: 'text-danger' };
+
+    if (strOs.includes('windows'))
+        return { icone: 'ri-macbook-line', cor: 'text-warning' };
+
+    return { icone: 'ri-computer-line', cor: 'text-secondary' };
+}
+
+// "11 de Agosto de 2026 às 14:18" - moment/locale pt-br só tem o nome do mês em
+// minúsculo, então capitaliza a primeira letra à parte. .locale() aqui só afeta
+// esta instância do moment, sem mudar o locale padrão usado no site.
+function fn_FormatarDataAcesso(ultimoLogin) {
+    if (!ultimoLogin) return '-';
+
+    const dataMoment = moment(ultimoLogin).locale('pt-br');
+    const mes = dataMoment.format('MMMM');
+    const mesCapitalizado = mes.charAt(0).toUpperCase() + mes.slice(1);
+
+    return `${dataMoment.format('D')} de ${mesCapitalizado} de ${dataMoment.format('YYYY')} às ${dataMoment.format('HH:mm')}`;
+}
+
+function fn_TextoBrowserOs(browser, os) {
+    return `${browser || 'Navegador'} no ${os || 'Dispositivo'}`;
+}
+
+function fn_TextoDispositivo(device) {
+    return device || 'Dispositivo Desconhecido';
+}
+
+// Últimos acessos (socio_log_acesso) do sócio autenticado - usado tanto na tela
+// de Segurança (grid) quanto na tela Meu Perfil (timeline de Atividade).
+function fn_CarregarUltimosAcessos(callback) {
+    $.ajax({
+        url: '/Auth/GetUltimosAcessos',
+        type: 'POST',
+        success: function (response) {
+            callback(response?.bResult ? (response.data || []) : []);
+        },
+        error: function (xhr, status, error) {
+            console.error("fn_CarregarUltimosAcessos error: " + error);
+            callback([]);
+        }
+    });
+}
+
+//#endregion

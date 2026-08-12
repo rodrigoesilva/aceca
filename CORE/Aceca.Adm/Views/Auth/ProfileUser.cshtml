@@ -38,8 +38,8 @@
                                 </li>
                             </ul>
                         </div>
-                        <a hidden="hidden" href="javascript:void(0)" class="btn btn-primary">
-                            <i class='ri-user-follow-line ri-16px me-1_5'></i>Connected
+                        <a id="btnAtualizar" asp-controller="Auth" asp-action="AccountSettings" class="btn btn-primary">
+                            <i class='ri-edit-box-line ri-16px me-1_5'></i>Atualizar Dados
                         </a>
                     </div>
                 </div>
@@ -83,27 +83,31 @@
     </div>
 
     <!--/ Actividade Login -->
-    <div class="col-xl-4 col-lg-4 col-md-4">
+    <div id="div_atividade" class="col-xl-4 col-lg-4 col-md-4">
         <div class="card card-action mb-6">
             <div class="card-header align-items-center">
                 <h5 class="card-action-title mb-0"><i class='ri-bar-chart-2-line ri-24px text-body me-4'></i>Atividade</h5>
             </div>
-            <div id="div_atividade" class="card-body pt-3">
+            <div class="card-body pt-3">
                 <ul class="timeline card-timeline mb-0">
                     <li class="timeline-item timeline-item-transparent">
                         <span class="timeline-point timeline-point-primary"></span>
                         <div class="timeline-event">
                             <div class="timeline-header mb-3">
-                                <h6 class="mb-0">12 Invoices have been paid</h6>
-                                <small class="text-muted">12 min ago</small>
+                                <h6 id="tl_Titulo_1" class="mb-0">-</h6>
+                                <small id="tl_Data_1" class="text-muted">-</small>
                             </div>
-                            <p class="mb-2">
-                                Invoices have been paid to the company
-                            </p>
-                            <div class="d-flex align-items-center mb-1">
-                                <div class="badge bg-lightest">
-                                    <img src="~/img/icons/misc/pdf.png" alt="img" width="15" class="me-2">
-                                    <span class="h6 mb-0">invoices.pdf</span>
+                            <p id="tl_Local_1" class="mb-2">-</p>
+
+                            <div class="d-flex justify-content-between flex-wrap gap-2">
+                                <div class="d-flex flex-wrap align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        <img src="~/img/avatars/socio/imgAvatarAceca.png" alt="Avatar" class="rounded-circle tl-avatar-img" />
+                                    </div>
+                                    <div>
+                                        <p class="mb-0 small fw-medium tl-avatar-nome">-</p>
+                                        <small class="tl-avatar-perfil">-</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -112,20 +116,18 @@
                         <span class="timeline-point timeline-point-success"></span>
                         <div class="timeline-event">
                             <div class="timeline-header mb-3">
-                                <h6 class="mb-0">Client Meeting</h6>
-                                <small class="text-muted">45 min ago</small>
+                                <h6 id="tl_Titulo_2" class="mb-0">-</h6>
+                                <small id="tl_Data_2" class="text-muted">-</small>
                             </div>
-                            <p class="mb-2">
-                                Project meeting with john &#64;10:15am
-                            </p>
+                            <p id="tl_Local_2" class="mb-2">-</p>
                             <div class="d-flex justify-content-between flex-wrap gap-2">
                                 <div class="d-flex flex-wrap align-items-center">
                                     <div class="avatar avatar-sm me-2">
-                                        <img src="~/img/avatars/1.png" alt="Avatar" class="rounded-circle" />
+                                        <img src="~/img/avatars/socio/imgAvatarAceca.png" alt="Avatar" class="rounded-circle tl-avatar-img" />
                                     </div>
                                     <div>
-                                        <p class="mb-0 small fw-medium">Lester McCarthy (Client)</p>
-                                        <small>CEO of @TempData.Peek("authorName")</small>
+                                        <p class="mb-0 small fw-medium tl-avatar-nome">-</p>
+                                        <small class="tl-avatar-perfil">-</small>
                                     </div>
                                 </div>
                             </div>
@@ -135,32 +137,22 @@
                         <span class="timeline-point timeline-point-info"></span>
                         <div class="timeline-event">
                             <div class="timeline-header mb-3">
-                                <h6 class="mb-0">Create a new project for client</h6>
-                                <small class="text-muted">2 Day Ago</small>
+                                <h6 id="tl_Titulo_3" class="mb-0">-</h6>
+                                <small id="tl_Data_3" class="text-muted">-</small>
                             </div>
-                            <p class="mb-2">
-                                6 team members in a project
-                            </p>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap border-top-0 p-0">
-                                    <div class="d-flex flex-wrap align-items-center">
-                                        <ul class="list-unstyled users-list d-flex align-items-center avatar-group m-0 me-2">
-                                            <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Vinnie Mostowy" class="avatar pull-up">
-                                                <img class="rounded-circle" src="~/img/avatars/5.png" alt="Avatar" />
-                                            </li>
-                                            <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Allen Rieske" class="avatar pull-up">
-                                                <img class="rounded-circle" src="~/img/avatars/12.png" alt="Avatar" />
-                                            </li>
-                                            <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Julee Rossignol" class="avatar pull-up">
-                                                <img class="rounded-circle" src="~/img/avatars/6.png" alt="Avatar" />
-                                            </li>
-                                            <li class="avatar">
-                                                <span class="avatar-initial rounded-circle pull-up text-heading" data-bs-toggle="tooltip" data-bs-placement="bottom" title="3 more">+3</span>
-                                            </li>
-                                        </ul>
+                            <p id="tl_Local_3" class="mb-2">-</p>
+
+                            <div class="d-flex justify-content-between flex-wrap gap-2">
+                                <div class="d-flex flex-wrap align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        <img src="~/img/avatars/socio/imgAvatarAceca.png" alt="Avatar" class="rounded-circle tl-avatar-img" />
                                     </div>
-                                </li>
-                            </ul>
+                                    <div>
+                                        <p class="mb-0 small fw-medium tl-avatar-nome">-</p>
+                                        <small class="tl-avatar-perfil">-</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </li>
                 </ul>

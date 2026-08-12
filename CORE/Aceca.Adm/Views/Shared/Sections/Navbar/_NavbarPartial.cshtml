@@ -67,7 +67,7 @@
             <input type="hidden" id="hdSocioLogadoId" name="hdSocioLogadoId" value="0" />
             <a class="nav-link dropdown-toggle hide-arrow p-0" href="javascript:void(0);" data-bs-toggle="dropdown">
                 <div class="avatar avatar-online">
-                    <img src="~/img/avatars/1.png" alt="User" class="w-px-40 h-auto rounded-circle">
+                    <img id="tbAvatarToggle" src="~/img/avatars/socio/imgAvatarAceca.png" alt="User" class="w-px-40 h-auto rounded-circle">
                 </div>
             </a>
             <ul class="dropdown-menu dropdown-menu-end mt-3 py-2">
@@ -75,7 +75,7 @@
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0 me-2">
                             <div class="avatar avatar-online">
-                                <img id="tbAvatar" src="~/img/avatars/1.png" alt="User" class="w-px-40 h-auto rounded-circle">
+                                <img id="tbAvatar" src="~/img/avatars/socio/imgAvatarAceca.png" alt="User" class="w-px-40 h-auto rounded-circle">
                             </div>
                         </div>
                         <div class="flex-grow-1">
@@ -93,7 +93,7 @@
                         <span class="align-middle">Meu Perfil</span>
                     </a>
                 </li>
-                <li hidden="hidden">
+                <li>
                     <a class="dropdown-item" asp-controller="Auth" asp-action="AccountSettings">
                         <i class="ri-settings-4-line ri-22px me-2"></i>
                         <span class="align-middle">Meus Dados</span>

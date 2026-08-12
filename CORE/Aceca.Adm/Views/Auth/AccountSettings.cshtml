@@ -1,178 +1,161 @@
 @{
-  ViewData["Title"] = "Account settings - Account";
+    ViewData["Title"] = "Meus Dados - Meu Perfil";
 }
 
 @section VendorStyles {
-  <link rel="stylesheet" href="~/vendor/libs/tagify/tagify.css" />
-  <link rel="stylesheet" href="~/vendor/libs/animate-css/animate.css" />
-}
-
-@section VendorScripts {
-  <script src="~/vendor/libs/tagify/tagify.js"></script>
-  <script src="~/vendor/libs/cleavejs/cleave.js"></script>
-  <script src="~/vendor/libs/cleavejs/cleave-phone.js"></script>
+    <link rel="stylesheet" href="~/vendor/css/pages/page-account-settings.css" />
 }
 
 @section PageScripts {
-  <script src="~/js/pages-account-settings-account.js" asp-append-version="true"></script>
+    <!-- Select Dropdownlist -->
+    <script src="~/js/forms-selects.js" asp-append-version="true"></script>
+
+    <script src="~/js/auth/pages-auth-account-settings.js" asp-append-version="true"></script>
 }
 
 @* ************** Content ************** *@
 <div class="row">
-  <div class="col-md-12">
-    <div class="nav-align-top">
-      <ul class="nav nav-pills flex-column flex-md-row mb-6 gap-2 gap-lg-0">
-        <li class="nav-item"><a class="nav-link active" href="javascript:void(0);"><i class="ri-group-line me-1_5"></i>Account</a></li>
-        <li class="nav-item"><a class="nav-link" href="AccountSettingsSecurity"><i class="ri-lock-line me-1_5"></i>Security</a></li>
-        <li class="nav-item"><a class="nav-link" href="AccountSettingsBilling"><i class="ri-bookmark-line me-1_5"></i>Billing & Plans</a></li>
-        <li class="nav-item"><a class="nav-link" href="AccountSettingsNotifications"><i class="ri-notification-4-line me-1_5"></i>Notifications</a></li>
-        <li class="nav-item"><a class="nav-link" href="AccountSettingsConnections"><i class="ri-link-m me-1_5"></i>Connections</a></li>
-      </ul>
-    </div>
-    <div class="card mb-6">
-      <!-- Account -->
-      <div class="card-body">
-        <div class="d-flex align-items-start align-items-sm-center gap-6">
-          <img src="~/img/avatars/1.png" alt="user-avatar" class="d-block w-px-100 h-px-100 rounded" id="uploadedAvatar" />
-          <div class="button-wrapper">
-            <label for="upload" class="btn btn-sm btn-primary me-3 mb-4" tabindex="0">
-              <span class="d-none d-sm-block">Upload new photo</span>
-              <i class="ri-upload-2-line d-block d-sm-none"></i>
-              <input type="file" id="upload" class="account-file-input" hidden accept="image/png, image/jpeg" />
-            </label>
-            <button type="button" class="btn btn-sm btn-outline-danger account-image-reset mb-4">
-              <i class="ri-refresh-line d-block d-sm-none"></i>
-              <span class="d-none d-sm-block">Reset</span>
-            </button>
-
-            <div>Allowed JPG, GIF or PNG. Max size of 800K</div>
-          </div>
+    <div class="col-md-12">
+        <div class="nav-align-top">
+            <ul class="nav nav-pills flex-column flex-md-row mb-6 gap-2 gap-lg-0">
+                <li class="nav-item"><a class="nav-link active" href="javascript:void(0);"><i class="ri-group-line me-1_5"></i> Meus Dados</a></li>
+                <li class="nav-item"><a class="nav-link" href="AccountSettingsSecurity"><i class="ri-lock-line me-1_5"></i> Segurança</a></li>
+                <li class="nav-item"><a class="nav-link" href="AccountSettingsBilling"><i class="ri-bookmark-line me-1_5"></i> Financeiro</a></li>
+            </ul>
         </div>
-      </div>
-      <div class="card-body pt-0">
-        <form id="formAccountSettings" method="GET" onsubmit="return false">
-          <div class="row mt-1 g-5">
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input class="form-control" type="text" id="firstName" name="firstName" value="John" autofocus />
-                <label for="firstName">First Name</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input class="form-control" type="text" name="lastName" id="lastName" value="Doe" />
-                <label for="lastName">Last Name</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input class="form-control" type="text" id="email" name="email" value="john.doe&#64;example.com" placeholder="john.doe&#64;example.com" />
-                <label for="email">E-mail</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input type="text" class="form-control" id="organization" name="organization" value='@TempData.Peek("authorName")' />
-                <label for="organization">Organization</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="input-group input-group-merge">
-                <div class="form-floating form-floating-outline">
-                  <input type="text" id="phoneNumber" name="phoneNumber" class="form-control" placeholder="202 555 0111" />
-                  <label for="phoneNumber">Phone Number</label>
+        <div class="card mb-6">
+            <!-- Account -->
+            <div id="div_MeusDados" class="card-body">
+                <div class="d-flex align-items-start align-items-sm-center gap-6">
+                    <img src="~/img/avatars/socio/imgAvatarAceca.png" alt="user-avatar" class="d-block w-px-100 h-px-100 rounded" id="uploadedAvatar" />
+                    <div class="button-wrapper">
+                        <label for="upload" class="btn btn-sm btn-primary me-3 mb-4" tabindex="0">
+                            <span class="d-none d-sm-block">Alterar foto</span>
+                            <i class="ri-upload-2-line d-block d-sm-none"></i>
+                            <input type="file" id="upload" class="account-file-input" hidden accept="image/png, image/jpeg" />
+                        </label>
+                        <button type="button" class="btn btn-sm btn-outline-danger account-image-reset mb-4">
+                            <i class="ri-refresh-line d-block d-sm-none"></i>
+                            <span class="d-none d-sm-block">Limpar</span>
+                        </button>
+
+                        <div>Permitido PNG ou JPG. Tamanho máximo de 800K</div>
+                    </div>
                 </div>
-                <span class="input-group-text">US (+1)</span>
-              </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input type="text" class="form-control" id="address" name="address" placeholder="Address" />
-                <label for="address">Address</label>
-              </div>
+            <div class="card-body pt-0">
+                <form id="formAccountSettings" onsubmit="return false">
+                    <div class="row mt-1 g-5">
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="nome" name="nome" autofocus />
+                                <label for="nome">Nome</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="usuario" name="usuario" placeholder="Como você quer ser chamado" />
+                                <label for="usuario">Usuário</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="email" name="email" placeholder="email@exemplo.com" />
+                                <label for="email">E-mail</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input type="text" class="form-control dt-calendar" id="aniversario" name="aniversario" placeholder="DD/MM/AAAA" data-date-format="dd/mm/yyyy" maxlength="10" oninput="fn_MaskDataAniversario(this)" />
+                                <label for="aniversario">Data de Aniversário</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input type="text" id="telefone" name="telefone" class="form-control" placeholder="(00) 00000-0000" maxlength="15" oninput="fn_MaskTelefone(this)" />
+                                <label for="telefone">Telefone</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input type="text" class="form-control" id="cep" name="cep" placeholder="00000-000" maxlength="9" oninput="fn_MaskCEP(this)" />
+                                <label for="cep">CEP</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input type="text" class="form-control" id="endereco" name="endereco" placeholder="Endereço" />
+                                <label for="endereco">Endereço</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input type="text" class="form-control" id="numero" name="numero" placeholder="Número" />
+                                <label for="numero">Número</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input type="text" class="form-control" id="complemento" name="complemento" placeholder="Complemento" />
+                                <label for="complemento">Complemento</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input type="text" class="form-control" id="bairro" name="bairro" placeholder="Bairro" />
+                                <label for="bairro">Bairro</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <input class="form-control" type="text" id="cidade" name="cidade" placeholder="Cidade" />
+                                <label for="cidade">Cidade</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating form-floating-outline">
+                                <select id="estado" name="estado" class="select2 form-select">
+                                    <option value="">-- Selecionar --</option>
+                                    <option value="AC">Acre</option>
+                                    <option value="AL">Alagoas</option>
+                                    <option value="AP">Amap&aacute;</option>
+                                    <option value="AM">Amazonas</option>
+                                    <option value="BA">Bahia</option>
+                                    <option value="CE">Cear&aacute;</option>
+                                    <option value="DF">Distrito Federal</option>
+                                    <option value="ES">Espirito Santo</option>
+                                    <option value="GO">Goi&aacute;s</option>
+                                    <option value="MA">Maranh&atilde;o</option>
+                                    <option value="MS">Mato Grosso do Sul</option>
+                                    <option value="MT">Mato Grosso</option>
+                                    <option value="MG">Minas Gerais</option>
+                                    <option value="PA">Par&aacute;</option>
+                                    <option value="PB">Para&iacute;ba</option>
+                                    <option value="PR">Paran&aacute;</option>
+                                    <option value="PE">Pernambuco</option>
+                                    <option value="PI">Piau&iacute;</option>
+                                    <option value="RJ">Rio de Janeiro</option>
+                                    <option value="RN">Rio Grande do Norte</option>
+                                    <option value="RS">Rio Grande do Sul</option>
+                                    <option value="RO">Rond&ocirc;nia</option>
+                                    <option value="RR">Roraima</option>
+                                    <option value="SC">Santa Catarina</option>
+                                    <option value="SP">S&atilde;o Paulo</option>
+                                    <option value="SE">Sergipe</option>
+                                    <option value="TO">Tocantins</option>
+                                </select>
+                                <label for="estado">Estado</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <button type="submit" id="btn_SalvarMeusDados" class="btn btn-primary me-3">Salvar Alterações</button>
+                        <button type="reset" class="btn btn-outline-secondary">Cancelar</button>
+                    </div>
+                </form>
             </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input class="form-control" type="text" id="state" name="state" placeholder="California" />
-                <label for="state">State</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input type="text" class="form-control" id="zipCode" name="zipCode" placeholder="231465" maxlength="6" />
-                <label for="zipCode">Zip Code</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input id="TagifyCountrySuggestion" name="TagifyCountrySuggestion" class="form-control h-auto" placeholder="select country" value="India, Japan, France">
-                <label for="TagifyCountrySuggestion">Country</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <input id="TagifyLanguageSuggestion" name="TagifyLanguageSuggestion" class="form-control h-auto" placeholder="select language" value="English">
-                <label for="TagifyLanguageSuggestion">Language</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <select id="timeZones" class="select2 form-select">
-                  <option value="">Select Timezone</option>
-                  <option value="-12">(GMT-12:00) International Date Line West</option>
-                  <option value="-11">(GMT-11:00) Midway Island, Samoa</option>
-                  <option value="-10">(GMT-10:00) Hawaii</option>
-                  <option value="-9">(GMT-09:00) Alaska</option>
-                  <option value="-8">(GMT-08:00) Pacific Time (US & Canada)</option>
-                  <option value="-8">(GMT-08:00) Tijuana, Baja California</option>
-                  <option value="-7">(GMT-07:00) Arizona</option>
-                  <option value="-7">(GMT-07:00) Chihuahua, La Paz, Mazatlan</option>
-                  <option value="-7">(GMT-07:00) Mountain Time (US & Canada)</option>
-                  <option value="-6">(GMT-06:00) Central America</option>
-                  <option value="-6">(GMT-06:00) Central Time (US & Canada)</option>
-                  <option value="-6">(GMT-06:00) Guadalajara, Mexico City, Monterrey</option>
-                  <option value="-6">(GMT-06:00) Saskatchewan</option>
-                  <option value="-5">(GMT-05:00) Bogota, Lima, Quito, Rio Branco</option>
-                  <option value="-5">(GMT-05:00) Eastern Time (US & Canada)</option>
-                  <option value="-5">(GMT-05:00) Indiana (East)</option>
-                  <option value="-4">(GMT-04:00) Atlantic Time (Canada)</option>
-                  <option value="-4">(GMT-04:00) Caracas, La Paz</option>
-                </select>
-                <label for="timeZones">Timezone</label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-floating form-floating-outline">
-                <select id="currency" class="select2 form-select">
-                  <option value="">Select Currency</option>
-                  <option value="usd">USD</option>
-                  <option value="euro">Euro</option>
-                  <option value="pound">Pound</option>
-                  <option value="bitcoin">Bitcoin</option>
-                </select>
-                <label for="currency">Currency</label>
-              </div>
-            </div>
-          </div>
-          <div class="mt-6">
-            <button type="submit" class="btn btn-primary me-3">Save changes</button>
-            <button type="reset" class="btn btn-outline-secondary">Reset</button>
-          </div>
-        </form>
-      </div>
-      <!-- /Account -->
+            <!-- /Account -->
+        </div>
+
     </div>
-    <div class="card">
-      <h5 class="card-header">Delete Account</h5>
-      <div class="card-body">
-        <form id="formAccountDeactivation" onsubmit="return false">
-          <div class="form-check mb-6 ms-3">
-            <input class="form-check-input" type="checkbox" name="accountActivation" id="accountActivation" />
-            <label class="form-check-label" for="accountActivation">I confirm my account deactivation</label>
-          </div>
-          <button type="submit" class="btn btn-danger deactivate-account" disabled="disabled">Deactivate Account</button>
-        </form>
-      </div>
-    </div>
-  </div>
 </div>

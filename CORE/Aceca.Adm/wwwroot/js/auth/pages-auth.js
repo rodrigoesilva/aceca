@@ -165,19 +165,26 @@ function fn_LoginAuthIni() {
                 }
             }
 
-            Swal.fire({
-                title: `Ol&aacute; ${userCk.split("|")[0].trim()}!`,
-                html: `Seja bem-vindo novamente`,
-                imageUrl: `${urlImgModaltext}`,
-                imageWidth: 400,
-                imageAlt: `${var_ImgAlt}`,
-                focusConfirm: false,
-                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                customClass: {
-                    confirmButton: 'btn btn-primary waves-effect waves-light'
+            // Usa a foto cadastrada em imgAvatar no Swal de boas-vindas, se houver -
+            // sem cadastro, mantém a imagem padrão (logo) já usada antes.
+            $.ajax({
+                url: '/Auth/GetAvatarInfo',
+                type: 'GET',
+                success: function (response) {
+                    const temAvatar = !!(response?.bResult && response.data?.imgAvatar);
+
+                    // Cache-busting: sem isso, o browser podia manter em cache uma versão
+                    // antiga da imagem (mesmo nome de arquivo, imgAvatar{id}.png) e o círculo
+                    // no Swal não atualizava depois de uma troca de foto recente.
+                    const urlImagemBoasVindas = temAvatar
+                        ? `${fn_UrlAvatar(response.data.id, response.data.imgAvatar)}?t=${Date.now()}`
+                        : urlImgModaltext;
+
+                    fn_SwalBemVindoNovamente(userCk, urlImagemBoasVindas, temAvatar);
                 },
-            }).then(() => {
-                window.location.href = '/Auth/Access';
+                error: function () {
+                    fn_SwalBemVindoNovamente(userCk, urlImgModaltext, false);
+                }
             });
 
         } else {
@@ -196,6 +203,28 @@ function fn_LoginAuthIni() {
         fn_LoginLimpar();
         fn_LoginSetupForm();
     }
+}
+
+function fn_SwalBemVindoNovamente(userCk, urlImagem, isAvatar) {
+    // Foto do sócio (isAvatar) entra num círculo, igual ao .lc-circle da tela de login
+    // (porém maior) - montado via html direto (em vez de imageUrl/imageClass do Swal2,
+    // que não estava aplicando a moldura) pra ter controle total do marcador.
+    // A logo padrão (fallback) mantém o tamanho/formato antigo, sem círculo.
+    const conteudoImagem = isAvatar
+        ? `<div class="swal-avatar-circle mx-auto mb-4"><img src="${urlImagem}" alt="${var_ImgAlt}" /></div>`
+        : `<img src="${urlImagem}" alt="${var_ImgAlt}" style="width:400px;max-width:100%;" class="mb-4" />`;
+
+    Swal.fire({
+        title: `Ol&aacute; ${userCk.split("|")[0].trim()}!`,
+        html: `${conteudoImagem}<div>Seja bem-vindo novamente</div>`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-primary waves-effect waves-light'
+        },
+    }).then(() => {
+        window.location.href = '/Auth/Access';
+    });
 }
 
 // Retorna true se a sessão local ainda está dentro dos limites de 2h ocioso / 24h absoluto

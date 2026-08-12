@@ -1,0 +1,100 @@
+@{
+    ViewData["Title"] = "Segurança - Meu Perfil";
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/vendor/css/pages/page-account-settings.css" />
+}
+
+@section PageScripts {
+    <script src="~/js/auth/pages-auth-account-settings-seguranca.js" asp-append-version="true"></script>
+}
+
+@* ************** Content ************** *@
+<div class="row">
+    <div class="col-md-12">
+        <div class="nav-align-top">
+            <ul class="nav nav-pills flex-column flex-md-row mb-6 gap-2 gap-lg-0">
+                <li class="nav-item"><a class="nav-link" href="AccountSettings"><i class="ri-group-line me-1_5"></i> Meus Dados</a></li>
+                <li class="nav-item"><a class="nav-link active" href="javascript:void(0);"><i class="ri-lock-line me-1_5"></i> Segurança</a></li>
+                <li class="nav-item"><a class="nav-link" href="AccountSettingsBilling"><i class="ri-bookmark-line me-1_5"></i> Financeiro</a></li>
+            </ul>
+        </div>
+        <!-- Change Password -->
+        <div id="div_TrocaSenha" class="card mb-6">
+            <h5 class="card-header">Alterar Senha</h5>
+            <div class="card-body pt-1">
+                <form id="formTrocaSenha" onsubmit="return false">
+                    <div class="row">
+                        <div class="mb-5 col-md-6 form-password-toggle">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input class="form-control" type="password" name="currentPassword" id="currentPassword" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+                                    <label for="currentPassword">Senha Atual</label>
+                                </div>
+                                <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-5 mb-6">
+                        <div class="col-md-6 form-password-toggle">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input class="form-control" type="password" id="newPassword" name="newPassword" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" oninput="fn_ValidarRequisitosSenha(this.value)" />
+                                    <label for="newPassword">Nova Senha</label>
+                                </div>
+                                <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 form-password-toggle">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input class="form-control" type="password" name="confirmPassword" id="confirmPassword" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" />
+                                    <label for="confirmPassword">Confirmar Nova Senha</label>
+                                </div>
+                                <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                    <h6 class="text-body">Requisitos para senhas:</h6>
+                    <ul class="ps-0 mb-0 list-unstyled">
+                        <li id="req_MinLength" class="mb-2 d-flex align-items-center text-muted">
+                            <i class="ri-circle-line me-2"></i>Mínimo de 8 caracteres
+                        </li>
+                        <li id="req_Uppercase" class="mb-2 d-flex align-items-center text-muted">
+                            <i class="ri-circle-line me-2"></i>Pelo menos um caractere Maiúsculo
+                        </li>
+                        <li id="req_Especial" class="d-flex align-items-center text-muted">
+                            <i class="ri-circle-line me-2"></i>Pelo menos um número, símbolo ou caractere especial
+                        </li>
+                    </ul>
+                    <div class="mt-6">
+                        <button type="submit" class="btn btn-primary me-3">Salvar Alterações</button>
+                        <button type="reset" class="btn btn-outline-secondary">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!--/ Change Password -->
+
+        <!-- Recent -->
+        <div id="div_GridAcessos" class="card mb-6">
+            <h6 class="card-header">Últimos Acessos</h6>
+            <div class="table-responsive">
+                <table id="tbl_UltimosAcessos" class="table">
+                    <thead>
+                        <tr>
+                            <th class="text-truncate">Browser</th>
+                            <th class="text-truncate">Equipamento</th>
+                            <th class="text-truncate">Local</th>
+                            <th class="text-truncate">Data / Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <!--/ Recent -->
+
+    </div>
+</div>

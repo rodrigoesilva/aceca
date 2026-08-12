@@ -177,9 +177,31 @@ function fn_SetSessionData(data) {
     varSessionDataSite = data;
     document.getElementById('hdSocioLogadoId').value = `${data?.nameIdentifier}`;
     document.getElementById('hdIsPerfil').value = `${data?.isPerfil}`;
-    if (document.getElementById('tbAvatar')) document.getElementById('tbAvatar').textContent = `${data?.avatar}`;
     document.getElementById('tbNome').textContent = `${data?.nome}`;
     document.getElementById('tbCargo').textContent = `${data?.cargo}`;
+
+    fn_AtualizarAvatarNavbar();
+}
+
+// GetSessionData (acima) só lê claims - sem custo de banco, chamado em toda página.
+// O avatar vem à parte, de um endpoint próprio e leve (fn_UrlAvatar é de ui-common.js).
+function fn_AtualizarAvatarNavbar() {
+    $.ajax({
+        url: '/Auth/GetAvatarInfo',
+        type: 'GET',
+        success: function (response) {
+            if (!response?.bResult) return;
+
+            const urlAvatar = fn_UrlAvatar(response.data.id, response.data.imgAvatar);
+
+            document.querySelectorAll('#tbAvatarToggle, #tbAvatar').forEach(function (img) {
+                img.src = urlAvatar;
+            });
+        },
+        error: function (xhr, status, error) {
+            console.error("fn_AtualizarAvatarNavbar error: " + error);
+        }
+    });
 }
 function fn_CleanUser() {
     document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
