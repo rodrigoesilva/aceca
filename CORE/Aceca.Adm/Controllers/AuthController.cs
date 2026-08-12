@@ -108,6 +108,78 @@ namespace Aceca.Adm.Controllers
             return View("~/Views/Auth/RegisterUpdate.cshtml");
         }
 
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public IActionResult ProfileUser() => View();
+
+        public IActionResult AccountSettings() => View();
+
+        /// <summary>
+        /// Dados de "Sobre" da tela Meu Perfil - sempre do sócio autenticado (nunca de um id
+        /// vindo do cliente, mesma trava de IDOR usada em SocioColecaoController), pra evitar
+        /// que qualquer sócio logado consiga ler nome/telefone/e-mail/endereço de outro sócio
+        /// só trocando um parâmetro. Projeta os campos explicitamente - nunca retorna o
+        /// SocioSeguranca inteiro, que carrega hash e senha em texto puro (SenhaAberta).
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetFullById()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var model = await (
+                    from s in _db.Socio
+                    join sp in _db.SocioPerfil on s.SocioPerfilId equals sp.Id
+                    join ss in _db.SocioSeguranca on s.Id equals ss.SocioId
+                    join sa in _db.SocioAniversario on s.Id equals sa.SocioId into saJoin
+                    from sa in saJoin.DefaultIfEmpty()
+                    join sc in _db.SocioContato on s.Id equals sc.SocioId into scJoin
+                    from sc in scJoin.DefaultIfEmpty()
+                    join se in _db.SocioEndereco on s.Id equals se.SocioId into seJoin
+                    from se in seJoin.DefaultIfEmpty()
+                    where s.Id == socioId
+                    select new
+                    {
+                        id = s.Id,
+                        nome = s.Nome,
+                        imgAvatar = s.ImgAvatar,
+                        dataCriacao = s.DataCriacao,
+                        usuario = ss.NomeUsuario,
+                        perfil = sp.Descricao,
+                        aniversarioDia = (int?)sa.Dia,
+                        aniversarioMes = (int?)sa.Mes,
+                        aniversarioAno = (int?)sa.Ano,
+                        contatoDDI = (int?)sc.DDI,
+                        contatoDDD = (int?)sc.DDD,
+                        contatoTelefone = (long?)sc.Telefone,
+                        email = sc.Email,
+                        endereco = se.Endereco,
+                        numero = se.Numero,
+                        complemento = se.Complemento,
+                        bairro = se.Bairro,
+                        cidade = se.Cidade,
+                        estado = se.Estado,
+                        cep = se.CEP,
+                    }
+                ).AsNoTracking().FirstOrDefaultAsync();
+
+                if (model == null)
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
+
+                return Ok(new { bResult = true, type = "OK", data = model });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetFullById));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
         /// <summary>
         /// Exibe a página de "Esqueci minha senha".
         /// </summary>

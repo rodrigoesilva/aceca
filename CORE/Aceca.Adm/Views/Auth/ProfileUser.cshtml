@@ -1,0 +1,194 @@
+@{
+    //ViewData["Title"] = "User Profile - Profile";
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/vendor/css/pages/page-profile.css" />
+}
+
+@section PageScripts {
+    <script src="~/js/auth/pages-auth-user.js" asp-append-version="true"></script>
+}
+
+@* ************** Content ************** *@
+<!-- Header -->
+<div id="div_header" class="row">
+    <div class="col-12">
+        <div class="card mb-6">
+            <div class="user-profile-header-banner">
+                <img src="~/img/pages/profile-banner.png" alt="Banner image" class="rounded-top">
+            </div>
+            <div class="user-profile-header d-flex flex-column flex-lg-row text-sm-start text-center mb-4">
+                <div class="flex-shrink-0 mt-n2 mx-sm-0 mx-auto">
+                    <img id="img_HeaderAvatar" src="~/img/avatars/socio/imgAvatarAceca.png" alt="user image" class="d-block h-auto ms-0 ms-sm-5 rounded user-profile-img">
+                </div>
+                <div class="flex-grow-1 mt-3 mt-lg-5">
+                    <div class="d-flex align-items-md-end align-items-sm-start align-items-center justify-content-md-between justify-content-start mx-5 flex-md-row flex-column gap-4">
+                        <div class="user-profile-info">
+                            <h4 id="sp_HeaderNome" class="mb-2 mt-lg-6">-</h4>
+                            <ul class="list-inline mb-0 d-flex align-items-center flex-wrap justify-content-sm-start justify-content-center gap-4">
+                                <li hidden="hidden" class="list-inline-item">
+                                    <i class='ri-palette-line me-2 ri-24px'></i><span class="fw-medium">Sócio</span>
+                                </li>
+                                <li class="list-inline-item">
+                                    <i class='ri-map-pin-line me-2 ri-24px'></i><span id="sp_HeaderCidade" class="fw-medium">-</span>
+                                </li>
+                                <li class="list-inline-item">
+                                    <i class='ri-calendar-line me-2 ri-24px'></i><span id="sp_HeaderSocioDesde" class="fw-medium">-</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <a hidden="hidden" href="javascript:void(0)" class="btn btn-primary">
+                            <i class='ri-user-follow-line ri-16px me-1_5'></i>Connected
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--/ Header -->
+
+<!-- User Profile Content -->
+<div class="row">
+    <!-- Sobre User -->
+    <div class="col-xl-4 col-lg-4 col-md-4">
+        <div class="card mb-6">
+            <div id="div_sobre" class="card-body">
+
+                <small class="card-text text-uppercase text-muted small">Sobre</small>
+                <ul class="list-unstyled my-3 py-1">
+                    <li class="d-flex align-items-center mb-4"><i class="ri-user-3-line ri-24px"></i><span class="fw-medium mx-2">Nome:</span> <span id="sp_Nome">-</span></li>
+                    <li class="d-flex align-items-center mb-4"><i class="ri-check-line ri-24px"></i><span class="fw-medium mx-2">Usuário:</span> <span id="sp_Usuario">-</span></li>
+                    <li class="d-flex align-items-center mb-4"><i class="ri-star-smile-line ri-24px"></i><span class="fw-medium mx-2">Perfil:</span> <span id="sp_Perfil">-</span></li>
+                    <li class="d-flex align-items-center mb-4"><i class="ri-calendar-line ri-24px"></i><span class="fw-medium mx-2">Aniversário:</span> <span id="sp_Aniversario">-</span></li>
+                </ul>
+
+                <small class="card-text text-uppercase text-muted small">Contatos</small>
+                <ul class="list-unstyled my-3 py-1">
+                    <li class="d-flex align-items-center mb-4"><i class="ri-phone-line ri-24px"></i><span class="fw-medium mx-2">Telefone:</span> <span id="sp_Telefone">-</span></li>
+                    <li class="d-flex align-items-center mb-2"><i class="ri-mail-open-line ri-24px"></i><span class="fw-medium mx-2">E-mail:</span> <span id="sp_Email">-</span></li>
+                </ul>
+
+                <small class="card-text text-uppercase text-muted small">Correspondência</small>
+                <ul class="list-unstyled mb-0 mt-3 pt-1">
+                    <li class="d-flex align-items-center mb-4">
+                        <i class="ri-map-pin-line ri-24px text-body me-2"></i>
+                        <div class="d-flex flex-wrap"><span class="fw-medium me-2">Endereço:</span><span id="sp_Endereco">-</span></div>
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+    </div>
+
+    <!--/ Actividade Login -->
+    <div class="col-xl-4 col-lg-4 col-md-4">
+        <div class="card card-action mb-6">
+            <div class="card-header align-items-center">
+                <h5 class="card-action-title mb-0"><i class='ri-bar-chart-2-line ri-24px text-body me-4'></i>Atividade</h5>
+            </div>
+            <div id="div_atividade" class="card-body pt-3">
+                <ul class="timeline card-timeline mb-0">
+                    <li class="timeline-item timeline-item-transparent">
+                        <span class="timeline-point timeline-point-primary"></span>
+                        <div class="timeline-event">
+                            <div class="timeline-header mb-3">
+                                <h6 class="mb-0">12 Invoices have been paid</h6>
+                                <small class="text-muted">12 min ago</small>
+                            </div>
+                            <p class="mb-2">
+                                Invoices have been paid to the company
+                            </p>
+                            <div class="d-flex align-items-center mb-1">
+                                <div class="badge bg-lightest">
+                                    <img src="~/img/icons/misc/pdf.png" alt="img" width="15" class="me-2">
+                                    <span class="h6 mb-0">invoices.pdf</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="timeline-item timeline-item-transparent">
+                        <span class="timeline-point timeline-point-success"></span>
+                        <div class="timeline-event">
+                            <div class="timeline-header mb-3">
+                                <h6 class="mb-0">Client Meeting</h6>
+                                <small class="text-muted">45 min ago</small>
+                            </div>
+                            <p class="mb-2">
+                                Project meeting with john &#64;10:15am
+                            </p>
+                            <div class="d-flex justify-content-between flex-wrap gap-2">
+                                <div class="d-flex flex-wrap align-items-center">
+                                    <div class="avatar avatar-sm me-2">
+                                        <img src="~/img/avatars/1.png" alt="Avatar" class="rounded-circle" />
+                                    </div>
+                                    <div>
+                                        <p class="mb-0 small fw-medium">Lester McCarthy (Client)</p>
+                                        <small>CEO of @TempData.Peek("authorName")</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="timeline-item timeline-item-transparent">
+                        <span class="timeline-point timeline-point-info"></span>
+                        <div class="timeline-event">
+                            <div class="timeline-header mb-3">
+                                <h6 class="mb-0">Create a new project for client</h6>
+                                <small class="text-muted">2 Day Ago</small>
+                            </div>
+                            <p class="mb-2">
+                                6 team members in a project
+                            </p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap border-top-0 p-0">
+                                    <div class="d-flex flex-wrap align-items-center">
+                                        <ul class="list-unstyled users-list d-flex align-items-center avatar-group m-0 me-2">
+                                            <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Vinnie Mostowy" class="avatar pull-up">
+                                                <img class="rounded-circle" src="~/img/avatars/5.png" alt="Avatar" />
+                                            </li>
+                                            <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Allen Rieske" class="avatar pull-up">
+                                                <img class="rounded-circle" src="~/img/avatars/12.png" alt="Avatar" />
+                                            </li>
+                                            <li data-bs-toggle="tooltip" data-popup="tooltip-custom" data-bs-placement="top" title="Julee Rossignol" class="avatar pull-up">
+                                                <img class="rounded-circle" src="~/img/avatars/6.png" alt="Avatar" />
+                                            </li>
+                                            <li class="avatar">
+                                                <span class="avatar-initial rounded-circle pull-up text-heading" data-bs-toggle="tooltip" data-bs-placement="bottom" title="3 more">+3</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!--/ Grid Colecao -->
+    <div id="div_grid_colecao" class="col-xl-4 col-lg-4 col-md-4">
+        <div class="card mb-4">
+            <h5 class="card-header">Coleção</h5>
+            <div class="card-datatable table-responsive pb-0 mb-n4">
+                <table class="table datatable-project table-border-bottom-0">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th>Project</th>
+                            <th>leader</th>
+                            <th>teams</th>
+                            <th>Progress</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+<!--/ User Profile Content -->
