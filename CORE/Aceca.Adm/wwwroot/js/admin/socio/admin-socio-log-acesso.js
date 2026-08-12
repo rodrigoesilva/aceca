@@ -90,7 +90,7 @@ function fn_GridList(formValid) {
                 },
 
                 dataSrc: function (result) {
-                    console.log("fn_GridList :: ", result)
+                    //console.log("fn_GridList :: ", result)
                     return result.data;
                 }
             },
@@ -248,6 +248,35 @@ function fn_GridList(formValid) {
                         }
 
                         return data;
+                    }
+                },
+                // COLUNA - ACOES
+                {
+                    data: 'Id',
+                    targets: -1,
+                    className: "text-center",
+                    orderable: false,
+                    searchable: false,
+                    render: function (data, type, full, meta) {
+
+                        let btns = '';
+
+                        //console.log("Acao data ::: ", data);
+                        //console.log("Acao type ::: ", type);
+                        //console.log("Acao full ::: ", full);
+                        //console.log("Acao meta ::: ", meta);
+                        if (type === 'display') {
+                            let itemId = data;
+                            let itemDados = full;
+                            let itemObjJson = encodeURIComponent(JSON.stringify(full));
+
+                            btns =
+                                '<div class="d-inline-block text-nowrap">' +
+                                '<a href="javascript:fn_Pop(' + itemObjJson + ',' + "'Edit'" + ');" class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body me-1"><i class="ri-edit-box-line ri-22px"></i></a>' +
+                                '</div>'
+                        }
+
+                        return (btns);
                     }
                 },
             ],
