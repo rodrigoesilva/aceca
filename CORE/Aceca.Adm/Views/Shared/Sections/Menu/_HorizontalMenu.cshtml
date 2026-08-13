@@ -54,6 +54,7 @@
                         </li>
                     </ul>
                 </li>-->
+                
                 <!-- Agenda -->
                 <li class='menu-item@(currentPage.StartsWith("/Agenda") ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">
@@ -364,6 +365,42 @@
                         </li>
                     </ul>
                 </li>
+
+                <!-- Configuracoes -->
+                <li hidden="hidden" class='menu-item@(currentPage.StartsWith("/Config") ? " active" : "")'>
+                    <a href="javascript:void(0)" class="menu-link menu-toggle">
+                        <i class="menu-icon tf-icons ri-settings-4-line"></i>
+                        <div data-i18n="Configurações">Configurações</div>
+                    </a>
+
+                    <ul class="menu-sub">
+                        <!-- Configuracoes / Drive  -->
+                        <li class='menu-item@(currentPage == "/Configuracoes/Drive" ? " active" : "")'>
+                            <a asp-controller="AdmConfig" asp-action="Index" class="menu-link">
+                                <i class="menu-icon tf-icons ri-hard-drive-3-line"></i>
+                                <div data-i18n="Drive">Drive</div>
+                            </a>
+                        </li>
+
+                        <!-- Configuracoes / Config. Gerais-->
+                        <li class='menu-item@(currentPage == "/Configuracoes/ConfiguracoesGerais" ? " active" : "")'>
+                            <a asp-controller="AdmConfig" asp-action="Index" class="menu-link">
+                                <i class="menu-icon tf-icons ri-tools-line"></i>
+                                <div data-i18n="Configurações Gerais">Configurações Gerais</div>
+                            </a>
+                        </li>
+
+                        <!-- Configuracoes / Textos -->
+                        <li class='menu-item@(currentPage == "/Configuracoes/TextoEmail" ? " active" : "")'>
+                            <a asp-controller="AdmConfig" asp-action="Index" class="menu-link">
+                                <i class="menu-icon tf-icons ri-file-settings-line"></i>
+                                <div data-i18n="Textos">Textos</div>
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
             </ul>
         }
         else

@@ -69,6 +69,17 @@ namespace Aceca.Adm.Models
 
     #region admin
 
+    [Table("adm_config")]
+    public class AdmConfig : BaseModel
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int? Id { get; set; }
+        public string? Parametro { get; set; }
+        public string? Descricao { get; set; }
+        public string? Valor { get; set; }
+    }
+
     [Table("admin_usuario")]
     public class AdminUsuario
     {

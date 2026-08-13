@@ -1,0 +1,85 @@
+@{
+    Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
+}
+
+@section VendorStyles {
+    <!-- Row Group CSS -->
+    <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
+
+}
+
+@section PageScripts {
+    <script src="~/js/admin/configuracao/app-config-adm-admconfig.js" asp-append-version="true"></script>
+}
+
+@* ************** Content ************** *@
+<div class="card">
+    <div class="card-datatable table-responsive pt-0">
+        <table class="datatables-basic table table-bordered">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>id</th>
+                    <th>Ações</th>
+                    <th>Parâmetro</th>
+                    <th>Descrição</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Add new Item -->
+<div class="offcanvas offcanvas-end" id="pop-add-new-item">
+    <div class="offcanvas-header border-bottom">
+        <input type="hidden" id="hdId" name="hdId" value="0" />
+        <h5 class="offcanvas-title" id="h5-pop-add-new-item">Novo Registro</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body flex-grow-1">
+        <form class="form-add-new-item pt-0 row g-3" id="form-pop-add-new-item" onsubmit="return false">
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_01" class="input-group-text"><i class="ri-key-2-line ri-18px"></i></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_01" class="form-control dt-line-01" name="pop_line_item_01" placeholder="parametro" aria-label="Parametro" aria-describedby="line_item_01" />
+                        <label for="pop_line_item_01">Parâmetro</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_02" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_02" class="form-control dt-line-02" name="pop_line_item_02" placeholder="descricao" aria-label="Descricao" aria-describedby="line_item_02" />
+                        <label for="pop_line_item_02">Descrição</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <span id="line_item_03" class="input-group-text"><i class="ri-profile-line ri-18px"></i></span>
+                    <div class="form-floating form-floating-outline">
+                        <input type="text" id="pop_line_item_03" class="form-control dt-line-03" name="pop_line_item_03" placeholder="valor" aria-label="Valor" aria-describedby="line_item_03" />
+                        <label for="pop_line_item_03">Valor</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <div class="input-group input-group-merge">
+                    <div class="form-check form-switch mb-2">
+                        <input type="checkbox" id="pop_line_item_04" class="form-check-input dt-line-04" name="pop_line_item_04" placeholder="status" aria-label="Status" aria-describedby="line_item_04" />
+                        <label class="form-check-label" for="pop_line_item_04">Status</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
+                <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>
+            </div>
+        </form>
+
+    </div>
+</div>
