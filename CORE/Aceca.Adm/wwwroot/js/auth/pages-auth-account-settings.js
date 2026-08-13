@@ -70,7 +70,7 @@ function fn_CarregarMeusDados() {
             document.getElementById('cidade').value = d.cidade || '';
             $('#estado').val(d.estado || '').trigger('change');
 
-            document.getElementById('uploadedAvatar').src = fn_UrlAvatar(d.id, d.imgAvatar);
+            document.getElementById('uploadedAvatar').src = fnhelper_UrlAvatar(d.id, d.imgAvatar);
         },
         error: function (xhr, status, error) {
             $.busyLoadFull("hide");
@@ -95,7 +95,7 @@ function fn_FormatarTelefoneInput(ddd, telefone) {
     return `(${ddd}) ${strTelefone.slice(0, -4)}-${strTelefone.slice(-4)}`;
 }
 
-// fn_UrlAvatar é comum (ui-common.js) - usada aqui e em pages-auth-user.js.
+// fnhelper_UrlAvatar é comum (helper-ui-common.js) - usada aqui e em pages-auth-user.js.
 
 function fn_WireSalvar() {
     const form = document.querySelector('#formAccountSettings');
@@ -177,7 +177,7 @@ function fn_WireSalvar() {
 
 //#region CEP
 
-// fn_MaskCEP e fn_BuscaEnderecoPorCep são comuns (ui-common.js). Callback específico
+// fnhelper_MaskCEP e fnhelper_BuscaEnderecoPorCep são comuns (helper-ui-common.js). Callback específico
 // desta tela - decide em quais campos preencher o retorno da ViaCEP.
 function fn_PreencherEnderecoMeusDados(result) {
     document.getElementById('endereco').value = result.logradouro || '';
@@ -190,7 +190,7 @@ function fn_PreencherEnderecoMeusDados(result) {
 
 //#endregion
 
-// fn_MaskTelefone e fn_MaskDataAniversario são comuns (ui-common.js).
+// fnhelper_MaskTelefone e fnhelper_MaskDataAniversario são comuns (helper-ui-common.js).
 
 //#region AVATAR
 

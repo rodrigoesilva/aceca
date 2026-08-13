@@ -1,5 +1,5 @@
 /**
- * ui-common.js
+ * helper-ui-common.js
  *
  * Inicializações repetidas em quase toda página administrativa/negociação:
  * SweetAlert2 com estilo padrão de botões, cores de tema (dark/light) e o
@@ -80,7 +80,7 @@ $(function () {
 
 // Foto cadastrada em imgAvatar (coluna socio.imgAvatar) fica em
 // img/avatars/socio/imgAvatar{id}.png; sem cadastro, usa o avatar padrão da ACECA.
-function fn_UrlAvatar(id, imgAvatar) {
+function fnhelper_UrlAvatar(id, imgAvatar) {
     return imgAvatar
         ? `${assetsPath}img/avatars/socio/imgAvatar${id}.png`
         : `${assetsPath}img/avatars/socio/imgAvatarAceca.png`;
@@ -89,7 +89,7 @@ function fn_UrlAvatar(id, imgAvatar) {
 // Mesmos ícones/cores do layout original do template de "Últimos Acessos" (um
 // por tipo de dispositivo), escolhidos a partir do OS/Device reais gravados em
 // socio_log_acesso.
-function fn_IconeAcesso(os, device) {
+function fnhelper_IconeAcesso(os, device) {
     const strOs = (os || '').toLowerCase();
     const strDevice = (device || '').toLowerCase();
 
@@ -114,7 +114,7 @@ function fn_IconeAcesso(os, device) {
 // "11 de Agosto de 2026 às 14:18" - moment/locale pt-br só tem o nome do mês em
 // minúsculo, então capitaliza a primeira letra à parte. .locale() aqui só afeta
 // esta instância do moment, sem mudar o locale padrão usado no site.
-function fn_FormatarDataAcesso(ultimoLogin) {
+function fnhelper_FormatarDataAcesso(ultimoLogin) {
     if (!ultimoLogin) return '-';
 
     const dataMoment = moment(ultimoLogin).locale('pt-br');
@@ -124,17 +124,17 @@ function fn_FormatarDataAcesso(ultimoLogin) {
     return `${dataMoment.format('D')} de ${mesCapitalizado} de ${dataMoment.format('YYYY')} às ${dataMoment.format('HH:mm')}`;
 }
 
-function fn_TextoBrowserOs(browser, os) {
+function fnhelper_TextoBrowserOs(browser, os) {
     return `${browser || 'Navegador'} no ${os || 'Dispositivo'}`;
 }
 
-function fn_TextoDispositivo(device) {
+function fnhelper_TextoDispositivo(device) {
     return device || 'Dispositivo Desconhecido';
 }
 
 // Últimos acessos (socio_log_acesso) do sócio autenticado - usado tanto na tela
 // de Segurança (grid) quanto na tela Meu Perfil (timeline de Atividade).
-function fn_CarregarUltimosAcessos(callback) {
+function fnhelper_CarregarUltimosAcessos(callback) {
     $.ajax({
         url: '/Auth/GetUltimosAcessos',
         type: 'POST',
@@ -142,7 +142,7 @@ function fn_CarregarUltimosAcessos(callback) {
             callback(response?.bResult ? (response.data || []) : []);
         },
         error: function (xhr, status, error) {
-            console.error("fn_CarregarUltimosAcessos error: " + error);
+            console.error("fnhelper_CarregarUltimosAcessos error: " + error);
             callback([]);
         }
     });
@@ -153,7 +153,7 @@ function fn_CarregarUltimosAcessos(callback) {
 //#region MASCARAS - antes duplicadas em admin-socio.js, admin-socio-contato.js,
 // admin-socio-endereco.js, negociacao-socio.js e pages-auth-account-settings.js.
 
-function fn_MaskTelefone(input) {
+function fnhelper_MaskTelefone(input) {
     // Remove tudo que não for dígito
     let value = input.value.replace(/\D/g, '');
 
@@ -167,7 +167,7 @@ function fn_MaskTelefone(input) {
     input.value = value;
 }
 
-function fn_MaskDataAniversario(input) {
+function fnhelper_MaskDataAniversario(input) {
     // Remove tudo que não for dígito (funciona tanto ao digitar quanto ao colar
     // uma data completa, ex.: "23/02/1956", pois o evento "input" dispara nos dois casos)
     let value = input.value.replace(/\D/g, '');
@@ -186,9 +186,9 @@ function fn_MaskDataAniversario(input) {
 }
 
 // onEncontrado é opcional - só telas que querem autocompletar o endereço passam esse
-// callback (ex.: fn_MaskCEP(this, fn_PreencherEndereco)); sem ele, só aplica a máscara
+// callback (ex.: fnhelper_MaskCEP(this, fn_PreencherEndereco)); sem ele, só aplica a máscara
 // (mesmo comportamento de telas como SocioEndereco.cshtml, que preenchem manualmente).
-function fn_MaskCEP(input, onEncontrado) {
+function fnhelper_MaskCEP(input, onEncontrado) {
     // Remove tudo que não for dígito
     let value = input.value.replace(/\D/g, '');
 
@@ -201,14 +201,14 @@ function fn_MaskCEP(input, onEncontrado) {
     input.value = value;
 
     if (onEncontrado && value.replace(/\D/g, '').length === 8) {
-        fn_BuscaEnderecoPorCep(value, onEncontrado);
+        fnhelper_BuscaEnderecoPorCep(value, onEncontrado);
     }
 }
 
 // onEncontrado recebe o objeto retornado pela ViaCEP ({logradouro, bairro, localidade,
 // uf, ...}) já validado (nunca chamado se não encontrar) - cada tela decide em quais
 // campos preencher esses dados.
-function fn_BuscaEnderecoPorCep(cep, onEncontrado) {
+function fnhelper_BuscaEnderecoPorCep(cep, onEncontrado) {
     const cepLimpo = cep.replace(/\D/g, '');
 
     // fetch() nativo (não $.ajax) de propósito: o $.ajaxSetup acima injeta o header
@@ -244,52 +244,15 @@ function fn_BuscaEnderecoPorCep(cep, onEncontrado) {
 
 //#endregion
 
-//#region GRID - antes duplicadas em praticamente todo admin-*.js/negociacao-*.js
-// (fn_ModalErro em 32 arquivos, fn_CheckVerAtivos em 25 - cópias idênticas).
-
-// Handler padrão de erro de $.ajax (error: fn_ModalErro) usado em quase toda tela
-// admin/negociação. Sempre fecha o busyLoad e mostra a mensagem do servidor, se a
-// resposta de erro vier em JSON - senão cai numa mensagem genérica.
-function fn_ModalErro(xhr, textStatus, errorThrown) {
-    console.log("Server Response:", xhr.responseText);
-    console.log("XMLHttpRequest  :: ", xhr);
-    console.log("textStatus  :: ", textStatus);
-    console.log("errorThrown  :: ", errorThrown);
-    console.log("result  :: Error while posting SendResult");
-
-    // Sempre esconde o loading e exibe o Swal, mesmo que a resposta de erro
-    // nao seja um JSON valido (ex.: pagina de erro HTML, timeout, requisicao
-    // abortada) - sem isso o JSON.parse podia estourar exception e travar o
-    // busyLoadFull aberto para sempre, sem nenhuma mensagem para o usuario.
-    $.busyLoadFull("hide");
-
-    let mensagemErro = 'Ocorreu um erro inesperado, tente novamente.';
-
-    try {
-        const objError = JSON.parse(xhr.responseText);
-
-        if (objError?.message)
-            mensagemErro = objError.message;
-    } catch (e) {
-        console.log("Falha ao interpretar resposta de erro do servidor:", e);
-    }
-
-    Swal.fire({
-        title: 'OPS!!',
-        icon: 'error',
-        html: `<b> Erro ocorrido <br><br>${mensagemErro}</b>`,
-        focusConfirm: false,
-        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-        customClass: {
-            confirmButton: 'btn btn-label-danger waves-effect'
-        }
-    });
-}
+//#region GRID - antes duplicada em praticamente todo admin-*.js/negociacao-*.js
+// (fnhelper_CheckVerAtivos em 25 arquivos - cópias idênticas). O handler de erro de
+// $.ajax que também vivia aqui (fn_ModalErro) foi substituído por
+// fnhelper_AlertErro, na região "Alertas (Swal) comuns" abaixo.
 
 // Liga o checkbox "Exibir Somente Ativos" (#chkFilterAtivo, injetado no DOM pela
 // própria grid ao carregar) ao redraw da DataTable - o filtro em si já é aplicado
 // no servidor (ver ajax.data em cada fn_GridList), aqui só redesenha.
-function fn_CheckVerAtivos() {
+function fnhelper_CheckVerAtivos() {
     const chkVerAtivos = document.querySelector('#chkFilterAtivo');
 
     if (chkVerAtivos) {
@@ -314,6 +277,55 @@ function fn_CheckVerAtivos() {
             }
         });
     }
+}
+
+//#endregion
+
+//#region Alertas (Swal) comuns entre telas
+
+// Resolve a melhor mensagem de erro disponivel a partir do que os callbacks de
+// ajax/DataTables tem em maos: o jqXHR (contem responseJSON.message quando a Api/Web
+// devolve BadRequest/Ok com { message }), o errorThrown do jQuery (string tipo "Bad
+// Request"), um objeto de resultado de sucesso com bResult === false (tem .message),
+// ou simplesmente uma string/mensagem estatica ja pronta.
+function fnhelper_ResolverMensagemErro(erro, fallback) {
+    if (erro === null || erro === undefined || erro === '') return fallback || 'Erro desconhecido';
+
+    if (typeof erro === 'string') return erro;
+
+    if (typeof erro === 'object') {
+        const mensagem = erro.responseJSON?.message
+            || erro.message
+            || erro.msg
+            || erro.responseText;
+
+        if (mensagem) return mensagem;
+    }
+
+    return fallback || 'Erro desconhecido';
+}
+
+// Alerta padrao de erro (Swal). Aceita:
+//   fnhelper_AlertErro('mensagem estatica')
+//   fnhelper_AlertErro(result)                       // result.bResult === false, usa result.message
+//   fnhelper_AlertErro(XMLHttpRequest, errorThrown)   // callback de erro do ajax/DataTables
+function fnhelper_AlertErro(erro, fallback) {
+    const mensagem = fnhelper_ResolverMensagemErro(erro, fallback);
+
+    // Idempotente - a maioria dos callbacks ja chama isso antes, mas garante que o
+    // overlay de loading nunca fique preso na tela atras do alerta de erro.
+    if (window.jQuery && $.busyLoadFull) $.busyLoadFull("hide");
+
+    Swal.fire({
+        title: 'OPS!!',
+        icon: 'error',
+        html: `<b> Erro ocorrido <br><br>` + mensagem + `</b>`,
+        focusConfirm: false,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+        customClass: {
+            confirmButton: 'btn btn-label-danger waves-effect'
+        }
+    });
 }
 
 //#endregion

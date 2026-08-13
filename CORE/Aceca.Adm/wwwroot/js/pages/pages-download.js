@@ -577,7 +577,7 @@ function fn_GridComplete(grid) {
 
 //#region MODAL
 
-// fn_ModalErro é comum (ui-common.js).
+// fnhelper_AlertErro é comum (helper-ui-common.js).
 
 //#endregion
 

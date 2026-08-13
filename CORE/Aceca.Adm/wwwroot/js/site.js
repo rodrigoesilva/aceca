@@ -184,7 +184,7 @@ function fn_SetSessionData(data) {
 }
 
 // GetSessionData (acima) só lê claims - sem custo de banco, chamado em toda página.
-// O avatar vem à parte, de um endpoint próprio e leve (fn_UrlAvatar é de ui-common.js).
+// O avatar vem à parte, de um endpoint próprio e leve (fnhelper_UrlAvatar é de helper-ui-common.js).
 function fn_AtualizarAvatarNavbar() {
     $.ajax({
         url: '/Auth/GetAvatarInfo',
@@ -192,7 +192,7 @@ function fn_AtualizarAvatarNavbar() {
         success: function (response) {
             if (!response?.bResult) return;
 
-            const urlAvatar = fn_UrlAvatar(response.data.id, response.data.imgAvatar);
+            const urlAvatar = fnhelper_UrlAvatar(response.data.id, response.data.imgAvatar);
 
             document.querySelectorAll('#tbAvatarToggle, #tbAvatar').forEach(function (img) {
                 img.src = urlAvatar;

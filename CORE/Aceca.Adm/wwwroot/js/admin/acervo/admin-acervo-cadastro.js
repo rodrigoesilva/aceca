@@ -175,7 +175,7 @@ function fn_ModalOpcaoInvalida() {
     })
 }
 
-// fn_ModalErro é comum (ui-common.js).
+// fnhelper_AlertErro é comum (helper-ui-common.js).
 
 function fn_ModalGetObj() {
     //console.log("fn_ModalGetObj ::: ");
@@ -483,7 +483,7 @@ function fn_LoadCmb_MarcaAcervo() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -508,7 +508,7 @@ function fn_LoadCmb_MarcaExPaisDestino() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -534,7 +534,7 @@ function fn_LoadCmb_MarcaVariante() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -559,7 +559,7 @@ function fn_LoadCmb_IncluidoSocio() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -610,7 +610,7 @@ function fn_LoadCmb_MarcaFase() {
                 if (textStatus === 'abort') return;
 
                 $cmb.prop('disabled', false);
-                fn_ModalErro(xhr, textStatus, errorThrown);
+                fnhelper_AlertErro(xhr, textStatus);
             },
         }
     );
@@ -636,7 +636,7 @@ function fn_LoadCmb_MarcaFinalidade() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -664,7 +664,7 @@ function fn_LoadCmb_MarcaFabrica() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -690,7 +690,7 @@ function fn_LoadCmb_MarcaDimensao() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -716,7 +716,7 @@ function fn_LoadCmb_MarcaTipo() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -749,7 +749,7 @@ function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -775,7 +775,7 @@ function fn_LoadCmb_MarcaImpressora() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -801,7 +801,7 @@ function fn_LoadCmb_MarcaQualidadeImagem() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -827,7 +827,7 @@ function fn_LoadCmb_MarcaRaridade() {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -1089,7 +1089,7 @@ function fn_GetCodigoAceca() {
                 }
             },
             error: function (xhr, textStatus, errorThrown) {
-                fn_ModalErro(xhr, textStatus, errorThrown);
+                fnhelper_AlertErro(xhr, textStatus);
             },
         }
     );
@@ -1374,7 +1374,7 @@ function fn_ModalSalvar(e) {
                 }
             },
             error: function (xhr, textStatus, errorThrown) {
-                fn_ModalErro(xhr, textStatus, errorThrown);
+                fnhelper_AlertErro(xhr, textStatus);
             },
         });
     }

@@ -66,19 +66,19 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating form-floating-outline">
-                                <input type="text" class="form-control dt-calendar" id="aniversario" name="aniversario" placeholder="DD/MM/AAAA" data-date-format="dd/mm/yyyy" maxlength="10" oninput="fn_MaskDataAniversario(this)" />
+                                <input type="text" class="form-control dt-calendar" id="aniversario" name="aniversario" placeholder="DD/MM/AAAA" data-date-format="dd/mm/yyyy" maxlength="10" oninput="fnhelper_MaskDataAniversario(this)" />
                                 <label for="aniversario">Data de Aniversário</label>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating form-floating-outline">
-                                <input type="text" id="telefone" name="telefone" class="form-control" placeholder="(00) 00000-0000" maxlength="15" oninput="fn_MaskTelefone(this)" />
+                                <input type="text" id="telefone" name="telefone" class="form-control" placeholder="(00) 00000-0000" maxlength="15" oninput="fnhelper_MaskTelefone(this)" />
                                 <label for="telefone">Telefone</label>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating form-floating-outline">
-                                <input type="text" class="form-control" id="cep" name="cep" placeholder="00000-000" maxlength="9" oninput="fn_MaskCEP(this, fn_PreencherEnderecoMeusDados)" />
+                                <input type="text" class="form-control" id="cep" name="cep" placeholder="00000-000" maxlength="9" oninput="fnhelper_MaskCEP(this, fn_PreencherEnderecoMeusDados)" />
                                 <label for="cep">CEP</label>
                             </div>
                         </div>

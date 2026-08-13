@@ -365,7 +365,7 @@ function fn_GridComplete(grid) {
         elfilter.insertAdjacentElement('beforebegin', divElement);
 
         //Verifca Selecao de ver Ativos
-        fn_CheckVerAtivos();
+        fnhelper_CheckVerAtivos();
 
     } else {
         Swal.fire({
@@ -392,7 +392,7 @@ function fn_GridComplete(grid) {
 
 //#region FUNCOES
 
-// fn_CheckVerAtivos é comum (ui-common.js).
+// fnhelper_CheckVerAtivos é comum (helper-ui-common.js).
 //#endregion
 
 //#region POP
@@ -783,5 +783,5 @@ function fnItem_Add(varTbl_Obj) {
 //#endregion
 
 //#region MODAL
-// fn_ModalErro é comum (ui-common.js).
+// fnhelper_AlertErro é comum (helper-ui-common.js).
 //#endregion

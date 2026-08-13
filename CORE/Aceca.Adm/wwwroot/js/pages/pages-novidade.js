@@ -915,7 +915,7 @@ function fn_LoadCmb_MarcaFase() {
         },
         error: function (xhr, textStatus, errorThrown) {
             cmbMarcaFaseLoaded = false;
-            fn_ModalErro(xhr, textStatus, errorThrown);
+            fnhelper_AlertErro(xhr, textStatus);
         }
     });
 }
@@ -950,7 +950,7 @@ function fn_LoadCmb_MarcaTipo() {
                         });
                     },
                     error: function (xhr, textStatus, errorThrown) {
-                        fn_ModalErro(xhr, textStatus, errorThrown);
+                        fnhelper_AlertErro(xhr, textStatus);
                     },
                 }
             );
@@ -972,7 +972,7 @@ function fn_LoadCmb_MarcaTipo() {
                         });
                     },
                     error: function (xhr, textStatus, errorThrown) {
-                        fn_ModalErro(xhr, textStatus, errorThrown);
+                        fnhelper_AlertErro(xhr, textStatus);
                     },
                 }
             );
@@ -1006,7 +1006,7 @@ function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -1032,7 +1032,7 @@ function fn_LoadCmb_MarcaSubTipo(idMarcaTipo) {
                     });
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
                 },
             }
         );
@@ -1077,7 +1077,7 @@ function fn_ModalSelecionarFase() {
     })
 }
 
-// fn_ModalErro é comum (ui-common.js).
+// fnhelper_AlertErro é comum (helper-ui-common.js).
 
 function fn_Modal(obj, action) {
     //console.log("fn_Modal obj::: ", obj);
@@ -1366,7 +1366,7 @@ function fnItem_Edit(varItems_Row) {
                 },
                 error: function (xhr, textStatus, errorThrown) {
 
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
 
                     return false;
                 },

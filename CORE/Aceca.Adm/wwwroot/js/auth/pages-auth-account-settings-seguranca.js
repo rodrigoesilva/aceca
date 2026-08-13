@@ -135,29 +135,29 @@ function fn_SwalErro(mensagem) {
 
 //#region ULTIMOS ACESSOS
 
-// fn_IconeAcesso, fn_FormatarDataAcesso, fn_TextoBrowserOs e fn_CarregarUltimosAcessos
+// fnhelper_IconeAcesso, fnhelper_FormatarDataAcesso, fnhelper_TextoBrowserOs e fnhelper_CarregarUltimosAcessos
 // (fetch) são comuns a esta grid e à timeline de Atividade em ProfileUser.cshtml -
-// centralizados em ui-common.js, carregado em toda página não-front.
+// centralizados em helper-ui-common.js, carregado em toda página não-front.
 function fn_PopularGridAcessos() {
     const tbody = document.querySelector('#tbl_UltimosAcessos tbody');
 
     if (!tbody) return;
 
-    fn_CarregarUltimosAcessos(function (acessos) {
+    fnhelper_CarregarUltimosAcessos(function (acessos) {
         if (!acessos.length) {
             tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nenhum acesso registrado</td></tr>';
             return;
         }
 
         tbody.innerHTML = acessos.map(function (acesso) {
-            const { icone, cor } = fn_IconeAcesso(acesso.os, acesso.device);
+            const { icone, cor } = fnhelper_IconeAcesso(acesso.os, acesso.device);
             const local = [acesso.cidade, acesso.estado].filter(Boolean).join(' - ') || '-';
 
             return `<tr>
-                <td class="text-truncate text-heading"><i class="${icone} ri-20px ${cor} me-3"></i>${fn_TextoBrowserOs(acesso.browser, acesso.os)}</td>
-                <td class="text-truncate">${fn_TextoDispositivo(acesso.device)}</td>
+                <td class="text-truncate text-heading"><i class="${icone} ri-20px ${cor} me-3"></i>${fnhelper_TextoBrowserOs(acesso.browser, acesso.os)}</td>
+                <td class="text-truncate">${fnhelper_TextoDispositivo(acesso.device)}</td>
                 <td class="text-truncate">${local}</td>
-                <td class="text-truncate">${fn_FormatarDataAcesso(acesso.ultimoLogin)}</td>
+                <td class="text-truncate">${fnhelper_FormatarDataAcesso(acesso.ultimoLogin)}</td>
             </tr>`;
         }).join('');
     });

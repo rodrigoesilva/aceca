@@ -275,7 +275,7 @@ function fn_CarregarSobre() {
             $('#sp_HeaderNome').text(d.nome || '-');
             $('#sp_HeaderCidade').text(d.cidade || '-');
             $('#sp_HeaderSocioDesde').text(fn_FormatarSocioDesde(d.dataCriacao));
-            $('#img_HeaderAvatar').attr('src', fn_UrlAvatar(d.id, d.imgAvatar));
+            $('#img_HeaderAvatar').attr('src', fnhelper_UrlAvatar(d.id, d.imgAvatar));
 
             // Sobre / Contatos / Correspondência (div_sobre)
             $('#sp_Nome').text(d.nome || '-');
@@ -324,7 +324,7 @@ function fn_FormatarSocioDesde(dataCriacao) {
     return `Sócio desde ${MESES_PT[data.getMonth()]} de ${data.getFullYear()}`;
 }
 
-// fn_UrlAvatar é comum (ui-common.js) - usada aqui e em pages-auth-account-settings.js.
+// fnhelper_UrlAvatar é comum (helper-ui-common.js) - usada aqui e em pages-auth-account-settings.js.
 
 function fn_FormatarEndereco(d) {
     if (!d.endereco) return '-';
@@ -344,19 +344,19 @@ function fn_FormatarEndereco(d) {
 //#region ATIVIDADE
 
 // Timeline de div_atividade: mesmos 3 slots já existentes no layout, preenchidos com
-// os últimos acessos reais (socio_log_acesso) - fn_CarregarUltimosAcessos/fn_IconeAcesso/
-// fn_FormatarDataAcesso/fn_TextoBrowserOs vêm de ui-common.js (comuns com a grid de
+// os últimos acessos reais (socio_log_acesso) - fnhelper_CarregarUltimosAcessos/fnhelper_IconeAcesso/
+// fnhelper_FormatarDataAcesso/fnhelper_TextoBrowserOs vêm de helper-ui-common.js (comuns com a grid de
 // Últimos Acessos em AccountSettingsSecurity.cshtml). O bloco de avatar é o mesmo sócio
 // autenticado nos 3 itens - troca a foto/nome fixos do template pelos dados reais, com
 // fallback pro avatar padrão da ACECA quando não há imgAvatar cadastrado.
 function fn_PopularTimelineAtividade(dadosPerfil) {
-    const urlAvatar = fn_UrlAvatar(dadosPerfil.id, dadosPerfil.imgAvatar);
+    const urlAvatar = fnhelper_UrlAvatar(dadosPerfil.id, dadosPerfil.imgAvatar);
 
     $('.tl-avatar-img').attr('src', urlAvatar);
     $('.tl-avatar-nome').text(dadosPerfil.nome || '-');
     $('.tl-avatar-perfil').text(dadosPerfil.perfil || '-');
 
-    fn_CarregarUltimosAcessos(function (acessos) {
+    fnhelper_CarregarUltimosAcessos(function (acessos) {
         for (let i = 1; i <= 3; i++) {
             const acesso = acessos[i - 1];
 
@@ -369,9 +369,9 @@ function fn_PopularTimelineAtividade(dadosPerfil) {
 
             const local = [acesso.cidade, acesso.estado].filter(Boolean).join(' - ') || '-';
 
-            $(`#tl_Titulo_${i}`).text(fn_TextoBrowserOs(acesso.browser, acesso.os));
-            $(`#tl_Data_${i}`).text(fn_FormatarDataAcesso(acesso.ultimoLogin));
-            $(`#tl_Local_${i}`).text(`Acesso via ${fn_TextoDispositivo(acesso.device)} - ${local}`);
+            $(`#tl_Titulo_${i}`).text(fnhelper_TextoBrowserOs(acesso.browser, acesso.os));
+            $(`#tl_Data_${i}`).text(fnhelper_FormatarDataAcesso(acesso.ultimoLogin));
+            $(`#tl_Local_${i}`).text(`Acesso via ${fnhelper_TextoDispositivo(acesso.device)} - ${local}`);
         }
     });
 }

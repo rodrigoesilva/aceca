@@ -447,7 +447,7 @@ function fn_GridComplete(grid) {
         elfilter.insertAdjacentElement('beforebegin', divElement);
 
         //Verifca Selecao de ver Ativos
-        fn_CheckVerAtivos();
+        fnhelper_CheckVerAtivos();
 
     } else {
         Swal.fire({
@@ -474,7 +474,7 @@ function fn_GridComplete(grid) {
 
 //#region FUNCOES
 
-// fn_CheckVerAtivos é comum (ui-common.js).
+// fnhelper_CheckVerAtivos é comum (helper-ui-common.js).
 
 //#endregion
 
@@ -486,10 +486,10 @@ function fn_Masks() {
     $('.phone-mask').mask('(00) 00000-0000');
 }
 
-// fn_MaskDataAniversario, fn_MaskCEP e fn_BuscaEnderecoPorCep são comuns (ui-common.js).
-// fn_MaskCEP(this, fn_PreencherEnderecoPopup) é quem dispara o autocompletar abaixo.
+// fnhelper_MaskDataAniversario, fnhelper_MaskCEP e fnhelper_BuscaEnderecoPorCep são comuns (helper-ui-common.js).
+// fnhelper_MaskCEP(this, fn_PreencherEnderecoPopup) é quem dispara o autocompletar abaixo.
 
-// Callback de fn_MaskCEP (via ui-common.js/fn_BuscaEnderecoPorCep) específico do popup
+// Callback de fnhelper_MaskCEP (via helper-ui-common.js/fnhelper_BuscaEnderecoPorCep) específico do popup
 // de cadastro - cada tela decide em quais campos preencher o retorno da ViaCEP.
 function fn_PreencherEnderecoPopup(result) {
     const popAddNewItem = document.querySelector('#pop-add-new-item');
@@ -698,7 +698,7 @@ function fnItem_Delete(varItems_Row) {
                         }
                     },
                     error: function (xhr, textStatus, errorThrown) {
-                        fn_ModalErro(xhr, textStatus, errorThrown);
+                        fnhelper_AlertErro(xhr, textStatus);
 
                         return false;
                     }
@@ -808,7 +808,7 @@ function fnItem_Edit(varItems_Row) {
                     }
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
 
                     return false;
                 }
@@ -891,7 +891,7 @@ function fnItem_Add(varTbl_Obj) {
                     }
                 },
                 error: function (xhr, textStatus, errorThrown) {
-                    fn_ModalErro(xhr, textStatus, errorThrown);
+                    fnhelper_AlertErro(xhr, textStatus);
 
                     return false;
                 }
@@ -903,6 +903,6 @@ function fnItem_Add(varTbl_Obj) {
 
 //#region MODAL
 
-// fn_ModalErro é comum (ui-common.js).
+// fnhelper_AlertErro é comum (helper-ui-common.js).
 
 //#endregion

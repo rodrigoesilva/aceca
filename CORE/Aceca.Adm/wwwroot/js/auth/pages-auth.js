@@ -177,7 +177,7 @@ function fn_LoginAuthIni() {
                     // antiga da imagem (mesmo nome de arquivo, imgAvatar{id}.png) e o círculo
                     // no Swal não atualizava depois de uma troca de foto recente.
                     const urlImagemBoasVindas = temAvatar
-                        ? `${fn_UrlAvatar(response.data.id, response.data.imgAvatar)}?t=${Date.now()}`
+                        ? `${fnhelper_UrlAvatar(response.data.id, response.data.imgAvatar)}?t=${Date.now()}`
                         : urlImgModaltext;
 
                     fn_SwalBemVindoNovamente(userCk, urlImagemBoasVindas, temAvatar);

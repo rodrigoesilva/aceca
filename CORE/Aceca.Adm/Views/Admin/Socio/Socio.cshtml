@@ -71,7 +71,7 @@
                 <h6 class="mb-3">Endere&ccedil;o</h6>
 
                 <div class="div-endereco-cep form-floating form-floating-outline mb-5">
-                    <input type="text" id="pop_line_item_04" class="form-control dt-line-04" name="pop_line_item_04" placeholder="00000-999" aria-label="00000-999" pattern="[0-9]{9}" maxlength="9" oninput="fn_MaskCEP(this, fn_PreencherEnderecoPopup)"/>
+                    <input type="text" id="pop_line_item_04" class="form-control dt-line-04" name="pop_line_item_04" placeholder="00000-999" aria-label="00000-999" pattern="[0-9]{9}" maxlength="9" oninput="fnhelper_MaskCEP(this, fn_PreencherEnderecoPopup)"/>
                     <label for="pop_line_item_04">CEP</label>
                 </div>
 
@@ -141,10 +141,10 @@
                 <h6 class="mb-3">Anivers&aacute;rio</h6>
                 <div class="div-aniversario-aniversario form-floating form-floating-outline">
                     @* data-date-format sobrescreve, só neste campo, o formato padrão
-                       "dd/mm" que o ui-common.js aplica a todo .dt-calendar do site -
+                       "dd/mm" que o helper-ui-common.js aplica a todo .dt-calendar do site -
                        assim o datepicker (clique no calendário) continua funcionando e
                        tanto a digitação quanto o paste reconhecem o ano. *@
-                    <input type="text" id="pop_line_item_11" class="form-control dt-calendar dt-line-11" name="pop_line_item_11" placeholder="DD/MM/YYYY" aria-label="Data de Anivers&aacute;rio" data-date-format="dd/mm/yyyy" maxlength="10" oninput="fn_MaskDataAniversario(this)" />
+                    <input type="text" id="pop_line_item_11" class="form-control dt-calendar dt-line-11" name="pop_line_item_11" placeholder="DD/MM/YYYY" aria-label="Data de Anivers&aacute;rio" data-date-format="dd/mm/yyyy" maxlength="10" oninput="fnhelper_MaskDataAniversario(this)" />
                     <label for="pop_line_item_11">Data de Anivers&aacute;rio</label>
                 </div>
             </div>
