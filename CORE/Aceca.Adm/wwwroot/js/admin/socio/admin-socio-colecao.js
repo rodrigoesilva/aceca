@@ -353,7 +353,7 @@ function fn_FiltrarDados() {
             },
 
             dataSrc: function (json) {
-                console.log("fn_FiltrarDados dataSrc json:: ", json);
+                // console.log("fn_FiltrarDados dataSrc json:: ", json);
                 return json.data;
             }
         },
@@ -545,6 +545,18 @@ function fn_FiltrarDados() {
                         }
                     }
                 ]
+            },
+
+            {
+                text: '<i class="ri-file-cloud-line"></i> <span class="d-none d-sm-inline-block">Importar Coleção</span>',
+                className: 'btn btn-primary me-4 waves-effect waves-light btnImport',
+                action: function (e, dt, node, config) {
+                    fn_ModalColecao_Importar(null);
+
+                    // Teste: abre tambem o modal do ModalImportColecao.cshtml (#enableOTP),
+                    // pra comparar com o offcanvas #modalUploadXls acima.
+                    //bootstrap.Modal.getOrCreateInstance(document.querySelector('#enableOTP')).show();
+                }
             },
         ],
         responsive: {
@@ -1334,6 +1346,18 @@ function fnItem_Colecao(obj, action) {
             }
         });
     }
+}
+
+//#endregion
+
+//#region IMPORTAR XLS
+
+function fn_ModalColecao_Importar(id) {
+    console.log("id ::: ", id);
+
+    const modalUploadXls = document.querySelector('#modalUploadXls');
+
+    bootstrap.Offcanvas.getOrCreateInstance(modalUploadXls).show();
 }
 
 //#endregion
