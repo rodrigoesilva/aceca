@@ -254,13 +254,13 @@ namespace Aceca.Adm.Controllers.Pages
                 // coluna SQL correspondente. Mantém alinhado com admin-socio-colecao.js::columns.
                 var colunasOrdenaveis = new Dictionary<int, string>
                 {
-                    { 1, "m.CodigoAceca" },
-                    { 2, "m.Nome" },
-                    { 5, "m.Descricao" },
-                    { 6, "COALESCE(mfa.Nome, m.fabrica_txt)" },
-                    { 7, "mst.Descricao" },
-                    { 8, "mf.Descricao" },
-                    { 9, "sc.observacao" },
+                    { 2, "m.CodigoAceca" },
+                    { 3, "m.Nome" },
+                    { 6, "m.Descricao" },
+                    { 7, "COALESCE(mfa.Nome, m.fabrica_txt)" },
+                    { 8, "mst.Descricao" },
+                    { 9, "mf.Descricao" },
+                    { 10, "sc.observacao" },
                 };
 
                 var orderByPartes = new List<string>();
@@ -870,6 +870,123 @@ namespace Aceca.Adm.Controllers.Pages
                 _logger.LogError(ex, "ERRO :: {Method}", nameof(CarregarPlanilhaColecao));
 
                 return BadRequest(new { bResult = false, type = "ERRO", message = "Não foi possível processar o arquivo enviado" });
+            }
+        }
+
+        /// <summary>
+        /// Ação em massa (checkboxes marcados na grid): marca os itens selecionados como
+        /// "possuo" (Possui=true, Favorito=false, Ativo=true). Só afeta linhas que já
+        /// pertencem ao sócio autenticado - os ids vêm do cliente, então nunca são confiáveis
+        /// sozinhos (IDOR).
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ColecaoIncluirTodos([FromBody] ColecaoSelecionadosRequest request)
+        {
+            try
+            {
+                var socioIdAutenticado = GetSocioIdAutenticado();
+
+                if (socioIdAutenticado <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var ids = request?.Ids ?? new List<int>();
+
+                if (ids.Count == 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nenhum item selecionado" });
+
+                var itens = await _db.SocioColecao
+                    .Where(sc => sc.SocioId == socioIdAutenticado && ids.Contains(sc.Id!.Value))
+                    .ToListAsync();
+
+                foreach (var item in itens)
+                {
+                    item.Possui = true;
+                    item.Favorito = false;
+                    item.Ativo = true;
+                }
+
+                var strategy = _db.Database.CreateExecutionStrategy();
+
+                Func<Task<IActionResult>> operation = async () =>
+                {
+                    using var transaction = await _db.Database.BeginTransactionAsync();
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "OK",
+                        message = "Itens incluídos na coleção com sucesso",
+                        data = new { qtdAtualizado = itens.Count }
+                    });
+                };
+
+                return await strategy.ExecuteAsync(operation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(ColecaoIncluirTodos));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Ação em massa (checkboxes marcados na grid): remove definitivamente os itens
+        /// selecionados de socio_colecao. Só afeta linhas que já pertencem ao sócio
+        /// autenticado (mesma proteção de ColecaoIncluirTodos). A confirmação ("essa ação não
+        /// pode ser desfeita") é feita no front antes de chamar este endpoint.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ColecaoRemoverTodos([FromBody] ColecaoSelecionadosRequest request)
+        {
+            try
+            {
+                var socioIdAutenticado = GetSocioIdAutenticado();
+
+                if (socioIdAutenticado <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var ids = request?.Ids ?? new List<int>();
+
+                if (ids.Count == 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nenhum item selecionado" });
+
+                var itens = await _db.SocioColecao
+                    .Where(sc => sc.SocioId == socioIdAutenticado && ids.Contains(sc.Id!.Value))
+                    .ToListAsync();
+
+                _db.SocioColecao.RemoveRange(itens);
+
+                var strategy = _db.Database.CreateExecutionStrategy();
+
+                Func<Task<IActionResult>> operation = async () =>
+                {
+                    using var transaction = await _db.Database.BeginTransactionAsync();
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Ok(new
+                    {
+                        bResult = true,
+                        type = "OK",
+                        message = "Itens removidos da coleção com sucesso",
+                        data = new { qtdRemovido = itens.Count }
+                    });
+                };
+
+                return await strategy.ExecuteAsync(operation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(ColecaoRemoverTodos));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
         }
     }

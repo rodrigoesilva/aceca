@@ -277,7 +277,7 @@ function fn_FiltrosChange() {
 
         //console.log("chk_PesquisarDescricao change ::: ", isChecked);
 
-        let colDesc = varTbl_Data.settings()[0].aoColumns[5]; //Descricao
+        let colDesc = varTbl_Data.settings()[0].aoColumns[6]; //Descricao
 
         colDesc.bSearchable = isChecked;
 
@@ -300,8 +300,8 @@ function fn_FiltrarDados() {
 
     var varLang_UrlTranslate = '/vendor/libs/datatables-bs5/i18n/pt-BR.json',
 
-        varCol_Exportar = [1, 2, 5, 6, 7, 8, 9],
-        varCol_Ordenacao = [2, 'asc'], //set any columns order asc/desc (NomeMarca)
+        varCol_Exportar = [2, 3, 6, 7, 8, 9, 10],
+        varCol_Ordenacao = [3, 'asc'], //set any columns order asc/desc (NomeMarca)
 
         varItems_QtdPorPage = 10,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
@@ -361,6 +361,16 @@ function fn_FiltrarDados() {
         columns: [
             // COLUNA - control (sempre visível — prioridade máxima)
             { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
+            // COLUNA - checkbox (seleção em massa - Id é sempre o socio_colecao.id, nunca o
+            // MarcaId, já que esta grid só lista itens que o sócio já tem em sua coleção -
+            // ver fn_ColecaoSelecionados_AtualizarBotoes/fn_ColecaoIncluirTodos/
+            // fn_ColecaoRemoverTodos).
+            {
+                data: 'Id', orderable: false, searchable: false, className: 'text-center', responsivePriority: 10011,
+                render: function (data) {
+                    return `<input type="checkbox" class="dt-checkboxes form-check-input" value="${data}">`;
+                }
+            },
             // COLUNA - codigoAceca (2ª a aparecer no mobile)
             {
                 data: 'CodigoAceca', className: 'text-center text-nowrap', width: '90px', responsivePriority: 2, orderable: true,
@@ -557,6 +567,23 @@ function fn_FiltrarDados() {
                     fn_ColecaoImportar_Modal(null);
                 }
             }] : []),
+
+            // Ações em massa: só aparecem quando há pelo menos um checkbox marcado na grid
+            // (ver fn_ColecaoSelecionados_AtualizarBotoes) - começam escondidas (d-none).
+            {
+                text: '<i class="ri-checkbox-circle-line"></i> <span class="d-none d-sm-inline-block">Incluir Todos na Coleção</span>',
+                className: 'btn btn-label-success me-4 waves-effect waves-light btnColecaoIncluirTodos d-none',
+                action: function (e, dt, node, config) {
+                    fn_ColecaoSelecionados_IncluirTodos();
+                }
+            },
+            {
+                text: '<i class="ri-delete-bin-line"></i> <span class="d-none d-sm-inline-block">Remover Todos da Coleção</span>',
+                className: 'btn btn-label-danger me-4 waves-effect waves-light btnColecaoRemoverTodos d-none',
+                action: function (e, dt, node, config) {
+                    fn_ColecaoSelecionados_RemoverTodos();
+                }
+            },
         ],
         responsive: {
             details: {
@@ -737,6 +764,11 @@ function fn_GridComplete(grid) {
 
     // var_Filtrado = true;
 
+    // A seleção de checkboxes não sobrevive a um redraw (linhas são recriadas do zero) -
+    // reseta o checkbox principal e esconde os botões de ação em massa a cada draw.
+    $('#chkColecaoSelectAll').prop('checked', false).prop('indeterminate', false);
+    fn_ColecaoSelecionados_AtualizarBotoes();
+
     var thisApi = grid.api();
 
     var countRows = grid.api().rows().count();
@@ -763,7 +795,7 @@ function fn_GridComplete(grid) {
 
         if (isPerfil === 'false') {
             console.log("fn_GridComplete - isPerfil ::: ", isPerfil);
-            thisApi.column(12).visible(false); // coluna acoes
+            thisApi.column(13).visible(false); // coluna acoes
 
             // Botao criar
             $(".create-new").attr('style', 'display: none !important');
@@ -773,7 +805,7 @@ function fn_GridComplete(grid) {
 
         //console.log("fn_GridComplete - idMarcaFase ::: ", idMarcaFase);
         if (idMarcaFase > 0) {
-            thisApi.column(8).visible(false); // coluna fase
+            thisApi.column(9).visible(false); // coluna fase
         }
 
         fn_Zoom();
@@ -802,6 +834,143 @@ function fn_GridComplete(grid) {
             $(".card-datatable").show();
         });
     }
+}
+
+//#endregion
+
+//#region SELECAO EM MASSA
+
+// Ids marcados na página atual da grid (a checagem NÃO sobrevive a paginação/redraw -
+// ver reset em fn_GridComplete). Cada checkbox carrega o socio_colecao.id (não o
+// MarcaId) - esta grid só lista itens que já existem na coleção do sócio.
+function fn_ColecaoSelecionados_ObterIds() {
+    return $('.dt-checkboxes:checked').map(function () {
+        return parseInt($(this).val());
+    }).get();
+}
+
+function fn_ColecaoSelecionados_AtualizarBotoes() {
+    const temSelecionados = $('.dt-checkboxes:checked').length > 0;
+
+    $('.btnColecaoIncluirTodos, .btnColecaoRemoverTodos').toggleClass('d-none', !temSelecionados);
+
+    // Com itens selecionados, some com Exportar/Importar - o foco passa a ser a ação em
+    // massa, não gera confusão com outros botões do mesmo toolbar.
+    $('.btnExport, .btnImport').toggleClass('d-none', temSelecionados);
+}
+
+// Delegado no document (não no elemento da tabela) porque o tbody inteiro é recriado a
+// cada draw do DataTable - um bind direto se perderia no primeiro redraw.
+$(document).on('change', '.dt-checkboxes', function () {
+    const totalCheckboxes = $('.dt-checkboxes').length;
+    const totalMarcados = $('.dt-checkboxes:checked').length;
+
+    $('#chkColecaoSelectAll')
+        .prop('checked', totalCheckboxes > 0 && totalMarcados === totalCheckboxes)
+        .prop('indeterminate', totalMarcados > 0 && totalMarcados < totalCheckboxes);
+
+    fn_ColecaoSelecionados_AtualizarBotoes();
+});
+
+$(document).on('change', '#chkColecaoSelectAll', function () {
+    // Marca/desmarca só os checkboxes da página atual - a grid é server-side, então não
+    // há como marcar linhas de outras páginas sem carregá-las.
+    $('.dt-checkboxes').prop('checked', $(this).is(':checked'));
+
+    fn_ColecaoSelecionados_AtualizarBotoes();
+});
+
+function fn_ColecaoSelecionados_IncluirTodos() {
+    const ids = fn_ColecaoSelecionados_ObterIds();
+
+    if (ids.length === 0) return;
+
+    $.busyLoadFull("show");
+
+    $.ajax({
+        url: `${var_Controller}/ColecaoIncluirTodos`,
+        type: 'POST',
+        data: JSON.stringify({ ids }),
+        contentType: 'application/json',
+        success: function (response) {
+            $.busyLoadFull("hide");
+
+            if (!response?.bResult) {
+                fnhelper_AlertErro(response);
+                return;
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Incluído(s) na coleção!',
+                html: `${response.data?.qtdAtualizado ?? ids.length} item(ns) inclu&iacute;do(s) na cole&ccedil;&atilde;o.`,
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: { confirmButton: 'btn btn-label-success waves-effect' }
+            }).then(() => {
+                $('.datatables-basic').DataTable().ajax.reload(null, false);
+            });
+        },
+        error: function (xhr, textStatus) {
+            $.busyLoadFull("hide");
+
+            fnhelper_AlertErro(xhr, textStatus);
+        }
+    });
+}
+
+function fn_ColecaoSelecionados_RemoverTodos() {
+    const ids = fn_ColecaoSelecionados_ObterIds();
+
+    if (ids.length === 0) return;
+
+    Swal.fire({
+        title: 'Tem certeza?',
+        icon: 'warning',
+        html: `Isso vai remover <b>${ids.length}</b> item(ns) da sua coleção. <br><br><b>Essa ação não poderá ser desfeita.</b>`,
+        showCancelButton: true,
+        reverseButtons: true,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Sim, remover!`,
+        cancelButtonText: `Cancelar`,
+        customClass: {
+            confirmButton: 'btn btn-label-danger waves-effect',
+            cancelButton: 'btn btn-label-secondary waves-effect me-3'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $.busyLoadFull("show");
+
+        $.ajax({
+            url: `${var_Controller}/ColecaoRemoverTodos`,
+            type: 'POST',
+            data: JSON.stringify({ ids }),
+            contentType: 'application/json',
+            success: function (response) {
+                $.busyLoadFull("hide");
+
+                if (!response?.bResult) {
+                    fnhelper_AlertErro(response);
+                    return;
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Removido(s)!',
+                    html: `${response.data?.qtdRemovido ?? ids.length} item(ns) removido(s) da cole&ccedil;&atilde;o.`,
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: { confirmButton: 'btn btn-label-success waves-effect' }
+                }).then(() => {
+                    $('.datatables-basic').DataTable().ajax.reload(null, false);
+                });
+            },
+            error: function (xhr, textStatus) {
+                $.busyLoadFull("hide");
+
+                fnhelper_AlertErro(xhr, textStatus);
+            }
+        });
+    });
 }
 
 //#endregion

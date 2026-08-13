@@ -74,4 +74,11 @@ namespace Aceca.Adm.Models
 
         public bool SomenteAtivos { get; set; }
     }
+
+    // Ids marcados via checkbox na grid de Minha Coleção (SocioColecaoController.
+    // ColecaoIncluirTodos/ColecaoRemoverTodos) - sempre socio_colecao.id, nunca MarcaId.
+    public class ColecaoSelecionadosRequest
+    {
+        public List<int> Ids { get; set; } = new();
+    }
 }
