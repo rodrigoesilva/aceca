@@ -239,7 +239,11 @@ else {
 }
 
 app.UseHttpsRedirection();
-app.UseResponseCompression();
+// Desativada: causava ERR_CONTENT_DECODING_FAILED no navegador (gzip/brotli corrompendo
+// a resposta em certas páginas/ambientes) - confirmado que desativar resolve. Causa raiz
+// exata não identificada (suspeita de antivírus/proxy interferindo na descompressão
+// Brotli em HTTPS local) - se quiser reavaliar depois, dá pra tentar só com Gzip.
+//app.UseResponseCompression();
 //app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
