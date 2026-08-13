@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using OfficeOpenXml;
 using System.Data;
 using System.Reflection;
 using System.Security.Claims;
@@ -595,6 +596,280 @@ namespace Aceca.Adm.Controllers.Pages
                     type = "ERRO",
                     message = mensagemErro
                 });
+            }
+        }
+
+        /// <summary>
+        /// Valida a planilha Excel (.xls/.xlsx) usada na importação em massa da Coleção.
+        /// Só confere a estrutura do cabeçalho (A1/B1/C1) - a extensão do próprio arquivo
+        /// só é confiável quando validada aqui no servidor (a checagem no front é só uma
+        /// conveniência de UX, nunca a garantia de segurança).
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administracao")]
+        public async Task<IActionResult> ValidarPlanilhaColecao(IFormFile arquivo)
+        {
+            try
+            {
+                var (planilha, aba, mensagemErro) = await AbrirEValidarPlanilhaColecao(arquivo);
+
+                using (planilha)
+                {
+                    if (mensagemErro != null)
+                        return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+
+                    var totalLinhas = Math.Max(0, (aba!.Dimension?.End.Row ?? 1) - 1);
+
+                    return Ok(new { bResult = true, type = "OK", message = "Arquivo validado com sucesso", data = new { totalLinhas } });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(ValidarPlanilhaColecao));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Não foi possível ler o arquivo enviado <br><br> Verifique se é uma planilha Excel válida" });
+            }
+        }
+
+        /// <summary>
+        /// Abre o arquivo enviado e confere formato (.xls/.xlsx) + estrutura do cabeçalho
+        /// (A1/B1/C1 = TenhoNaColecao/TenhoInteresse/CodigoACECA) - usado tanto por
+        /// ValidarPlanilhaColecao (só valida) quanto por CarregarPlanilhaColecao (valida de novo
+        /// antes de processar, nunca confiando apenas na validação já feita no front).
+        /// Retorna MensagemErro nulo quando tudo está OK; Planilha vem null nesse caso e deve ser
+        /// descartado com "using" mesmo assim (using aceita null sem erro).
+        /// </summary>
+        private async Task<(ExcelPackage? Planilha, ExcelWorksheet? Aba, string? MensagemErro)> AbrirEValidarPlanilhaColecao(IFormFile arquivo)
+        {
+            if (arquivo == null || arquivo.Length == 0)
+                return (null, null, "Nenhum arquivo enviado");
+
+            var extensao = Path.GetExtension(arquivo.FileName)?.ToLowerInvariant();
+            var extensoesValidas = new[] { ".xls", ".xlsx" };
+
+            if (string.IsNullOrEmpty(extensao) || !extensoesValidas.Contains(extensao))
+                return (null, null, "O arquivo deve estar no formato Excel (.xls ou .xlsx)");
+
+            var stream = new MemoryStream();
+            await arquivo.CopyToAsync(stream);
+            stream.Position = 0;
+
+            var planilha = new ExcelPackage(stream);
+            var aba = planilha.Workbook.Worksheets.FirstOrDefault();
+
+            if (aba == null)
+            {
+                planilha.Dispose();
+                return (null, null, "A planilha está vazia");
+            }
+
+            var colunaA = (aba.Cells[1, 1].Text ?? string.Empty).Trim();
+            var colunaB = (aba.Cells[1, 2].Text ?? string.Empty).Trim();
+            var colunaC = (aba.Cells[1, 3].Text ?? string.Empty).Trim();
+
+            var cabecalhoValido =
+                string.Equals(colunaA, "TenhoNaColecao", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(colunaB, "TenhoInteresse", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(colunaC, "CodigoACECA", StringComparison.OrdinalIgnoreCase);
+
+            if (!cabecalhoValido)
+            {
+                planilha.Dispose();
+                return (null, null, "O cabeçalho da planilha é inválido. <br><br> As células A1, B1 e C1 devem conter," +
+                                     "respectivamente: <br><br> \"TenhoNaColecao\",<br> \"TenhoInteresse\"<br> \"CodigoACECA\".");
+            }
+
+            return (planilha, aba, null);
+        }
+
+        /// <summary>
+        /// Processa de fato a planilha validada por ValidarPlanilhaColecao/AbrirEValidarPlanilhaColecao:
+        /// coluna A (TenhoNaColecao) marcada com "S"/"Sim" inclui o item na coleção (Possui=true);
+        /// coluna B (TenhoInteresse) marca como favorito (Favorito=true). A coluna C (CodigoACECA)
+        /// é comparada contra Marcas.CodigoAceca/CodigoAcecaNew para achar o MarcaId correspondente -
+        /// códigos não encontrados são apenas contados e reportados, sem interromper o restante do
+        /// processamento.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administracao")]
+        public async Task<IActionResult> CarregarPlanilhaColecao(IFormFile arquivo)
+        {
+            try
+            {
+                var socioIdAutenticado = GetSocioIdAutenticado();
+
+                if (socioIdAutenticado <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var (planilha, aba, mensagemErro) = await AbrirEValidarPlanilhaColecao(arquivo);
+
+                using (planilha)
+                {
+                    if (mensagemErro != null)
+                        return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+
+                    var ultimaLinha = aba!.Dimension?.End.Row ?? 1;
+
+                    if (ultimaLinha < 2)
+                        return BadRequest(new { bResult = false, type = "ERRO", message = "A planilha não possui nenhuma linha de dados" });
+
+                    // Marcas.CodigoAceca/CodigoAcecaNew/Descricao -> Id, carregado uma única vez
+                    // (evita 1 query por linha da planilha).
+                    var marcas = await _db.Marca
+                        .Where(m => m.CodigoAceca != null || m.CodigoAcecaNew != null)
+                        .Select(m => new { m.Id, m.CodigoAceca, m.CodigoAcecaNew, m.Descricao })
+                        .ToListAsync();
+
+                    var marcaIdPorCodigo = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var m in marcas)
+                    {
+                        if (!string.IsNullOrWhiteSpace(m.CodigoAceca))
+                            marcaIdPorCodigo.TryAdd(m.CodigoAceca.Trim(), m.Id!.Value);
+
+                        if (!string.IsNullOrWhiteSpace(m.CodigoAcecaNew))
+                            marcaIdPorCodigo.TryAdd(m.CodigoAcecaNew.Trim(), m.Id!.Value);
+                    }
+
+                    // Código da planilha não encontrado em CodigoAceca/CodigoAcecaNew - último
+                    // recurso antes de desistir da linha: o código pode ter mudado e continuar
+                    // citado dentro da Descricao da marca (texto livre, por isso é feito em
+                    // memória em vez de um LIKE '%...%' por linha no banco).
+                    int? BuscarMarcaIdPorDescricao(string codigo)
+                    {
+                        foreach (var m in marcas)
+                        {
+                            if (!string.IsNullOrWhiteSpace(m.Descricao) &&
+                                m.Descricao.Contains(codigo, StringComparison.OrdinalIgnoreCase))
+                                return m.Id;
+                        }
+
+                        return null;
+                    }
+
+                    // Coleção já existente do sócio, carregada uma única vez (evita 1 query por linha
+                    // da planilha) - reimportar a mesma planilha NUNCA sobrescreve um item já
+                    // existente, só inclui o que ainda não está na coleção.
+                    var colecaoExistente = await _db.SocioColecao
+                        .Where(sc => sc.SocioId == socioIdAutenticado)
+                        .ToDictionaryAsync(sc => sc.MarcaId!.Value);
+
+                    var qtdPossui = 0;
+                    var qtdFavorito = 0;
+                    var qtdJaExistente = 0;
+                    var qtdNaoEncontrado = 0;
+                    var qtdCodigoMudou = 0;
+
+                    bool AplicarItem(int marcaId, bool possui, bool favorito)
+                    {
+                        if (colecaoExistente.ContainsKey(marcaId))
+                            return false;
+
+                        var novo = new SocioColecao
+                        {
+                            SocioId = socioIdAutenticado,
+                            MarcaId = marcaId,
+                            Possui = possui,
+                            Favorito = favorito,
+                            DisponivelNegocio = false,
+                            Observacao = null,
+                            Ativo = true
+                        };
+
+                        _db.SocioColecao.Add(novo);
+                        colecaoExistente[marcaId] = novo;
+
+                        return true;
+                    }
+
+                    static bool CelulaMarcada(string valor) =>
+                        string.Equals(valor, "S", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(valor, "Sim", StringComparison.OrdinalIgnoreCase);
+
+                    for (var linha = 2; linha <= ultimaLinha; linha++)
+                    {
+                        var colA = (aba.Cells[linha, 1].Text ?? string.Empty).Trim();
+                        var colB = (aba.Cells[linha, 2].Text ?? string.Empty).Trim();
+                        var colC = (aba.Cells[linha, 3].Text ?? string.Empty).Trim();
+
+                        if (string.IsNullOrEmpty(colC))
+                            continue;
+
+                        var tenhoNaColecao = CelulaMarcada(colA);
+                        var tenhoInteresse = CelulaMarcada(colB);
+
+                        if (!tenhoNaColecao && !tenhoInteresse)
+                            continue;
+
+                        if (!marcaIdPorCodigo.TryGetValue(colC, out var marcaId))
+                        {
+                            var marcaIdPorDescricao = BuscarMarcaIdPorDescricao(colC);
+
+                            if (marcaIdPorDescricao == null)
+                            {
+                                qtdNaoEncontrado++;
+                                continue;
+                            }
+
+                            marcaId = marcaIdPorDescricao.Value;
+                            qtdCodigoMudou++;
+                        }
+
+                        // Uma linha marcada nas duas colunas conta só como "TenhoNaColecao" - é o
+                        // estado mais forte, e evita que a segunda checagem veja o item recém
+                        // incluído pela primeira e o conte erroneamente como "já existente".
+                        if (tenhoNaColecao)
+                        {
+                            if (AplicarItem(marcaId, possui: true, favorito: false))
+                                qtdPossui++;
+                            else
+                                qtdJaExistente++;
+                        }
+                        else if (tenhoInteresse)
+                        {
+                            if (AplicarItem(marcaId, possui: false, favorito: true))
+                                qtdFavorito++;
+                            else
+                                qtdJaExistente++;
+                        }
+                    }
+
+                    var strategy = _db.Database.CreateExecutionStrategy();
+
+                    Func<Task<IActionResult>> operation = async () =>
+                    {
+                        using var transaction = await _db.Database.BeginTransactionAsync();
+
+                        await _db.SaveChangesAsync();
+                        await transaction.CommitAsync();
+
+                        return Ok(new
+                        {
+                            bResult = true,
+                            type = "OK",
+                            message = "Planilha de coleção carregada com sucesso",
+                            data = new
+                            {
+                                totalLinhas = ultimaLinha - 1,
+                                qtdPossui,
+                                qtdFavorito,
+                                qtdJaExistente,
+                                qtdNaoEncontrado,
+                                qtdCodigoMudou
+                            }
+                        });
+                    };
+
+                    return await strategy.ExecuteAsync(operation);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(CarregarPlanilhaColecao));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Não foi possível processar o arquivo enviado" });
             }
         }
     }

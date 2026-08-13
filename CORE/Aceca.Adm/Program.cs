@@ -7,6 +7,10 @@ using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// EPPlus (leitura de planilhas .xlsx na importação de coleção) exige a licença
+// configurada globalmente antes do primeiro uso de ExcelPackage.
+OfficeOpenXml.ExcelPackage.License.SetNonCommercialOrganization(builder.Configuration["EPPlus:ExcelPackage:License"]!);
+
 // Connect to the database
 var conn = builder.Configuration.GetConnectionString("MySqlConnection")
                 ?? throw new InvalidOperationException("Connection string não localizada");
@@ -51,7 +55,7 @@ builder.Services.AddControllersWithViews();
 
 // Chamadas AJAX enviam o token via header (JSON body, não form-encoded) -
 // ver @Html.AntiForgeryToken() em _CommonMasterLayout.cshtml + injeção do
-// header em ui-common.js.
+// header em helper-ui-common.js.
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";

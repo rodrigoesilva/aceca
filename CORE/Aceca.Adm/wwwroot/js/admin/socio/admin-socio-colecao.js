@@ -547,17 +547,16 @@ function fn_FiltrarDados() {
                 ]
             },
 
-            {
+            // Importação por planilha: por ora restrita ao Administracao (a proteção real é
+            // o [Authorize(Roles = "Administracao")] em ValidarPlanilhaColecao/
+            // CarregarPlanilhaColecao - esconder o botão é só UX pros demais perfis).
+            ...(window.gIsAdministracao ? [{
                 text: '<i class="ri-file-cloud-line"></i> <span class="d-none d-sm-inline-block">Importar Coleção</span>',
                 className: 'btn btn-primary me-4 waves-effect waves-light btnImport',
                 action: function (e, dt, node, config) {
-                    fn_ModalColecao_Importar(null);
-
-                    // Teste: abre tambem o modal do ModalImportColecao.cshtml (#enableOTP),
-                    // pra comparar com o offcanvas #modalUploadXls acima.
-                    //bootstrap.Modal.getOrCreateInstance(document.querySelector('#enableOTP')).show();
+                    fn_ColecaoImportar_Modal(null);
                 }
-            },
+            }] : []),
         ],
         responsive: {
             details: {
@@ -1352,7 +1351,11 @@ function fnItem_Colecao(obj, action) {
 
 //#region IMPORTAR XLS
 
-function fn_ModalColecao_Importar(id) {
+// Total de linhas de dados da última planilha validada (ValidarPlanilhaColecao) - usado
+// só para calibrar o passo da animação da barra de progresso ao "Carregar".
+let gColecaoImportarTotalLinhas = 0;
+
+function fn_ColecaoImportar_Modal(id) {
     //console.log("id ::: ", id);
 
     const modalUploadXls = document.querySelector('#modalUploadXls');
@@ -1360,4 +1363,208 @@ function fn_ModalColecao_Importar(id) {
     bootstrap.Offcanvas.getOrCreateInstance(modalUploadXls).show();
 }
 
+// #fileUpload é resetado ao abrir a offcanvas e sempre que ela é fechada - pelo botão
+// Cancelar, clicando fora, ou pelo Esc - "hidden.bs.offcanvas" dispara em qualquer um
+// desses casos, então um único listener cobre todos.
+$('#modalUploadXls')
+    .on('show.bs.offcanvas', function () {
+        $('#fileUpload').val('');
+    })
+    .on('hidden.bs.offcanvas', function () {
+        $('#fileUpload').val('');
+    });
+
+$("#fileUpload").on("change", function () {
+    const fileUpload = $(this);
+    const arquivo = this.files?.[0];
+
+    if (!arquivo) {
+        fnhelper_AlertErro('Arquivo não carregado corretamente.');
+        return;
+    }
+
+    // Checagem de extensão no front é só uma conveniência de UX - a validação que
+    // conta (estrutura do cabeçalho) é sempre refeita no servidor.
+    const extensao = arquivo.name.split('.').pop()?.toLowerCase();
+
+    if (extensao !== 'xls' && extensao !== 'xlsx') {
+        fnhelper_AlertErro('O arquivo deve estar no formato Excel (.xls ou .xlsx).');
+        fileUpload.val('');
+        return;
+    }
+
+    $.busyLoadFull("show");
+
+    fn_ColecaoImportar_ValidarArquivo(arquivo);
+});
+
+// Valida no servidor (EPPlus) se o cabeçalho da planilha (A1/B1/C1) segue o modelo
+// esperado - TenhoNaColecao/TenhoInteresse/CodigoACECA (ver SocioColecaoController.
+// ValidarPlanilhaColecao). O processamento da importação em si é o próximo passo.
+function fn_ColecaoImportar_ValidarArquivo(arquivo) {
+    const formData = new FormData();
+    formData.append('arquivo', arquivo);
+
+    $.ajax({
+        url: `${var_Controller}/ValidarPlanilhaColecao`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            $.busyLoadFull("hide");
+
+            if (!response?.bResult) {
+                fnhelper_AlertErro(response);
+                $("#fileUpload").val('');
+                return;
+            }
+
+            gColecaoImportarTotalLinhas = response.data?.totalLinhas || 0;
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Validado!',
+                html: 'Arquivo validado com sucesso.<br><br>Clique em <b>Carregar</b> para processar o arquivo.',
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: {
+                    confirmButton: 'btn btn-label-success waves-effect'
+                }
+            });
+        },
+        error: function (xhr, textStatus) {
+            $.busyLoadFull("hide");
+
+            fnhelper_AlertErro(xhr, textStatus);
+
+            $("#fileUpload").val('');
+        }
+    });
+}
+
+// Clique em "Carregar": revalida o arquivo (mesmas checagens do onchange - selecionado,
+// não vazio, formato Excel) e só então envia pra CarregarPlanilhaColecao, que refaz a
+// validação do cabeçalho no servidor antes de processar linha a linha.
+$("#btnColecao_DadosCarregar").on("click", function () {
+    const arquivo = $('#fileUpload').prop('files')?.[0];
+
+    if (!arquivo) {
+        fnhelper_AlertErro('Selecione um arquivo antes de carregar.');
+        return;
+    }
+
+    const extensao = arquivo.name.split('.').pop()?.toLowerCase();
+
+    if (extensao !== 'xls' && extensao !== 'xlsx') {
+        fnhelper_AlertErro('O arquivo deve estar no formato Excel (.xls ou .xlsx).');
+        $('#fileUpload').val('');
+        return;
+    }
+
+    fn_ColecaoImportar_CarregarArquivo(arquivo);
+});
+
+// Tabela-resumo do resultado da importação (ícone + quantidade + descrição por linha),
+// usada no html do Swal de sucesso de fn_ColecaoImportar_CarregarArquivo.
+function fn_ColecaoImportar_MontarTabelaResumo(d) {
+    const linhas = [
+        { qtd: d.qtdPossui ?? 0, texto: 'Incluído(s) na coleção', icone: 'ri-checkbox-circle-line', cor: 'text-success' },
+        { qtd: d.qtdFavorito ?? 0, texto: 'Favoritado(s)', icone: 'ri-checkbox-circle-line', cor: 'text-success' },
+        { qtd: d.qtdJaExistente ?? 0, texto: 'Já existente(s) na coleção (não sobrescrito(s))', icone: 'ri-information-line', cor: 'text-info' },
+        { qtd: d.qtdCodigoMudou ?? 0, texto: 'Encontrado(s) pela descrição (código mudou)', icone: 'ri-alert-line', cor: 'text-warning' },
+        { qtd: d.qtdNaoEncontrado ?? 0, texto: 'Código(s) não encontrado(s)', icone: 'ri-close-circle-line', cor: 'text-danger' }
+    ];
+
+    const linhasHtml = linhas.map(l => `
+        <tr>
+            <td class="${l.cor}"><i class="${l.icone} ri-20px"></i></td>
+            <td class="fw-bold text-center">${l.qtd}</td>
+            <td>${l.texto}</td>
+        </tr>
+    `).join('');
+
+    return `
+        <div class="table-responsive mt-3">
+            <table class="table table-sm text-start align-middle mb-0">
+                <tbody>${linhasHtml}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+function fn_ColecaoImportar_CarregarArquivo(arquivo) {
+    $.busyLoadFull("show");
+
+    $('#divprogressbar').show();
+    $('#divprogressbar_upload').css('width', '0%').attr('aria-valuenow', 0).text('0%');
+
+    // Não há como o servidor avisar "processei a linha X" no meio de uma única requisição
+    // síncrona - a barra anima progressivamente até 90% num ritmo calibrado pelo total de
+    // linhas da planilha (mais linhas, incremento mais lento), e só completa os 10% finais
+    // quando a resposta de fato chegar.
+    const passoPorTick = 90 / Math.max(gColecaoImportarTotalLinhas, 1);
+    let percentualAtual = 0;
+
+    const fn_AtualizarProgresso = (pct) => {
+        $('#divprogressbar_upload').css('width', pct + '%').attr('aria-valuenow', pct).text(pct + '%');
+    };
+
+    const intervalId = setInterval(() => {
+        percentualAtual = Math.min(90, percentualAtual + passoPorTick);
+        fn_AtualizarProgresso(Math.round(percentualAtual));
+    }, 40);
+
+    const formData = new FormData();
+    formData.append('arquivo', arquivo);
+
+    $.ajax({
+        url: `${var_Controller}/CarregarPlanilhaColecao`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (response) {
+            clearInterval(intervalId);
+            fn_AtualizarProgresso(100);
+
+            $.busyLoadFull("hide");
+            $('#divprogressbar').hide();
+
+            if (!response?.bResult) {
+                fnhelper_AlertErro(response);
+                $("#fileUpload").val('');
+                return;
+            }
+
+            const d = response.data || {};
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Coleção carregada!',
+                html: `Arquivo de coleção carregado com sucesso.` + fn_ColecaoImportar_MontarTabelaResumo(d),
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: {
+                    confirmButton: 'btn btn-label-success waves-effect'
+                }
+            }).then(() => {
+                $("#fileUpload").val('');
+
+                const modalUploadXls = document.querySelector('#modalUploadXls');
+                bootstrap.Offcanvas.getOrCreateInstance(modalUploadXls).hide();
+
+                $('.datatables-basic').DataTable().ajax.reload(null, false);
+            });
+        },
+        error: function (xhr, textStatus) {
+            clearInterval(intervalId);
+
+            $.busyLoadFull("hide");
+            $('#divprogressbar').hide();
+
+            fnhelper_AlertErro(xhr, textStatus);
+
+            $("#fileUpload").val('');
+        }
+    });
+}
 //#endregion

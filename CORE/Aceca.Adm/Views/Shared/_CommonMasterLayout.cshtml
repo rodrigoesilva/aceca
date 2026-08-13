@@ -85,6 +85,12 @@
      usar esses globais sem declará-los de novo. Não roda em páginas front (main.js diferente). *@
   @if (!isFront)
   {
+    <script>
+      // Flag global de perfil, pra telas/botões restritos ao Administracao (ex.: Importar
+      // Coleção) poderem se esconder/bloquear no JS sem precisar reconsultar o servidor.
+      // A checagem que realmente protege é sempre a do backend ([Authorize] na action).
+      window.gIsAdministracao = @Json.Serialize(httpContextAccessor.HttpContext?.User?.IsInRole("Administracao") == true);
+    </script>
     <script src="~/js/helper-ui-common.js" asp-append-version="true"></script>
   }
 
