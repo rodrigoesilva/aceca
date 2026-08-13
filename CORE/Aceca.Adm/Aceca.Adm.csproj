@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\midia\" />
+    <Folder Include="wwwroot\file\" />
   </ItemGroup>
 
 </Project>

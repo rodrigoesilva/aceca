@@ -1353,7 +1353,7 @@ function fnItem_Colecao(obj, action) {
 //#region IMPORTAR XLS
 
 function fn_ModalColecao_Importar(id) {
-    console.log("id ::: ", id);
+    //console.log("id ::: ", id);
 
     const modalUploadXls = document.querySelector('#modalUploadXls');
 

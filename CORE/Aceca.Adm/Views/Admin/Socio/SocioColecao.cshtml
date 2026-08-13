@@ -140,12 +140,6 @@
                             <button type="button" class="btn btn-label-secondary waves-effect btn-filter-clear">
                                 <span class="tf-icons ri-eraser-line ri-16px me-1_5"></span>Limpar
                             </button>
-                            <a href="~/file/MODELO_RENTRAK_ImportarRentrakPorCodigoReferencia.xlsx"
-                               download="~/file/MODELO_RENTRAK_ImportarRentrakPorCodigoReferencia.xlsx"
-                               class="btn btn-label-info waves-effect btn-modelo"
-                               role="button">
-                                <span class="tf-icons ri-arrow-down-circle-line ri-16px me-1_5"></span>Modelo
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -224,46 +218,58 @@
     </div>
 </div>
 
-<!-- Modal Lateral - Form de Importacao de itens XLS -->
+<!-- Modal Lateral - Form de Importacao de Colecao XLS -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="modalUploadXls" aria-labelledby="modalUploadXlsLabel">
     <!-- Offcanvas Header -->
     <div class="offcanvas-header py-6">
-        <h5 id="modalUploadXlsLabel" class="offcanvas-title">Planilha de Itens</h5>
-        <!--  <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button> -->
+        <h5 id="modalUploadXlsLabel" class="offcanvas-title">Planilha de Coleção</h5>
     </div>
+
     <!-- Offcanvas Body -->
     <div class="offcanvas-body border-top">
-        <!--   <form id="formFile" name="formFile" action="">-->
         <!-- Title -->
-
         <div class="form-floating form-floating-outline mb-5">
+            <a href="~/file/ACECA_ModeloPlanilhaColecao.xlsx"
+               download="~/file/ACECA_ModeloPlanilhaColecao.xlsx"
+               class="btn btn-label-primary waves-effect btn-modelo"
+               role="button">
+                <div class="alert d-flex align-items-center alert-primary mb-5 h5" role="alert">
+                        <span class="alert-icon me-4 rounded-2" data-bs-toggle="tooltip" 
+                            data-bs-placement="top" title="Download Planilha Modelo">
+                              <i class="ri-download-cloud-line ri-22px"></i>
+                        </span>
+                    Faça aqui o download da planilha modelo de coleção
+                </div>
+            </a>
+
             <div class="alert d-flex align-items-center alert-info mb-0 h5" role="alert">
                 <span class="alert-icon me-4 rounded-2"><i class="ri-information-line ri-22px"></i></span>
-                Selecionar o arquivo no formato Excel contendo os Itens da Campanha
+                Selecione a planilha com os dados da sua Coleção
             </div>
         </div>
 
-        <!-- Image -->
+        <!-- Upload Input -->
         <div class="mb-5">
-            @* <input class="form-control" type="file" id="ecommerce-category-image"> *@
             <input id="fileUpload" name="fileUpload" class="form-control" type="file" accept=".xlsx, .xls">
         </div>
-        <!-- Submit and reset -->
+
+        <!-- Botoes -->
         <div class="mb-5">
-            <button id="btnPropItens_DadosCarregar" type="submit" class="btn btn-success me-sm-3 me-1 data-submit">
+            <button id="btnPropItens_DadosCarregar" type="submit" class="btn btn-primary me-sm-3 me-1 data-submit">
                 <span class="tf-icons ri-upload-2-fill ri-16px me-1_5"></span>Carregar
             </button>
-
-            @* <button id="btnPropItens_DadosLimpar" type="button" class="btn btn-label-secondary">
-                                        <span class="tf-icons ri-eraser-line ri-16px me-1_5"></span>Limpar
-                                        </button> *@
-
-            <button id="btnPropItens_DadosCancelar" type="reset" class="btn btn-outline-danger" data-bs-dismiss="offcanvas">
+            <button id="btnPropItens_DadosCancelar" type="reset" class="btn btn-label-secondary waves-effect btn-cancel" data-bs-dismiss="offcanvas">
                 Cancelar
             </button>
         </div>
-        <!-- </form>-->
+
+        <!-- Progress -->
+        <div id="divprogressbar" class="demo-vertical-spacing" style="display: none;">
+            <div class="progress" style="font-size: large; height: 40px;">
+                <div id="divprogressbar_upload" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+            </div>
+        </div>
     </div>
 </div>
-<!--/ Modal Lateral - Form de Importacao de itens XLS  -->
+
 @* @await Html.PartialAsync("../_Partials/_Modals/ModalImportColecao") *@
