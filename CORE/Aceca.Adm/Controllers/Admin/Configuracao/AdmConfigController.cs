@@ -1,14 +1,13 @@
-﻿using Aceca.Adm.Controllers.Admin.Socio;
 using Aceca.Adm.Data;
 using Aceca.Adm.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Net.Http.Headers;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Aceca.Adm.Controllers.Admin.Configuracao
 {
+    [Authorize(Roles = "Administracao")]
     public class AdmConfigController : Controller
     {
         #region variaveis
@@ -21,7 +20,7 @@ namespace Aceca.Adm.Controllers.Admin.Configuracao
         private readonly string _urlBaseImg = string.Empty;
         private readonly string _urlBaseSite = string.Empty;
         private readonly string _urlBaseApp = string.Empty;
-        //
+
         #endregion
 
         public AdmConfigController(ILogger<AdmConfigController> logger, AppDbContext db, IWebHostEnvironment env, IConfiguration cfg)
@@ -36,225 +35,201 @@ namespace Aceca.Adm.Controllers.Admin.Configuracao
             _urlBaseApp = _appConfiguration["Url:App"]!;
         }
 
-        #region CRUD JS
+        #region Index
 
         public ActionResult Index()
         {
             return View("~/Views/Admin/Configuracao/AdmConfig.cshtml");
         }
-        /*
+
+        #endregion
+
+        #region GRID
+
+        [HttpGet]
         public async Task<IActionResult> ListGrid()
         {
-            var response = string.Empty;
-
-            var lst = new List<AdmConfig>();
-
-            using (var httpClient = _httpClientFactory.CreateClient())
-            {
-                string strControllerName = "AdmConfig";
-                string strControllerMethod = "GetAllAsync";
-
-                httpClient.BaseAddress = new Uri($"{apiBaseUrl}");
-                httpClient.DefaultRequestHeaders.Accept.Clear();
-                httpClient.DefaultRequestHeaders.Accept
-                    .Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                string url = BuildApiUrl(apiUrl, strControllerName, strControllerMethod);
-
-                response = await httpClient.GetStringAsync(url);
-
-                if (!string.IsNullOrEmpty(response))
-                {
-                    var data = JsonConvert
-                        .DeserializeObject<List<AdmConfig>>(response)
-                         //?.Where(s => s.Ativo == true)
-                          ?.OrderBy(s => s.Descricao);
-
-                    if (data == null)
-                        return BadRequest();
-
-                    lst = data.ToList();
-                }
-                else
-                    return BadRequest();
-            }
-
-            response = HelperApiResponse.SerializeCamelCase(lst);
-
-            await HelperUsuarioLog.RegistrarAsync(_httpClientFactory, apiUrl, _logger, User,
-                EAdmLogAcao.Listou, nameof(AdmConfigController), "Listou registros de AdmConfig");
-
-            return Ok(response);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult> Create(AdmConfig data)
-        {
             try
             {
-                dynamic response = new { bResult = false, message = string.Empty };
-
-                if (string.IsNullOrEmpty(data.Descricao))
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Descrição deve ser preenchida"
-                    });
-                }
-
-                try
-                {
-                    var result = await AsyncActionAPI(data, "Create");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = HelperApiResponse.ExtractMessage(result) ?? "Erro ao processar a solicitação."
-                        });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
-                    });
-                }
-
-                await HelperUsuarioLog.RegistrarAsync(_httpClientFactory, apiUrl, _logger, User,
-                    EAdmLogAcao.Incluiu, nameof(AdmConfigController),
-                    $"Incluiu AdmConfig '{data.Parametro}'", data.Id > 0 ? data.Id : null);
+                var lstModel = await _db.AdmConfig
+                    .AsNoTracking()
+                    .OrderBy(x => x.Parametro)
+                    .ToListAsync();
 
                 return Ok(new
                 {
                     bResult = true,
                     type = "OK",
-                    message = "SUCESSO ::: "
+                    message = "SUCESSO ::: ",
+                    data = lstModel
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
             }
         }
 
+        #endregion
+
+        #region CRUD
+
         [HttpPost]
-        public async Task<ActionResult> Edit(AdmConfig data)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(AdmConfig model)
         {
             try
             {
-                dynamic response = new { bResult = false, message = string.Empty };
+                if (string.IsNullOrWhiteSpace(model?.Parametro))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Parâmetro deve ser preenchido" });
 
-                if (string.IsNullOrEmpty(data.Descricao))
+                if (string.IsNullOrWhiteSpace(model.Descricao))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Descrição deve ser preenchida" });
+
+                // Parametro é a chave lógica do registro (usada por quem for ler a
+                // configuração pelo nome) - nunca pode se repetir.
+                var jaExiste = await _db.AdmConfig.AnyAsync(x => x.Parametro == model.Parametro.Trim());
+
+                if (jaExiste)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Já existe uma configuração com esse Parâmetro" });
+
+                var novoModel = new AdmConfig
                 {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Descrição deve ser preenchida"
-                    });
-                }
+                    Parametro = model.Parametro.Trim(),
+                    Descricao = model.Descricao.Trim(),
+                    Valor = model.Valor?.Trim(),
+                    Ativo = model.Ativo
+                };
 
-                try
-                {
-                    var result = await AsyncActionAPI(data, "Edit");
-
-                    if (result.GetType() == typeof(NotFoundObjectResult) ||
-                         result.GetType() == typeof(BadRequestObjectResult))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = HelperApiResponse.ExtractMessage(result) ?? "Erro ao processar a solicitação."
-                        });
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = ex?.Message?.ToString()
-                    });
-                }
-
-                await HelperUsuarioLog.RegistrarAsync(_httpClientFactory, apiUrl, _logger, User,
-                    EAdmLogAcao.Alterou, nameof(AdmConfigController),
-                    $"Alterou AdmConfig '{data.Parametro}'", data.Id > 0 ? data.Id : null);
+                _db.AdmConfig.Add(novoModel);
+                await _db.SaveChangesAsync();
 
                 return Ok(new
                 {
                     bResult = true,
                     type = "OK",
-                    message = "SUCESSO ::: "
+                    message = "SUCESSO ::: ",
+                    data = novoModel
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                return View();
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(AdmConfig model)
+        {
+            try
+            {
+                if (model == null || model.Id <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Id deve ser maior que 0" });
+
+                if (string.IsNullOrWhiteSpace(model.Descricao))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Descrição deve ser preenchida" });
+
+                var existente = await _db.AdmConfig.FirstOrDefaultAsync(x => x.Id == model.Id);
+
+                if (existente == null)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Registro não encontrado" });
+
+                // Parametro é a chave lógica do registro - o front trava o campo na edição
+                // (não confiado sozinho); o valor enviado pelo cliente é sempre ignorado aqui.
+                existente.Descricao = model.Descricao.Trim();
+                existente.Valor = model.Valor?.Trim();
+                existente.Ativo = model.Ativo;
+
+                await _db.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = existente
+                });
+            }
+            catch (Exception ex)
+            {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = mensagemErro
+                });
             }
         }
 
         [HttpDelete]
-        public async Task<ActionResult> Delete(int id)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
         {
-            dynamic response = new { bResult = false, message = string.Empty };
-
-            if (id < 1)
-            {
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "Id deve ser maior que 0"
-                });
-            }
-
-            var model = new List<AdmConfig>();
-
             try
             {
-                var result = await AsyncDeleteById(id);
+                if (id < 1)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Id deve ser maior que 0" });
 
-                if (result.GetType() == typeof(NotFoundObjectResult) ||
-                     result.GetType() == typeof(BadRequestObjectResult))
-                    return BadRequest(new
+                var model = await _db.AdmConfig.FirstOrDefaultAsync(x => x.Id == id);
+
+                if (model == null)
+                    return Ok(new
                     {
-                        bResult = false,
-                        type = "ERRO",
-                        message = HelperApiResponse.ExtractMessage(result) ?? "Erro ao processar a solicitação."
+                        bResult = true,
+                        type = "ERRO - ID nao localizado",
+                        message = "ID nao localizado",
+                        data = id
                     });
+
+                _db.AdmConfig.Remove(model);
+                await _db.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
+                    data = model
+                });
             }
             catch (Exception ex)
             {
+                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
+
+                _logger.LogError(mensagemErro);
+
                 return BadRequest(new
                 {
                     bResult = false,
                     type = "ERRO",
-                    message = ex?.Message?.ToString()
+                    message = mensagemErro
                 });
             }
-
-            await HelperUsuarioLog.RegistrarAsync(_httpClientFactory, apiUrl, _logger, User,
-                EAdmLogAcao.Excluiu, nameof(AdmConfigController), $"Excluiu AdmConfig Id {id}", id);
-
-            return Ok(new
-            {
-                bResult = true,
-                type = "OK",
-                message = "SUCESSO ::: "
-            });
-
-            //return View();
         }
-         */
+
         #endregion
-       
     }
 }

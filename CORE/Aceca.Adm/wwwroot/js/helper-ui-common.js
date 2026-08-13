@@ -329,3 +329,173 @@ function fnhelper_AlertErro(erro, fallback) {
 }
 
 //#endregion
+
+//#region CRUD GENERICO (telas simples de "tabela de apoio" - ver AdmConfig)
+
+// Fecha e reseta o offcanvas #pop-add-new-item padrão usado por essas telas.
+function fnhelper_PopFechar() {
+    const popAddNewItem = document.querySelector('#pop-add-new-item');
+
+    if (popAddNewItem) bootstrap.Offcanvas.getOrCreateInstance(popAddNewItem).hide();
+}
+
+// Cada tela que usa esses helpers precisa definir fn_PopGetObj() (globalmente) com os
+// campos do seu próprio formulário - só assim fnhelper_ItemAdd sabe o que enviar, já que
+// é chamado sem receber os dados do formulário diretamente (ver app-config-adm-
+// admconfig.js::formValid.on('core.form.valid', ...)).
+function fnhelper_ItemAdd(varTblObj, controller) {
+    const objFormData = fn_PopGetObj();
+
+    $.busyLoadFull("show");
+
+    $.ajax({
+        url: `${controller}/Create`,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(objFormData),
+        success: function (response) {
+            $.busyLoadFull("hide");
+
+            if (!response?.bResult) {
+                fnhelper_AlertErro(response);
+                return;
+            }
+
+            fnhelper_PopFechar();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Salvo!',
+                html: 'Registro adicionado com sucesso.',
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: { confirmButton: 'btn btn-label-success waves-effect' }
+            }).then(() => {
+                (varTblObj?.DataTable ? varTblObj : $('.datatables-basic')).DataTable().ajax.reload(null, false);
+            });
+        },
+        error: function (xhr, textStatus) {
+            $.busyLoadFull("hide");
+
+            fnhelper_AlertErro(xhr, textStatus);
+        }
+    });
+}
+
+function fnhelper_ItemEdit(objFormData, controller) {
+    $.busyLoadFull("show");
+
+    $.ajax({
+        url: `${controller}/Edit`,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(objFormData),
+        success: function (response) {
+            $.busyLoadFull("hide");
+
+            if (!response?.bResult) {
+                fnhelper_AlertErro(response);
+                return;
+            }
+
+            fnhelper_PopFechar();
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Salvo!',
+                html: 'Registro alterado com sucesso.',
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: { confirmButton: 'btn btn-label-success waves-effect' }
+            }).then(() => {
+                $('.datatables-basic').DataTable().ajax.reload(null, false);
+            });
+        },
+        error: function (xhr, textStatus) {
+            $.busyLoadFull("hide");
+
+            fnhelper_AlertErro(xhr, textStatus);
+        }
+    });
+}
+
+// item precisa ter .id (o objeto completo da linha, como já é passado pelas telas que
+// chamam isso a partir da coluna de Ações).
+function fnhelper_ItemDelete(item, controller) {
+    Swal.fire({
+        title: 'Tem certeza?',
+        icon: 'warning',
+        html: 'Essa ação não poderá ser desfeita.',
+        showCancelButton: true,
+        reverseButtons: true,
+        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Sim, excluir!`,
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            confirmButton: 'btn btn-label-danger waves-effect',
+            cancelButton: 'btn btn-label-secondary waves-effect me-3'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $.busyLoadFull("show");
+
+        $.ajax({
+            url: `${controller}/Delete?id=${item.id}`,
+            type: 'DELETE',
+            success: function (response) {
+                $.busyLoadFull("hide");
+
+                if (!response?.bResult) {
+                    fnhelper_AlertErro(response);
+                    return;
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Excluído!',
+                    html: 'Registro excluído com sucesso.',
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: { confirmButton: 'btn btn-label-success waves-effect' }
+                }).then(() => {
+                    $('.datatables-basic').DataTable().ajax.reload(null, false);
+                });
+            },
+            error: function (xhr, textStatus) {
+                $.busyLoadFull("hide");
+
+                fnhelper_AlertErro(xhr, textStatus);
+            }
+        });
+    });
+}
+
+// Igual a fnhelper_CheckVerAtivos, mas recebendo o seletor da tabela em vez de assumir
+// '.datatables-basic' fixo - fnhelper_CheckVerAtivos continua como está (usada em 25+
+// arquivos), esta é só a variante parametrizada para quem precisar.
+function fnhelper_ExibirSomenteAtivos(seletorTabela) {
+    const chkVerAtivos = document.querySelector('#chkFilterAtivo');
+
+    if (!chkVerAtivos) return;
+
+    chkVerAtivos.addEventListener('change', function () {
+        var table = $(seletorTabela).DataTable();
+
+        if (this.checked) {
+            Swal.fire({
+                title: 'INFO!!',
+                icon: 'info',
+                html: 'Essa op&ccedil;&atilde;o <br> exbir&aacute; somente os itens ativos !!',
+                focusConfirm: false,
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: {
+                    confirmButton: 'btn btn-label-info waves-effect'
+                },
+            }).then((result) => {
+                table.draw();
+            });
+        } else {
+            table.draw();
+        }
+    });
+}
+
+//#endregion

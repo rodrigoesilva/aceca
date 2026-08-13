@@ -367,7 +367,7 @@
                 </li>
 
                 <!-- Configuracoes -->
-                <li hidden="hidden" class='menu-item@(currentPage.StartsWith("/Config") ? " active" : "")'>
+                <li class='menu-item@(currentPage.StartsWith("/Config") ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">
                         <i class="menu-icon tf-icons ri-settings-4-line"></i>
                         <div data-i18n="Configurações">Configurações</div>
@@ -375,7 +375,7 @@
 
                     <ul class="menu-sub">
                         <!-- Configuracoes / Drive  -->
-                        <li class='menu-item@(currentPage == "/Configuracoes/Drive" ? " active" : "")'>
+                        <li hidden="hidden" class='menu-item@(currentPage == "/Configuracoes/Drive" ? " active" : "")'>
                             <a asp-controller="AdmConfig" asp-action="Index" class="menu-link">
                                 <i class="menu-icon tf-icons ri-hard-drive-3-line"></i>
                                 <div data-i18n="Drive">Drive</div>
@@ -391,7 +391,7 @@
                         </li>
 
                         <!-- Configuracoes / Textos -->
-                        <li class='menu-item@(currentPage == "/Configuracoes/TextoEmail" ? " active" : "")'>
+                        <li hidden="hidden" class='menu-item@(currentPage == "/Configuracoes/TextoEmail" ? " active" : "")'>
                             <a asp-controller="AdmConfig" asp-action="Index" class="menu-link">
                                 <i class="menu-icon tf-icons ri-file-settings-line"></i>
                                 <div data-i18n="Textos">Textos</div>

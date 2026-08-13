@@ -68,9 +68,9 @@ function fn_GridList() {
                 crossDomain: true,
                 url: varAjax_UrlController,
                 type: varAjax_TypeAction,
-                dataSrc: function (data) {
-                    //console.log("data fn :: ", data)
-                    return data;
+                dataSrc: function (result) {
+                    //console.log("data fn :: ", result)
+                    return result.data;
                 }
             },
             columns: [

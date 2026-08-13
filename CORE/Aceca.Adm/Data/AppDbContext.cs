@@ -43,6 +43,7 @@ namespace Aceca.Adm.Data
         #region Admin
         public DbSet<AdminUsuario> AdminUsuarios { get; set; }
         public DbSet<Configuracao> Configuracoes { get; set; }
+        public DbSet<AdmConfig> AdmConfig { get; set; }
         #endregion
 
         #region Agenda
