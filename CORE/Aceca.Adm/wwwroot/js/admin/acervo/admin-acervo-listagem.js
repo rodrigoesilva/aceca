@@ -1088,7 +1088,7 @@ function fn_Zoom() {
         img01.className += " out";
         setTimeout(function () {
             modal.style.display = "none";
-            img01.className = "modal-content";
+            img01.className = "img-zoom-content";
         }, 400);
 
     });

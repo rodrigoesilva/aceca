@@ -10,7 +10,7 @@ img[name=myImg]{
     img[name=myImg]:hover{opacity: 0.7;}
 
         /* The Modal (background) */
-    .modal {
+    .img-zoom-modal {
         display: none; /* Hidden by default */
         position: fixed; /* Stay in place */
         z-index: 1; /* Sit on top */
@@ -25,7 +25,7 @@ img[name=myImg]{
     }
 
     /* Modal Content (image) */
-    .modal-content {
+    .img-zoom-content {
         margin: auto;
         display: block;
         width: 75%;
@@ -45,7 +45,7 @@ img[name=myImg]{
     }
 
     /* Add Animation */
-    .modal-content, #caption {
+    .img-zoom-content, #caption {
         -webkit-animation-name: zoom;
         -webkit-animation-duration: 0.6s;
         animation-name: zoom;
