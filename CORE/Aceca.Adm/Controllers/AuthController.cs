@@ -110,7 +110,7 @@ namespace Aceca.Adm.Controllers
         }
 
         [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public IActionResult ProfileUser() => View();
+        public IActionResult AccountSettingsProfileUser() => View();
 
         public IActionResult AccountSettings() => View();
 
