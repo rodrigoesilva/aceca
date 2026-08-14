@@ -26,7 +26,7 @@
 }
 
 @section PageScripts {
-    <script src="~/js/auth/pages-auth-account-settings-financeiro.js"></script>
+    <script src="~/js/auth/pages-auth-account-settings-financeiro.js" asp-append-version="true"></script>
 }
 
 @* ************** Content ************** *@
@@ -101,18 +101,18 @@
                             <div class="col-12 mb-1">
                                 <div class="form-check form-check-inline">
                                     <input name="collapsible-payment" class="form-check-input" type="radio" value="" id="collapsible-payment-cc" checked="" />
-                                    <label class="form-check-label" for="collapsible-payment-cc">Credit/Debit/ATM Card</label>
+                                    <label class="form-check-label" for="collapsible-payment-cc">Cartão de Crédito</label>
                                 </div>
                                 <div class="form-check form-check-inline">
                                     <input name="collapsible-payment" class="form-check-input" type="radio" value="" id="collapsible-payment-cash" />
-                                    <label class="form-check-label" for="collapsible-payment-cash">Paypal account</label>
+                                    <label class="form-check-label" for="collapsible-payment-cash">Pix</label>
                                 </div>
                             </div>
                             <div class="col-12">
                                 <div class="input-group input-group-merge">
                                     <div class="form-floating form-floating-outline">
                                         <input id="paymentCard" name="paymentCard" class="form-control credit-card-mask" type="text" placeholder="1356 3215 6548 7898" aria-describedby="paymentCard2" />
-                                        <label for="paymentCard">Card Number</label>
+                                        <label for="paymentCard">Número do Cartão</label>
                                     </div>
                                     <span class="input-group-text cursor-pointer" id="paymentCard2"><span class="card-type"></span></span>
                                 </div>
@@ -120,13 +120,13 @@
                             <div class="col-12 col-xl-6 col-lg-12">
                                 <div class="form-floating form-floating-outline">
                                     <input type="text" id="paymentName" class="form-control" placeholder="John Doe" />
-                                    <label for="paymentName">Name</label>
+                                    <label for="paymentName">Nome</label>
                                 </div>
                             </div>
                             <div class="col-6 col-xl-3 col-lg-6">
                                 <div class="form-floating form-floating-outline">
                                     <input type="text" id="paymentExpiryDate" class="form-control expiry-date-mask" placeholder="MM/YY" />
-                                    <label for="paymentExpiryDate">Exp. Date</label>
+                                    <label for="paymentExpiryDate">Data Expiração</label>
                                 </div>
                             </div>
                             <div class="col-6 col-xl-3 col-lg-6">
@@ -135,40 +135,41 @@
                                         <input type="text" id="paymentCvv" class="form-control cvv-code-mask" maxlength="3" placeholder="654" />
                                         <label for="paymentCvv">CVV Code</label>
                                     </div>
-                                    <span class="input-group-text cursor-pointer" id="paymentCvv2"><i class="ri-question-line" data-bs-toggle="tooltip" data-bs-placement="top" title="Card Verification Value"></i></span>
+                                    <span class="input-group-text cursor-pointer" id="paymentCvv2"><i class="ri-question-line" data-bs-toggle="tooltip" data-bs-placement="top" title="Código de verificação do cartão"></i></span>
                                 </div>
                             </div>
                             <div class="col-12 mt-6">
                                 <div class="form-check form-switch">
                                     <input type="checkbox" class="form-check-input" id="future-billing" />
-                                    <label for="future-billing">Save card for future billing?</label>
+                                    <label for="future-billing">Salvar para compras futuras?</label>
                                 </div>
                             </div>
                             <div class="col-12 mt-6">
-                                <button type="submit" class="btn btn-primary me-sm-3 me-1">Save Changes</button>
-                                <button type="reset" class="btn btn-outline-secondary">Reset</button>
+                                <button type="submit" class="btn btn-primary me-sm-3 me-1">Salvar</button>
+                                <button type="reset" class="btn btn-outline-secondary">Limpar</button>
                             </div>
                         </form>
                     </div>
-                    <div class="col-md-6 mt-5 mt-md-0">
-                        <h6 class="mb-4">My Cards</h6>
+                    <!-- / Cartoes -->
+                    <div id="div_meuscartoes" class="col-md-6 mt-5 mt-md-0">
+                        <h6 class="mb-4">Meus Cartões</h6>
                         <div class="added-cards">
                             <div class="cardMaster bg-lightest p-4 rounded mb-6">
                                 <div class="d-flex justify-content-between flex-sm-row flex-column">
                                     <div class="card-information me-2">
                                         <img class="mb-2 img-fluid" src="~/img/icons/payments/mastercard.png" alt="Master Card">
                                         <div class="d-flex align-items-center mb-2 flex-wrap gap-2">
-                                            <h6 class="mb-0 me-2">Tom McBride</h6>
-                                            <span class="badge bg-label-primary rounded-pill">Primary</span>
+                                            <h6 class="mb-0 me-2">Zezinho Silva</h6>
+                                            <span class="badge bg-label-primary rounded-pill">Principal</span>
                                         </div>
                                         <span class="card-number">&#8727;&#8727;&#8727;&#8727; &#8727;&#8727;&#8727;&#8727; 9856</span>
                                     </div>
                                     <div class="d-flex flex-column text-start text-lg-end">
                                         <div class="d-flex order-sm-0 order-1 mt-sm-0 mt-4">
-                                            <button class="btn btn-sm btn-outline-primary me-4" data-bs-toggle="modal" data-bs-target="#editCCModal">Edit</button>
-                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                            <button class="btn btn-sm btn-outline-primary me-4" data-bs-toggle="modal" data-bs-target="#editCCModal">Editar</button>
+                                            <button class="btn btn-sm btn-outline-danger">Apagar</button>
                                         </div>
-                                        <small class="mt-4 order-sm-1 order-0">Card expires at 12/26</small>
+                                        <small class="mt-4 order-sm-1 order-0">Cartão expira em 12/26</small>
                                     </div>
                                 </div>
                             </div>
@@ -176,15 +177,15 @@
                                 <div class="d-flex justify-content-between flex-sm-row flex-column">
                                     <div class="card-information me-4">
                                         <img class="mb-2 img-fluid" src="~/img/icons/payments/visa.png" alt="Visa Card">
-                                        <h6 class="mb-2">Mildred Wagner</h6>
+                                        <h6 class="mb-2">Virgulino SOuza</h6>
                                         <span class="card-number">&#8727;&#8727;&#8727;&#8727; &#8727;&#8727;&#8727;&#8727; 5896</span>
                                     </div>
                                     <div class="d-flex flex-column text-start text-lg-end">
                                         <div class="d-flex order-sm-0 order-1 mt-sm-0 mt-4">
-                                            <button class="btn btn-sm btn-outline-primary me-4" data-bs-toggle="modal" data-bs-target="#editCCModal">Edit</button>
-                                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                            <button class="btn btn-sm btn-outline-primary me-4" data-bs-toggle="modal" data-bs-target="#editCCModal">Editar</button>
+                                            <button class="btn btn-sm btn-outline-danger">Apagar</button>
                                         </div>
-                                        <small class="mt-4 order-sm-1 order-0">Card expires at 02/24</small>
+                                        <small class="mt-4 order-sm-1 order-0">Cartão expira em 02/24</small>
                                     </div>
                                 </div>
                             </div>
@@ -192,6 +193,48 @@
                         <!-- Modal -->
                         @await Html.PartialAsync("../_Partials/_Modals/ModalEditCc")
                         <!--/ Modal -->
+                    </div>
+
+                     <!-- / PIX -->
+                    <div id="div_pix" class="col-md-6 mt-5 mt-md-0 d-none">
+                        <h6 class="mb-4">PIX</h6>
+                        <div class="added-cards">
+                            <div class="cardMaster bg-lightest p-4 rounded mb-6">
+                                <div class="d-flex justify-content-between flex-sm-row flex-column">
+                                    <div class="card-information me-2">
+                                        <img class="mb-2 img-fluid" src="~/img/icons/payments/mastercard.png" alt="Master Card">
+                                        <div class="d-flex align-items-center mb-2 flex-wrap gap-2">
+                                                    <h6 class="mb-0 me-2">Zezinho PIX</h6>
+                                            <span class="badge bg-label-primary rounded-pill">Principal</span>
+                                        </div>
+                                        <span class="card-number">&#8727;&#8727;&#8727;&#8727; &#8727;&#8727;&#8727;&#8727; 9856</span>
+                                    </div>
+                                    <div class="d-flex flex-column text-start text-lg-end">
+                                        <div class="d-flex order-sm-0 order-1 mt-sm-0 mt-4">
+                                            <button class="btn btn-sm btn-outline-primary me-4" data-bs-toggle="modal" data-bs-target="#editCCModal">Editar</button>
+                                            <button class="btn btn-sm btn-outline-danger">Apagar</button>
+                                        </div>
+                                        <small class="mt-4 order-sm-1 order-0">Cartão expira em 12/26</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="cardMaster bg-lightest p-4 rounded">
+                                <div class="d-flex justify-content-between flex-sm-row flex-column">
+                                    <div class="card-information me-4">
+                                        <img class="mb-2 img-fluid" src="~/img/icons/payments/visa.png" alt="Visa Card">
+                                                <h6 class="mb-2">Virgulino PIX</h6>
+                                        <span class="card-number">&#8727;&#8727;&#8727;&#8727; &#8727;&#8727;&#8727;&#8727; 5896</span>
+                                    </div>
+                                    <div class="d-flex flex-column text-start text-lg-end">
+                                        <div class="d-flex order-sm-0 order-1 mt-sm-0 mt-4">
+                                            <button class="btn btn-sm btn-outline-primary me-4" data-bs-toggle="modal" data-bs-target="#editCCModal">Editar</button>
+                                            <button class="btn btn-sm btn-outline-danger">Apagar</button>
+                                        </div>
+                                        <small class="mt-4 order-sm-1 order-0">Cartão expira em 02/24</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -20,8 +20,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fn_CarregarInfoFinanceira();
         fn_WireCancelSubscription();
+        fn_WireFormaPagamento();
     })();
 });
+
+//#endregion
+
+//#region FORMA DE PAGAMENTO (Cartão x Pix)
+
+// Alterna qual bloco aparece em div_formapagamento (Meus Cartões x Pix) conforme o
+// radio "collapsible-payment" selecionado (collapsible-payment-cc / -cash).
+function fn_WireFormaPagamento() {
+    const radios = document.querySelectorAll('input[name="collapsible-payment"]');
+
+    if (!radios.length) return;
+
+    radios.forEach(function (radio) {
+        radio.addEventListener('change', fn_AtualizarFormaPagamento);
+    });
+
+    fn_AtualizarFormaPagamento();
+}
+
+function fn_AtualizarFormaPagamento() {
+    const ehCartao = document.getElementById('collapsible-payment-cc')?.checked ?? true;
+
+    document.getElementById('div_meuscartoes')?.classList.toggle('d-none', !ehCartao);
+    document.getElementById('div_pix')?.classList.toggle('d-none', ehCartao);
+}
 
 //#endregion
 
