@@ -16,7 +16,7 @@
     <div class="col-12">
         <div class="card mb-6">
             <div class="user-profile-header-banner">
-                <img src="~/img/pages/profile-banner.png" alt="Banner image" class="rounded-top">
+                <img src="~/img/pages/profile-banner.png" alt="Banner image" class="rounded-top" style="height: 125px !important;">
             </div>
             <div class="user-profile-header d-flex flex-column flex-lg-row text-sm-start text-center mb-4">
                 <div class="flex-shrink-0 mt-n2 mx-sm-0 mx-auto">
@@ -47,16 +47,19 @@
         </div>
     </div>
 </div>
-<!--/ Header -->
 
 <!-- User Profile Content -->
 <div class="row">
     <!-- Sobre User -->
-    <div class="col-xl-4 col-lg-4 col-md-4">
-        <div class="card mb-6">
-            <div id="div_sobre" class="card-body">
+    <div id="div_sobre" class="col-xl-4 col-lg-4 col-md-4">
+        <div class="card card-action mb-6 h-100">
+            <div class="card-header align-items-center">
+                <h5 class="card-action-title mb-0"><i class='ri-questionnaire-line ri-24px text-body me-4'></i>Sobre</h5>
+            </div>
+            <hr class="my-0">
+            <div class="card-body pt-3">
 
-                <small class="card-text text-uppercase text-muted small">Sobre</small>
+                @* <small class="card-text text-uppercase text-muted small">Sobre</small> *@
                 <ul class="list-unstyled my-3 py-1">
                     <li class="d-flex align-items-center mb-4"><i class="ri-user-3-line ri-24px"></i><span class="fw-medium mx-2">Nome:</span> <span id="sp_Nome">-</span></li>
                     <li class="d-flex align-items-center mb-4"><i class="ri-check-line ri-24px"></i><span class="fw-medium mx-2">Usuário:</span> <span id="sp_Usuario">-</span></li>
@@ -84,12 +87,13 @@
 
     <!--/ Actividade Login -->
     <div id="div_atividade" class="col-xl-4 col-lg-4 col-md-4">
-        <div class="card card-action mb-6">
+        <div class="card card-action mb-6 h-100">
             <div class="card-header align-items-center">
                 <h5 class="card-action-title mb-0"><i class='ri-bar-chart-2-line ri-24px text-body me-4'></i>Atividade</h5>
             </div>
+            <hr class="my-0">
             <div class="card-body pt-3">
-                <ul class="timeline card-timeline mb-0">
+                <ul class="timeline card-timeline mb-0 my-3 py-1">
                     <li class="timeline-item timeline-item-transparent">
                         <span class="timeline-point timeline-point-primary"></span>
                         <div class="timeline-event">
@@ -162,9 +166,12 @@
 
     <!--/ Grid Colecao -->
     <div id="div_grid_colecao" class="col-xl-4 col-lg-4 col-md-4">
-        <div class="card mb-4">
-            <h5 class="card-header">Coleção</h5>
-            <div class="card-datatable table-responsive pb-0 mb-n4">
+        <div class="card card-action mb-6 h-100">
+            <div class="card-header align-items-center">
+                <h5 class="card-action-title mb-0"><i class='ri-archive-line ri-24px text-body me-4'></i>Coleção</h5>
+            </div>
+            <hr class="my-0">
+            <div class="card-datatable table-responsive pb-0 mb-n4 pt-3">
                 <table class="table datatable-project table-border-bottom-0">
                     <thead>
                         <tr>
@@ -181,4 +188,3 @@
     </div>
 
 </div>
-<!--/ User Profile Content -->

@@ -19,7 +19,7 @@
                  <!-- Colecao -->
                 <li class='menu-item@(currentPage.StartsWith("/Colecao") ? " active" : "")'>
                     <a asp-controller="SocioColecao" asp-action="Index" class="menu-link">
-                        <i class='menu-icon icon-base ri ri-map-2-line'></i>
+                        <i class='menu-icon icon-base ri ri-archive-line'></i>
                         <div data-i18n="Cole&ccedil;&atilde;o">Cole&ccedil;&atilde;o</div>
                     </a>
                 </li>
@@ -83,7 +83,7 @@
                 <!-- Download -->
                 <li class='menu-item@(currentPage.StartsWith("/Download") ? " active" : "")'>
                     <a asp-controller="Download" asp-action="Index" class="menu-link">
-                        <i class='menu-icon icon-base ri ri-drag-drop-line'></i>
+                        <i class='menu-icon icon-base ri ri-download-cloud-line'></i>
                         <div data-i18n="Downloads">Downloads</div>
                     </a>
                 </li>
@@ -116,7 +116,7 @@
                 <!-- Acervo -->
                 <li class='menu-item@((currentPage.StartsWith("/Acervo") || currentPage.StartsWith("/Cadastro")) ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">
-                        <i class="menu-icon tf-icons ri-archive-line"></i>
+                        <i class="menu-icon tf-icons ri-drag-drop-line"></i>
                         <div data-i18n="Acervo">Acervo</div>
                     </a>
                     <ul class="menu-sub">
@@ -261,7 +261,7 @@
                 <!-- Novidades -->
                 <li class='menu-item@(currentPage.StartsWith("/Novidade") ? " active" : "")'>
                     <a asp-controller="Novidade" asp-action="Index" class="menu-link">
-                        <i class='menu-icon icon-base ri ri-map-2-line'></i>
+                        <i class='menu-icon icon-base ri ri-article-line'></i>
                         <div data-i18n="Novidades">Novidades</div>
                     </a>
                 </li>
@@ -269,7 +269,7 @@
                 <!-- Pais -->
                 <li class='menu-item@(currentPage.StartsWith("/Pais") ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">
-                        <i class="menu-icon tf-icons ri-article-line"></i>
+                        <i class="menu-icon tf-icons ri-map-pin-line"></i>
                         <div data-i18n="Pa&iacute;ses">Pa&iacute;ses</div>
                     </a>
 
