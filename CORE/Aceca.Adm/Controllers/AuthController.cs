@@ -557,8 +557,9 @@ namespace Aceca.Adm.Controllers
         /// <summary>
         /// Combinações Fase/Tipo com mais quantidade na coleção do sócio autenticado
         /// (tela "Meu Perfil" -&gt; card Coleção), sempre escopado pela claim - nunca por um
-        /// socioId vindo do cliente. O percentual de cada barra de progresso é relativo ao
-        /// total geral (Possui/Favorito) da coleção do próprio sócio, não ao catálogo.
+        /// socioId vindo do cliente. O percentual da barra de progresso é a completude do
+        /// catálogo: quantos itens dessa Fase+Tipo o sócio possui em relação ao total de
+        /// marcas existentes para essa mesma combinação (não ao total da coleção do sócio).
         /// </summary>
         [HttpPost]
         [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
@@ -577,16 +578,21 @@ namespace Aceca.Adm.Controllers
                     .Join(_db.MarcaSubTipo, x => x.MarcaSubTipoId, st => st.Id, (x, st) => new { x.Possui, x.Favorito, x.MarcaFaseId, st.MarcaTipoId })
                     .ToListAsync();
 
-                var totalPossui = itensColecao.Count(x => x.Possui);
-                var totalFavorito = itensColecao.Count(x => x.Favorito);
+                var catalogoPorGrupo = (await _db.Marca
+                        .Where(m => m.MarcaFaseId != null && m.MarcaSubTipoId != null)
+                        .Join(_db.MarcaSubTipo, m => m.MarcaSubTipoId, st => st.Id, (m, st) => new { m.MarcaFaseId, st.MarcaTipoId })
+                        .ToListAsync())
+                    .GroupBy(x => (x.MarcaFaseId, x.MarcaTipoId))
+                    .ToDictionary(g => g.Key, g => g.Count());
 
                 var fases = await _db.MarcaFase.AsNoTracking().ToDictionaryAsync(f => f.Id!.Value, f => f.Descricao);
                 var tipos = await _db.MarcaTipo.AsNoTracking().ToDictionaryAsync(t => t.Id!.Value, t => t.Descricao);
 
                 var topFases = itensColecao
-                    .GroupBy(x => new { x.MarcaFaseId, x.MarcaTipoId })
+                    .GroupBy(x => (x.MarcaFaseId, x.MarcaTipoId))
                     .Select(g => new
                     {
+                        grupo = g.Key,
                         nomeFase = g.Key.MarcaFaseId.HasValue && fases.TryGetValue(g.Key.MarcaFaseId.Value, out var nf) ? nf : "-",
                         tipo = tipos.TryGetValue(g.Key.MarcaTipoId, out var nt) ? nt : "-",
                         qtdPossui = g.Count(x => x.Possui),
@@ -594,14 +600,19 @@ namespace Aceca.Adm.Controllers
                     })
                     .OrderByDescending(x => x.qtdPossui)
                     .Take(10)
-                    .Select(x => new
+                    .Select(x =>
                     {
-                        x.nomeFase,
-                        x.tipo,
-                        x.qtdPossui,
-                        percentPossui = totalPossui > 0 ? (int)Math.Round(100.0 * x.qtdPossui / totalPossui) : 0,
-                        x.qtdFavorito,
-                        percentFavorito = totalFavorito > 0 ? (int)Math.Round(100.0 * x.qtdFavorito / totalFavorito) : 0,
+                        var totalCatalogo = catalogoPorGrupo.TryGetValue(x.grupo, out var tot) ? tot : 0;
+
+                        return new
+                        {
+                            x.nomeFase,
+                            x.tipo,
+                            x.qtdPossui,
+                            x.qtdFavorito,
+                            totalCatalogo,
+                            percentPossui = totalCatalogo > 0 ? (int)Math.Round(100.0 * x.qtdPossui / totalCatalogo) : 0,
+                        };
                     })
                     .ToList();
 

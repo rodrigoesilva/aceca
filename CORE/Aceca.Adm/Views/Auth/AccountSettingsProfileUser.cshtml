@@ -4,6 +4,18 @@
 
 @section PageStyles {
     <link rel="stylesheet" href="~/vendor/css/pages/page-profile.css" />
+    <style>
+        /* Coluna "control" do grid de Coleção fica vazia (sem ícone de expandir) - o tema
+           força padding-left/right: 1.25rem tanto no th quanto no td dessa 1ª coluna
+           (div.card-datatable table.dataTable thead th:first-child / tbody td:first-child),
+           o que empurra a coluna Fase pra direita sem necessidade. */
+        #tblColecaoTopFases thead th:first-child,
+        #tblColecaoTopFases tbody td.control {
+            padding-left: 0.1rem !important;
+            padding-right: 0 !important;
+            width: 1% !important;
+        }
+    </style>
 }
 
 @section PageScripts {
@@ -172,13 +184,14 @@
             </div>
             <hr class="my-0">
             <div class="card-datatable table-responsive pb-0 mb-n4 pt-3">
-                <table class="table datatable-project table-border-bottom-0">
+                <table id="tblColecaoTopFases" class="table datatable-project table-border-bottom-0">
                     <thead>
                         <tr>
                             <th></th>
                             <th>Fase</th>
                             <th>Tipo</th>
                             <th>Coleção</th>
+                            <th>Status</th>
                             <th>Favoritos</th>
                         </tr>
                     </thead>

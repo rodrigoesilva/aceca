@@ -47,10 +47,10 @@ function fn_GridColecao(dt_project_table) {
     // sócio autenticado (quantidade retornada/limitada pelo Take() do backend em
     // AuthController.GetTopFasesColecao - varItems_QtdPorPage aqui só controla quantas
     // dessas linhas são exibidas de uma vez, então mantenha >= ao Take() do backend).
-    // Cada quantidade (Possui/Favorito) é exibida como percentual relativo ao total geral
-    // da coleção do próprio sócio, via barra de progresso.
+    // Coleção = % de completude do catálogo (possui/total dessa Fase+Tipo). Status e
+    // Favoritos são badges com a quantidade bruta (possui/favorito) daquela Fase+Tipo.
     // --------------------------------------------------------------------
-   
+
         var dt_project = dt_project_table.DataTable({
             ajax: {
                 url: '/Auth/GetTopFasesColecao',
@@ -64,12 +64,15 @@ function fn_GridColecao(dt_project_table) {
                 { data: 'nomeFase' },
                 { data: 'tipo' },
                 { data: 'percentPossui' },
-                { data: 'percentFavorito' }
+                { data: 'qtdPossui' },
+                { data: 'qtdFavorito' }
             ],
             columnDefs: [
                 {
-                    // For Responsive
+                    // For Responsive - padding da célula reduzido via CSS em
+                    // AccountSettingsProfileUser.cshtml (#tblColecaoTopFases tbody td.control)
                     className: 'control',
+                    width: '1%',
                     searchable: false,
                     orderable: false,
                     responsivePriority: 2,
@@ -89,22 +92,32 @@ function fn_GridColecao(dt_project_table) {
                 {
                     // Tipo (maço, box, ...)
                     targets: 2,
+                    visible: false,
                     render: function (data, type, full, meta) {
                         return '<span class="text-heading">' + (full.tipo || '-') + '</span>';
                     }
                 },
                 {
-                    // Coleção (% Possui em relação ao total da coleção do sócio)
+                    // Coleção (% do catálogo dessa Fase+Tipo que o sócio possui)
                     targets: 3,
                     render: function (data, type, full, meta) {
-                        return fn_RenderProgressoColecao(full.percentPossui, full.qtdPossui);
+                        return fn_RenderProgressoColecao(full.percentPossui, full.qtdPossui, full.totalCatalogo);
                     }
                 },
                 {
-                    // Favoritos (% Favorito em relação ao total de favoritos do sócio)
+                    // Status (quantidade de itens dessa Fase+Tipo na coleção)
                     targets: 4,
+                    className: 'text-center',
                     render: function (data, type, full, meta) {
-                        return fn_RenderProgressoColecao(full.percentFavorito, full.qtdFavorito);
+                        return fn_RenderBadgeQtd(full.qtdPossui, 'ri-checkbox-circle-line', 'text-success');
+                    }
+                },
+                {
+                    // Favoritos (quantidade de favoritos dessa Fase+Tipo)
+                    targets: 5,
+                    className: 'text-center',
+                    render: function (data, type, full, meta) {
+                        return fn_RenderBadgeQtd(full.qtdFavorito, 'ri-shield-star-line', 'text-warning');
                     }
                 }
             ],
@@ -119,15 +132,16 @@ function fn_GridColecao(dt_project_table) {
                 emptyTable: 'Nenhum item na coleção'
             }
         });
-    
+
 
 }
 
-function fn_RenderProgressoColecao(percent, qtd) {
+function fn_RenderProgressoColecao(percent, qtd, total) {
   var $percent = percent || 0;
 
   return (
-    '<div class="d-flex align-items-center" title="' + (qtd || 0) + ' item(ns)">' +
+    '<div class="d-flex align-items-center gap-2">' +
+    '<span class="fw-medium" style="min-width: 2.5rem;">' + $percent + '%</span>' +
     '<div class="progress rounded-pill w-px-75" style="height: 8px;">' +
     '<div class="progress-bar" role="progressbar" style="width:' +
     $percent +
@@ -135,10 +149,17 @@ function fn_RenderProgressoColecao(percent, qtd) {
     $percent +
     '" aria-valuemin="0" aria-valuemax="100"></div>' +
     '</div>' +
-    '<div class="text-heading ms-2">' +
-    $percent +
-    '%</div>' +
+    '<small class="text-muted ms-1">' + (qtd || 0) + '/' + (total || 0) + '</small>' +
     '</div>'
+  );
+}
+
+function fn_RenderBadgeQtd(qtd, icone, cor) {
+  return (
+    '<span class="d-flex align-items-center justify-content-center gap-1">' +
+    '<i class="' + icone + ' ri-20px ' + cor + '"></i>' +
+    '<span class="fw-medium">' + (qtd || 0) + '</span>' +
+    '</span>'
   );
 }
 
