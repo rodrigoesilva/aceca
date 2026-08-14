@@ -555,6 +555,67 @@ namespace Aceca.Adm.Controllers
         }
 
         /// <summary>
+        /// Combinações Fase/Tipo com mais quantidade na coleção do sócio autenticado
+        /// (tela "Meu Perfil" -&gt; card Coleção), sempre escopado pela claim - nunca por um
+        /// socioId vindo do cliente. O percentual de cada barra de progresso é relativo ao
+        /// total geral (Possui/Favorito) da coleção do próprio sócio, não ao catálogo.
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetTopFasesColecao()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var itensColecao = await _db.SocioColecao
+                    .Where(c => c.SocioId == socioId && (c.Possui || c.Favorito))
+                    .Join(_db.Marca, c => c.MarcaId, m => m.Id, (c, m) => new { c.Possui, c.Favorito, m.MarcaFaseId, m.MarcaSubTipoId })
+                    .Join(_db.MarcaSubTipo, x => x.MarcaSubTipoId, st => st.Id, (x, st) => new { x.Possui, x.Favorito, x.MarcaFaseId, st.MarcaTipoId })
+                    .ToListAsync();
+
+                var totalPossui = itensColecao.Count(x => x.Possui);
+                var totalFavorito = itensColecao.Count(x => x.Favorito);
+
+                var fases = await _db.MarcaFase.AsNoTracking().ToDictionaryAsync(f => f.Id!.Value, f => f.Descricao);
+                var tipos = await _db.MarcaTipo.AsNoTracking().ToDictionaryAsync(t => t.Id!.Value, t => t.Descricao);
+
+                var topFases = itensColecao
+                    .GroupBy(x => new { x.MarcaFaseId, x.MarcaTipoId })
+                    .Select(g => new
+                    {
+                        nomeFase = g.Key.MarcaFaseId.HasValue && fases.TryGetValue(g.Key.MarcaFaseId.Value, out var nf) ? nf : "-",
+                        tipo = tipos.TryGetValue(g.Key.MarcaTipoId, out var nt) ? nt : "-",
+                        qtdPossui = g.Count(x => x.Possui),
+                        qtdFavorito = g.Count(x => x.Favorito),
+                    })
+                    .OrderByDescending(x => x.qtdPossui)
+                    .Take(10)
+                    .Select(x => new
+                    {
+                        x.nomeFase,
+                        x.tipo,
+                        x.qtdPossui,
+                        percentPossui = totalPossui > 0 ? (int)Math.Round(100.0 * x.qtdPossui / totalPossui) : 0,
+                        x.qtdFavorito,
+                        percentFavorito = totalFavorito > 0 ? (int)Math.Round(100.0 * x.qtdFavorito / totalFavorito) : 0,
+                    })
+                    .ToList();
+
+                return Ok(new { bResult = true, type = "OK", data = topFases });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetTopFasesColecao));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Exibe a página de "Esqueci minha senha".
         /// </summary>
         [HttpGet]
