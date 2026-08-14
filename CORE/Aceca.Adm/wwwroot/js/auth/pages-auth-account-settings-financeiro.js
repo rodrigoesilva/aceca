@@ -28,8 +28,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //#region FORMA DE PAGAMENTO (Cartão x Pix)
 
-// Alterna qual bloco aparece em div_formapagamento (Meus Cartões x Pix) conforme o
-// radio "collapsible-payment" selecionado (collapsible-payment-cc / -cash).
+// Alterna qual bloco aparece em div_formapagamento (div_formapagamento_pix x
+// div_formapagamento_cartoes) conforme o radio "collapsible-payment" selecionado -
+// cada bloco tem seus próprios campos, independentes (nada é compartilhado/reaproveitado
+// entre Pix e Cartão), então não há mais necessidade de trocar label/placeholder/disabled
+// via JS a cada troca de rádio.
 function fn_WireFormaPagamento() {
     const radios = document.querySelectorAll('input[name="collapsible-payment"]');
 
@@ -43,10 +46,50 @@ function fn_WireFormaPagamento() {
 }
 
 function fn_AtualizarFormaPagamento() {
-    const ehCartao = document.getElementById('collapsible-payment-cc')?.checked ?? true;
+    const ehCartao = document.getElementById('collapsible-payment-cc')?.checked ?? false;
 
-    document.getElementById('div_meuscartoes')?.classList.toggle('d-none', !ehCartao);
-    document.getElementById('div_pix')?.classList.toggle('d-none', ehCartao);
+    document.getElementById('div_formapagamento_cartoes')?.classList.toggle('pagamento-oculto', !ehCartao);
+    document.getElementById('div_formapagamento_pix')?.classList.toggle('pagamento-oculto', ehCartao);
+
+    if (!ehCartao) fn_CarregarChavePix();
+}
+
+// Cacheia a resposta - a chave Pix e o QR Code não mudam entre as trocas do radio.
+let _chavePixCache = null;
+
+function fn_CarregarChavePix() {
+    const campoChave = document.getElementById('pixChaveValue');
+    const imgQrCode = document.getElementById('pixQrCodeImg');
+    const mensagem = document.getElementById('pixMensagem');
+
+    if (_chavePixCache) {
+        campoChave.value = _chavePixCache.chavePix;
+        imgQrCode.src = _chavePixCache.qrCodeDataUri;
+        imgQrCode.classList.remove('d-none');
+        mensagem.classList.add('d-none');
+        return;
+    }
+
+    $.ajax({
+        url: `${var_Controller}/GetChavePix`,
+        type: 'GET',
+        success: function (response) {
+            if (!response?.bResult || !response?.data) {
+                mensagem.textContent = 'Chave Pix não configurada.';
+                return;
+            }
+
+            _chavePixCache = response.data;
+            campoChave.value = response.data.chavePix;
+            imgQrCode.src = response.data.qrCodeDataUri;
+            imgQrCode.classList.remove('d-none');
+            mensagem.classList.add('d-none');
+        },
+        error: function (xhr, status, error) {
+            console.error("fn_CarregarChavePix error: " + error);
+            mensagem.textContent = 'Não foi possível carregar a chave Pix.';
+        }
+    });
 }
 
 //#endregion

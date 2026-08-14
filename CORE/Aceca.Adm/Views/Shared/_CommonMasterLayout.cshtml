@@ -77,7 +77,7 @@
   <!-- Vendor Scripts -->
   @RenderSection("VendorScripts", required: false)
 
-  <script src='~/js/@ViewData["main"]main.js'></script>
+  <script src='~/js/@ViewData["main"]main.js' defer></script>
 
   @* Globais compartilhados por admin/negociação/auth: swalWithBootstrapButtons, borderColor/
      bodyBg/headingColor, busyLoadSetup e o datepicker padrão. Depende de main.js (isDarkStyle/
@@ -91,7 +91,7 @@
       // A checagem que realmente protege é sempre a do backend ([Authorize] na action).
       window.gIsAdministracao = @Json.Serialize(httpContextAccessor.HttpContext?.User?.IsInRole("Administracao") == true);
     </script>
-    <script src="~/js/helper-ui-common.js" asp-append-version="true"></script>
+    <script src="~/js/helper-ui-common.js" asp-append-version="true" defer></script>
   }
 
   @* Monitor de expiração de sessão (2h ocioso / 24h absoluto) — apenas para usuários autenticados *@
@@ -104,7 +104,7 @@
         idleMinutes: 120              // 2h sem uso
       };
     </script>
-    <script src="~/js/session-guard.js" asp-append-version="true"></script>
+    <script src="~/js/session-guard.js" asp-append-version="true" defer></script>
   }
 
   <!-- Page Scripts-->

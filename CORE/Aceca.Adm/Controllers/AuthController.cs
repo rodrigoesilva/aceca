@@ -196,6 +196,44 @@ namespace Aceca.Adm.Controllers
         }
 
         /// <summary>
+        /// Chave Pix da associação (adm_config, parâmetro "ChavePix") + QR Code gerado na hora
+        /// - exibidos na aba Financeiro quando o sócio escolhe pagar via Pix. Não depende de
+        /// nenhum serviço externo (QRCoder gera o PNG localmente).
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetChavePix()
+        {
+            try
+            {
+                var chavePix = await _db.AdmConfig
+                    .Where(c => c.Parametro == "ChavePix")
+                    .Select(c => c.Valor)
+                    .FirstOrDefaultAsync();
+
+                if (string.IsNullOrWhiteSpace(chavePix))
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Chave Pix não configurada" });
+
+                using var qrGenerator = new QRCoder.QRCodeGenerator();
+                using var qrCodeData = qrGenerator.CreateQrCode(chavePix, QRCoder.QRCodeGenerator.ECCLevel.Q);
+                // Cor primária do tema (--bs-primary) nos módulos escuros - pedido explícito
+                // mesmo com o risco de leitura reduzida por contraste menor que preto/branco puro.
+                var qrCodePng = new QRCoder.PngByteQRCode(qrCodeData).GetGraphic(20,
+                    System.Drawing.ColorTranslator.FromHtml("#8c57ff"),
+                    System.Drawing.Color.White);
+                var qrCodeDataUri = "data:image/png;base64," + Convert.ToBase64String(qrCodePng);
+
+                return Ok(new { bResult = true, type = "OK", data = new { chavePix, qrCodeDataUri } });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetChavePix));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Dados de "Sobre" da tela Meu Perfil - sempre do sócio autenticado (nunca de um id
         /// vindo do cliente, mesma trava de IDOR usada em SocioColecaoController), pra evitar
         /// que qualquer sócio logado consiga ler nome/telefone/e-mail/endereço de outro sócio
