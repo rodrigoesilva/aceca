@@ -304,6 +304,21 @@ using (var scope = app.Services.CreateScope())
             indexLogger.LogWarning(ex, "Não foi possível garantir o índice {Indice} em {Tabela}", nomeIndice, tabela);
         }
     }
+
+    // Warm-up do EF Core: o ALTER TABLE acima já abre conexão com o MySQL, mas só uma
+    // consulta LINQ de verdade força o EF a compilar o modelo (reflection sobre todas as
+    // entidades mapeadas) - sem isso, esse custo (perceptível, ~1s+) cai na primeira
+    // requisição autenticada de um usuário real (ex.: GetAvatarInfo, chamado antes do Swal
+    // de "bem-vindo novamente" no login), fazendo aquele Swal demorar a aparecer logo após
+    // subir a aplicação.
+    try
+    {
+        await dbIndex.Socio.AsNoTracking().Select(s => s.Id).FirstOrDefaultAsync();
+    }
+    catch (Exception ex)
+    {
+        indexLogger.LogWarning(ex, "Não foi possível aquecer o modelo do EF Core na inicialização");
+    }
 }
 
 app.MapControllerRoute(
