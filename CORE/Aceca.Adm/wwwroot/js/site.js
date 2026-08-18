@@ -253,6 +253,9 @@ function fn_ImageProtect() {
         });
     }
 
+    // Retorna a Promise da resposta (em vez de fire-and-forget puro) para que o chamador
+    // saiba se o servidor determinou bloqueio de login (ver _forcarLogoutPorSeguranca) -
+    // ação "printscreen" é a única que dispara isso (AuthController.ReportImageAccess).
     function _reportar(img, acao) {
         var meta = _imgMeta(img);
         var ts   = new Date().toISOString();
@@ -262,7 +265,32 @@ function fn_ImageProtect() {
         fd.append('urlAcesso',   window.location.href);
         fd.append('acao',        acao);
         fd.append('timestamp',   ts);
-        fetch('/Auth/ReportImageAccess', { method: 'POST', body: fd }).catch(function () {});
+        return fetch('/Auth/ReportImageAccess', { method: 'POST', body: fd })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; });
+    }
+
+    // Encerra a sessão no cliente e explica o motivo - o bloqueio de verdade (5 minutos
+    // sem conseguir logar) já foi gravado no servidor por ReportImageAccess antes desta
+    // resposta chegar; isso aqui só tira a pessoa da tela atual imediatamente.
+    function _forcarLogoutPorSeguranca() {
+        document.cookie = `${_ck}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+        sessionStorage.removeItem('aceca_sessao');
+        try {
+            localStorage.removeItem('aceca_last_activity');
+            localStorage.removeItem('aceca_abs_exp');
+        } catch (e) { /* ignore */ }
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Sessão encerrada',
+            html: 'Foi detectada uma tentativa de captura de tela.<br>Por segurança, sua sessão foi encerrada e o login ficará bloqueado por <b>5 minutos</b>.',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            confirmButtonText: '<i class="ri-check-line"></i>&nbsp;Entendi'
+        }).then(function () {
+            window.location.href = '/Auth/Index';
+        });
     }
 
     // Cria overlay com selo 'PLÁGIO PROIBIDO' (aceca_plagio.jpeg) em mosaico diagonal
@@ -538,14 +566,28 @@ function fn_ImageProtect() {
         // null — _reportar/_imgMeta tratam isso). Antes só reportava quando
         // "img" existia, então F12/PrintScreen sem clique prévio em imagem
         // não gerava nenhum alerta.
-        _reportar(img, label);
+        var reportarPromise = _reportar(img, label);
 
         if (isDevTools) {
             _swalAviso();
         } else if (isPrint) {
+            // _swapAllToPlagio já troca TODAS as imagens protegidas visíveis na página
+            // (seletor '.cmyImg, #imgZoomTarget' cobre a grid inteira, não só o modal de
+            // zoom) - já é independente de estar com o zoom aberto ou não.
             _swapAllToPlagio();
             setTimeout(_restoreAllFromPlagio, 4000);
-            _swalAviso();
+
+            // PrintScreen é o único gatilho que desloga e bloqueia o login por 5 minutos
+            // (AuthController.ReportImageAccess) - espera a confirmação do servidor antes
+            // de decidir qual aviso mostrar; se por algum motivo o servidor não confirmar o
+            // bloqueio (offline, erro etc.), cai no aviso genérico como rede de segurança.
+            reportarPromise.then(function (resp) {
+                if (resp && resp.bloqueado) {
+                    _forcarLogoutPorSeguranca();
+                } else {
+                    _swalAviso();
+                }
+            });
         } else if (img) {
             if (_removeWatermark) _removeWatermark();
             _removeWatermark = _watermark(img);
@@ -574,10 +616,16 @@ function fn_ImageProtect() {
         e.preventDefault();
         e.stopImmediatePropagation();
 
-        _reportar(_lastImg, 'printscreen');
         _swapAllToPlagio();
         setTimeout(_restoreAllFromPlagio, 4000);
-        _swalAviso();
+
+        _reportar(_lastImg, 'printscreen').then(function (resp) {
+            if (resp && resp.bloqueado) {
+                _forcarLogoutPorSeguranca();
+            } else {
+                _swalAviso();
+            }
+        });
     }, true);
 
     // ── beforeprint / afterprint ──────────────────────────────────────────────

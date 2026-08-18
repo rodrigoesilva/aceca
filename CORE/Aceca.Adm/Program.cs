@@ -197,6 +197,31 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                     {
                         ctx.RejectPrincipal();
                         await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        return;
+                    }
+
+                    // Sessão única: um login novo (outro device/navegador) sobrescreve
+                    // SocioSeguranca.SessionStamp - qualquer sessão com o carimbo antigo
+                    // (claim "sess_stamp") é encerrada aqui, na próxima requisição dela.
+                    // Sem isso, o mesmo sócio ficava logado ao mesmo tempo no celular e no
+                    // computador, abrindo margem pra compartilhar acesso com outra pessoa.
+                    // Claim ausente (sessão criada antes deste recurso existir) não é
+                    // tratado como violação - evita derrubar em massa sessões já abertas
+                    // no dia do deploy; elas seguem só até o teto de 24h (sess_abs_exp).
+                    var sessStampClaim = ctx.Principal?.FindFirst("sess_stamp")?.Value;
+
+                    if (socioId != 39 && !string.IsNullOrEmpty(sessStampClaim))
+                    {
+                        var stampAtual = await db.SocioSeguranca.AsNoTracking()
+                            .Where(s => s.SocioId == socioId)
+                            .Select(s => s.SessionStamp)
+                            .FirstOrDefaultAsync();
+
+                        if (!string.Equals(stampAtual, sessStampClaim, StringComparison.Ordinal))
+                        {
+                            ctx.RejectPrincipal();
+                            await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        }
                     }
                 }
             },
@@ -323,6 +348,41 @@ using (var scopeLog = app.Services.CreateScope())
     catch (Exception ex)
     {
         logTableLogger.LogWarning(ex, "Não foi possível garantir a tabela log_erros");
+    }
+}
+
+// Colunas de segurança em socio_seguranca — bloqueio temporário de login após tentativa de
+// captura de tela (BloqueadoAte) e carimbo de sessão única (SessionStamp), ver
+// AuthController.Login/ReportImageAccess e Program.cs::OnValidatePrincipal. Checa via
+// INFORMATION_SCHEMA (DbSchemaHelper) antes do ALTER pelo mesmo motivo do bloco de índices
+// abaixo — "ADD COLUMN IF NOT EXISTS" não é aceito pelo servidor em uso.
+using (var scopeSeguranca = app.Services.CreateScope())
+{
+    var dbSeguranca = scopeSeguranca.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var segurancaLogger = scopeSeguranca.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var errorLogSeguranca = scopeSeguranca.ServiceProvider.GetRequiredService<Aceca.Adm.Services.ErrorLogService>();
+
+    var colunasSeguranca = new[]
+    {
+        ("bloqueado_ate", "DATETIME NULL"),
+        ("session_stamp", "VARCHAR(64) NULL"),
+    };
+
+    foreach (var (coluna, tipoSql) in colunasSeguranca)
+    {
+        try
+        {
+            if (await Aceca.Adm.Helper.DbSchemaHelper.ColunaExisteAsync(dbSeguranca.Database, "socio_seguranca", coluna))
+                continue;
+
+            await dbSeguranca.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE socio_seguranca ADD COLUMN " + coluna + " " + tipoSql);
+        }
+        catch (Exception ex)
+        {
+            segurancaLogger.LogWarning(ex, "Não foi possível garantir a coluna {Coluna} em socio_seguranca", coluna);
+            await errorLogSeguranca.RegistrarExcecaoAsync(null, ex);
+        }
     }
 }
 

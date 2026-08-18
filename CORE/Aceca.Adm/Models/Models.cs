@@ -470,6 +470,16 @@ namespace Aceca.Adm.Models
 
         public string? ResetPasswordToken { get; set; } = null;
         public DateTime? ResetPasswordTokenExpiry { get; set; } = null;
+
+        // Bloqueio temporário de login após detectar tentativa de captura de tela
+        // (ver AuthController.ReportImageAccess / Login).
+        [Column("bloqueado_ate")] public DateTime? BloqueadoAte { get; set; }
+
+        // Sessão única: carimbo (GUID) gerado a cada login bem-sucedido e validado em
+        // todo request via OnValidatePrincipal (Program.cs) - um novo login sobrescreve
+        // esse valor, o que derruba qualquer sessão anterior (outro device/navegador)
+        // na próxima requisição dela.
+        [Column("session_stamp")] public string? SessionStamp { get; set; }
     }
 
     #endregion

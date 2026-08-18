@@ -807,6 +807,17 @@ namespace Aceca.Adm.Controllers
                 if (!user.Socio.Ativo)
                     return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
 
+                if (user.BloqueadoAte.HasValue && user.BloqueadoAte.Value > DateTime.UtcNow)
+                {
+                    var minutosRestantes = (int)Math.Ceiling((user.BloqueadoAte.Value - DateTime.UtcNow).TotalMinutes);
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = $"Login bloqueado temporariamente por tentativa de captura de tela. Tente novamente em {minutosRestantes} minuto(s)."
+                    });
+                }
+
                 var financeiroPendente = await _db.SocioFinanceiro
                     .AsNoTracking()
                     .AnyAsync(f => f.SocioId == user.SocioId && f.PagamentoEmDia == 0);
@@ -1383,6 +1394,13 @@ namespace Aceca.Adm.Controllers
                 // Teto absoluto da sessão: 24h após o login (validado em OnValidatePrincipal no Program.cs)
                 var absoluteExpiry = DateTime.UtcNow.AddHours(24);
 
+                // Sessão única: um carimbo novo por login. Como sobrescreve o valor salvo
+                // em SocioSeguranca (abaixo), qualquer sessão anterior (outro device/
+                // navegador) passa a carregar um carimbo desatualizado e é encerrada na
+                // próxima requisição por OnValidatePrincipal (Program.cs) - evita duas
+                // sessões do mesmo sócio ativas ao mesmo tempo (ex.: celular + computador).
+                var sessionStamp = Guid.NewGuid().ToString("N");
+
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, socio.Id.ToString()),
@@ -1393,7 +1411,17 @@ namespace Aceca.Adm.Controllers
                     new Claim(ClaimTypes.Expiration, absoluteExpiry.ToString("o")),
                     // Teto absoluto de 24h, independente de atividade
                     new Claim("sess_abs_exp", absoluteExpiry.ToString("o")),
+                    new Claim("sess_stamp", sessionStamp),
                 };
+
+                // user vem de uma consulta AsNoTracking (Login) - ExecuteUpdateAsync grava
+                // direto no banco sem depender de change tracking.
+                if (socio.Id != 39)
+                {
+                    await _db.SocioSeguranca
+                        .Where(s => s.SocioId == socio.Id)
+                        .ExecuteUpdateAsync(s => s.SetProperty(x => x.SessionStamp, sessionStamp));
+                }
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -1665,7 +1693,24 @@ namespace Aceca.Adm.Controllers
 
             await _helperController.EnviarAlertaImagemAsync(socioId, socioNome, socioEmail, codigoAceca, imagemSrc, urlAcesso, acao, timestamp);
 
-            return Ok();
+            var bloqueado = false;
+
+            // Tentativa de captura de tela de verdade (PrintScreen) é o único gatilho que
+            // desloga e bloqueia o login por 5 minutos - as demais ações detectadas (clique
+            // direito, Ctrl+S/U/P, DevTools) já recebem aviso + marca d'água, sem essa
+            // severidade extra, pra não punir uma ação acidental como se fosse intencional.
+            if (string.Equals(acao, "printscreen", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(socioId, out var socioIdInt) && socioIdInt != 39)
+            {
+                await _db.SocioSeguranca
+                    .Where(s => s.SocioId == socioIdInt)
+                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.BloqueadoAte, DateTime.UtcNow.AddMinutes(5)));
+
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                bloqueado = true;
+            }
+
+            return Ok(new { bloqueado });
         }
 
         #endregion
