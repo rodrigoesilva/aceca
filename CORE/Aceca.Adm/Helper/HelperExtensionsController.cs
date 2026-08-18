@@ -952,7 +952,7 @@ namespace Aceca.Adm.Helper
         /// tentativa de acesso indevido a uma imagem protegida.
         /// </summary>
         public async Task EnviarAlertaImagemAsync(
-            string socioId, string socioNome,
+            string socioId, string socioNome, string socioEmail,
             string codigoAceca, string imagemSrc, string urlAcesso,
             string acao, string timestamp)
         {
@@ -1049,6 +1049,10 @@ namespace Aceca.Adm.Helper
                         <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{socioId}</td>
                       </tr>
                       <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Sócio (E-mail)</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{socioEmail}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
                         <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Código ACECA</td>
                         <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{codigoAceca}</td>
                       </tr>
@@ -1090,10 +1094,37 @@ namespace Aceca.Adm.Helper
                 EnableSsl   = smtpSsl
             };
 
-            try   { await smtp.SendMailAsync(mailMessage); }
+            var emailEnviado = false;
+            try
+            {
+                await smtp.SendMailAsync(mailMessage);
+                emailEnviado = true;
+            }
             catch (Exception ex)
             {
                 _logger.LogError("ERRO EnviarAlertaImagemAsync :: {msg}", ex.Message);
+            }
+
+            // Persiste em log_erros independente do e-mail ter sido enviado - se o SMTP
+            // falhar ou o alerta cair em spam, ainda sobra um registro consultável (antes
+            // esse alerta era só um e-mail solto, sem nenhum rastro em caso de falha de envio).
+            try
+            {
+                _db.LogErro.Add(new Models.LogErro
+                {
+                    Tipo = "AcessoImagemIndevido",
+                    Url = urlAcesso,
+                    Usuario = $"{socioNome} ({socioEmail}) — SocioId {socioId}",
+                    MensagemHumanizada = $"Tentativa de acesso indevido a imagem protegida (ação: {acao}).",
+                    MensagemOriginal = $"codigoAceca={codigoAceca}; imagemSrc={imagemSrc}; acao={acao}; timestamp={timestamp}",
+                    EmailEnviado = emailEnviado,
+                    DataCriacao = DateTime.Now
+                });
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO EnviarAlertaImagemAsync :: falha ao gravar em log_erros");
             }
         }
 

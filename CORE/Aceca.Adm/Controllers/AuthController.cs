@@ -853,7 +853,10 @@ namespace Aceca.Adm.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> LoginLog([FromForm] string strIp, [FromForm] string srtId)
+        public async Task<IActionResult> LoginLog(
+            [FromForm] string strIp, [FromForm] string srtId,
+            [FromForm] string? latitude = null, [FromForm] string? longitude = null,
+            [FromForm] string? winPlatformVersion = null)
         {
             try
             {
@@ -877,18 +880,40 @@ namespace Aceca.Adm.Controllers
                             nodeGeo["time_zone"]?["current_time"]?.GetValue<string>(),
                             out var loginTime);
 
+                        // Geolocation API do navegador (GPS/Wi-Fi, enviada pelo client quando o
+                        // usuário concede a permissão) é bem mais precisa que geolocalização por
+                        // IP - em rede móvel (CGNAT), o IP é geolocalizado no ponto de saída da
+                        // operadora, que pode ficar a dezenas de km do usuário real. Quando
+                        // disponível, usa reverse geocoding (Nominatim/OSM, gratuito) para achar
+                        // bairro/cidade; senão mantém o valor vindo do IP (fallback original).
+                        string? bairroPreciso = null;
+                        string? cidadePrecisa = null;
+                        string? latPrecisa = null;
+                        string? lngPrecisa = null;
+
+                        if (!string.IsNullOrWhiteSpace(latitude) && !string.IsNullOrWhiteSpace(longitude))
+                        {
+                            (bairroPreciso, cidadePrecisa) = await ReverseGeocodeAsync(latitude, longitude);
+                            latPrecisa = latitude;
+                            lngPrecisa = longitude;
+                        }
+
+                        var osBruto = nodeAgent?["operating_system"]?["name"]?.GetValue<string>();
+
                         var newModel = new Models.SocioLogAcesso
                         {
                             SocioId = userId,
                             IP         = nodeGeo["ip"]?.GetValue<string>(),
-                            OS         = nodeAgent?["operating_system"]?["name"]?.GetValue<string>(),
+                            OS         = CorrigirNomeSistemaOperacional(osBruto, winPlatformVersion),
                             Browser    = nodeAgent?["name"]?.GetValue<string>(),
                             Device     = nodeAgent?["device"]?["type"]?.GetValue<string>(),
                             Operadora  = nodeGeo["asn"]?["organization"]?.GetValue<string>(),
                             Estado     = nodeGeo["location"]?["state_code"]?.GetValue<string>(),
-                            Cidade     = nodeGeo["location"]?["city"]?.GetValue<string>(),
-                            Latitude   = nodeGeo["location"]?["latitude"]?.ToString()?.Trim('"'),
-                            Longitude  = nodeGeo["location"]?["longitude"]?.ToString()?.Trim('"'),
+                            Cidade     = !string.IsNullOrWhiteSpace(cidadePrecisa)
+                                ? (!string.IsNullOrWhiteSpace(bairroPreciso) ? $"{bairroPreciso}, {cidadePrecisa}" : cidadePrecisa)
+                                : nodeGeo["location"]?["city"]?.GetValue<string>(),
+                            Latitude   = latPrecisa ?? nodeGeo["location"]?["latitude"]?.ToString()?.Trim('"'),
+                            Longitude  = lngPrecisa ?? nodeGeo["location"]?["longitude"]?.ToString()?.Trim('"'),
                             UltimoLogin = loginTime != default ? loginTime.DateTime : DateTime.UtcNow.AddHours(-3),
                         };
 
@@ -904,6 +929,71 @@ namespace Aceca.Adm.Controllers
                 _logger.LogError("ERRO :: {Method} :: {Message}", nameof(LoginLog), ex.Message);
                 return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
+        }
+
+        // Reverse geocoding gratuito (OpenStreetMap Nominatim, sem chave de API) - converte
+        // lat/long (vindos da Geolocation API do navegador) em bairro/cidade. Política de uso
+        // do Nominatim exige um User-Agent identificando a aplicação; falha aqui não deve
+        // derrubar o login, por isso sempre retorna (null, null) em vez de lançar.
+        private async Task<(string? bairro, string? cidade)> ReverseGeocodeAsync(string lat, string lng)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var url = $"https://nominatim.openstreetmap.org/reverse?lat={Uri.EscapeDataString(lat)}&lon={Uri.EscapeDataString(lng)}&format=json&zoom=16&addressdetails=1";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.UserAgent.ParseAdd("ACECA-App/1.0 (contato: ti@aceca.com.br)");
+
+                var response = await client.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                    return (null, null);
+
+                var json = await response.Content.ReadAsStringAsync();
+                var address = JsonNode.Parse(json)?["address"];
+
+                var bairro = address?["suburb"]?.GetValue<string>()
+                    ?? address?["neighbourhood"]?.GetValue<string>()
+                    ?? address?["city_district"]?.GetValue<string>();
+
+                var cidade = address?["city"]?.GetValue<string>()
+                    ?? address?["town"]?.GetValue<string>()
+                    ?? address?["village"]?.GetValue<string>()
+                    ?? address?["municipality"]?.GetValue<string>();
+
+                return (bairro, cidade);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao fazer reverse geocoding via Nominatim (lat={Lat}, lng={Lng})", lat, lng);
+                return (null, null);
+            }
+        }
+
+        // O User-Agent clássico não distingue Windows 10 de Windows 11 - a Microsoft manteve
+        // o mesmo token "Windows NT 10.0" nos dois por compatibilidade com sites que fazem
+        // sniffing de OS. A única forma de diferenciar é via User-Agent Client Hints
+        // (Sec-CH-UA-Platform-Version), suportado só por navegadores Chromium (Chrome/Edge) -
+        // o client envia esse valor via navigator.userAgentData quando disponível.
+        // Referência do esquema de versionamento: https://learn.microsoft.com/microsoft-edge/web-platform/how-to-detect-win11
+        private static string CorrigirNomeSistemaOperacional(string? osNomeBruto, string? winPlatformVersion)
+        {
+            if (string.IsNullOrWhiteSpace(osNomeBruto))
+                return osNomeBruto ?? "Desconhecido";
+
+            if (!osNomeBruto.Contains("Windows", StringComparison.OrdinalIgnoreCase))
+                return osNomeBruto;
+
+            if (!string.IsNullOrWhiteSpace(winPlatformVersion))
+            {
+                var primeiroSegmento = winPlatformVersion.Split('.')[0];
+                if (int.TryParse(primeiroSegmento, out var versaoMajor))
+                    return versaoMajor >= 13 ? "Windows 11" : "Windows 10";
+            }
+
+            // Navegador não-Chromium (Firefox/Safari) ou Client Hint indisponível - não dá
+            // pra saber qual dos dois, mas pelo menos não mostra mais o rótulo cru "Windows NT".
+            return "Windows 10/11 (versão exata não detectável neste navegador)";
         }
 
         #endregion
@@ -1569,10 +1659,11 @@ namespace Aceca.Adm.Controllers
             [FromForm] string acao,
             [FromForm] string timestamp)
         {
-            var socioId   = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "?";
-            var socioNome = User.FindFirstValue(ClaimTypes.Name)           ?? "Desconhecido";
+            var socioId    = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "?";
+            var socioNome  = User.FindFirstValue(ClaimTypes.Name)           ?? "Desconhecido";
+            var socioEmail = User.FindFirstValue(ClaimTypes.Email)         ?? "sem e-mail";
 
-            await _helperController.EnviarAlertaImagemAsync(socioId, socioNome, codigoAceca, imagemSrc, urlAcesso, acao, timestamp);
+            await _helperController.EnviarAlertaImagemAsync(socioId, socioNome, socioEmail, codigoAceca, imagemSrc, urlAcesso, acao, timestamp);
 
             return Ok();
         }

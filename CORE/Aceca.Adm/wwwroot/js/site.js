@@ -360,6 +360,14 @@ function fn_ImageProtect() {
     //    statement 'debugger' pausa a thread; medimos o tempo decorrido para
     //    inferir isso. Cobre o caso que a heurística de tamanho não cobre.
     //
+    // Falso positivo relatado em produção (ação "devtools-open" sem o usuário ter
+    // aberto nada): a heurística 2 sozinha estoura com qualquer pico de CPU/throttling
+    // no instante do check (aba em segundo plano, notebook saindo de suspensão,
+    // antivírus etc.), não só com DevTools de verdade. Mitigado com duas guardas em
+    // _devCheck: pula o check se a aba estiver em segundo plano/sem foco, e só declara
+    // DevTools aberto após 2 detecções seguidas (não 1) — ruído pontual não se repete,
+    // DevTools real fica aberto por segundos.
+    //
     // IMPORTANTE: nenhuma das duas *impede* o DevTools de abrir — apenas
     // detecta e reage (blur nas imagens + alerta silencioso por e-mail).
     // Não existe API de browser que permita a uma página bloquear F12.
@@ -381,7 +389,25 @@ function fn_ImageProtect() {
         }
     }
 
+    // Contagem de acertos consecutivos antes de declarar DevTools aberto - single-shot
+    // gerava muito falso positivo: a aba em segundo plano (usuário trocou de aba/app),
+    // o notebook saindo de suspensão, uma varredura de antivírus ou qualquer pico de CPU
+    // no instante exato do check já atrasa o 'debugger' (ou distorce outerWidth/innerHeight
+    // durante a animação de maximizar/restaurar a janela) sem nenhum DevTools envolvido.
+    // Exigir 2 detecções seguidas (checks rodam a cada 800ms) filtra esse ruído mantendo
+    // a detecção real (que fica aberta por segundos, não um instante só).
+    var _hits = 0;
+
     function _devCheck() {
+        // Aba em segundo plano ou janela sem foco: o browser já throttla os timers
+        // nesse estado, o que por si só atrasa o 'debugger' abaixo e gera falso positivo
+        // de byTiming. Sem DevTools real pra detectar aqui (o usuário nem está olhando
+        // pra essa aba), então pula o check inteiro.
+        if (document.hidden || !document.hasFocus()) {
+            _hits = 0;
+            return;
+        }
+
         var wDiff  = window.outerWidth  - window.innerWidth;
         var hDiff  = window.outerHeight - window.innerHeight;
         var bySize = wDiff > 160 || hDiff > 160;
@@ -389,9 +415,15 @@ function fn_ImageProtect() {
         var t0        = performance.now();
         // eslint-disable-next-line no-debugger
         debugger;
-        var byTiming  = (performance.now() - t0) > 100;
+        var byTiming  = (performance.now() - t0) > 150;
 
-        _setDevToolsOpen(bySize || byTiming);
+        if (bySize || byTiming) {
+            _hits++;
+        } else {
+            _hits = 0;
+        }
+
+        _setDevToolsOpen(_hits >= 2);
     }
 
     // Navegadores mobile "normais" (sem cabo + Web Inspector habilitado no Mac)

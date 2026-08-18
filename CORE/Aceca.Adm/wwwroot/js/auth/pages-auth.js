@@ -400,15 +400,33 @@ function fn_LoginCkSet(cname, cvalue, exmins ) {
                     let varIp = data.ip;
                     //console.log(`fn_LoginAuthGeo varIp ::: ${data.ip}`);
 
+                    // Geolocation API do navegador (GPS/Wi-Fi) é bem mais precisa que a
+                    // geolocalização por IP acima - em rede móvel (CGNAT), o IP é
+                    // geolocalizado no ponto de saída da operadora, que pode ficar a
+                    // dezenas de km do usuário real. Best-effort: só entra se o usuário
+                    // conceder a permissão em poucos segundos; senão, segue só com IP
+                    // (fallback = comportamento de antes, inalterado).
+                    const coords = await fn_ObterCoordenadas();
+
+                    // User-Agent Client Hints (só Chrome/Edge) - distingue Windows 10 de
+                    // 11, que compartilham o mesmo token no User-Agent clássico.
+                    const winPlatformVersion = await fn_ObterWinPlatformVersion();
+
+                    const params = { strIp: varIp, srtId: userId };
+                    if (coords) {
+                        params.latitude  = coords.latitude;
+                        params.longitude = coords.longitude;
+                    }
+                    if (winPlatformVersion) {
+                        params.winPlatformVersion = winPlatformVersion;
+                    }
+
                     const response = await fetch(`${var_Controller}/LoginLog`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: new URLSearchParams({
-                            strIp: varIp,
-                            srtId: userId
-                        }),
+                        body: new URLSearchParams(params),
                     });
 
                     if (!response.ok) {
@@ -425,6 +443,52 @@ function fn_LoginCkSet(cname, cvalue, exmins ) {
 
         } catch (error) {
             console.error('Error fetching IP address:', error);
+        }
+    }
+
+    // Pede a localização ao navegador com timeout curto - não trava o login esperando o
+    // usuário decidir o prompt de permissão, nem se o navegador/dispositivo não suportar.
+    function fn_ObterCoordenadas() {
+        return new Promise(function (resolve) {
+            if (!navigator.geolocation) { resolve(null); return; }
+
+            var resolvido = false;
+            var timer = setTimeout(function () {
+                if (!resolvido) { resolvido = true; resolve(null); }
+            }, 4000);
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    clearTimeout(timer);
+                    resolve({
+                        latitude:  position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
+                },
+                function () {
+                    // Permissão negada, indisponível, timeout do próprio browser etc. -
+                    // qualquer erro aqui só significa "sem coordenada de GPS", segue com IP.
+                    if (resolvido) return;
+                    resolvido = true;
+                    clearTimeout(timer);
+                    resolve(null);
+                },
+                { enableHighAccuracy: true, timeout: 3500, maximumAge: 300000 }
+            );
+        });
+    }
+
+    // User-Agent Client Hints só existe em navegadores Chromium (Chrome/Edge) - em
+    // Firefox/Safari retorna null e o backend mantém o rótulo genérico "Windows 10/11".
+    async function fn_ObterWinPlatformVersion() {
+        try {
+            if (!navigator.userAgentData?.getHighEntropyValues) return null;
+            var info = await navigator.userAgentData.getHighEntropyValues(['platformVersion']);
+            return info?.platformVersion || null;
+        } catch (e) {
+            return null;
         }
     }
 //#endregion
