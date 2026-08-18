@@ -536,6 +536,13 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : obj.Email)),
         (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '-- Selecionar --' : obj.SocioPerfilId));
         (popAddNewItem.querySelector('.dt-line-05').checked = (obj === null ? false : obj.SocioAtivo));
+        (popAddNewItem.querySelector('.dt-line-06').checked = (obj === null ? false : obj.Bloqueado));
+
+    // Contador de tentativas de captura de tela - só contexto pra administração decidir se
+    // libera; o campo em si (checkbox acima) é quem efetivamente desbloqueia.
+    document.getElementById('lblQtdInfracoesPrint').textContent = (obj === null || !obj.QtdInfracoesPrint)
+        ? ''
+        : `${obj.QtdInfracoesPrint} tentativa(s) registrada(s)`;
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -562,6 +569,7 @@ function fn_PopGetObj() {
         NomeUsuario: $('.form-add-new-item .dt-line-02').val(),        
         SocioPerfilId: $('#cmb_SocioPerfil').val(),
         Ativo: $('.form-add-new-item .dt-line-05').is(':checked'),
+        Bloqueado: $('.form-add-new-item .dt-line-06').is(':checked'),
     };
 
     console.log("fn_PopGetObj !", objFormData);

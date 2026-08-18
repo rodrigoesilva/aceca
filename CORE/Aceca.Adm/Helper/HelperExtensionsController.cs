@@ -1128,6 +1128,96 @@ namespace Aceca.Adm.Helper
             }
         }
 
+        /// <summary>
+        /// Envia alerta para ti@aceca.com.br quando um sócio atinge a 5ª tentativa de
+        /// captura de tela e é bloqueado permanentemente (ver AuthController.ReportImageAccess) -
+        /// a liberação exige ação manual da administração em Sócio > Segurança.
+        /// </summary>
+        public async Task EnviarAlertaBloqueioPermanenteAsync(string socioId, string socioNome, string socioEmail)
+        {
+            var smtpHost     = _appConfiguration["Email:Host"]        ?? "smtp.gmail.com";
+            var smtpPort     = int.Parse(_appConfiguration["Email:Port"]      ?? "587");
+            var smtpSsl      = bool.Parse(_appConfiguration["Email:EnableSsl"] ?? "true");
+            var smtpFrom     = _appConfiguration["Email:From"]        ?? "noreply@aceca.com.br";
+            var smtpUser     = _appConfiguration["Email:User"]        ?? smtpFrom;
+            var smtpPassword = _appConfiguration["Email:Password"]    ?? "";
+            var displayName  = _appConfiguration["Email:DisplayName"] ?? "ACECA - Área do Sócio";
+
+            var agoraBrasil = DateTime.UtcNow.AddHours(-3).ToString("dd/MM/yyyy HH:mm:ss") + " (Brasília)";
+
+            var body = $@"
+                <!DOCTYPE html>
+                <html lang=""pt-BR"">
+                <head><meta charset=""UTF-8""></head>
+                <body style=""font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;"">
+                  <div style=""max-width:600px;margin:0 auto;background:#fff;border-radius:10px;
+                               padding:36px 40px;box-shadow:0 2px 12px rgba(0,0,0,.08);"">
+                    <div style=""text-align:center;"">
+                      <img src=""https://www.aceca.com.br/img/logo/logo02.png""
+                           alt=""ACECA"" width=""200"" style=""max-width:100%;"">
+                    </div>
+                    <h2 style=""color:#cc0000;margin-top:24px;"">
+                      🚫 Sócio Bloqueado Permanentemente
+                    </h2>
+                    <table style=""width:100%;border-collapse:collapse;margin-top:16px;"">
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;width:40%;border:1px solid #e0d0f0;"">Timestamp</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{agoraBrasil}</td>
+                      </tr>
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Sócio (Nome)</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{socioNome}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Sócio (ID)</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{socioId}</td>
+                      </tr>
+                      <tr>
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Sócio (E-mail)</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{socioEmail}</td>
+                      </tr>
+                      <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Motivo</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;color:#cc0000;font-weight:bold;"">
+                          5ª tentativa de captura de tela detectada - login bloqueado até liberação manual
+                        </td>
+                      </tr>
+                    </table>
+                    <p style=""margin-top:20px;"">
+                      Verifique o hist&oacute;rico de tentativas em <b>log_erros</b> (tipo AcessoImagemIndevido)
+                      e, se apropriado, libere o acesso desmarcando <b>Bloqueado</b> na tela
+                      <b>S&oacute;cio &gt; Seguran&ccedil;a</b>.
+                    </p>
+                    <hr style=""border:none;border-top:1px solid #eee;margin:28px 0;"">
+                    <p style=""font-size:12px;color:#aaa;text-align:center;"">
+                      © ACECA - Associação dos Colecionadores de Embalagens de Cigarros e Afins
+                    </p>
+                  </div>
+                </body>
+                </html>";
+
+            var mailMessage = new MailMessage
+            {
+                From       = new MailAddress(smtpFrom, displayName),
+                Subject    = $"🚫 ALERTA: Sócio bloqueado permanentemente — [{socioNome}]",
+                IsBodyHtml = true,
+                Body       = body
+            };
+            mailMessage.To.Add("ti@aceca.com.br");
+
+            using var smtp = new SmtpClient(smtpHost, smtpPort)
+            {
+                Credentials = new NetworkCredential(smtpUser, smtpPassword),
+                EnableSsl   = smtpSsl
+            };
+
+            try { await smtp.SendMailAsync(mailMessage); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO EnviarAlertaBloqueioPermanenteAsync :: falha ao enviar e-mail");
+            }
+        }
+
         #endregion
 
 

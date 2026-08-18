@@ -97,6 +97,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         sg.nome_usuario AS NomeUsuario,
                         sg.Email AS Email,
                         sg.last_login AS UltimoLogin,
+                        sg.bloqueado AS Bloqueado,
+                        sg.qtd_infracoes_print AS QtdInfracoesPrint,
 
                         s.nome AS NomeSocio,
                         s.ativo AS SocioAtivo,
@@ -182,7 +184,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Models.SocioSeguranca model, int? socioPerfilId, bool? ativo)
+        public async Task<IActionResult> Edit(Models.SocioSeguranca model, int? socioPerfilId, bool? ativo, bool? bloqueado)
         {
             try
             {
@@ -224,6 +226,21 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     trackedUser.Email = model.Email.Trim().ToLowerInvariant();
                     trackedUser.NomeUsuario = model.NomeUsuario;
+
+                    // Bloqueio permanente (5ª tentativa de captura de tela, ver
+                    // AuthController.ReportImageAccess) - só a administração desmarca, por
+                    // aqui. Ao liberar, zera o contador e o bloqueio temporário também,
+                    // pra não bloquear de novo na primeira tentativa seguinte.
+                    if (bloqueado.HasValue)
+                    {
+                        trackedUser.Bloqueado = bloqueado.Value;
+
+                        if (!bloqueado.Value)
+                        {
+                            trackedUser.QtdInfracoesPrint = 0;
+                            trackedUser.BloqueadoAte = null;
+                        }
+                    }
 
                     #endregion
 

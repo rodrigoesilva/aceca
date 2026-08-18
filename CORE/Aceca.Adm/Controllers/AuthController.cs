@@ -807,6 +807,16 @@ namespace Aceca.Adm.Controllers
                 if (!user.Socio.Ativo)
                     return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
 
+                // Bloqueio permanente (5ª tentativa de captura de tela) - só a administração
+                // consegue liberar, desmarcando "Bloqueado" em Sócio > Segurança.
+                if (user.Bloqueado)
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Login bloqueado por tentativas repetidas de captura de tela. Aguarde contato da administração para liberação."
+                    });
+
                 if (user.BloqueadoAte.HasValue && user.BloqueadoAte.Value > DateTime.UtcNow)
                 {
                     var minutosRestantes = (int)Math.Ceiling((user.BloqueadoAte.Value - DateTime.UtcNow).TotalMinutes);
@@ -1696,15 +1706,48 @@ namespace Aceca.Adm.Controllers
             var bloqueado = false;
 
             // Tentativa de captura de tela de verdade (PrintScreen) é o único gatilho que
-            // desloga e bloqueia o login por 5 minutos - as demais ações detectadas (clique
-            // direito, Ctrl+S/U/P, DevTools) já recebem aviso + marca d'água, sem essa
-            // severidade extra, pra não punir uma ação acidental como se fosse intencional.
+            // desloga e bloqueia o login - as demais ações detectadas (clique direito,
+            // Ctrl+S/U/P, DevTools) já recebem aviso + marca d'água, sem essa severidade
+            // extra, pra não punir uma ação acidental como se fosse intencional.
+            //
+            // A duração do bloqueio dobra a cada reincidência (1ª = N minutos, configurável
+            // em adm_config "PrintScreenBloqueioMinutos"; 2ª = N×2; 3ª = N×4...); na 5ª
+            // tentativa o sócio é bloqueado permanentemente e só a administração consegue
+            // liberar (Sócio > Segurança), avisada por e-mail nesse momento.
+            const int qtdInfracoesParaBloqueioPermanente = 5;
+
             if (string.Equals(acao, "printscreen", StringComparison.OrdinalIgnoreCase)
                 && int.TryParse(socioId, out var socioIdInt) && socioIdInt != 39)
             {
-                await _db.SocioSeguranca
-                    .Where(s => s.SocioId == socioIdInt)
-                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.BloqueadoAte, DateTime.UtcNow.AddMinutes(5)));
+                var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(s => s.SocioId == socioIdInt);
+
+                if (seguranca != null && !seguranca.Bloqueado)
+                {
+                    seguranca.QtdInfracoesPrint++;
+
+                    if (seguranca.QtdInfracoesPrint >= qtdInfracoesParaBloqueioPermanente)
+                    {
+                        seguranca.Bloqueado = true;
+                        seguranca.BloqueadoAte = null;
+
+                        await _db.SaveChangesAsync();
+                        await _helperController.EnviarAlertaBloqueioPermanenteAsync(socioId, socioNome, socioEmail);
+                    }
+                    else
+                    {
+                        var baseMinutosStr = await _db.AdmConfig
+                            .Where(c => c.Parametro == "PrintScreenBloqueioMinutos")
+                            .Select(c => c.Valor)
+                            .FirstOrDefaultAsync();
+
+                        var baseMinutos = int.TryParse(baseMinutosStr, out var m) && m > 0 ? m : 5;
+                        var minutosBloqueio = baseMinutos * Math.Pow(2, seguranca.QtdInfracoesPrint - 1);
+
+                        seguranca.BloqueadoAte = DateTime.UtcNow.AddMinutes(minutosBloqueio);
+
+                        await _db.SaveChangesAsync();
+                    }
+                }
 
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 bloqueado = true;

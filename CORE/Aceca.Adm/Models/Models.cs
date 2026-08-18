@@ -471,9 +471,19 @@ namespace Aceca.Adm.Models
         public string? ResetPasswordToken { get; set; } = null;
         public DateTime? ResetPasswordTokenExpiry { get; set; } = null;
 
-        // Bloqueio temporário de login após detectar tentativa de captura de tela
-        // (ver AuthController.ReportImageAccess / Login).
+        // Bloqueio temporário de login após detectar tentativa de captura de tela - a
+        // duração dobra a cada reincidência (ver adm_config "PrintScreenBloqueioMinutos"
+        // e AuthController.ReportImageAccess / Login).
         [Column("bloqueado_ate")] public DateTime? BloqueadoAte { get; set; }
+
+        // Contador de tentativas de captura de tela (nunca reseta sozinho - só quando a
+        // administração desmarca "Bloqueado" na tela de Sócio > Segurança). Ao chegar em 5,
+        // Bloqueado é setado e o login fica indisponível até liberação manual.
+        [Column("qtd_infracoes_print")] public int QtdInfracoesPrint { get; set; }
+
+        // Bloqueio permanente (5ª tentativa de captura de tela) - só a administração pode
+        // desmarcar, pelo offcanvas de edição do sócio (Segurança).
+        [Column("bloqueado")] public bool Bloqueado { get; set; }
 
         // Sessão única: carimbo (GUID) gerado a cada login bem-sucedido e validado em
         // todo request via OnValidatePrincipal (Program.cs) - um novo login sobrescreve

@@ -366,6 +366,8 @@ using (var scopeSeguranca = app.Services.CreateScope())
     {
         ("bloqueado_ate", "DATETIME NULL"),
         ("session_stamp", "VARCHAR(64) NULL"),
+        ("qtd_infracoes_print", "INT NOT NULL DEFAULT 0"),
+        ("bloqueado", "TINYINT(1) NOT NULL DEFAULT 0"),
     };
 
     foreach (var (coluna, tipoSql) in colunasSeguranca)
@@ -383,6 +385,47 @@ using (var scopeSeguranca = app.Services.CreateScope())
             segurancaLogger.LogWarning(ex, "Não foi possível garantir a coluna {Coluna} em socio_seguranca", coluna);
             await errorLogSeguranca.RegistrarExcecaoAsync(null, ex);
         }
+    }
+}
+
+// Parâmetro configurável (adm_config) para os minutos de bloqueio de login na 1ª tentativa
+// de captura de tela - dobra a cada reincidência (ver AuthController.ReportImageAccess).
+// Só cria o registro se ainda não existir; não sobrescreve um valor que a administração já
+// tenha alterado pela tela de Configurações.
+using (var scopeConfigPrint = app.Services.CreateScope())
+{
+    var dbConfigPrint = scopeConfigPrint.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var configPrintLogger = scopeConfigPrint.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        // adm_config.id no servidor em uso é um INT sem AUTO_INCREMENT (nem default) -
+        // todo INSERT via EF (aqui e também no já existente AdmConfigController.Create)
+        // falhava com "Field 'id' doesn't have a default value". Corrige uma vez, de forma
+        // idempotente - o MySQL calcula o próximo valor automaticamente a partir do
+        // MAX(id) já existente, então é seguro rodar com a tabela já populada.
+        if (!await Aceca.Adm.Helper.DbSchemaHelper.ColunaEhAutoIncrementAsync(dbConfigPrint.Database, "adm_config", "id"))
+        {
+            await dbConfigPrint.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE adm_config MODIFY id INT UNSIGNED NOT NULL AUTO_INCREMENT");
+        }
+
+        var existeParametro = await dbConfigPrint.AdmConfig.AnyAsync(c => c.Parametro == "PrintScreenBloqueioMinutos");
+
+        if (!existeParametro)
+        {
+            dbConfigPrint.AdmConfig.Add(new Aceca.Adm.Models.AdmConfig
+            {
+                Parametro = "PrintScreenBloqueioMinutos",
+                Descricao = "Minutos de bloqueio de login na 1ª tentativa de captura de tela detectada. Dobra a cada reincidência; a 5ª tentativa bloqueia o sócio permanentemente (exige liberação manual em Sócio > Segurança).",
+                Valor = "5"
+            });
+            await dbConfigPrint.SaveChangesAsync();
+        }
+    }
+    catch (Exception ex)
+    {
+        configPrintLogger.LogWarning(ex, "Não foi possível garantir o parâmetro PrintScreenBloqueioMinutos em adm_config");
     }
 }
 

@@ -23,6 +23,38 @@ namespace Aceca.Adm.Helper
                 "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = @tabela AND index_name = @nome",
                 tabela, indice);
 
+        public static async Task<bool> ColunaEhAutoIncrementAsync(DatabaseFacade database, string tabela, string coluna)
+        {
+            var conn = database.GetDbConnection();
+            var precisaAbrir = conn.State != ConnectionState.Open;
+            if (precisaAbrir)
+                await conn.OpenAsync();
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT extra FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = @tabela AND column_name = @nome";
+
+                var pTabela = cmd.CreateParameter();
+                pTabela.ParameterName = "@tabela";
+                pTabela.Value = tabela;
+                cmd.Parameters.Add(pTabela);
+
+                var pNome = cmd.CreateParameter();
+                pNome.ParameterName = "@nome";
+                pNome.Value = coluna;
+                cmd.Parameters.Add(pNome);
+
+                var extra = (await cmd.ExecuteScalarAsync()) as string;
+                return extra?.Contains("auto_increment", StringComparison.OrdinalIgnoreCase) == true;
+            }
+            finally
+            {
+                if (precisaAbrir)
+                    await conn.CloseAsync();
+            }
+        }
+
         private static async Task<bool> ExisteAsync(DatabaseFacade database, string sql, string tabela, string nome)
         {
             var conn = database.GetDbConnection();
