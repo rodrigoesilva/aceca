@@ -1,5 +1,11 @@
 @{
   ViewData["Title"] = "Account settings - Security";
+
+  // Ver Helper/AssetUrlHelper.cs - dentro de @section, só a 1ª tag com
+  // asp-append-version é processada pelo Tag Helper; as demais ficam com "~/"
+  // literal (JS não carrega).
+  var urlPagesAccountSettingsSecurity = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/pages-account-settings-security.js");
+  var urlModalEnableOtp = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/modal-enable-otp.js");
 }
 
 @section VendorScripts {
@@ -8,8 +14,8 @@
 }
 
 @section PageScripts {
-<script src="~/js/pages-account-settings-security.js" asp-append-version="true" defer></script>
-<script src="~/js/modal-enable-otp.js" asp-append-version="true" defer></script>
+<script src="@urlPagesAccountSettingsSecurity" defer></script>
+<script src="@urlModalEnableOtp" defer></script>
 }
 @section PageStyles {
 <link rel="stylesheet" href="~/vendor/css/pages/page-account-settings.css" />

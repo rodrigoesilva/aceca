@@ -1,5 +1,13 @@
 @{
   ViewData["Title"] = "Account settings - Pages";
+
+  // Ver Helper/AssetUrlHelper.cs - dentro de @section, só a 1ª tag com
+  // asp-append-version é processada pelo Tag Helper; as demais ficam com "~/"
+  // literal (JS não carrega).
+  var urlPagesPricing = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/pages-pricing.js");
+  var urlPagesAccountSettingsBilling = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/pages-account-settings-billing.js");
+  var urlAppInvoiceList = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/app-invoice-list.js");
+  var urlModalEditCc = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/modal-edit-cc.js");
 }
 
 @section VendorStyles {
@@ -12,10 +20,10 @@
 }
 
 @section PageScripts {
-  <script src="~/js/pages-pricing.js" asp-append-version="true" defer></script>
-  <script src="~/js/pages-account-settings-billing.js" asp-append-version="true" defer></script>
-  <script src="~/js/app-invoice-list.js" asp-append-version="true" defer></script>
-  <script src="~/js/modal-edit-cc.js" asp-append-version="true" defer></script>
+  <script src="@urlPagesPricing" defer></script>
+  <script src="@urlPagesAccountSettingsBilling" defer></script>
+  <script src="@urlAppInvoiceList" defer></script>
+  <script src="@urlModalEditCc" defer></script>
 }
 
 @* ************** Content ************** *@

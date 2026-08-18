@@ -1,6 +1,12 @@
 @{
   Layout = "_BlankLayout";
   ViewData["Title"] = "Two Steps Verifications Cover - Pages";
+
+  // Ver Helper/AssetUrlHelper.cs - dentro de @section, só a 1ª tag com
+  // asp-append-version é processada pelo Tag Helper; as demais ficam com "~/"
+  // literal (JS não carrega).
+  var urlPagesAuth = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/pages-auth.js");
+  var urlPagesAuthTwoSteps = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/pages-auth-two-steps.js");
 }
 
 @section VendorScripts {
@@ -12,8 +18,8 @@
 }
 
 @section PageScripts {
-<script src="~/js/pages-auth.js" asp-append-version="true" defer></script>
-<script src="~/js/pages-auth-two-steps.js" asp-append-version="true" defer></script>
+<script src="@urlPagesAuth" defer></script>
+<script src="@urlPagesAuthTwoSteps" defer></script>
 }
 @* ************** Content ************** *@
 

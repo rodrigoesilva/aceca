@@ -1,5 +1,11 @@
 @{
     ViewData["Title"] = "Meus Dados - Meu Perfil";
+
+    // Ver Helper/AssetUrlHelper.cs - dentro de @section, só a 1ª tag com
+    // asp-append-version é processada pelo Tag Helper; as demais ficam com "~/"
+    // literal (JS não carrega).
+    var urlFormsSelects = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/forms-selects.js");
+    var urlPagesAuthAccountSettings = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/auth/pages-auth-account-settings.js");
 }
 
 @section VendorStyles {
@@ -8,9 +14,9 @@
 
 @section PageScripts {
     <!-- Select Dropdownlist -->
-    <script src="~/js/forms-selects.js" asp-append-version="true" defer></script>
+    <script src="@urlFormsSelects" defer></script>
 
-    <script src="~/js/auth/pages-auth-account-settings.js" asp-append-version="true" defer></script>
+    <script src="@urlPagesAuthAccountSettings" defer></script>
 }
 
 @* ************** Content ************** *@

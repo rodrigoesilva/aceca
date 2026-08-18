@@ -1,5 +1,11 @@
 @{
     Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
+
+    // Ver Helper/AssetUrlHelper.cs - dentro de @section, só a 1ª tag com
+    // asp-append-version é processada pelo Tag Helper; as demais ficam com "~/"
+    // literal (JS não carrega).
+    var urlFormsSelects = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/forms-selects.js");
+    var urlAdminSocioAniversario = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/admin/socio/admin-socio-aniversario.js");
 }
 
 @section VendorStyles {
@@ -33,9 +39,9 @@
 
 @section PageScripts {
     <!-- Select Dropdownlist -->
-    <script src="~/js/forms-selects.js" asp-append-version="true" defer></script>
+    <script src="@urlFormsSelects" defer></script>
 
-    <script src="~/js/admin/socio/admin-socio-aniversario.js" asp-append-version="true" defer></script>
+    <script src="@urlAdminSocioAniversario" defer></script>
 }
 
 @* ************** Content ************** *@

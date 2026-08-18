@@ -2,9 +2,18 @@
     Layout = $"~/Views/Shared/_BlankLayout.cshtml";
 }
 
+@{
+    // Ver Helper/AssetUrlHelper.cs - dentro de @section, só a 1ª tag <link>/<script>
+    // com asp-append-version é processada pelo Tag Helper (bug reproduzido isolando
+    // arquivo/ordem/conteúdo entre as tags); as demais ficam com "~/" literal (CSS/JS
+    // não carrega). Resolve ambas manualmente para não depender do Tag Helper aqui.
+    var urlStyleCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/style.css");
+    var urlAuthLoginCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/pages/auth-login.css");
+}
+
 @section PageStyles {
-    <link rel="stylesheet" href="~/css/pages/auth-login.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    <link rel="stylesheet" href="@urlAuthLoginCss">
+    <link rel="stylesheet" href="@urlStyleCss">
 }
 
 @section PageScripts {

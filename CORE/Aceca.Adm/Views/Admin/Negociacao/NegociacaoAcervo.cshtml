@@ -2,6 +2,13 @@
 
 @{
     Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
+
+    // Ver Helper/AssetUrlHelper.cs - dentro de @section, só a 1ª tag com
+    // asp-append-version é processada pelo Tag Helper; as demais ficam com "~/"
+    // literal (JS não carrega).
+    var urlNegociacaoAcervo = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/negociacao/negociacao-acervo.js");
+    var urlModalMarca = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/modal/modal-marca.js");
+    var urlFormsSelects = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/forms-selects.js");
 }
 
 @section VendorStyles {
@@ -22,11 +29,11 @@
 } 
 
 @section PageScripts {
-    <script src="~/js/negociacao/negociacao-acervo.js" asp-append-version="true" defer></script>
-    <script src="~/js/modal/modal-marca.js" asp-append-version="true" defer></script>
+    <script src="@urlNegociacaoAcervo" defer></script>
+    <script src="@urlModalMarca" defer></script>
 
     <!-- Select Dropdownlist -->
-    <script src="~/js/forms-selects.js" asp-append-version="true" defer></script>
+    <script src="@urlFormsSelects" defer></script>
 }
 
 @* ************** Filtros ************** *@
