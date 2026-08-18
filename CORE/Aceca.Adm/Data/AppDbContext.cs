@@ -98,5 +98,9 @@ namespace Aceca.Adm.Data
         #endregion
 
         public DbSet<Transactions> Transactions { get; set; } = default!;
+
+        #region Log de Erros
+        public DbSet<LogErro> LogErro { get; set; }
+        #endregion
     }
 }

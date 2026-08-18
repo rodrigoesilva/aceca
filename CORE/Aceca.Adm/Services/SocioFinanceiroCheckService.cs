@@ -91,14 +91,23 @@ namespace Aceca.Adm.Services
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                await db.Database.ExecuteSqlRawAsync(
-                    "ALTER TABLE socio_financeiro ADD COLUMN IF NOT EXISTS data_aviso_vencimento_7dias DATETIME NULL", ct);
-                await db.Database.ExecuteSqlRawAsync(
-                    "ALTER TABLE socio_financeiro ADD COLUMN IF NOT EXISTS data_aviso_vencimento_2dias DATETIME NULL", ct);
+                // "ADD COLUMN IF NOT EXISTS" só é aceito a partir do MySQL 8.0.29 e o
+                // servidor em uso rejeita com erro de sintaxe — checa via INFORMATION_SCHEMA
+                // antes do ALTER (DbSchemaHelper) para continuar idempotente em qualquer versão.
+                if (!await DbSchemaHelper.ColunaExisteAsync(db.Database, "socio_financeiro", "data_aviso_vencimento_7dias"))
+                    await db.Database.ExecuteSqlRawAsync(
+                        "ALTER TABLE socio_financeiro ADD COLUMN data_aviso_vencimento_7dias DATETIME NULL", ct);
+
+                if (!await DbSchemaHelper.ColunaExisteAsync(db.Database, "socio_financeiro", "data_aviso_vencimento_2dias"))
+                    await db.Database.ExecuteSqlRawAsync(
+                        "ALTER TABLE socio_financeiro ADD COLUMN data_aviso_vencimento_2dias DATETIME NULL", ct);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ERRO :: {Service} :: {Method}", nameof(SocioFinanceiroCheckService), nameof(GarantirColunasControleAsync));
+
+                using var scope = _scopeFactory.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<ErrorLogService>().RegistrarExcecaoAsync(null, ex);
             }
         }
 
@@ -185,6 +194,9 @@ namespace Aceca.Adm.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ERRO :: {Service} :: {Method}", nameof(SocioFinanceiroCheckService), nameof(ExecutarVerificacaoFinanceiraAsync));
+
+                using var scope = _scopeFactory.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<ErrorLogService>().RegistrarExcecaoAsync(null, ex);
             }
         }
 

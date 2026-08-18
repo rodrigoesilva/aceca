@@ -47,11 +47,19 @@ builder.Services.AddResponseCompression(options =>
 
 builder.Services.AddScoped<HelperExtensionsController>();
 
+// Registro central de erros (tabela log_erros + e-mail de alerta para ti@aceca.com.br
+// quando é exceção de verdade — ver Services/ErrorLogService.cs).
+builder.Services.AddScoped<Aceca.Adm.Services.ErrorLogService>();
+
 // Automação: verifica semanalmente vencimento/pendência financeira dos sócios (socio_financeiro)
 builder.Services.AddHostedService<Aceca.Adm.Services.SocioFinanceiroCheckService>();
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Grava todo BadRequest devolvido por qualquer action em log_erros (auditoria).
+    options.Filters.Add<Aceca.Adm.Filters.BadRequestLogFilter>();
+});
 
 // Chamadas AJAX enviam o token via header (JSON body, não form-encoded) -
 // ver @Html.AntiForgeryToken() em _CommonMasterLayout.cshtml + injeção do
@@ -238,6 +246,25 @@ else {
     app.UseStatusCodePagesWithReExecute("/Error/{0}");
 }
 
+// Registrado logo após o UseDeveloperExceptionPage/UseExceptionHandler acima (portanto mais
+// "interno" no pipeline): qualquer exceção não tratada vinda de baixo (MVC, autenticação,
+// static files) passa primeiro por aqui — grava em log_erros e avisa ti@aceca.com.br por
+// e-mail — e só depois é relançada, para que o UseDeveloperExceptionPage/UseExceptionHandler
+// registrado acima continue tratando a resposta ao usuário exatamente como antes.
+app.Use(async (ctx, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        var errorLog = ctx.RequestServices.GetRequiredService<Aceca.Adm.Services.ErrorLogService>();
+        await errorLog.RegistrarExcecaoAsync(ctx, ex);
+        throw;
+    }
+});
+
 app.UseHttpsRedirection();
 // Desativada: causava ERR_CONTENT_DECODING_FAILED no navegador (gzip/brotli corrompendo
 // a resposta em certas páginas/ambientes) - confirmado que desativar resolve. Causa raiz
@@ -268,15 +295,49 @@ app.Use(async (ctx, next) =>
     await next();
 });
 
+// Tabela de log de erros (log_erros) — ver Models/LogErro.cs e Services/ErrorLogService.cs.
+// CREATE TABLE IF NOT EXISTS é sintaxe padrão suportada por qualquer versão de MySQL/MariaDB
+// (diferente do "IF NOT EXISTS" em ADD COLUMN/ADD INDEX tratado abaixo), então pode rodar direto.
+using (var scopeLog = app.Services.CreateScope())
+{
+    var dbLog = scopeLog.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var logTableLogger = scopeLog.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        await dbLog.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS log_erros (
+                Id INT NOT NULL AUTO_INCREMENT,
+                tipo VARCHAR(50) NULL,
+                url VARCHAR(1000) NULL,
+                metodo_http VARCHAR(10) NULL,
+                usuario VARCHAR(255) NULL,
+                mensagem_humanizada VARCHAR(500) NULL,
+                mensagem_original TEXT NULL,
+                stack_trace TEXT NULL,
+                email_enviado TINYINT(1) NOT NULL DEFAULT 0,
+                data_criacao DATETIME NULL,
+                PRIMARY KEY (Id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+    catch (Exception ex)
+    {
+        logTableLogger.LogWarning(ex, "Não foi possível garantir a tabela log_erros");
+    }
+}
+
 // Índices de banco — preparação para escala em duas tabelas que ainda vão crescer bastante
 // (marcas ~65 mil linhas hoje; socio_colecao ainda pequena, mas vai passar de 100 mil).
 // Cobrem exatamente as colunas usadas em WHERE/JOIN nos FiltrarDados/upserts existentes
 // (AcervoController, SocioColecaoController, NegociacaoController). Idempotente: seguro
-// rodar em todo restart, "IF NOT EXISTS" evita erro se o índice já existir.
+// rodar em todo restart — checa via INFORMATION_SCHEMA antes de criar (DbSchemaHelper), em
+// vez de "ADD INDEX IF NOT EXISTS" (só suportado a partir do MySQL 8.0.29 e rejeitado pelo
+// servidor em uso, o que antes fazia essa rotina falhar com erro de sintaxe em todo restart).
 using (var scope = app.Services.CreateScope())
 {
     var dbIndex = scope.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
     var indexLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var errorLogIndices = scope.ServiceProvider.GetRequiredService<Aceca.Adm.Services.ErrorLogService>();
 
     var indices = new[]
     {
@@ -293,15 +354,19 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
+            if (await Aceca.Adm.Helper.DbSchemaHelper.IndiceExisteAsync(dbIndex.Database, tabela, nomeIndice))
+                continue;
+
             // Identificadores vêm só da lista constante acima (nunca de input externo),
             // então a concatenação aqui é segura — DDL não aceita nomes de tabela/coluna
             // como parâmetro bindado de qualquer forma.
-            string sqlDdl = "ALTER TABLE " + tabela + " ADD INDEX IF NOT EXISTS " + nomeIndice + " (" + colunas + ")";
+            string sqlDdl = "ALTER TABLE " + tabela + " ADD INDEX " + nomeIndice + " (" + colunas + ")";
             await dbIndex.Database.ExecuteSqlRawAsync(sqlDdl);
         }
         catch (Exception ex)
         {
             indexLogger.LogWarning(ex, "Não foi possível garantir o índice {Indice} em {Tabela}", nomeIndice, tabela);
+            await errorLogIndices.RegistrarExcecaoAsync(null, ex);
         }
     }
 
