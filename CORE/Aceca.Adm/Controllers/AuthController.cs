@@ -611,9 +611,9 @@ namespace Aceca.Adm.Controllers
                     return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
 
                 var itensColecao = await _db.SocioColecao
-                    .Where(c => c.SocioId == socioId && (c.Possui || c.Favorito))
-                    .Join(_db.Marca, c => c.MarcaId, m => m.Id, (c, m) => new { c.Possui, c.Favorito, m.MarcaFaseId, m.MarcaSubTipoId })
-                    .Join(_db.MarcaSubTipo, x => x.MarcaSubTipoId, st => st.Id, (x, st) => new { x.Possui, x.Favorito, x.MarcaFaseId, st.MarcaTipoId })
+                    .Where(c => c.SocioId == socioId && (c.Possui || c.Interesse))
+                    .Join(_db.Marca, c => c.MarcaId, m => m.Id, (c, m) => new { c.Possui, c.Interesse, m.MarcaFaseId, m.MarcaSubTipoId })
+                    .Join(_db.MarcaSubTipo, x => x.MarcaSubTipoId, st => st.Id, (x, st) => new { x.Possui, x.Interesse, x.MarcaFaseId, st.MarcaTipoId })
                     .ToListAsync();
 
                 var catalogoPorGrupo = (await _db.Marca
@@ -634,7 +634,7 @@ namespace Aceca.Adm.Controllers
                         nomeFase = g.Key.MarcaFaseId.HasValue && fases.TryGetValue(g.Key.MarcaFaseId.Value, out var nf) ? nf : "-",
                         tipo = tipos.TryGetValue(g.Key.MarcaTipoId, out var nt) ? nt : "-",
                         qtdPossui = g.Count(x => x.Possui),
-                        qtdFavorito = g.Count(x => x.Favorito),
+                        qtdInteresse = g.Count(x => x.Interesse),
                     })
                     .OrderByDescending(x => x.qtdPossui)
                     .Take(10)
@@ -647,7 +647,7 @@ namespace Aceca.Adm.Controllers
                             x.nomeFase,
                             x.tipo,
                             x.qtdPossui,
-                            x.qtdFavorito,
+                            x.qtdInteresse,
                             totalCatalogo,
                             percentPossui = totalCatalogo > 0 ? (int)Math.Round(100.0 * x.qtdPossui / totalCatalogo) : 0,
                         };

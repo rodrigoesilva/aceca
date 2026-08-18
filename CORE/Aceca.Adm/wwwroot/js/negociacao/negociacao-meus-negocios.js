@@ -459,13 +459,13 @@ function fn_FiltrarDados() {
                     };
 
                     if (idColecaoStatus < 3 && !full?.possui) {
-                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoFavorito');" class="btn btn-sm btn-icon btn-text-${(full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Meus Favoritos"><i class="ri-shield-star-line ri-22px"></i></a>`
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Meus Interesses"><i class="ri-shield-star-line ri-22px"></i></a>`
                     }
 
-                    if (idColecaoStatus < 3 && full?.favorito) {
-                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-${(!full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
+                    if (idColecaoStatus < 3 && full?.interesse) {
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-${(!full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
                     }
-                    //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoFavorito' : 'ColecaoFavorito')});" class="btn btn-sm btn-icon btn-text-${(full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Favorito' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
+                    //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoInteresse' : 'ColecaoInteresse')});" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Interesse' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
 
                     btn += '</div>'
 

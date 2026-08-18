@@ -48,7 +48,7 @@ function fn_GridColecao(dt_project_table) {
     // AuthController.GetTopFasesColecao - varItems_QtdPorPage aqui só controla quantas
     // dessas linhas são exibidas de uma vez, então mantenha >= ao Take() do backend).
     // Coleção = % de completude do catálogo (possui/total dessa Fase+Tipo). Status e
-    // Favoritos são badges com a quantidade bruta (possui/favorito) daquela Fase+Tipo.
+    // Interesses são badges com a quantidade bruta (possui/interesse) daquela Fase+Tipo.
     // --------------------------------------------------------------------
 
         var dt_project = dt_project_table.DataTable({
@@ -65,7 +65,7 @@ function fn_GridColecao(dt_project_table) {
                 { data: 'tipo' },
                 { data: 'percentPossui' },
                 { data: 'qtdPossui' },
-                { data: 'qtdFavorito' }
+                { data: 'qtdInteresse' }
             ],
             columnDefs: [
                 {
@@ -92,7 +92,7 @@ function fn_GridColecao(dt_project_table) {
                 {
                     // Tipo (maço, box, ...)
                     targets: 2,
-                    visible: false,
+                    //visible: false,
                     render: function (data, type, full, meta) {
                         return '<span class="text-heading">' + (full.tipo || '-') + '</span>';
                     }
@@ -113,11 +113,11 @@ function fn_GridColecao(dt_project_table) {
                     }
                 },
                 {
-                    // Favoritos (quantidade de favoritos dessa Fase+Tipo)
+                    // Interesses (quantidade de Interesse dessa Fase+Tipo)
                     targets: 5,
                     className: 'text-center',
                     render: function (data, type, full, meta) {
-                        return fn_RenderBadgeQtd(full.qtdFavorito, 'ri-shield-star-line', 'text-warning');
+                        return fn_RenderBadgeQtd(full.qtdInteresse, 'ri-shield-star-line', 'text-warning');
                     }
                 }
             ],

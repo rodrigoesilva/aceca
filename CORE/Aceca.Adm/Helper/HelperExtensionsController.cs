@@ -152,7 +152,7 @@ namespace Aceca.Adm.Helper
         {
             Cadastro = 0,
             EsqueceuSenha = 1,
-            ColecaoFavorito = 2,
+            ColecaoInteresse = 2,
             AcessoImagemIndevido = 3,
             FinanceiroPendente = 4
         }
@@ -161,7 +161,7 @@ namespace Aceca.Adm.Helper
         {
             ColecaoDelete = 0,
             ColecaoIncluir = 1,
-            ColecaoFavorito = 2,
+            ColecaoInteresse = 2,
             ColecaoNegociar = 3,
             ColecaoObs = 4,
         }
@@ -175,7 +175,7 @@ namespace Aceca.Adm.Helper
         public enum EColecaoStatus
         {
             [Description("Minha Coleção")] Possui = 1,
-            [Description("Meus Favoritos")] Favorito = 2,
+            [Description("Meus Interesses")] Interesse = 2,
             [Description("Para Negociação")] DisponivelNegocio = 3,
         }
         #endregion

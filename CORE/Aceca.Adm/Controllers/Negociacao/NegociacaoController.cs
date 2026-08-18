@@ -46,7 +46,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
         }
 
         // O socioId autenticado é usado só para marcar quais itens já estão na
-        // coleção do usuário logado (flags Possui/Favorito) - nunca vem do cliente.
+        // coleção do usuário logado (flags Possui/Interesse) - nunca vem do cliente.
         private int GetSocioIdAutenticado()
         {
             var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -115,8 +115,8 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         case EColecaoStatus.Possui:
                             sqlFrom.Append(" AND sc.possui = true");
                             break;
-                        case EColecaoStatus.Favorito:
-                            sqlFrom.Append(" AND sc.favorito = true");
+                        case EColecaoStatus.Interesse:
+                            sqlFrom.Append(" AND sc.interesse = true");
                             break;
                         case EColecaoStatus.DisponivelNegocio:
                             sqlFrom.Append(" AND sc.disponivel_negocio = true");
@@ -703,7 +703,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                             @ImgDefault) AS ImgDetalheFull,
 
                         COALESCE(sc.possui, 0) AS possui,
-                        COALESCE(sc.favorito, 0) AS favorito
+                        COALESCE(sc.interesse, 0) AS interesse
 
                     {sqlFrom}
 
@@ -945,7 +945,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 IActionResult response = Ok();
 
                 bool bDispoivelNegocio = false;
-                bool bFavorito = false;
+                bool bInteresse = false;
 
                 switch ((ENegociacaoAcao)actionId)
                 {
@@ -953,12 +953,12 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         //response = await RemoverItemAsync(itemColecaoId);
                         break;
                     case ENegociacaoAcao.NegociacaoSocio:
-                        //response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bFavorito, itemColecaoObs);
+                        //response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bInteresse, itemColecaoObs);
                         break;
                     case ENegociacaoAcao.NegociacaoAcervo:
                         {
-                            bFavorito = true;
-                            //response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bFavorito, itemColecaoObs);
+                            bInteresse = true;
+                            //response = await AdicionarOuAtualizarItemAsync(itemColecaoId, marcaId, socioId, bDispoivelNegocio, bInteresse, itemColecaoObs);
                         }
                         break;
                     default:

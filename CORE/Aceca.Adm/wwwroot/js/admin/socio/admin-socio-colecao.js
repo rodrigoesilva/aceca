@@ -471,13 +471,13 @@ function fn_FiltrarDados() {
                     };
 
                     if (idColecaoStatus < 3 && !full?.possui) {
-                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoFavorito');" class="btn btn-sm btn-icon btn-text-${(full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Meus Favoritos"><i class="ri-shield-star-line ri-22px"></i></a>`
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoInteresse');" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Meus Interesses"><i class="ri-shield-star-line ri-22px"></i></a>`
                     }
 
-                    if (idColecaoStatus < 3 && full?.favorito) {
-                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-${(!full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
+                    if (idColecaoStatus < 3 && full?.interesse) {
+                        btn += `<a href="javascript: fnItem_Colecao(${itemObjJson},'ColecaoIncluir');" class="btn btn-sm btn-icon btn-text-${(!full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="Incluir na Coleção"><i class="ri-mail-check-line ri-22px"></i></a>`
                     }
-                            //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoFavorito' : 'ColecaoIncluir')});" class="btn btn-sm btn-icon btn-text-${(full?.favorito ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Favorito' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
+                            //'<a href="javascript:fnItem_Colecao(${itemObjJson},${(idColecaoStatus < 0 ? 'ColecaoInteresse' : 'ColecaoIncluir')});" class="btn btn-sm btn-icon btn-text-${(full?.interesse ? 'success' : 'secondary')} rounded-pill waves-effect" data-bs-toggle="tooltip" title="${(idColecaoStatus < 0 ? 'Interesse' : 'Incluir na Coleção')}"><i class="${(idColecaoStatus < 0 ? 'ri - eye - line' : 'ri - mail - check - line')} ri-22px"></i></a>' +
                             
                     btn += '</div>'
 
@@ -1638,7 +1638,7 @@ $("#btnColecao_DadosCarregar").on("click", function () {
 function fn_ColecaoImportar_MontarTabelaResumo(d) {
     const linhas = [
         { qtd: d.qtdPossui ?? 0, texto: 'Incluído(s) na coleção', icone: 'ri-checkbox-circle-line', cor: 'text-success' },
-        { qtd: d.qtdFavorito ?? 0, texto: 'Favoritado(s)', icone: 'ri-checkbox-circle-line', cor: 'text-success' },
+        { qtd: d.qtdInteresse ?? 0, texto: 'Interesse(s)', icone: 'ri-checkbox-circle-line', cor: 'text-success' },
         { qtd: d.qtdJaExistente ?? 0, texto: 'Já existente(s) na coleção (não sobrescrito(s))', icone: 'ri-information-line', cor: 'text-info' },
         { qtd: d.qtdCodigoMudou ?? 0, texto: 'Encontrado(s) pela descrição (código mudou)', icone: 'ri-alert-line', cor: 'text-warning' },
         { qtd: d.qtdNaoEncontrado ?? 0, texto: 'Código(s) não encontrado(s)', icone: 'ri-close-circle-line', cor: 'text-danger' }

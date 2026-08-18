@@ -138,9 +138,9 @@ namespace Aceca.Adm.Controllers.Pages
                                 sqlFrom.Append(" AND sc.possui = true");
                             }
                             break;
-                        case EColecaoStatus.Favorito:
+                        case EColecaoStatus.Interesse:
                             {
-                                sqlFrom.Append(" AND sc.favorito  = true");
+                                sqlFrom.Append(" AND sc.interesse  = true");
                             }
                             break;
                         case EColecaoStatus.DisponivelNegocio:
@@ -304,7 +304,7 @@ namespace Aceca.Adm.Controllers.Pages
                         mf.id AS IdMarcaFase,
 
                         sc.possui, 
-                        sc.favorito,  
+                        sc.interesse,  
                         sc.disponivel_negocio,  
                         s.nome AS NomeSocio,
 
@@ -389,13 +389,6 @@ namespace Aceca.Adm.Controllers.Pages
         {
             try
             {
-                // actionId chega como o nome do membro do enum (ex.: "ColecaoFavorito"), não
-                // mais como número - o JS manda o mesmo texto usado nos data-attribute/CSS
-                // das telas, então não existe um segundo mapeamento texto->número duplicado
-                // em cada tela que precisaria ser mantido manualmente em sincronia com este
-                // enum (era exatamente esse mapeamento duplicado que, com o rename de
-                // Interesse para Favorito, gerou um "ColecaFavorito" digitado errado em uma
-                // das telas sem que nada avisasse).
                 if (!Enum.TryParse<EColecaoAcao>(actionId, ignoreCase: true, out var acao))
                     return BadRequest("ActionId inválido");
 
@@ -414,7 +407,7 @@ namespace Aceca.Adm.Controllers.Pages
                         response = await RemoverItemAsync(itemColecaoId, socioIdAutenticado);
                         break;
                     case EColecaoAcao.ColecaoIncluir:
-                    case EColecaoAcao.ColecaoFavorito:
+                    case EColecaoAcao.ColecaoInteresse:
                     case EColecaoAcao.ColecaoNegociar:
                     case EColecaoAcao.ColecaoObs:
                         response = await AdicionarOuAtualizarItemAsync(marcaId, socioIdAutenticado, acao, disponivelNegocio, itemColecaoObs);
@@ -449,7 +442,7 @@ namespace Aceca.Adm.Controllers.Pages
         }
 
         /// <summary>
-        /// Cada ação altera exclusivamente o seu próprio flag (Possui / Favorito / DisponivelNegocio).
+        /// Cada ação altera exclusivamente o seu próprio flag (Possui / Interesse / DisponivelNegocio).
         /// ColecaoObs apenas atualiza Observação/DisponivelNegocio (edição do modal), sem alternar
         /// nenhum outro estado da coleção.
         /// </summary>
@@ -470,7 +463,7 @@ namespace Aceca.Adm.Controllers.Pages
                         SocioId = socioId,
                         MarcaId = marcaId,
                         Possui = acao == EColecaoAcao.ColecaoIncluir,
-                        Favorito = acao == EColecaoAcao.ColecaoFavorito,
+                        Interesse = acao == EColecaoAcao.ColecaoInteresse,
                         DisponivelNegocio = acao == EColecaoAcao.ColecaoNegociar
                             || (acao == EColecaoAcao.ColecaoObs && disponivelNegocio),
                         Observacao = !string.IsNullOrWhiteSpace(itemColecaoObs) ? itemColecaoObs.Trim() : null
@@ -485,12 +478,12 @@ namespace Aceca.Adm.Controllers.Pages
                         case EColecaoAcao.ColecaoIncluir:
                             model.Possui = !model.Possui;
 
-                            // Ao incluir na coleção, o item deixa de estar como "Favorito".
+                            // Ao incluir na coleção, o item deixa de estar como "Interesse".
                             if (model.Possui)
-                                model.Favorito = false;
+                                model.Interesse = false;
                             break;
-                        case EColecaoAcao.ColecaoFavorito:
-                            // Item já incluído na coleção - não faz sentido marcar Favorito
+                        case EColecaoAcao.ColecaoInteresse:
+                            // Item já incluído na coleção - não faz sentido marcar Interesse
                             // nele. Bloqueia antes de tocar no registro.
                             if (model.Possui)
                             {
@@ -502,7 +495,7 @@ namespace Aceca.Adm.Controllers.Pages
                                 });
                             }
 
-                            model.Favorito = !model.Favorito;
+                            model.Interesse = !model.Interesse;
                             break;
                         case EColecaoAcao.ColecaoNegociar:
                             model.DisponivelNegocio = !model.DisponivelNegocio;
@@ -686,7 +679,7 @@ namespace Aceca.Adm.Controllers.Pages
         /// <summary>
         /// Processa de fato a planilha validada por ValidarPlanilhaColecao/AbrirEValidarPlanilhaColecao:
         /// coluna A (TenhoNaColecao) marcada com "S"/"Sim" inclui o item na coleção (Possui=true);
-        /// coluna B (TenhoInteresse) marca como favorito (Favorito=true). A coluna C (CodigoACECA)
+        /// coluna B (TenhoInteresse) marca como interesse (Interesse=true). A coluna C (CodigoACECA)
         /// é comparada contra Marcas.CodigoAceca/CodigoAcecaNew para achar o MarcaId correspondente -
         /// códigos não encontrados são apenas contados e reportados, sem interromper o restante do
         /// processamento.
@@ -757,12 +750,12 @@ namespace Aceca.Adm.Controllers.Pages
                         .ToDictionaryAsync(sc => sc.MarcaId!.Value);
 
                     var qtdPossui = 0;
-                    var qtdFavorito = 0;
+                    var qtdInteresse = 0;
                     var qtdJaExistente = 0;
                     var qtdNaoEncontrado = 0;
                     var qtdCodigoMudou = 0;
 
-                    bool AplicarItem(int marcaId, bool possui, bool favorito)
+                    bool AplicarItem(int marcaId, bool possui, bool interesse)
                     {
                         if (colecaoExistente.ContainsKey(marcaId))
                             return false;
@@ -772,7 +765,7 @@ namespace Aceca.Adm.Controllers.Pages
                             SocioId = socioIdAutenticado,
                             MarcaId = marcaId,
                             Possui = possui,
-                            Favorito = favorito,
+                            Interesse = interesse,
                             DisponivelNegocio = false,
                             Observacao = null,
                             Ativo = true
@@ -822,15 +815,15 @@ namespace Aceca.Adm.Controllers.Pages
                         // incluído pela primeira e o conte erroneamente como "já existente".
                         if (tenhoNaColecao)
                         {
-                            if (AplicarItem(marcaId, possui: true, favorito: false))
+                            if (AplicarItem(marcaId, possui: true, interesse: false))
                                 qtdPossui++;
                             else
                                 qtdJaExistente++;
                         }
                         else if (tenhoInteresse)
                         {
-                            if (AplicarItem(marcaId, possui: false, favorito: true))
-                                qtdFavorito++;
+                            if (AplicarItem(marcaId, possui: false, interesse: true))
+                                qtdInteresse++;
                             else
                                 qtdJaExistente++;
                         }
@@ -854,7 +847,7 @@ namespace Aceca.Adm.Controllers.Pages
                             {
                                 totalLinhas = ultimaLinha - 1,
                                 qtdPossui,
-                                qtdFavorito,
+                                qtdInteresse,
                                 qtdJaExistente,
                                 qtdNaoEncontrado,
                                 qtdCodigoMudou
@@ -875,7 +868,7 @@ namespace Aceca.Adm.Controllers.Pages
 
         /// <summary>
         /// Ação em massa (checkboxes marcados na grid): marca os itens selecionados como
-        /// "possuo" (Possui=true, Favorito=false, Ativo=true). Só afeta linhas que já
+        /// "possuo" (Possui=true, Interesse=false, Ativo=true). Só afeta linhas que já
         /// pertencem ao sócio autenticado - os ids vêm do cliente, então nunca são confiáveis
         /// sozinhos (IDOR).
         /// </summary>
@@ -902,7 +895,7 @@ namespace Aceca.Adm.Controllers.Pages
                 foreach (var item in itens)
                 {
                     item.Possui = true;
-                    item.Favorito = false;
+                    item.Interesse = false;
                     item.Ativo = true;
                 }
 
