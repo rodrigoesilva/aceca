@@ -814,7 +814,7 @@ namespace Aceca.Adm.Controllers
                     {
                         bResult = false,
                         type = "ERRO",
-                        message = "Login bloqueado por tentativas repetidas de captura de tela. Aguarde contato da administração para liberação."
+                        message = "Login bloqueado por tentativas repetidas de ação indevida. Aguarde contato da administração para liberação."
                     });
 
                 if (user.BloqueadoAte.HasValue && user.BloqueadoAte.Value > DateTime.UtcNow)
@@ -824,7 +824,7 @@ namespace Aceca.Adm.Controllers
                     {
                         bResult = false,
                         type = "ERRO",
-                        message = $"Login bloqueado temporariamente por tentativa de captura de tela. Tente novamente em {minutosRestantes} minuto(s)."
+                        message = $"Login bloqueado temporariamente por tentativa de ação indevida. Tente novamente mais tarde."
                     });
                 }
 

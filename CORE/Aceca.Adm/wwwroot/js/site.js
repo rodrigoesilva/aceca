@@ -284,7 +284,7 @@ function fn_ImageProtect() {
         Swal.fire({
             icon: 'error',
             title: 'Sessão encerrada',
-            html: 'Foi detectada uma tentativa de captura de tela.<br>Por segurança, sua sessão foi encerrada e o login ficará bloqueado por <b>5 minutos</b>.',
+            html: 'Foi detectada uma tentativa de ação indevida.<br>Por segurança, sua sessão foi encerrada e o login ficará bloqueado temporariamente.',
             allowOutsideClick: false,
             allowEscapeKey: false,
             confirmButtonText: '<i class="ri-check-line"></i>&nbsp;Entendi'
