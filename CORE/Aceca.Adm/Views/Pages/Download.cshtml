@@ -61,8 +61,12 @@
 
 @section PageScripts {
 
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js" defer></script>
+    <!-- Versão fixada em 4.6.13 pra bater com o core local (vendor/libs/flatpickr/flatpickr.js) -
+         sem isso, o CDN serve sempre a versão mais recente do pacote, que pode ficar
+         incompatível com o core antigo e quebrar o bindEvents do plugin (mesmo problema já
+         visto com a extensão Responsive do DataTables - ver commit 9b2fcca). -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/pt.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/plugins/monthSelect/index.js" defer></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js" defer></script>
 
