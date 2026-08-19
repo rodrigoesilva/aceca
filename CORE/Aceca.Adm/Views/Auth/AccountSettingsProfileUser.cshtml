@@ -18,6 +18,14 @@
     </style>
 }
 
+@section VendorStyles {
+    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css" />
+}
+
+@section VendorScripts {
+    <script src="~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js" defer></script>
+}
+
 @section PageScripts {
     <script src="~/js/auth/pages-auth-account-settings-user.js" asp-append-version="true" defer></script>
 }
@@ -63,7 +71,7 @@
 <!-- User Profile Content -->
 <div class="row">
     <!-- Sobre User -->
-    <div id="div_sobre" class="col-xl-4 col-lg-4 col-md-4">
+    <div id="div_sobre" class="col-xl-3 col-lg-3 col-md-3">
         <div class="card card-action mb-6 h-100">
             <div class="card-header align-items-center">
                 <h5 class="card-action-title mb-0"><i class='ri-questionnaire-line ri-24px text-body me-4'></i>Sobre</h5>
@@ -98,7 +106,7 @@
     </div>
 
     <!--/ Actividade Login -->
-    <div id="div_atividade" class="col-xl-4 col-lg-4 col-md-4">
+    <div id="div_atividade" class="col-xl-3 col-lg-3 col-md-3">
         <div class="card card-action mb-6 h-100">
             <div class="card-header align-items-center">
                 <h5 class="card-action-title mb-0"><i class='ri-bar-chart-2-line ri-24px text-body me-4'></i>Atividade</h5>
@@ -177,7 +185,7 @@
     </div>
 
     <!--/ Grid Colecao -->
-    <div id="div_grid_colecao" class="col-xl-4 col-lg-4 col-md-4">
+    <div id="div_grid_colecao" class="col-xl-6 col-lg-6 col-md-6">
         <div class="card card-action mb-6 h-100">
             <div class="card-header align-items-center">
                 <h5 class="card-action-title mb-0"><i class='ri-archive-line ri-24px text-body me-4'></i>Coleção</h5>
@@ -190,9 +198,9 @@
                             <th></th>
                             <th>Fase</th>
                             <th>Tipo</th>
-                            <th>Coleção</th>
-                            <th>Status</th>
-                            <th>Interesses</th>
+                            <th>Status da Minha Coleção</th>
+                            <th>Tenho</th>
+                            <th>Meus Interesses</th>
                         </tr>
                     </thead>
                 </table>

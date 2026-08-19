@@ -139,6 +139,18 @@ function fn_GridColecao(dt_project_table) {
             lengthMenu: varItems_DivPage,
             info: false,
             searching: false,
+            // Responsive: sem isso, a tabela só estourava a largura (scroll horizontal)
+            // no mobile - a coluna "control" (target 0) e os responsivePriority acima já
+            // estavam prontos pra isso, só faltava ligar a extensão (ver VendorStyles/
+            // VendorScripts em AccountSettingsProfileUser.cshtml). Colunas de menor
+            // prioridade (Tipo, % Coleção) somem primeiro e viram uma lista de detalhes
+            // ao clicar no "+" da 1ª coluna.
+            responsive: {
+                details: {
+                    type: 'column',
+                    target: 0
+                }
+            },
             language: {
                 emptyTable: 'Nenhum item na coleção'
             }
