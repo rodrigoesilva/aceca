@@ -71,7 +71,7 @@
                 </div>
             </a>
             <ul class="dropdown-menu dropdown-menu-end mt-3 py-2">
-                <li>
+                <li id="limenu-avatr">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0 me-2">
                             <div class="avatar avatar-online">
@@ -87,26 +87,36 @@
                 <li>
                     <div class="dropdown-divider"></div>
                 </li>
-                <li>
-                    <a class="dropdown-item" asp-controller="Auth" asp-action="AccountSettingsProfileUser">
-                        <i class="ri-user-3-line ri-22px me-2"></i>
-                        <span class="align-middle">Meu Perfil</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" asp-controller="Auth" asp-action="AccountSettings">
-                        <i class="ri-settings-4-line ri-22px me-2"></i>
-                        <span class="align-middle">Meus Dados</span>
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" asp-controller="Auth" asp-action="AccountSettingsBilling">
-                        <span class="d-flex align-items-center align-middle">
-                            <i class="flex-shrink-0 ri-file-text-line ri-22px me-3"></i>
-                            <span class="flex-grow-1 align-middle">Financeiro</span>
-                        </span>
-                    </a>
-                </li>
+
+                @{
+                    // Por enquanto, exibidos só para o perfil Administração - mesmo flag
+                    // (TempData "isPerfil") já usado no topo deste arquivo para diferenciar
+                    // o "Ambiente de Administração/Sócio" na marca.
+                    var isAdministracao = Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True";
+                }
+                @if (isAdministracao)
+                {
+                    <li id="limenu-meu-perfil">
+                        <a class="dropdown-item" asp-controller="Auth" asp-action="AccountSettingsProfileUser">
+                            <i class="ri-user-3-line ri-22px me-2"></i>
+                            <span class="align-middle">Meu Perfil</span>
+                        </a>
+                    </li>
+                    <li id="limenu-meus-dados">
+                        <a class="dropdown-item" asp-controller="Auth" asp-action="AccountSettings">
+                            <i class="ri-settings-4-line ri-22px me-2"></i>
+                            <span class="align-middle">Meus Dados</span>
+                        </a>
+                    </li>
+                    <li id="limenu-financeiro">
+                        <a class="dropdown-item" asp-controller="Auth" asp-action="AccountSettingsBilling">
+                            <span class="d-flex align-items-center align-middle">
+                                <i class="flex-shrink-0 ri-file-text-line ri-22px me-3"></i>
+                                <span class="flex-grow-1 align-middle">Financeiro</span>
+                            </span>
+                        </a>
+                    </li>
+                }
 
                 <!--
                 <li hidden="hidden">
@@ -126,7 +136,7 @@
                 </li>
 
                 -->
-                <li>
+                <li id="limenu-sair">
                     <div class="d-grid px-4 pt-2 pb-1">
                         <button type="button" class="btn btn-danger btn-logout d-flex waves-effect waves-light">
                             <span class="icon-base ri ri-logout-box-r-line ms-2 icon-16px"></span>Sair
