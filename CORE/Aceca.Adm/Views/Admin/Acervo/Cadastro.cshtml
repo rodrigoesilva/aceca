@@ -3,6 +3,12 @@
 
 @{
     Layout = $"~/Views/Shared/{(Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True" ? "_HorizontalLayout" : "_WithoutMenuLayout")}.cshtml";
+
+    // Ver Helper/AssetUrlHelper.cs - dentro de @section, só a 1ª tag "~/" resolve
+    // corretamente, mesmo com asp-append-version - as demais ficam com "~/" literal
+    // (admin-acervo-cadastro.js era a 2ª tag real aqui, atrás de forms-selects.js).
+    var urlFormsSelects = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/forms-selects.js");
+    var urlAdminAcervoCadastro = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/admin/acervo/admin-acervo-cadastro.js");
 }
 
 @section VendorStyles {
@@ -12,11 +18,10 @@
 }
 
 @section PageScripts {
-    @* <script src="~/js/form-validation.js" asp-append-version="true" defer></script> *@    
     <!-- Select Dropdownlist -->
-    <script src="~/js/forms-selects.js" asp-append-version="true" defer></script>
+    <script src="@urlFormsSelects" defer></script>
 
-    <script src="~/js/admin/acervo/admin-acervo-cadastro.js" asp-append-version="true" defer></script>
+    <script src="@urlAdminAcervoCadastro" defer></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.js" defer></script>
 }

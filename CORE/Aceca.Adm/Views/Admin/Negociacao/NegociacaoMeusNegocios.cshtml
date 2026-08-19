@@ -16,14 +16,19 @@
     // isso que aconteceu na atualização 2.1.0 -> 3.0.8 do Responsive).
     var urlResponsiveCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css");
     var urlResponsiveJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js");
+
+    // Mesmo bug: só a 1ª tag "~/" de uma @section resolve corretamente, mesmo com
+    // asp-append-version - as demais ficam com "~/" literal (zoom.css era a 2ª aqui).
+    var urlRowGroupCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css");
+    var urlZoomCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/zoom.css");
 }
 
 @section VendorStyles {
     <!-- Row Group CSS -->
-    <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
+    <link rel="stylesheet" href="@urlRowGroupCss">
 
     <!-- CSS PAGE -->
-    <link rel="stylesheet" href="~/css/zoom.css" asp-append-version="true">
+    <link rel="stylesheet" href="@urlZoomCss">
 
     <link rel="stylesheet" href="@urlResponsiveCss" />
 }
