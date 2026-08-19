@@ -70,6 +70,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 INNER JOIN socio_contato sc ON s.id = sc.SocioId
                 INNER JOIN socio_endereco se ON s.id = se.SocioId
                 INNER JOIN socio_perfil sp ON s.socioPerfilId = sp.id
+                LEFT JOIN socio_seguranca sg ON s.id = sg.SocioId
                 WHERE 1=1
                 ");
 
@@ -122,7 +123,10 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         sa.id AS SocioAniversarioId,
                         sa.dia AS Dia,
                         sa.mes AS Mes,
-                        sa.ano AS Ano
+                        sa.ano AS Ano,
+
+                        sg.bloqueado AS Bloqueado,
+                        sg.qtd_infracoes_print AS QtdInfracoesPrint
 
                     {sqlFrom}
 
@@ -455,7 +459,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(VMSocio model)
+        public async Task<IActionResult> Edit(VMSocio model, bool? bloqueado)
         {
             try
             {
@@ -494,6 +498,32 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     await _db.SaveChangesAsync();
 
                     model.Id = newModel?.Id;
+
+                    #endregion
+
+                    #region SocioSeguranca (Bloqueado)
+
+                    // Mesmo campo/regra da tela Sócio > Segurança (SocioSegurancaController.Edit) -
+                    // duplicado aqui pra não obrigar trocar de tela só pra bloquear/liberar.
+                    // Ao liberar, zera o contador e o bloqueio temporário também, dando um
+                    // recomeço limpo (senão a próxima tentativa já bloqueia de novo direto).
+                    if (bloqueado.HasValue)
+                    {
+                        var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(s => s.SocioId == model.Id);
+
+                        if (seguranca != null)
+                        {
+                            seguranca.Bloqueado = bloqueado.Value;
+
+                            if (!bloqueado.Value)
+                            {
+                                seguranca.QtdInfracoesPrint = 0;
+                                seguranca.BloqueadoAte = null;
+                            }
+
+                            await _db.SaveChangesAsync();
+                        }
+                    }
 
                     #endregion
 

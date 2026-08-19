@@ -545,6 +545,13 @@ function fn_Pop(obj, action) {
         (popAddNewItem.querySelector('.dt-line-11').value = (obj === null ? '' : fn_FormataDataAniversario(obj.Dia, obj.Mes, obj.Ano))),
         (popAddNewItem.querySelector('.dt-line-12').checked = (obj === null ? true : obj.SocioAtivo));
         (popAddNewItem.querySelector('.dt-line-13').checked = (obj === null ? true : obj.MostrarSite));
+        (popAddNewItem.querySelector('.dt-line-14').checked = (obj === null ? false : obj.Bloqueado));
+
+    // Contador de tentativas de captura de tela - só contexto pra decidir se libera; o
+    // campo em si (checkbox acima) é quem efetivamente desbloqueia.
+    document.getElementById('lblQtdInfracoesPrint').textContent = (obj === null || !obj.QtdInfracoesPrint)
+        ? ''
+        : `${obj.QtdInfracoesPrint} tentativa(s) registrada(s)`;
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');
@@ -582,7 +589,8 @@ function fn_PopGetObj() {
         DataAniversario: $('.form-add-new-item .dt-line-11').val(),
         Ativo: $('.form-add-new-item .dt-line-12').is(':checked'),
         MostrarSite: $('.form-add-new-item .dt-line-13').is(':checked'),
-        
+        Bloqueado: $('.form-add-new-item .dt-line-14').is(':checked'),
+
         SocioEstadoId: $('#cmb_SocioEstado').val(),
         SocioContatoId: $('#hdSocioContatoId').val(),
         SocioEnderecoId: $('#hdSocioEnderecoId').val(),
