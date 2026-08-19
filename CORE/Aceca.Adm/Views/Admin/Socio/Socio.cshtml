@@ -149,18 +149,28 @@
                 </div>
             </div>
 
-            <div class="div-status-exibir d-sm-flex mt-n1 mb-n5">
-                <div class="row g-0">
-                    <div class="col-md p-6 ms-8 me-12">
+            <div class="div-status-exibir-bloq mt-n1 mb-n5">
+                <div class="row g-2">
+                    <div class="div-ativo col-4">
                         <div class="form-check form-switch mb-2">
                             <input type="checkbox" id="pop_line_item_12" class="form-check-input dt-line-12"
                                    name="pop_line_item_12" placeholder="Ativo" aria-label="Ativo"
                                    aria-describedby="line_item_12" />
                             <label class="form-check-label" for="pop_line_item_12">Ativo</label>
                         </div>
-
                     </div>
-                    <div class="col-md p-6">
+                    <div class="div-bloqueado col-4">
+                        <div class="form-check form-switch mb-2">
+                            <input type="checkbox" id="pop_line_item_14" class="form-check-input dt-line-14"
+                                   name="pop_line_item_14" placeholder="Bloqueado" aria-label="Bloqueado" />
+                            <label class="form-check-label" for="pop_line_item_14">
+                                Block Prints
+                                <small class="d-block text-muted" id="lblQtdInfracoesPrint"></small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="div-exibir col-4">
                         <div class="form-check form-switch mb-2">
                             <input type="checkbox" id="pop_line_item_13" class="form-check-input dt-line-13"
                                    name="pop_line_item_13" placeholder="MostrarSite" aria-label="MostrarSite"
@@ -171,16 +181,7 @@
                 </div>
             </div>
 
-            <div class="div-bloqueado mb-2 ms-8">
-                <div class="form-check form-switch mb-2">
-                    <input type="checkbox" id="pop_line_item_14" class="form-check-input dt-line-14"
-                           name="pop_line_item_14" placeholder="Bloqueado" aria-label="Bloqueado" />
-                    <label class="form-check-label" for="pop_line_item_14">
-                        Bloqueado (captura de tela) &mdash;
-                        <small class="text-muted" id="lblQtdInfracoesPrint"></small>
-                    </label>
-                </div>
-            </div>
+           
 
             <div class="div-botoes text-center">
                 <button type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
