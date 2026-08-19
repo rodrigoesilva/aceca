@@ -72,6 +72,11 @@ function fn_GridList(formValid) {
             scrollCollapse: true,
             ordering: true,
             destroy: true,
+            // autoWidth:true (padrão) trava a largura de cada coluna via estilo inline,
+            // impedindo o Responsive de recalcular colunas ocultas/visíveis no mobile -
+            // mesmo problema já corrigido em Acervo/Listagem e no grid de Coleção do perfil.
+            autoWidth: false,
+            scrollX: false,
 
             ajax: {
                 crossDomain: true,
@@ -84,12 +89,16 @@ function fn_GridList(formValid) {
                 }
             },
             columnDefs: [
-                // COLUNA - Responsive
+                // COLUNA - Responsive (visível e vazia - com visible:false o Responsive
+                // nunca conseguia clicar pra expandir no mobile, já que não existe td
+                // renderizado pra essa coluna. Mesmo padrão de Acervo/Listagem etc.)
                 {
                     data: 'id',
                     targets: 0,
                     className: 'control',
-                    visible: false,
+                    width: '1%',
+                    searchable: false,
+                    orderable: false,
                     render: function (data, type, full, meta) {
                         return '';
                     }

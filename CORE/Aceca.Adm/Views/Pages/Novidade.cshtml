@@ -15,6 +15,27 @@
     var urlResponsiveJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js");
 }
 
+@section PageStyles {
+    <style>
+        /* Mobile: coluna Marca (NomeMarca, priority 3) estourava a largura da tela na
+           linha "colapsada" do Responsive quando o nome era longo (ex: "COMBATE SLIM
+           UVA CAPSULE PITEIRA"), gerando scroll horizontal na página inteira. Acervo/
+           Listagem (mesma extensão/config) não sofre isso por acaso - nomes testados lá
+           não chegaram a ser tão longos. Corrige forçando quebra de linha em vez de
+           deixar o texto empurrar a coluna pra fora da viewport. */
+        #tblNovidade,
+        #tblNovidade td,
+        #tblNovidade th {
+            max-width: 100%;
+        }
+
+        #tblNovidade td {
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+    </style>
+}
+
 @section VendorStyles {
 
     <!-- Row Group CSS -->
@@ -147,7 +168,7 @@
 @*************** Content List Table ************** *@
 <div class="card">
     <div class="card-datatable table-responsive pt-0">
-        <table class="datatables-basic table table-hover display responsive" width="100%">
+        <table id="tblNovidade" class="datatables-basic table table-hover display responsive" width="100%">
             <thead>
                 <tr>
                     <th></th>

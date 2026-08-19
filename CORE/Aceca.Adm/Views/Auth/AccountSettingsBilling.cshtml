@@ -1,22 +1,16 @@
 @{
     ViewData["Title"] = "Account settings - Pages";
-
-    // Cache-busting manual (Program.cs aplica Cache-Control: max-age=604800 em TODO
-    // arquivo estático) - sem isso, o navegador continua servindo a versão antiga do
-    // vendor em cache mesmo depois do arquivo ser atualizado no servidor (foi exatamente
-    // isso que aconteceu na atualização 2.1.0 -> 3.0.8 do Responsive).
-    var urlResponsiveBs5Css = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css");
 }
 
 @section VendorStyles {
-    <link rel="stylesheet" href="~/vendor/libs/select2/select2.css" />
-    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
+    <!-- select2/form-validation/sweetalert2/datatables-bs5/buttons/checkboxes/responsive já
+         vêm de _Styles.cshtml (centralizado ali pra não precisar repetir em cada view - ver
+         comentário lá) - reafirmar aqui só duplicava o carregamento e, pior, quebrava a
+         resolução de "~/" de 2 dessas tags nesse @@section (bug conhecido do Razor: uma tag
+         com expressão C# no meio de tags "~/" estáticas corrompe a Tag Helper das vizinhas -
+         ver Helper/AssetUrlHelper.cs). animate-css é o único vendor daqui que não está no
+         global, por isso é o único que continua declarado nesta página. -->
     <link rel="stylesheet" href="~/vendor/libs/animate-css/animate.css" />
-    <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
-    <link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css">
-    <link rel="stylesheet" href="@urlResponsiveBs5Css">
-    <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css">
-    <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
     <style>
         /* Pix e Cartão ficam empilhados na mesma célula do grid (em vez de d-none), pra
            altura do card não pular ao trocar o rádio - o grid sempre dimensiona a célula
@@ -151,12 +145,12 @@
                                                     <label>.</label>
                                                 </div>
                                             </div>
-                                            <div class="col-12 mt-6 d-flex align-items-center gap-4">
+                                            <div class="col-12 mt-6 d-flex flex-column flex-sm-row align-items-center gap-4">
                                                 <div>
                                                     <button type="submit" class="btn btn-primary me-sm-3 me-1">Pagar</button>
                                                     <button type="reset" class="btn btn-outline-secondary">Cancelar</button>
                                                 </div>
-                                                <div id="div_logopix" class="ms-auto">
+                                                <div id="div_logopix" class="ms-sm-auto">
                                                     <img src="~/img/icons/payments/logo_pix.png" alt="Pix powered by Banco Central" style="max-height: 48px;">
                                                 </div>
                                             </div>
