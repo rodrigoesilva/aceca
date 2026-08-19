@@ -69,6 +69,8 @@ function fn_GridList(formValid) {
             scrollCollapse: true,
             ordering: true,
             destroy: true,
+            autoWidth: false,
+            scrollX: false,
 
             ajax: {
                 url: varAjax_UrlController,
@@ -105,7 +107,9 @@ function fn_GridList(formValid) {
                     data: 'Id',
                     targets: 0,
                     className: 'control',
-                    visible: false,
+                    width: '1%',
+                    searchable: false,
+                    orderable: false,
                     render: function (data, type, full, meta) {
                         return '';
                     }
@@ -206,7 +210,7 @@ function fn_GridList(formValid) {
                 },
                 // COLUNA - Status
                 {
-                    targets: -2,
+                    targets: 7,
                     data: 'SocioAtivo',
                     render: function (data, type, full, meta) {
 
@@ -230,6 +234,27 @@ function fn_GridList(formValid) {
                         }
 
                         return data;
+                    }
+                },
+                // COLUNA - Bloqueio (tentativas de captura de tela - ver ReportImageAccess/Login)
+                {
+                    targets: -2,
+                    data: 'QtdInfracoesPrint',
+                    className: "text-center",
+                    render: function (data, type, full) {
+                        if (type !== 'display') return data || 0;
+
+                        const qtd = data || 0;
+
+                        if (full.Bloqueado) {
+                            return '<span class="badge rounded-pill bg-label-danger" title="Bloqueado após ' + qtd + ' tentativa(s) de captura de tela - aguardando liberação da administração">Bloqueado</span>';
+                        }
+
+                        if (qtd > 0) {
+                            return '<span class="badge rounded-pill bg-label-warning" title="' + qtd + ' tentativa(s) de captura de tela registrada(s)">' + qtd + '</span>';
+                        }
+
+                        return '<span class="text-muted">-</span>';
                     }
                 },
                 // COLUNA - Botoes Acoes
