@@ -5,34 +5,55 @@
 @section PageStyles {
     <link rel="stylesheet" href="~/vendor/css/pages/page-profile.css" />
     <style>
-        /* Coluna "control" do grid de Coleção fica vazia (sem ícone de expandir) - o tema
-           força padding-left/right: 1.25rem tanto no th quanto no td dessa 1ª coluna
-           (div.card-datatable table.dataTable thead th:first-child / tbody td:first-child),
-           o que empurra a coluna Fase pra direita sem necessidade. */
+        /* Coluna "control" (1ª, vazia) do grid de Coleção - sem uso agora que o mobile é
+           resolvido via CSS puro abaixo (ver bloco @@media), então fica sempre oculta. */
         #tblColecaoTopFases thead th:first-child,
-        #tblColecaoTopFases tbody td.control {
-            padding-left: 0.1rem !important;
-            padding-right: 0 !important;
-            width: 1% !important;
+        #tblColecaoTopFases tbody td:first-child {
+            display: none !important;
+        }
+
+        /* Mobile: em vez de depender da extensão DataTables Responsive (já causou
+           incompatibilidade de versão com o DataTables core do projeto - ver commit
+           9b2fcca), empilha cada linha em formato de cartão via CSS puro. Solução
+           independente de qualquer lib/versão, então não quebra de novo. */
+        @@media (max-width: 575.98px) {
+            #tblColecaoTopFases thead {
+                display: none;
+            }
+
+            #tblColecaoTopFases,
+            #tblColecaoTopFases tbody,
+            #tblColecaoTopFases tr,
+            #tblColecaoTopFases td {
+                display: block;
+                width: 100% !important;
+            }
+
+            #tblColecaoTopFases tr {
+                margin-bottom: 0.75rem;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 0.5rem 0.75rem;
+            }
+
+            #tblColecaoTopFases td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.35rem 0 !important;
+                border: none !important;
+                text-align: right;
+            }
+
+            #tblColecaoTopFases td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #566a7f;
+                text-align: left;
+            }
         }
     </style>
-}
-
-@{
-    // Cache-busting manual (Program.cs aplica Cache-Control: max-age=604800 em TODO
-    // arquivo estático) - sem isso, o navegador continua servindo a versão antiga do
-    // vendor em cache mesmo depois do arquivo ser atualizado no servidor. Ver
-    // Helper/AssetUrlHelper.cs.
-    var urlResponsiveCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css");
-    var urlResponsiveJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js");
-}
-
-@section VendorStyles {
-    <link rel="stylesheet" href="@urlResponsiveCss" />
-}
-
-@section VendorScripts {
-    <script src="@urlResponsiveJs" defer></script>
 }
 
 @section PageScripts {

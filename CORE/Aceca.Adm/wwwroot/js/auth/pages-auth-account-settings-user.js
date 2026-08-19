@@ -69,23 +69,23 @@ function fn_GridColecao(dt_project_table) {
             ],
             columnDefs: [
                 {
-                    // For Responsive - padding da célula reduzido via CSS em
-                    // AccountSettingsProfileUser.cshtml (#tblColecaoTopFases tbody td.control)
-                    className: 'control',
-                    width: '1%',
+                    // Coluna vazia (some via CSS - #tblColecaoTopFases tbody td:first-child
+                    // em AccountSettingsProfileUser.cshtml). Mantida só pra não precisar
+                    // renumerar os targets abaixo.
                     searchable: false,
                     orderable: false,
-                    responsivePriority: 2,
                     targets: 0,
                     render: function (data, type, full, meta) {
                         return '';
                     }
                 },
                 {
-                    // Nome da fase
+                    // Nome da fase - data-label usado pelo layout em cartão no mobile
+                    // (CSS td::before { content: attr(data-label) } em
+                    // AccountSettingsProfileUser.cshtml)
                     targets: 1,
                     orderable: false,
-                    responsivePriority: 1,
+                    createdCell: function (td) { $(td).attr('data-label', 'Fase'); },
                     render: function (data, type, full, meta) {
                         return '<span class="text-truncate fw-medium text-heading">' + (full.nomeFase || '-') + '</span>';
                     }
@@ -94,7 +94,7 @@ function fn_GridColecao(dt_project_table) {
                     // Tipo (maço, box, ...)
                     targets: 2,
                     orderable: false,
-                    //visible: false,
+                    createdCell: function (td) { $(td).attr('data-label', 'Tipo'); },
                     render: function (data, type, full, meta) {
                         return '<span class="text-heading">' + (full.tipo || '-') + '</span>';
                     }
@@ -103,6 +103,7 @@ function fn_GridColecao(dt_project_table) {
                     // Coleção (% do catálogo dessa Fase+Tipo que o sócio possui)
                     targets: 3,
                     orderable: false,
+                    createdCell: function (td) { $(td).attr('data-label', 'Status da Minha Coleção'); },
                     render: function (data, type, full, meta) {
                         return fn_RenderProgressoColecao(full.percentPossui, full.qtdPossui, full.totalCatalogo);
                     }
@@ -113,6 +114,7 @@ function fn_GridColecao(dt_project_table) {
                     targets: 4,
                     className: 'text-center',
                     orderable: false,
+                    createdCell: function (td) { $(td).attr('data-label', 'Tenho'); },
                     render: function (data, type, full, meta) {
                         return fn_RenderBadgeQtd(full.qtdPossui, 'ri-checkbox-circle-line', 'text-success');
                     }
@@ -122,6 +124,7 @@ function fn_GridColecao(dt_project_table) {
                     targets: 5,
                     className: 'text-center',
                     orderable: false,
+                    createdCell: function (td) { $(td).attr('data-label', 'Meus Interesses'); },
                     render: function (data, type, full, meta) {
                         return fn_RenderBadgeQtd(full.qtdInteresse, 'ri-shield-star-line', 'text-warning');
                     }
@@ -146,42 +149,10 @@ function fn_GridColecao(dt_project_table) {
             lengthMenu: varItems_DivPage,
             info: false,
             searching: false,
-            // Responsive: sem isso, a tabela só estourava a largura (scroll horizontal)
-            // no mobile - a coluna "control" (target 0) e os responsivePriority acima já
-            // estavam prontos pra isso, só faltava ligar a extensão (ver VendorStyles/
-            // VendorScripts em AccountSettingsProfileUser.cshtml). Colunas de menor
-            // prioridade (Tipo, % Coleção) somem primeiro.
-            //
-            // renderer customizado (em vez do padrão da extensão) - o vendor
-            // dataTables.responsive.js aqui é a versão 2.1.0 (2014-2016), de antes do
-            // DataTables 2.x usado no projeto; o renderer padrão (lista automática de
-            // colunas ocultas) não expande direito nessa combinação de versões - mesmo
-            // motivo pelo qual Acervo/Listagem (admin-acervo-listagem.js) também usa
-            // renderer próprio em vez do padrão.
-            responsive: {
-                details: {
-                    type: 'column',
-                    target: 0,
-                    renderer: function (api, rowIdx) {
-                        var full = api.row(rowIdx).data();
-
-                        var linhas = [
-                            ['Status da Minha Coleção', fn_RenderProgressoColecao(full.percentPossui, full.qtdPossui, full.totalCatalogo)],
-                            ['Tenho', fn_RenderBadgeQtd(full.qtdPossui, 'ri-checkbox-circle-line', 'text-success')],
-                            ['Meus Interesses', fn_RenderBadgeQtd(full.qtdInteresse, 'ri-shield-star-line', 'text-warning')]
-                        ];
-
-                        var html = '<div class="p-2">' + linhas.map(function (linha) {
-                            return '<div class="d-flex justify-content-between align-items-center py-1 gap-3">' +
-                                '<span class="fw-medium text-heading">' + linha[0] + '</span>' +
-                                linha[1] +
-                                '</div>';
-                        }).join('') + '</div>';
-
-                        return $(html);
-                    }
-                }
-            },
+            // Mobile resolvido via CSS puro (ver @@media em AccountSettingsProfileUser.cshtml),
+            // empilhando cada linha em formato de cartão - sem depender da extensão DataTables
+            // Responsive, que já causou incompatibilidade de versão com o DataTables core do
+            // projeto (ver commit 9b2fcca) e não vale a pena pra um grid pequeno como este.
             language: {
                 emptyTable: 'Nenhum item na coleção'
             }
