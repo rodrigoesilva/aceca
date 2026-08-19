@@ -44,6 +44,28 @@
             word-break: break-word;
             overflow-wrap: anywhere;
         }
+
+        /* Mobile: com só 3 colunas visíveis (control/Cód. ACECA/Nome), a coluna de
+           controle (só o ícone de expandir) e o Cód. ACECA sufocavam a de Nome - dá
+           prioridade de espaço pra Nome, depois Cód. ACECA, controle fica mínimo. */
+        @@media (max-width: 767.98px) {
+            #tblNovidade thead th:first-child,
+            #tblNovidade tbody td.control {
+                width: 8% !important;
+                padding-left: 0.25rem !important;
+                padding-right: 0 !important;
+            }
+
+            #tblNovidade thead th:nth-child(2),
+            #tblNovidade tbody td:nth-child(2) {
+                width: 25% !important;
+            }
+
+            #tblNovidade thead th:nth-child(3),
+            #tblNovidade tbody td:nth-child(3) {
+                width: 67% !important;
+            }
+        }
     </style>
 }
 
