@@ -13,6 +13,17 @@
     // isso que aconteceu na atualização 2.1.0 -> 3.0.8 do Responsive).
     var urlResponsiveCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css");
     var urlResponsiveJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js");
+
+    // Mesmo bug (@section com 2+ tags "~/" estáticas quebra a resolução de parte delas) -
+    // essas 5 (CSS) e 3 (JS) nunca tinham sido cobertas, só as do Responsive acima.
+    var urlRowGroupCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css");
+    var urlMonthSelectCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/flatpickr/plugins/monthSelect/style.css");
+    var urlDateRangePickerCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css");
+    var urlTimepickerCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/jquery-timepicker/jquery-timepicker.css");
+    var urlPickrThemesCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/pickr/pickr-themes.css");
+    var urlDateRangePickerJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js");
+    var urlTimepickerJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/jquery-timepicker/jquery-timepicker.js");
+    var urlPickrJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/pickr/pickr.js");
 }
 
 @section PageStyles {
@@ -39,16 +50,14 @@
 @section VendorStyles {
 
     <!-- Row Group CSS -->
-    <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
-    <!-- Form Validation
-    -->
+    <link rel="stylesheet" href="@urlRowGroupCss">
     <!-- Flat Picker - Calendar -->
-    <link rel="stylesheet" href="~/vendor/libs/flatpickr/plugins/monthSelect/style.css">
+    <link rel="stylesheet" href="@urlMonthSelectCss">
     <!-- DatePicker Range -->
-    <link rel="stylesheet" href="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css" />
+    <link rel="stylesheet" href="@urlDateRangePickerCss" />
 
-    <link rel="stylesheet" href="~/vendor/libs/jquery-timepicker/jquery-timepicker.css" />
-    <link rel="stylesheet" href="~/vendor/libs/pickr/pickr-themes.css" />
+    <link rel="stylesheet" href="@urlTimepickerCss" />
+    <link rel="stylesheet" href="@urlPickrThemesCss" />
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css" integrity="sha512-WWc9iSr5tHo+AliwUnAQN1RfGK9AnpiOFbmboA0A0VJeooe69YR2rLgHw13KxF1bOSLmke+SNnLWxmZd8RTESQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -60,15 +69,11 @@
 
 @section VendorScripts {
 
-    <!-- Form Validation
-    -->
     <!-- DatePicker Range -->
-    <script src="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js" defer></script>
+    <script src="@urlDateRangePickerJs" defer></script>
 
-    <script src="~/vendor/libs/jquery-timepicker/jquery-timepicker.js" defer></script>
-    <script src="~/vendor/libs/pickr/pickr.js" defer></script>
-
-    <!--  -->
+    <script src="@urlTimepickerJs" defer></script>
+    <script src="@urlPickrJs" defer></script>
 
     <script src="@urlResponsiveJs" defer></script>
 

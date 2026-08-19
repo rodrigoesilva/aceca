@@ -1,24 +1,33 @@
 
 @{
     Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
+
+    // Dentro de @section, 2+ tags <link>/<script> com "~/" estático quebram a resolução
+    // da Tag Helper pra parte delas (bug conhecido do Razor - ver Helper/AssetUrlHelper.cs).
+    // Aqui nenhuma é duplicata do global (_Styles.cshtml/_Scripts.cshtml), então em vez de
+    // remover, usa o helper que resolve manualmente e sempre funciona.
+    var urlRowGroupCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css");
+    var urlQuillTypographyCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/quill/typography.css");
+    var urlQuillKatexCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/quill/katex.css");
+    var urlQuillEditorCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/quill/editor.css");
+    var urlQuillKatexJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/quill/katex.js");
+    var urlQuillJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/quill/quill.js");
 }
 
 @section VendorStyles {
     <!-- Row Group CSS -->
-    <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
+    <link rel="stylesheet" href="@urlRowGroupCss">
     <!-- Form Editor -->
-    <link rel="stylesheet" href="~/vendor/libs/quill/typography.css">
-    <link rel="stylesheet" href="~/vendor/libs/quill/katex.css">
-    <link rel="stylesheet" href="~/vendor/libs/quill/editor.css">
-
+    <link rel="stylesheet" href="@urlQuillTypographyCss">
+    <link rel="stylesheet" href="@urlQuillKatexCss">
+    <link rel="stylesheet" href="@urlQuillEditorCss">
 }
 
 @section VendorScripts {
     <!-- Form Editor -->
-    <script src="~/vendor/libs/quill/katex.js" defer></script>
-    <script src="~/vendor/libs/quill/quill.js" defer></script>
-
-} 
+    <script src="@urlQuillKatexJs" defer></script>
+    <script src="@urlQuillJs" defer></script>
+}
 
 @section PageScripts {
     <script src="~/js/admin/agenda/admin-agenda.js" asp-append-version="true" defer></script>

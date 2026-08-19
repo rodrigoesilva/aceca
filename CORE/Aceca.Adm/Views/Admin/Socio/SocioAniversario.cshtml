@@ -6,21 +6,15 @@
     // literal (JS não carrega).
     var urlFormsSelects = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/forms-selects.js");
     var urlAdminSocioAniversario = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/admin/socio/admin-socio-aniversario.js");
+    var urlRowGroupCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css");
+    var urlDateRangePickerCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css");
 }
 
 @section VendorStyles {
     <!-- Row Group CSS -->
-    <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
-    <!-- Form Validation -->
-    
-    <!-- DatePicker    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/css/bootstrap-datepicker.min.css" />
-     -->
-    <!-- DatePicker RANGE
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.0.5/daterangepicker.css" />
-     -->
-    <link rel="stylesheet" href="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.css" />
-
+    <link rel="stylesheet" href="@urlRowGroupCss">
+    <!-- DatePicker Range -->
+    <link rel="stylesheet" href="@urlDateRangePickerCss">
 }
 
 @section VendorScripts {

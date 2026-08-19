@@ -1,19 +1,21 @@
 @{
     Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
+
+    // 2+ tags <link>/<script> com "~/" estático no mesmo @section quebram a resolução da
+    // Tag Helper pra parte delas (bug conhecido do Razor - ver Helper/AssetUrlHelper.cs).
+    var urlCleaveJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/cleavejs/cleave.js");
+    var urlCleavePhoneJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/cleavejs/cleave-phone.js");
 }
 
 @section VendorStyles {
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="~/vendor/libs/datatables-rowgroup-bs5/rowgroup.bootstrap5.css">
-
 }
 
 @section VendorScripts {
-
     <!-- Select Dropdownlist -->
-
-    <script src="~/vendor/libs/cleavejs/cleave.js" defer></script>
-    <script src="~/vendor/libs/cleavejs/cleave-phone.js" defer></script>
+    <script src="@urlCleaveJs" defer></script>
+    <script src="@urlCleavePhoneJs" defer></script>
 }
 
 @section PageScripts {
