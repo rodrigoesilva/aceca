@@ -351,8 +351,10 @@ function fn_FiltrarDados() {
                 }
             },
             // COLUNA - nomeMarca (3ª a aparecer no mobile) - width aumentado de 120px pra
-            // 140px (ver comentário acima em CodigoAceca) pra dar mais espaço real ao nome.
-            { data: 'NomeMarca', className: 'text-center', width: '140px' , responsivePriority: 3 },
+            // 175px: 140 (ver comentário acima em CodigoAceca) + ~35px compensando a redução
+            // de padding da coluna control em Novidade.cshtml, pra manter a largura total
+            // que o Responsive mede e não repetir o bug da coluna Imagem reaparecendo.
+            { data: 'NomeMarca', className: 'text-center', width: '175px' , responsivePriority: 3 },
             // COLUNA - imagem (some primeiro no mobile)
             {
                 data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004,
