@@ -355,25 +355,24 @@ function fn_FiltrarDados() {
             // de padding da coluna control em Novidade.cshtml, pra manter a largura total
             // que o Responsive mede e não repetir o bug da coluna Imagem reaparecendo.
             { data: 'NomeMarca', className: 'text-center', width: '175px' , responsivePriority: 3 },
-            // COLUNA - imagem (nunca aparece como coluna no mobile - só no card expandido).
+            // COLUNA - imagem (some só no mobile, continua normal no desktop/tablet).
             // responsivePriority sozinho não garante isso: o Responsive mede a largura
             // mínima pelo TEXTO DO CABEÇALHO ("Imagem", uma palavra curta) num clone
             // isolado, não pelo conteúdo real (uma <img> 64x64px) - então ele "cabia" no
-            // orçamento mesmo sem espaço de verdade, sufocando Nome. className "none" tira
-            // essa coluna do cálculo de vez (ela continua aparecendo no card expandido, que
-            // usa row.ImgPrincipalFull direto no renderer, sem depender da visibilidade
-            // da coluna).
+            // orçamento mesmo sem espaço de verdade, sufocando Nome. "none" (usado antes)
+            // exclui a coluna de TODOS os breakpoints, inclusive desktop - por isso sumiu
+            // lá também. "min-tablet" restringe certo: só desktop+tablet (breakpoints com
+            // width >= o de 'tablet'), excluindo só 'mobile'.
             {
-                data: 'ImgPrincipalFull', className: 'text-center none', responsivePriority: 10004,
+                data: 'ImgPrincipalFull', className: 'text-center min-tablet', responsivePriority: 10004,
                 render: function (data, type, row) {
                     return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${data}">`;
                 }
             },
             // COLUNA - imagemDetalhe
             {
-                // Mesmo problema/fix da coluna Imagem acima ("Detalhe" também é uma
-                // palavra curta - tomou o lugar de Imagem assim que ela ficou "none").
-                data: 'ImgDetalheFull', className: 'text-center none', responsivePriority: 10005,
+                // Mesmo fix da coluna Imagem acima.
+                data: 'ImgDetalheFull', className: 'text-center min-tablet', responsivePriority: 10005,
                 render: function (data, type, row) {
                     return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row.CodigoAceca}" src="${data}">`;
                 }
