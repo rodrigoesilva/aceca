@@ -1,60 +1,15 @@
-/*! Responsive 3.0.8
- * © SpryMedia Ltd - datatables.net/license
+/*! Responsive 2.1.0
+ * 2014-2016 SpryMedia Ltd - datatables.net/license
  */
-
-(function( factory ){
-	if ( typeof define === 'function' && define.amd ) {
-		// AMD
-		define( ['jquery', 'datatables.net'], function ( $ ) {
-			return factory( $, window, document );
-		} );
-	}
-	else if ( typeof exports === 'object' ) {
-		// CommonJS
-		var jq = require('jquery');
-		var cjsRequires = function (root, $) {
-			if ( ! $.fn.dataTable ) {
-				require('datatables.net')(root, $);
-			}
-		};
-
-		if (typeof window === 'undefined') {
-			module.exports = function (root, $) {
-				if ( ! root ) {
-					// CommonJS environments without a window global must pass a
-					// root. This will give an error otherwise
-					root = window;
-				}
-
-				if ( ! $ ) {
-					$ = jq( root );
-				}
-
-				cjsRequires( root, $ );
-				return factory( $, root, root.document );
-			};
-		}
-		else {
-			cjsRequires( window, jq );
-			module.exports = factory( jq, window, window.document );
-		}
-	}
-	else {
-		// Browser
-		factory( jQuery, window, document );
-	}
-}(function( $, window, document ) {
-'use strict';
-var DataTable = $.fn.dataTable;
-
-
 
 /**
  * @summary     Responsive
  * @description Responsive tables plug-in for DataTables
- * @version     3.0.8
- * @author      SpryMedia Ltd
- * @copyright   SpryMedia Ltd.
+ * @version     2.1.0
+ * @file        dataTables.responsive.js
+ * @author      SpryMedia Ltd (www.sprymedia.co.uk)
+ * @contact     www.sprymedia.co.uk/contact
+ * @copyright   Copyright 2014-2016 SpryMedia Ltd.
  *
  * This source file is free software, available under the following license:
  *   MIT license - http://datatables.net/license/mit
@@ -65,6 +20,35 @@ var DataTable = $.fn.dataTable;
  *
  * For details please refer to: http://www.datatables.net
  */
+(function( factory ){
+	if ( typeof define === 'function' && define.amd ) {
+		// AMD
+		define( ['jquery', 'datatables.net'], function ( $ ) {
+			return factory( $, window, document );
+		} );
+	}
+	else if ( typeof exports === 'object' ) {
+		// CommonJS
+		module.exports = function (root, $) {
+			if ( ! root ) {
+				root = window;
+			}
+
+			if ( ! $ || ! $.fn.dataTable ) {
+				$ = require('datatables.net')(root, $).$;
+			}
+
+			return factory( $, root, root.document );
+		};
+	}
+	else {
+		// Browser
+		factory( jQuery, window, document );
+	}
+}(function( $, window, document, undefined ) {
+'use strict';
+var DataTable = $.fn.dataTable;
+
 
 /**
  * Responsive is a plug-in for the DataTables library that makes use of
@@ -103,7 +87,7 @@ var DataTable = $.fn.dataTable;
  *  @param {object} settings DataTables settings object for the host table
  *  @param {object} [opts] Configuration options
  *  @requires jQuery 1.7+
- *  @requires DataTables 2.0.0+
+ *  @requires DataTables 1.10.3+
  *
  *  @example
  *      $('#example').DataTable( {
@@ -111,48 +95,41 @@ var DataTable = $.fn.dataTable;
  *      } );
  *    } );
  */
-var Responsive = function (settings, opts) {
-	// Sanity check that we are using DataTables 2.0.0 or newer
-	if (!DataTable.versionCheck || !DataTable.versionCheck('2')) {
-		throw 'DataTables Responsive requires DataTables 2 or newer';
+var Responsive = function ( settings, opts ) {
+	// Sanity check that we are using DataTables 1.10 or newer
+	if ( ! DataTable.versionCheck || ! DataTable.versionCheck( '1.10.3' ) ) {
+		throw 'DataTables Responsive requires DataTables 1.10.3 or newer';
 	}
 
 	this.s = {
-		childNodeStore: {},
+		dt: new DataTable.Api( settings ),
 		columns: [],
-		current: [],
-		dt: new DataTable.Api(settings)
+		current: []
 	};
 
 	// Check if responsive has already been initialised on this table
-	if (this.s.dt.settings()[0].responsive) {
+	if ( this.s.dt.settings()[0].responsive ) {
 		return;
 	}
 
 	// details is an object, but for simplicity the user can give it as a string
 	// or a boolean
-	if (opts && typeof opts.details === 'string') {
+	if ( opts && typeof opts.details === 'string' ) {
 		opts.details = { type: opts.details };
 	}
-	else if (opts && opts.details === false) {
+	else if ( opts && opts.details === false ) {
 		opts.details = { type: false };
 	}
-	else if (opts && opts.details === true) {
+	else if ( opts && opts.details === true ) {
 		opts.details = { type: 'inline' };
 	}
 
-	this.c = $.extend(
-		true,
-		{},
-		Responsive.defaults,
-		DataTable.defaults.responsive,
-		opts
-	);
+	this.c = $.extend( true, {}, Responsive.defaults, DataTable.defaults.responsive, opts );
 	settings.responsive = this;
 	this._constructor();
 };
 
-$.extend(Responsive.prototype, {
+$.extend( Responsive.prototype, {
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Constructor
 	 */
@@ -162,262 +139,122 @@ $.extend(Responsive.prototype, {
 	 *
 	 * @private
 	 */
-	_constructor: function () {
+	_constructor: function ()
+	{
 		var that = this;
 		var dt = this.s.dt;
-		var oldWindowWidth = $(window).innerWidth();
+		var dtPrivateSettings = dt.settings()[0];
+		var oldWindowWidth = $(window).width();
 
 		dt.settings()[0]._responsive = this;
 
-		// Use DataTables' throttle function to avoid processor thrashing
-		$(window).on(
-			'orientationchange.dtr',
-			DataTable.util.throttle(function () {
-				// iOS has a bug whereby resize can fire when only scrolling
-				// See: http://stackoverflow.com/questions/8898412
-				var width = $(window).innerWidth();
+		// Use DataTables' throttle function to avoid processor thrashing on
+		// resize
+		$(window).on( 'resize.dtr orientationchange.dtr', DataTable.util.throttle( function () {
+			// iOS has a bug whereby resize can fire when only scrolling
+			// See: http://stackoverflow.com/questions/8898412
+			var width = $(window).width();
 
-				if (width !== oldWindowWidth) {
-					that._resize();
-					oldWindowWidth = width;
-				}
-			})
-		);
-
-		// Handle new rows being dynamically added - needed as responsive
-		// updates all rows (shown or not) a responsive change, rather than
-		// per draw.
-		dt.on('row-created.dtr', function (e, tr, data, idx) {
-			if ($.inArray(false, that.s.current) !== -1) {
-				$('>td, >th', tr).each(function (i) {
-					var idx = dt.column.index('toData', i);
-
-					if (that.s.current[idx] === false) {
-						$(this)
-							.css('display', 'none')
-							.addClass('dtr-hidden');
-					}
-				});
+			if ( width !== oldWindowWidth ) {
+				that._resize();
+				oldWindowWidth = width;
 			}
-		});
+		} ) );
+
+		// DataTables doesn't currently trigger an event when a row is added, so
+		// we need to hook into its private API to enforce the hidden rows when
+		// new data is added
+		dtPrivateSettings.oApi._fnCallbackReg( dtPrivateSettings, 'aoRowCreatedCallback', function (tr, data, idx) {
+			if ( $.inArray( false, that.s.current ) !== -1 ) {
+				$('td, th', tr).each( function ( i ) {
+					var idx = dt.column.index( 'toData', i );
+
+					if ( that.s.current[idx] === false ) {
+						$(this).css('display', 'none');
+					}
+				} );
+			}
+		} );
 
 		// Destroy event handler
-		dt.on('destroy.dtr', function () {
-			dt.off('.dtr');
-			$(dt.table().body()).off('.dtr');
-			$(window).off('resize.dtr orientationchange.dtr');
-			dt.cells('.dtr-control').nodes().to$().removeClass('dtr-control');
-			$(dt.table().node()).removeClass('dtr-inline collapsed');
+		dt.on( 'destroy.dtr', function () {
+			dt.off( '.dtr' );
+			$( dt.table().body() ).off( '.dtr' );
+			$(window).off( 'resize.dtr orientationchange.dtr' );
 
 			// Restore the columns that we've hidden
-			$.each(that.s.current, function (i, val) {
-				if (val === false) {
-					that._setColumnVis(i, true);
+			$.each( that.s.current, function ( i, val ) {
+				if ( val === false ) {
+					that._setColumnVis( i, true );
 				}
-			});
-		});
+			} );
+		} );
 
 		// Reorder the breakpoints array here in case they have been added out
 		// of order
-		this.c.breakpoints.sort(function (a, b) {
-			return a.width < b.width ? 1 : a.width > b.width ? -1 : 0;
-		});
+		this.c.breakpoints.sort( function (a, b) {
+			return a.width < b.width ? 1 :
+				a.width > b.width ? -1 : 0;
+		} );
 
 		this._classLogic();
+		this._resizeAuto();
 
 		// Details handler
 		var details = this.c.details;
 
-		if (details.type !== false) {
+		if ( details.type !== false ) {
 			that._detailsInit();
 
 			// DataTables will trigger this event on every column it shows and
 			// hides individually
-			dt.on('column-visibility.dtr', function () {
-				// Use a small debounce to allow multiple columns to be set together
-				if (that._timer) {
-					clearTimeout(that._timer);
-				}
-
-				that._timer = setTimeout(function () {
-					that._timer = null;
-
-					that._classLogic();
-					that._resizeAuto();
-					that._resize(true);
-
-					that._redrawChildren();
-				}, 100);
-			});
+			dt.on( 'column-visibility.dtr', function (e, ctx, col, vis) {
+				that._classLogic();
+				that._resizeAuto();
+				that._resize();
+			} );
 
 			// Redraw the details box on each draw which will happen if the data
 			// has changed. This is used until DataTables implements a native
 			// `updated` event for rows
-			dt.on('draw.dtr', function () {
+			dt.on( 'draw.dtr', function () {
 				that._redrawChildren();
-			});
+			} );
 
-			$(dt.table().node()).addClass('dtr-' + details.type);
+			$(dt.table().node()).addClass( 'dtr-'+details.type );
 		}
 
-		// DT2 let's us tell it if we are hiding columns
-		dt.on('column-calc.dt', function (e, d) {
-			var curr = that.s.current;
-
-			for (var i = 0; i < curr.length; i++) {
-				var idx = d.visible.indexOf(i);
-
-				if (curr[i] === false && idx >= 0) {
-					d.visible.splice(idx, 1);
-				}
-			}
-		});
-
-		// On Ajax reload we want to reopen any child rows which are displayed
-		// by responsive
-		dt.on('preXhr.dtr', function () {
-			var rowIds = [];
-			dt.rows().every(function () {
-				if (this.child.isShown()) {
-					rowIds.push(this.id(true));
-				}
-			});
-
-			dt.one('draw.dtr', function () {
-				that._resizeAuto();
-				that._resize();
-
-				dt.rows(rowIds).every(function () {
-					that._detailsDisplay(this, false);
-				});
-			});
-		});
-
-		// First pass when the table is ready
-		dt
-			.on('draw.dtr', function () {
-				// For server-side tables, each draw needs the child node
-				// cache to be cleared since it is no longer relevant. We can
-				// create a new object for speed in this case - no mutation.
-				if (dt.page.info().serverSide) {
-					that.s.childNodeStore = {};
-				}
-
-				that._controlClass();
-			})
-			.ready(function () {
-				that._resizeAuto();
-				that._resize();
-
-				// Change in column sizes means we need to calc
-				dt.on('column-sizing.dtr', function () {
-					that._resizeAuto();
-					that._resize();
-				});
-			});
-
-		// Attach listeners after first pass
-		dt.on('column-reorder.dtr', function (e, settings, details) {
+		dt.on( 'column-reorder.dtr', function (e, settings, details) {
 			that._classLogic();
 			that._resizeAuto();
-			that._resize(true);
+			that._resize();
+		} );
+
+		// Change in column sizes means we need to calc
+		dt.on( 'column-sizing.dtr', function () {
+			that._resizeAuto();
+			that._resize();
 		});
+
+		dt.on( 'init.dtr', function (e, settings, details) {
+			that._resizeAuto();
+			that._resize();
+
+			// If columns were hidden, then DataTables needs to adjust the
+			// column sizing
+			if ( $.inArray( false, that.s.current ) ) {
+				dt.columns.adjust();
+			}
+		} );
+
+		// First pass - draw the table for the current viewport size
+		this._resize();
 	},
+
 
 	/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	 * Private methods
 	 */
-
-	/**
-	 * Insert a `col` tag into the correct location in a `colgroup`.
-	 *
-	 * @param {jQuery} colGroup The `colgroup` tag
-	 * @param {jQuery} colEl The `col` tag
-	 */
-	_colGroupAttach: function (colGroup, colEls, idx) {
-		var found = null;
-
-		// No need to do anything if already attached
-		if (colEls[idx].get(0).parentNode === colGroup[0]) {
-			return;
-		}
-
-		// Find the first `col` after our own which is already attached
-		for (var i = idx+1; i < colEls.length; i++) {
-			if (colGroup[0] === colEls[i].get(0).parentNode) {
-				found = i;
-				break;
-			}
-		}
-
-		if (found !== null) {
-			// Insert before
-			colEls[idx].insertBefore(colEls[found][0]);
-		}
-		else {
-			// If wasn't found, insert at the end
-			colGroup.append(colEls[idx]);
-		}
-	},
-
-	/**
-	 * Get and store nodes from a cell - use for node moving renderers
-	 *
-	 * @param {*} dt DT instance
-	 * @param {*} row Row index
-	 * @param {*} col Column index
-	 */
-	_childNodes: function (dt, row, col) {
-		var name = row + '-' + col;
-
-		if (this.s.childNodeStore[name]) {
-			return this.s.childNodeStore[name];
-		}
-
-		// https://jsperf.com/childnodes-array-slice-vs-loop
-		var nodes = [];
-		var children = dt.cell(row, col).node().childNodes;
-		for (var i = 0, iLen = children.length; i < iLen; i++) {
-			nodes.push(children[i]);
-		}
-
-		this.s.childNodeStore[name] = nodes;
-
-		return nodes;
-	},
-
-	/**
-	 * Restore nodes from the cache to a table cell
-	 *
-	 * @param {*} dt DT instance
-	 * @param {*} row Row index
-	 * @param {*} col Column index
-	 */
-	_childNodesRestore: function (dt, row, col) {
-		var name = row + '-' + col;
-
-		if (!this.s.childNodeStore[name]) {
-			return;
-		}
-
-		var node = dt.cell(row, col).node();
-		var store = this.s.childNodeStore[name];
-		if (store.length > 0) {
-			var parent = store[0].parentNode;
-			var parentChildren = parent.childNodes;
-			var a = [];
-
-			for (var i = 0, iLen = parentChildren.length; i < iLen; i++) {
-				a.push(parentChildren[i]);
-			}
-
-			for (var j = 0, jen = a.length; j < jen; j++) {
-				node.appendChild(a[j]);
-			}
-		}
-
-		this.s.childNodeStore[name] = undefined;
-	},
 
 	/**
 	 * Calculate the visibility for the columns in a table for a given
@@ -431,47 +268,45 @@ $.extend(Responsive.prototype, {
 	 *   column.
 	 *  @private
 	 */
-	_columnsVisibility: function (breakpoint) {
+	_columnsVisiblity: function ( breakpoint )
+	{
 		var dt = this.s.dt;
 		var columns = this.s.columns;
-		var i, iLen;
+		var i, ien;
 
 		// Create an array that defines the column ordering based first on the
 		// column's priority, and secondly the column index. This allows the
 		// columns to be removed from the right if the priority matches
 		var order = columns
-			.map(function (col, idx) {
+			.map( function ( col, idx ) {
 				return {
 					columnIdx: idx,
 					priority: col.priority
 				};
-			})
-			.sort(function (a, b) {
-				if (a.priority !== b.priority) {
+			} )
+			.sort( function ( a, b ) {
+				if ( a.priority !== b.priority ) {
 					return a.priority - b.priority;
 				}
 				return a.columnIdx - b.columnIdx;
-			});
+			} );
 
 		// Class logic - determine which columns are in this breakpoint based
 		// on the classes. If no class control (i.e. `auto`) then `-` is used
 		// to indicate this to the rest of the function
-		var display = $.map(columns, function (col, i) {
-			if (dt.column(i).visible() === false) {
-				return 'not-visible';
-			}
-			return col.auto && col.minWidth === null
-				? false
-				: col.auto === true
-				? '-'
-				: $.inArray(breakpoint, col.includeIn) !== -1;
-		});
+		var display = $.map( columns, function ( col ) {
+			return col.auto && col.minWidth === null ?
+				false :
+				col.auto === true ?
+					'-' :
+					$.inArray( breakpoint, col.includeIn ) !== -1;
+		} );
 
 		// Auto column control - first pass: how much width is taken by the
 		// ones that must be included from the non-auto columns
 		var requiredWidth = 0;
-		for (i = 0, iLen = display.length; i < iLen; i++) {
-			if (display[i] === true) {
+		for ( i=0, ien=display.length ; i<ien ; i++ ) {
+			if ( display[i] === true ) {
 				requiredWidth += columns[i].minWidth;
 			}
 		}
@@ -491,8 +326,8 @@ $.extend(Responsive.prototype, {
 		// thrashing or overflow. Also we need to account for the control column
 		// width first so we know how much width is available for the other
 		// columns, since the control column might not be the first one shown
-		for (i = 0, iLen = display.length; i < iLen; i++) {
-			if (columns[i].control) {
+		for ( i=0, ien=display.length ; i<ien ; i++ ) {
+			if ( columns[i].control ) {
 				usedWidth -= columns[i].minWidth;
 			}
 		}
@@ -500,18 +335,14 @@ $.extend(Responsive.prototype, {
 		// Allow columns to be shown (counting by priority and then right to
 		// left) until we run out of room
 		var empty = false;
-		for (i = 0, iLen = order.length; i < iLen; i++) {
+		for ( i=0, ien=order.length ; i<ien ; i++ ) {
 			var colIdx = order[i].columnIdx;
 
-			if (
-				display[colIdx] === '-' &&
-				!columns[colIdx].control &&
-				columns[colIdx].minWidth
-			) {
+			if ( display[colIdx] === '-' && ! columns[colIdx].control && columns[colIdx].minWidth ) {
 				// Once we've found a column that won't fit we don't let any
 				// others display either, or columns might disappear in the
 				// middle of the table
-				if (empty || usedWidth - columns[colIdx].minWidth < 0) {
+				if ( empty || usedWidth - columns[colIdx].minWidth < 0 ) {
 					empty = true;
 					display[colIdx] = false;
 				}
@@ -530,36 +361,28 @@ $.extend(Responsive.prototype, {
 		// first , before the action in the second can be taken
 		var showControl = false;
 
-		for (i = 0, iLen = columns.length; i < iLen; i++) {
-			if (
-				!columns[i].control &&
-				!columns[i].never &&
-				display[i] === false
-			) {
+		for ( i=0, ien=columns.length ; i<ien ; i++ ) {
+			if ( ! columns[i].control && ! columns[i].never && ! display[i] ) {
 				showControl = true;
 				break;
 			}
 		}
 
-		for (i = 0, iLen = columns.length; i < iLen; i++) {
-			if (columns[i].control) {
+		for ( i=0, ien=columns.length ; i<ien ; i++ ) {
+			if ( columns[i].control ) {
 				display[i] = showControl;
-			}
-
-			// Replace not visible string with false from the control column detection above
-			if (display[i] === 'not-visible') {
-				display[i] = false;
 			}
 		}
 
 		// Finally we need to make sure that there is at least one column that
 		// is visible
-		if ($.inArray(true, display) === -1) {
+		if ( $.inArray( true, display ) === -1 ) {
 			display[0] = true;
 		}
 
 		return display;
 	},
+
 
 	/**
 	 * Create the internal `columns` array with information about the columns
@@ -569,79 +392,76 @@ $.extend(Responsive.prototype, {
 	 *
 	 * @private
 	 */
-	_classLogic: function () {
+	_classLogic: function ()
+	{
 		var that = this;
+		var calc = {};
 		var breakpoints = this.c.breakpoints;
 		var dt = this.s.dt;
-		var columns = dt
-			.columns()
-			.eq(0)
-			.map(function (i) {
-				var column = this.column(i);
-				var className = column.header().className;
-				var priority = column.init().responsivePriority;
-				var dataPriority = column
-					.header()
-					.getAttribute('data-priority');
+		var columns = dt.columns().eq(0).map( function (i) {
+			var column = this.column(i);
+			var className = column.header().className;
+			var priority = dt.settings()[0].aoColumns[i].responsivePriority;
 
-				if (priority === undefined) {
-					priority =
-						dataPriority === undefined || dataPriority === null
-							? 10000
-							: dataPriority * 1;
-				}
+			if ( priority === undefined ) {
+				var dataPriority = $(column.header()).data('priority');
 
-				return {
-					className: className,
-					includeIn: [],
-					auto: false,
-					control: false,
-					never: className.match(/\b(dtr\-)?never\b/) ? true : false,
-					priority: priority
-				};
-			});
+				priority = dataPriority !== undefined ?
+					dataPriority * 1 :
+					10000;
+			}
+
+			return {
+				className: className,
+				includeIn: [],
+				auto:      false,
+				control:   false,
+				never:     className.match(/\bnever\b/) ? true : false,
+				priority:  priority
+			};
+		} );
 
 		// Simply add a breakpoint to `includeIn` array, ensuring that there are
 		// no duplicates
-		var add = function (colIdx, name) {
-			var includeIn = columns[colIdx].includeIn;
+		var add = function ( colIdx, name ) {
+			var includeIn = columns[ colIdx ].includeIn;
 
-			if ($.inArray(name, includeIn) === -1) {
-				includeIn.push(name);
+			if ( $.inArray( name, includeIn ) === -1 ) {
+				includeIn.push( name );
 			}
 		};
 
-		var column = function (colIdx, name, operator, matched) {
-			var size, i, iLen;
+		var column = function ( colIdx, name, operator, matched ) {
+			var size, i, ien;
 
-			if (!operator) {
-				columns[colIdx].includeIn.push(name);
+			if ( ! operator ) {
+				columns[ colIdx ].includeIn.push( name );
 			}
-			else if (operator === 'max-') {
+			else if ( operator === 'max-' ) {
 				// Add this breakpoint and all smaller
-				size = that._find(name).width;
+				size = that._find( name ).width;
 
-				for (i = 0, iLen = breakpoints.length; i < iLen; i++) {
-					if (breakpoints[i].width <= size) {
-						add(colIdx, breakpoints[i].name);
+				for ( i=0, ien=breakpoints.length ; i<ien ; i++ ) {
+					if ( breakpoints[i].width <= size ) {
+						add( colIdx, breakpoints[i].name );
 					}
 				}
 			}
-			else if (operator === 'min-') {
+			else if ( operator === 'min-' ) {
 				// Add this breakpoint and all larger
-				size = that._find(name).width;
+				size = that._find( name ).width;
 
-				for (i = 0, iLen = breakpoints.length; i < iLen; i++) {
-					if (breakpoints[i].width >= size) {
-						add(colIdx, breakpoints[i].name);
+				for ( i=0, ien=breakpoints.length ; i<ien ; i++ ) {
+					if ( breakpoints[i].width >= size ) {
+						add( colIdx, breakpoints[i].name );
 					}
 				}
 			}
-			else if (operator === 'not-') {
+			else if ( operator === 'not-' ) {
 				// Add all but this breakpoint
-				for (i = 0, iLen = breakpoints.length; i < iLen; i++) {
-					if (breakpoints[i].name.indexOf(matched) === -1) {
-						add(colIdx, breakpoints[i].name);
+				for ( i=0, ien=breakpoints.length ; i<ien ; i++ ) {
+					if ( breakpoints[i].name.indexOf( matched ) === -1 ) {
+						add( colIdx, breakpoints[i].name );
 					}
 				}
 			}
@@ -649,35 +469,28 @@ $.extend(Responsive.prototype, {
 
 		// Loop over each column and determine if it has a responsive control
 		// class
-		columns.each(function (col, i) {
+		columns.each( function ( col, i ) {
 			var classNames = col.className.split(' ');
 			var hasClass = false;
 
 			// Split the class name up so multiple rules can be applied if needed
-			for (var k = 0, ken = classNames.length; k < ken; k++) {
-				var className = classNames[k].trim();
+			for ( var k=0, ken=classNames.length ; k<ken ; k++ ) {
+				var className = $.trim( classNames[k] );
 
-				if (className === 'all' || className === 'dtr-all') {
+				if ( className === 'all' ) {
 					// Include in all
 					hasClass = true;
-					col.includeIn = $.map(breakpoints, function (a) {
+					col.includeIn = $.map( breakpoints, function (a) {
 						return a.name;
-					});
+					} );
 					return;
 				}
-				else if (
-					className === 'none' ||
-					className === 'dtr-none' ||
-					col.never
-				) {
+				else if ( className === 'none' || col.never ) {
 					// Include in none (default) and no auto
 					hasClass = true;
 					return;
 				}
-				else if (
-					className === 'control' ||
-					className === 'dtr-control'
-				) {
+				else if ( className === 'control' ) {
 					// Special column that is only visible, when one of the other
 					// columns is hidden. This is used for the details control
 					hasClass = true;
@@ -685,81 +498,36 @@ $.extend(Responsive.prototype, {
 					return;
 				}
 
-				$.each(breakpoints, function (j, breakpoint) {
+				$.each( breakpoints, function ( j, breakpoint ) {
 					// Does this column have a class that matches this breakpoint?
 					var brokenPoint = breakpoint.name.split('-');
-					var re = new RegExp(
-						'(min\\-|max\\-|not\\-)?(' +
-							brokenPoint[0] +
-							')(\\-[_a-zA-Z0-9])?'
-					);
-					var match = className.match(re);
+					var re = new RegExp( '(min\\-|max\\-|not\\-)?('+brokenPoint[0]+')(\\-[_a-zA-Z0-9])?' );
+					var match = className.match( re );
 
-					if (match) {
+					if ( match ) {
 						hasClass = true;
 
-						if (
-							match[2] === brokenPoint[0] &&
-							match[3] === '-' + brokenPoint[1]
-						) {
+						if ( match[2] === brokenPoint[0] && match[3] === '-'+brokenPoint[1] ) {
 							// Class name matches breakpoint name fully
-							column(
-								i,
-								breakpoint.name,
-								match[1],
-								match[2] + match[3]
-							);
+							column( i, breakpoint.name, match[1], match[2]+match[3] );
 						}
-						else if (match[2] === brokenPoint[0] && !match[3]) {
+						else if ( match[2] === brokenPoint[0] && ! match[3] ) {
 							// Class name matched primary breakpoint name with no qualifier
-							column(i, breakpoint.name, match[1], match[2]);
+							column( i, breakpoint.name, match[1], match[2] );
 						}
 					}
-				});
+				} );
 			}
 
 			// If there was no control class, then automatic sizing is used
-			if (!hasClass) {
+			if ( ! hasClass ) {
 				col.auto = true;
 			}
-		});
+		} );
 
 		this.s.columns = columns;
 	},
 
-	/**
-	 * Update the cells to show the correct control class / button
-	 * @private
-	 */
-	_controlClass: function () {
-		if (this.c.details.type === 'inline') {
-			var dt = this.s.dt;
-			var columnsVis = this.s.current;
-			var firstVisible = $.inArray(true, columnsVis);
-
-			// Remove from any cells which shouldn't have it
-			dt.cells(
-				null,
-				function (idx) {
-					return idx !== firstVisible;
-				},
-				{ page: 'current' }
-			)
-				.nodes()
-				.to$()
-				.filter('.dtr-control')
-				.removeClass('dtr-control');
-
-			if (firstVisible >= 0) {
-				dt.cells(null, firstVisible, { page: 'current' })
-					.nodes()
-					.to$()
-					.addClass('dtr-control');
-			}
-		}
-
-		this._tabIndexes();
-	},
 
 	/**
 	 * Show the details for the child row
@@ -768,170 +536,132 @@ $.extend(Responsive.prototype, {
 	 * @param  {boolean}        update Update flag
 	 * @private
 	 */
-	_detailsDisplay: function (row, update) {
+	_detailsDisplay: function ( row, update )
+	{
 		var that = this;
 		var dt = this.s.dt;
 		var details = this.c.details;
-		var event = function (res) {
-			$(row.node()).toggleClass('dtr-expanded', res !== false);
-			$(dt.table().node()).triggerHandler('responsive-display.dt', [
-				dt,
-				row,
-				res,
-				update
-			]);
-		};
 
-		if (details && details.type !== false) {
-			var renderer =
-				typeof details.renderer === 'string'
-					? Responsive.renderer[details.renderer]()
-					: details.renderer;
+		if ( details && details.type !== false ) {
+			var res = details.display( row, update, function () {
+				return details.renderer(
+					dt, row[0], that._detailsObj(row[0])
+				);
+			} );
 
-			var res = details.display(
-				row,
-				update,
-				function () {
-					return renderer.call(
-						that,
-						dt,
-						row[0][0],
-						that._detailsObj(row[0])
-					);
-				},
-				function () {
-					event(false);
-				}
-			);
-
-			if (typeof res === 'boolean') {
-				event(res);
+			if ( res === true || res === false ) {
+				$(dt.table().node()).triggerHandler( 'responsive-display.dt', [dt, row, res, update] );
 			}
 		}
 	},
+
 
 	/**
 	 * Initialisation for the details handler
 	 *
 	 * @private
 	 */
-	_detailsInit: function () {
-		var that = this;
-		var dt = this.s.dt;
+	_detailsInit: function ()
+	{
+		var that    = this;
+		var dt      = this.s.dt;
 		var details = this.c.details;
 
 		// The inline type always uses the first child as the target
-		if (details.type === 'inline') {
-			details.target = 'td.dtr-control, th.dtr-control';
+		if ( details.type === 'inline' ) {
+			details.target = 'td:first-child, th:first-child';
 		}
 
-		$(dt.table().body()).on('keyup.dtr', 'td, th', function (e) {
-			let activeNodeName = document.activeElement.nodeName.toLowerCase();
+		// Keyboard accessibility
+		dt.on( 'draw.dtr', function () {
+			that._tabIndexes();
+		} );
+		that._tabIndexes(); // Initial draw has already happened
 
-			if (
-				e.keyCode === 13 &&
-				$(this).data('dtr-keyboard') &&
-				(activeNodeName === 'td' || activeNodeName === 'th')
-			) {
+		$( dt.table().body() ).on( 'keyup.dtr', 'td, th', function (e) {
+			if ( e.keyCode === 13 && $(this).data('dtr-keyboard') ) {
 				$(this).click();
 			}
-		});
+		} );
 
 		// type.target can be a string jQuery selector or a column index
-		var target = details.target;
+		var target   = details.target;
 		var selector = typeof target === 'string' ? target : 'td, th';
 
-		if (target !== undefined || target !== null) {
-			// Click handler to show / hide the details rows when they are available
-			$(dt.table().body()).on(
-				'click.dtr mousedown.dtr mouseup.dtr',
-				selector,
-				function (e) {
-					// If the table is not collapsed (i.e. there is no hidden columns)
-					// then take no action
-					if (!$(dt.table().node()).hasClass('collapsed')) {
+		// Click handler to show / hide the details rows when they are available
+		$( dt.table().body() )
+			.on( 'click.dtr mousedown.dtr mouseup.dtr', selector, function (e) {
+				// If the table is not collapsed (i.e. there is no hidden columns)
+				// then take no action
+				if ( ! $(dt.table().node()).hasClass('collapsed' ) ) {
+					return;
+				}
+
+				// Check that the row is actually a DataTable's controlled node
+				if ( ! dt.row( $(this).closest('tr') ).length ) {
+					return;
+				}
+
+				// For column index, we determine if we should act or not in the
+				// handler - otherwise it is already okay
+				if ( typeof target === 'number' ) {
+					var targetIdx = target < 0 ?
+						dt.columns().eq(0).length + target :
+						target;
+
+					if ( dt.cell( this ).index().column !== targetIdx ) {
 						return;
-					}
-
-					// Check that the row is actually a DataTable's controlled node
-					if (
-						$.inArray(
-							$(this).closest('tr').get(0),
-							dt.rows().nodes().toArray()
-						) === -1
-					) {
-						return;
-					}
-
-					// For column index, we determine if we should act or not in the
-					// handler - otherwise it is already okay
-					if (typeof target === 'number') {
-						var targetIdx =
-							target < 0
-								? dt.columns().eq(0).length + target
-								: target;
-
-						if (dt.cell(this).index().column !== targetIdx) {
-							return;
-						}
-					}
-
-					// $().closest() includes itself in its check
-					var row = dt.row($(this).closest('tr'));
-
-					// Check event type to do an action
-					if (e.type === 'click') {
-						// The renderer is given as a function so the caller can execute it
-						// only when they need (i.e. if hiding there is no point is running
-						// the renderer)
-						that._detailsDisplay(row, false);
-					}
-					else if (e.type === 'mousedown') {
-						// For mouse users, prevent the focus ring from showing
-						$(this).css('outline', 'none');
-					}
-					else if (e.type === 'mouseup') {
-						// And then re-allow at the end of the click
-						$(this).trigger('blur').css('outline', '');
 					}
 				}
-			);
-		}
+
+				// $().closest() includes itself in its check
+				var row = dt.row( $(this).closest('tr') );
+
+				// Check event type to do an action
+				if ( e.type === 'click' ) {
+					// The renderer is given as a function so the caller can execute it
+					// only when they need (i.e. if hiding there is no point is running
+					// the renderer)
+					that._detailsDisplay( row, false );
+				}
+				else if ( e.type === 'mousedown' ) {
+					// For mouse users, prevent the focus ring from showing
+					$(this).css('outline', 'none');
+				}
+				else if ( e.type === 'mouseup' ) {
+					// And then re-allow at the end of the click
+					$(this).blur().css('outline', '');
+				}
+			} );
 	},
+
 
 	/**
 	 * Get the details to pass to a renderer for a row
 	 * @param  {int} rowIdx Row index
 	 * @private
 	 */
-	_detailsObj: function (rowIdx) {
+	_detailsObj: function ( rowIdx )
+	{
 		var that = this;
 		var dt = this.s.dt;
-		var columnApis = [];
-		let settings = dt.settings()[0];
 
-		return $.map(this.s.columns, function (col, i) {
+		return $.map( this.s.columns, function( col, i ) {
 			// Never and control columns should not be passed to the renderer
-			if (col.never || col.control) {
+			if ( col.never || col.control ) {
 				return;
 			}
 
-			var dtCol = settings.aoColumns[i];
-
-			if (!columnApis[i]) {
-				columnApis[i] = dt.column(i);
-			}
-
 			return {
-				className: dtCol.sClass,
+				title:       dt.settings()[0].aoColumns[ i ].sTitle,
+				data:        dt.cell( rowIdx, i ).render( that.c.orthogonal ),
+				hidden:      dt.column( i ).visible() && !that.s.current[ i ],
 				columnIndex: i,
-				data: settings.fastData(rowIdx, i, that.c.orthogonal),
-				hidden: columnApis[i].visible() && !that.s.current[i],
-				rowIndex: rowIdx,
-				title: columnApis[i].title()
+				rowIndex:    rowIdx
 			};
-		});
+		} );
 	},
+
 
 	/**
 	 * Find a breakpoint object from a name
@@ -940,15 +670,17 @@ $.extend(Responsive.prototype, {
 	 * @return {object}      Breakpoint description object
 	 * @private
 	 */
-	_find: function (name) {
+	_find: function ( name )
+	{
 		var breakpoints = this.c.breakpoints;
 
-		for (var i = 0, iLen = breakpoints.length; i < iLen; i++) {
-			if (breakpoints[i].name === name) {
+		for ( var i=0, ien=breakpoints.length ; i<ien ; i++ ) {
+			if ( breakpoints[i].name === name ) {
 				return breakpoints[i];
 			}
 		}
 	},
+
 
 	/**
 	 * Re-create the contents of the child rows as the display has changed in
@@ -956,121 +688,79 @@ $.extend(Responsive.prototype, {
 	 *
 	 * @private
 	 */
-	_redrawChildren: function () {
+	_redrawChildren: function ()
+	{
 		var that = this;
 		var dt = this.s.dt;
 
-		dt.rows({ page: 'current' }).iterator('row', function (settings, idx) {
-			that._detailsDisplay(dt.row(idx), true);
-		});
+		dt.rows( {page: 'current'} ).iterator( 'row', function ( settings, idx ) {
+			var row = dt.row( idx );
+
+			that._detailsDisplay( dt.row( idx ), true );
+		} );
 	},
+
 
 	/**
 	 * Alter the table display for a resized viewport. This involves first
 	 * determining what breakpoint the window currently is in, getting the
 	 * column visibilities to apply and then setting them.
 	 *
-	 * @param  {boolean} forceRedraw Force a redraw
 	 * @private
 	 */
-	_resize: function (forceRedraw) {
+	_resize: function ()
+	{
 		var that = this;
 		var dt = this.s.dt;
-		var width = $(window).innerWidth();
+		var width = $(window).width();
 		var breakpoints = this.c.breakpoints;
 		var breakpoint = breakpoints[0].name;
 		var columns = this.s.columns;
-		var i, iLen;
+		var i, ien;
 		var oldVis = this.s.current.slice();
 
 		// Determine what breakpoint we are currently at
-		for (i = breakpoints.length - 1; i >= 0; i--) {
-			if (width <= breakpoints[i].width) {
+		for ( i=breakpoints.length-1 ; i>=0 ; i-- ) {
+			if ( width <= breakpoints[i].width ) {
 				breakpoint = breakpoints[i].name;
 				break;
 			}
 		}
-
+		
 		// Show the columns for that break point
-		var columnsVis = this._columnsVisibility(breakpoint);
+		var columnsVis = this._columnsVisiblity( breakpoint );
 		this.s.current = columnsVis;
 
 		// Set the class before the column visibility is changed so event
 		// listeners know what the state is. Need to determine if there are
 		// any columns that are not visible but can be shown
 		var collapsedClass = false;
-
-		for (i = 0, iLen = columns.length; i < iLen; i++) {
-			if (
-				columnsVis[i] === false &&
-				!columns[i].never &&
-				!columns[i].control &&
-				!dt.column(i).visible() === false
-			) {
+		for ( i=0, ien=columns.length ; i<ien ; i++ ) {
+			if ( columnsVis[i] === false && ! columns[i].never && ! columns[i].control ) {
 				collapsedClass = true;
 				break;
 			}
 		}
 
-		$(dt.table().node()).toggleClass('collapsed', collapsedClass);
+		$( dt.table().node() ).toggleClass( 'collapsed', collapsedClass );
 
 		var changed = false;
-		var visible = 0;
-		var dtSettings = dt.settings()[0];
-		var colGroup = $(dt.table().node()).children('colgroup');
-		var colEls = dtSettings.aoColumns.map(function (col) {
-			return col.colEl;
-		});
 
-		dt.columns()
-			.eq(0)
-			.each(function (colIdx, i) {
-				// Do nothing on DataTables' hidden column - DT removes it from the table
-				// so we need to slide back
-				if (! dt.column(colIdx).visible()) {
-					return;
-				}
+		dt.columns().eq(0).each( function ( colIdx, i ) {
+			if ( columnsVis[i] !== oldVis[i] ) {
+				changed = true;
+				that._setColumnVis( colIdx, columnsVis[i] );
+			}
+		} );
 
-				if (columnsVis[i] === true) {
-					visible++;
-				}
-
-				if (forceRedraw || columnsVis[i] !== oldVis[i]) {
-					changed = true;
-					that._setColumnVis(colIdx, columnsVis[i]);
-				}
-
-				// DataTables 2 uses `col` to define the width for a column
-				// and this needs to run each time, as DataTables will change
-				// the column width. We may need to reattach if we've removed
-				// an element previously.
-				if (! columnsVis[i]) {
-					colEls[i].detach();
-				}
-				else {
-					that._colGroupAttach(colGroup, colEls, i);
-				}
-			});
-
-		if (changed) {
-			dt.columns.adjust();
-
+		if ( changed ) {
 			this._redrawChildren();
 
 			// Inform listeners of the change
-			$(dt.table().node()).trigger('responsive-resize.dt', [
-				dt,
-				this._responsiveOnlyHidden()
-			]);
-
-			// If no records, update the "No records" display element
-			if (dt.page.info().recordsDisplay === 0) {
-				$('td', dt.table().body()).eq(0).attr('colspan', visible);
-			}
+			$(dt.table().node()).trigger( 'responsive-resize.dt', [dt, this.s.current] );
 		}
-
-		that._controlClass();
 	},
+
 
 	/**
 	 * Determine the width of each column in the table so the auto column hiding
@@ -1080,187 +770,96 @@ $.extend(Responsive.prototype, {
 	 *
 	 * @private
 	 */
-	_resizeAuto: function () {
+	_resizeAuto: function ()
+	{
 		var dt = this.s.dt;
 		var columns = this.s.columns;
-		var that = this;
-		var visibleColumns = dt
-			.columns()
-			.indexes()
-			.filter(function (idx) {
-				return dt.column(idx).visible();
-			});
 
 		// Are we allowed to do auto sizing?
-		if (!this.c.auto) {
+		if ( ! this.c.auto ) {
 			return;
 		}
 
 		// Are there any columns that actually need auto-sizing, or do they all
 		// have classes defined
-		if (
-			$.inArray(
-				true,
-				$.map(columns, function (c) {
-					return c.auto;
-				})
-			) === -1
-		) {
+		if ( $.inArray( true, $.map( columns, function (c) { return c.auto; } ) ) === -1 ) {
 			return;
 		}
 
 		// Clone the table with the current data in it
-		var clonedTable = dt.table().node().cloneNode(false);
-		var clonedHeader = $(dt.table().header().cloneNode(false)).appendTo(
-			clonedTable
-		);
-		var clonedFooter = $(dt.table().footer().cloneNode(false)).appendTo(
-			clonedTable
-		);
-		var clonedBody = $(dt.table().body())
-			.clone(false, false)
-			.empty()
-			.appendTo(clonedTable); // use jQuery because of IE8
-
-		clonedTable.style.width = 'auto';
+		var tableWidth   = dt.table().node().offsetWidth;
+		var columnWidths = dt.columns;
+		var clonedTable  = dt.table().node().cloneNode( false );
+		var clonedHeader = $( dt.table().header().cloneNode( false ) ).appendTo( clonedTable );
+		var clonedBody   = $( dt.table().body() ).clone( false, false ).empty().appendTo( clonedTable ); // use jQuery because of IE8
 
 		// Header
-		dt.table()
-			.header.structure(visibleColumns)
-			.forEach((row) => {
-				var cells = row
-					.filter(function (el) {
-						return el ? true : false;
-					})
-					.map(function (el) {
-						return $(el.cell)
-							.clone(false)
-							.css('display', 'table-cell')
-							.css('width', 'auto')
-							.css('min-width', 0);
-					});
+		var headerCells = dt.columns()
+			.header()
+			.filter( function (idx) {
+				return dt.column(idx).visible();
+			} )
+			.to$()
+			.clone( false )
+			.css( 'display', 'table-cell' );
 
-				$('<tr/>').append(cells).appendTo(clonedHeader);
-			});
-
-		// Always need an empty row that we can read widths from
-		var emptyRow = $('<tr/>').appendTo(clonedBody);
-
-		for (var i = 0; i < visibleColumns.count(); i++) {
-			emptyRow.append('<td/>');
-		}
-
-		// Body rows
-		if (this.c.details.renderer._responsiveMovesNodes) {
-			// Slow but it allows for moving elements around the document
-			dt.rows({ page: 'current' }).every(function (rowIdx) {
-				var node = this.node();
-
-				if (! node) {
-					return;
-				}
-
-				// We clone the table's rows and cells to create the sizing table
-				var tr = node.cloneNode(false);
-
-				dt.cells(rowIdx, visibleColumns).every(function (rowIdx2, colIdx) {
-					// If nodes have been moved out (listHiddenNodes), we need to
-					// clone from the store
-					var store = that.s.childNodeStore[rowIdx + '-' + colIdx];
-
-					if (store) {
-						$(this.node().cloneNode(false))
-							.append($(store).clone())
-							.appendTo(tr);
-					}
-					else {
-						$(this.node()).clone(false).appendTo(tr);
-					}
-				});
-
-				clonedBody.append(tr);
-			});
-		}
-		else {
-			// This is much faster, but it doesn't account for moving nodes around
-			$(clonedBody)
-				.append( $(dt.rows( { page: 'current' } ).nodes()).clone( false ) )
-				.find( 'th, td' ).css( 'display', '' );
-		}
-
-		// Any cells which were hidden by Responsive in the host table, need to
-		// be visible here for the calculations
-		clonedBody.find('th, td').css('display', '');
+		// Body rows - we don't need to take account of DataTables' column
+		// visibility since we implement our own here (hence the `display` set)
+		$(clonedBody)
+			.append( $(dt.rows( { page: 'current' } ).nodes()).clone( false ) )
+			.find( 'th, td' ).css( 'display', '' );
 
 		// Footer
-		dt.table()
-			.footer.structure(visibleColumns)
-			.forEach((row) => {
-				var cells = row
-					.filter(function (el) {
-						return el ? true : false;
-					})
-					.map(function (el) {
-						return $(el.cell)
-							.clone(false)
-							.css('display', 'table-cell')
-							.css('width', 'auto')
-							.css('min-width', 0);
-					});
+		var footer = dt.table().footer();
+		if ( footer ) {
+			var clonedFooter = $( footer.cloneNode( false ) ).appendTo( clonedTable );
+			var footerCells = dt.columns()
+				.footer()
+				.filter( function (idx) {
+					return dt.column(idx).visible();
+				} )
+				.to$()
+				.clone( false )
+				.css( 'display', 'table-cell' );
 
-				$('<tr/>').append(cells).appendTo(clonedFooter);
-			});
+			$('<tr/>')
+				.append( footerCells )
+				.appendTo( clonedFooter );
+		}
+
+		$('<tr/>')
+			.append( headerCells )
+			.appendTo( clonedHeader );
 
 		// In the inline case extra padding is applied to the first column to
 		// give space for the show / hide icon. We need to use this in the
 		// calculation
-		if (this.c.details.type === 'inline') {
-			$(clonedTable).addClass('dtr-inline collapsed');
+		if ( this.c.details.type === 'inline' ) {
+			$(clonedTable).addClass( 'dtr-inline collapsed' );
 		}
-
+		
 		// It is unsafe to insert elements with the same name into the DOM
 		// multiple times. For example, cloning and inserting a checked radio
-		// clears the checked state of the original radio.
-		$(clonedTable).find('[name]').removeAttr('name');
-
-		// A position absolute table would take the table out of the flow of
-		// our container element, bypassing the height and width (Scroller)
-		$(clonedTable).css('position', 'relative');
-
+		// clears the chcecked state of the original radio.
+		$( clonedTable ).find( '[name]' ).removeAttr( 'name' );
+		
 		var inserted = $('<div/>')
-			.css({
+			.css( {
 				width: 1,
 				height: 1,
-				overflow: 'hidden',
-				clear: 'both'
-			})
-			.append(clonedTable);
+				overflow: 'hidden'
+			} )
+			.append( clonedTable );
 
-		inserted.insertBefore(dt.table().node());
+		inserted.insertBefore( dt.table().node() );
 
-		// The cloned table now contains the smallest that each column can be
-		emptyRow.children().each(function (i) {
-			var idx = dt.column.index('fromVisible', i);
-			columns[idx].minWidth = this.offsetWidth || 0;
-		});
+		// The cloned header now contains the smallest that each column can be
+		headerCells.each( function (i) {
+			var idx = dt.column.index( 'fromVisible', i );
+			columns[ idx ].minWidth =  this.offsetWidth || 0;
+		} );
 
 		inserted.remove();
-	},
-
-	/**
-	 * Get the state of the current hidden columns - controlled by Responsive only
-	 */
-	_responsiveOnlyHidden: function () {
-		var dt = this.s.dt;
-
-		return $.map(this.s.current, function (v, i) {
-			// If the column is hidden by DataTables then it can't be hidden by
-			// Responsive!
-			if (dt.column(i).visible() === false) {
-				return true;
-			}
-			return v;
-		});
 	},
 
 	/**
@@ -1275,106 +874,16 @@ $.extend(Responsive.prototype, {
 	 * @param {boolean} showHide Show or hide (true or false)
 	 * @private
 	 */
-	_setColumnVis: function (col, showHide) {
-		var that = this;
+	_setColumnVis: function ( col, showHide )
+	{
 		var dt = this.s.dt;
 		var display = showHide ? '' : 'none'; // empty string will remove the attr
 
-		this._setHeaderVis(col, showHide, dt.table().header.structure());
-		this._setHeaderVis(col, showHide, dt.table().footer.structure());
-
-		dt.column(col)
-			.nodes()
-			.to$()
-			.css('display', display)
-			.toggleClass('dtr-hidden', !showHide);
-
-		// We need to set a variable that DT can use when selecting visible
-		// columns without needing to query the DOM
-		dt.settings()[0].aoColumns[col].responsiveVisible = showHide;
-
-		// If the are child nodes stored, we might need to reinsert them
-		if (!$.isEmptyObject(this.s.childNodeStore)) {
-			dt.cells(null, col)
-				.indexes()
-				.each(function (idx) {
-					that._childNodesRestore(dt, idx.row, idx.column);
-				});
-		}
+		$( dt.column( col ).header() ).css( 'display', display );
+		$( dt.column( col ).footer() ).css( 'display', display );
+		dt.column( col ).nodes().to$().css( 'display', display );
 	},
 
-	/**
-	 * Set a column's visibility, taking into account multiple rows
-	 * in a header / footer and colspan attributes
-	 * @param {*} col
-	 * @param {*} showHide
-	 * @param {*} structure
-	 */
-	_setHeaderVis: function (col, showHide, structure) {
-		var that = this;
-		var display = showHide ? '' : 'none';
-
-		// We use the `null`s in the structure array to indicate that a cell
-		// should expand over that one if there is a colspan, but it might
-		// also have been filled by a rowspan, so we need to expand the
-		// rowspan cells down through the structure
-		structure.forEach(function (row, rowIdx) {
-			for (var col = 0; col < row.length; col++) {
-				if (row[col] && row[col].rowspan > 1) {
-					var span = row[col].rowspan;
-
-					for (var i=1 ; i<span ; i++) {
-						structure[rowIdx + i][col] = {};
-					}
-				}
-			}
-		});
-
-		structure.forEach(function (row) {
-			if (row[col] && row[col].cell) {
-				$(row[col].cell)
-					.css('display', display)
-					.toggleClass('dtr-hidden', !showHide);
-			}
-			else {
-				// In a colspan - need to rewind calc the new span since
-				// display:none elements do not count as being spanned over
-				var search = col;
-
-				while (search >= 0) {
-					if (row[search] && row[search].cell) {
-						row[search].cell.colSpan = that._colspan(row, search);
-						break;
-					}
-
-					search--;
-				}
-			}
-		});
-	},
-
-	/**
-	 * How many columns should this cell span
-	 *
-	 * @param {*} row Header structure row
-	 * @param {*} idx The column index of the cell to span
-	 */
-	_colspan: function (row, idx) {
-		var colspan = 1;
-
-		for (var col = idx + 1; col < row.length; col++) {
-			if (row[col] === null && this.s.current[col]) {
-				// colspan and not hidden by Responsive
-				colspan++;
-			}
-			else if (row[col]) {
-				// Got the next cell, jump out
-				break;
-			}
-		}
-
-		return colspan;
-	},
 
 	/**
 	 * Update the cell tab indexes for keyboard accessibility. This is called on
@@ -1385,39 +894,25 @@ $.extend(Responsive.prototype, {
 	 *
 	 * @private
 	 */
-	_tabIndexes: function () {
+	_tabIndexes: function ()
+	{
 		var dt = this.s.dt;
-		var cells = dt.cells({ page: 'current' }).nodes().to$();
+		var cells = dt.cells( { page: 'current' } ).nodes().to$();
 		var ctx = dt.settings()[0];
 		var target = this.c.details.target;
 
-		cells.filter('[data-dtr-keyboard]').removeData('[data-dtr-keyboard]');
+		cells.filter( '[data-dtr-keyboard]' ).removeData( '[data-dtr-keyboard]' );
 
-		if (typeof target === 'number') {
-			dt.cells(null, target, { page: 'current' })
-				.nodes()
-				.to$()
-				.attr('tabIndex', ctx.iTabIndex)
-				.data('dtr-keyboard', 1);
-		}
-		else {
-			// This is a bit of a hack - we need to limit the selected nodes to just
-			// those of this table
-			if (target === 'td:first-child, th:first-child') {
-				target = '>td:first-child, >th:first-child';
-			}
+		var selector = typeof target === 'number' ?
+			':eq('+target+')' :
+			target;
 
-			var rows = dt.rows({ page: 'current' }).nodes();
-			var nodes = target === 'tr'
-				? $(rows)
-				: $(target, rows);
-
-			nodes
-				.attr('tabIndex', ctx.iTabIndex)
-				.data('dtr-keyboard', 1);
-		}
+		$( selector, dt.rows( { page: 'current' } ).nodes() )
+			.attr( 'tabIndex', ctx.iTabIndex )
+			.data( 'dtr-keyboard', 1 );
 	}
-});
+} );
+
 
 /**
  * List of default breakpoints. Each item in the array is an object with two
@@ -1430,12 +925,13 @@ $.extend(Responsive.prototype, {
  * @static
  */
 Responsive.breakpoints = [
-	{ name: 'desktop', width: Infinity },
+	{ name: 'desktop',  width: Infinity },
 	{ name: 'tablet-l', width: 1024 },
 	{ name: 'tablet-p', width: 768 },
 	{ name: 'mobile-l', width: 480 },
 	{ name: 'mobile-p', width: 320 }
 ];
+
 
 /**
  * Display methods - functions which define how the hidden data should be shown
@@ -1446,56 +942,42 @@ Responsive.breakpoints = [
  * @static
  */
 Responsive.display = {
-	childRow: function (row, update, render) {
-		var rowNode = $(row.node());
-
-		if (update) {
-			if (rowNode.hasClass('dtr-expanded')) {
-				row.child(render(), 'child').show();
+	childRow: function ( row, update, render ) {
+		if ( update ) {
+			if ( $(row.node()).hasClass('parent') ) {
+				row.child( render(), 'child' ).show();
 
 				return true;
 			}
 		}
 		else {
-			if (!rowNode.hasClass('dtr-expanded')) {
-				var rendered = render();
+			if ( ! row.child.isShown()  ) {
+				row.child( render(), 'child' ).show();
+				$( row.node() ).addClass( 'parent' );
 
-				if (rendered === false) {
-					return false;
-				}
-
-				row.child(rendered, 'child').show();
 				return true;
 			}
 			else {
-				row.child(false);
+				row.child( false );
+				$( row.node() ).removeClass( 'parent' );
 
 				return false;
 			}
 		}
 	},
 
-	childRowImmediate: function (row, update, render) {
-		var rowNode = $(row.node());
-
-		if (
-			(!update && rowNode.hasClass('dtr-expanded')) ||
-			!row.responsive.hasHidden()
-		) {
+	childRowImmediate: function ( row, update, render ) {
+		if ( (! update && row.child.isShown()) || ! row.responsive.hasHidden() ) {
 			// User interaction and the row is show, or nothing to show
-			row.child(false);
+			row.child( false );
+			$( row.node() ).removeClass( 'parent' );
 
 			return false;
 		}
 		else {
 			// Display
-			var rendered = render();
-
-			if (rendered === false) {
-				return false;
-			}
-
-			row.child(rendered, 'child').show();
+			row.child( render(), 'child' ).show();
+			$( row.node() ).addClass( 'parent' );
 
 			return true;
 		}
@@ -1504,82 +986,56 @@ Responsive.display = {
 	// This is a wrapper so the modal options for Bootstrap and jQuery UI can
 	// have options passed into them. This specific one doesn't need to be a
 	// function but it is for consistency in the `modal` name
-	modal: function (options) {
-		return function (row, update, render, closeCallback) {
-			var modal;
-			var rendered = render();
-
-			if (rendered === false) {
-				return false;
-			}
-
-			if (!update) {
+	modal: function ( options ) {
+		return function ( row, update, render ) {
+			if ( ! update ) {
 				// Show a modal
 				var close = function () {
 					modal.remove(); // will tidy events for us
-					$(document).off('keypress.dtr');
-					$(row.node()).removeClass('dtr-expanded');
-
-					closeCallback();
+					$(document).off( 'keypress.dtr' );
 				};
 
-				modal = $('<div class="dtr-modal"/>')
-					.append(
-						$('<div class="dtr-modal-display"/>')
-							.append(
-								$('<div class="dtr-modal-content"/>')
-									.data('dtr-row-idx', row.index())
-									.append(rendered)
-							)
-							.append(
-								$(
-									'<div class="dtr-modal-close">&times;</div>'
-								).click(function () {
-									close();
-								})
-							)
-					)
-					.append(
-						$('<div class="dtr-modal-background"/>').click(
-							function () {
+				var modal = $('<div class="dtr-modal"/>')
+					.append( $('<div class="dtr-modal-display"/>')
+						.append( $('<div class="dtr-modal-content"/>')
+							.append( render() )
+						)
+						.append( $('<div class="dtr-modal-close">&times;</div>' )
+							.click( function () {
 								close();
-							}
+							} )
 						)
 					)
-					.appendTo('body');
+					.append( $('<div class="dtr-modal-background"/>')
+						.click( function () {
+							close();
+						} )
+					)
+					.appendTo( 'body' );
 
-				$(row.node()).addClass('dtr-expanded');
-
-				$(document).on('keyup.dtr', function (e) {
-					if (e.keyCode === 27) {
+				$(document).on( 'keyup.dtr', function (e) {
+					if ( e.keyCode === 27 ) {
 						e.stopPropagation();
 
 						close();
 					}
-				});
+				} );
 			}
 			else {
-				modal = $('div.dtr-modal-content');
-
-				if (modal.length && row.index() === modal.data('dtr-row-idx')) {
-					modal.empty().append(rendered);
-				}
-				else {
-					// Modal not shown, nothing to update
-					return null;
-				}
+				$('div.dtr-modal-content')
+					.empty()
+					.append( render() );
 			}
 
-			if (options && options.header) {
+			if ( options && options.header ) {
 				$('div.dtr-modal-content').prepend(
-					'<h2>' + options.header(row) + '</h2>'
+					'<h2>'+options.header( row )+'</h2>'
 				);
 			}
-
-			return true;
 		};
 	}
 };
+
 
 /**
  * Display methods - functions which define how the hidden data should be shown
@@ -1590,136 +1046,42 @@ Responsive.display = {
  * @static
  */
 Responsive.renderer = {
-	listHiddenNodes: function () {
-		var fn = function (api, rowIdx, columns) {
-			var that = this;
-			var ul = $(
-				'<ul data-dtr-index="' + rowIdx + '" class="dtr-details"/>'
-			);
-			var found = false;
-
-			$.each(columns, function (i, col) {
-				if (col.hidden) {
-					var klass = col.className
-						? 'class="' + col.className + '"'
-						: '';
-
-					$(
-						'<li ' +
-							klass +
-							' data-dtr-index="' +
-							col.columnIndex +
-							'" data-dt-row="' +
-							col.rowIndex +
-							'" data-dt-column="' +
-							col.columnIndex +
-							'">' +
-							'<span class="dtr-title">' +
-							col.title +
-							'</span> ' +
-							'</li>'
-					)
-						.append(
-							$('<span class="dtr-data"/>').append(
-								that._childNodes(
-									api,
-									col.rowIndex,
-									col.columnIndex
-								)
-							)
-						) // api.cell( col.rowIndex, col.columnIndex ).node().childNodes ) )
-						.appendTo(ul);
-
-					found = true;
-				}
-			});
-
-			return found ? ul : false;
-		};
-
-		fn._responsiveMovesNodes = true;
-
-		return fn;
-	},
-
 	listHidden: function () {
-		return function (api, rowIdx, columns) {
-			var data = $.map(columns, function (col) {
-				var klass = col.className
-					? 'class="' + col.className + '"'
-					: '';
+		return function ( api, rowIdx, columns ) {
+			var data = $.map( columns, function ( col ) {
+				return col.hidden ?
+					'<li data-dtr-index="'+col.columnIndex+'" data-dt-row="'+col.rowIndex+'" data-dt-column="'+col.columnIndex+'">'+
+						'<span class="dtr-title">'+
+							col.title+
+						'</span> '+
+						'<span class="dtr-data">'+
+							col.data+
+						'</span>'+
+					'</li>' :
+					'';
+			} ).join('');
 
-				return col.hidden
-					? '<li ' +
-							klass +
-							' data-dtr-index="' +
-							col.columnIndex +
-							'" data-dt-row="' +
-							col.rowIndex +
-							'" data-dt-column="' +
-							col.columnIndex +
-							'">' +
-							'<span class="dtr-title">' +
-							col.title +
-							'</span> ' +
-							'<span class="dtr-data">' +
-							col.data +
-							'</span>' +
-							'</li>'
-					: '';
-			}).join('');
-
-			return data
-				? $(
-						'<ul data-dtr-index="' +
-							rowIdx +
-							'" class="dtr-details"/>'
-				).append(data)
-				: false;
-		};
+			return data ?
+				$('<ul data-dtr-index="'+rowIdx+'"/>').append( data ) :
+				false;
+		}
 	},
 
-	tableAll: function (options) {
-		options = $.extend(
-			{
-				tableClass: ''
-			},
-			options
-		);
+	tableAll: function ( options ) {
+		options = $.extend( {
+			tableClass: ''
+		}, options );
 
-		return function (api, rowIdx, columns) {
-			var data = $.map(columns, function (col) {
-				var klass = col.className
-					? 'class="' + col.className + '"'
-					: '';
+		return function ( api, rowIdx, columns ) {
+			var data = $.map( columns, function ( col ) {
+				return '<tr data-dt-row="'+col.rowIndex+'" data-dt-column="'+col.columnIndex+'">'+
+						'<td>'+col.title+':'+'</td> '+
+						'<td>'+col.data+'</td>'+
+					'</tr>';
+			} ).join('');
 
-				return (
-					'<tr ' +
-					klass +
-					' data-dt-row="' +
-					col.rowIndex +
-					'" data-dt-column="' +
-					col.columnIndex +
-					'">' +
-					'<td>' +
-					( '' !== col.title
-						? col.title + ':'
-						: ''
-					) +
-					'</td> ' +
-					'<td>' +
-					col.data +
-					'</td>' +
-					'</tr>'
-				);
-			}).join('');
-
-			return $(
-				'<table class="' +
-					options.tableClass +
-					' dtr-details" width="100%"/>'
-			).append(data);
-		};
+			return $('<table class="'+options.tableClass+'" width="100%"/>').append( data );
+		}
 	}
 };
 
@@ -1787,65 +1149,51 @@ Responsive.defaults = {
 	orthogonal: 'display'
 };
 
+
 /*
  * API
  */
 var Api = $.fn.dataTable.Api;
 
-// Doesn't do anything - workaround for a bug in DT... Not documented
-Api.register('responsive()', function () {
+// Doesn't do anything - work around for a bug in DT... Not documented
+Api.register( 'responsive()', function () {
 	return this;
-});
+} );
 
-Api.register('responsive.index()', function (li) {
+Api.register( 'responsive.index()', function ( li ) {
 	li = $(li);
 
 	return {
 		column: li.data('dtr-index'),
-		row: li.parent().data('dtr-index')
+		row:    li.parent().data('dtr-index')
 	};
-});
+} );
 
-Api.register('responsive.rebuild()', function () {
-	return this.iterator('table', function (ctx) {
-		if (ctx._responsive) {
+Api.register( 'responsive.rebuild()', function () {
+	return this.iterator( 'table', function ( ctx ) {
+		if ( ctx._responsive ) {
 			ctx._responsive._classLogic();
 		}
-	});
-});
+	} );
+} );
 
-Api.register('responsive.recalc()', function () {
-	return this.iterator('table', function (ctx) {
-		if (ctx._responsive) {
+Api.register( 'responsive.recalc()', function () {
+	return this.iterator( 'table', function ( ctx ) {
+		if ( ctx._responsive ) {
 			ctx._responsive._resizeAuto();
 			ctx._responsive._resize();
 		}
-	});
-});
+	} );
+} );
 
-Api.register('responsive.hasHidden()', function () {
+Api.register( 'responsive.hasHidden()', function () {
 	var ctx = this.context[0];
 
-	return ctx._responsive
-		? $.inArray(false, ctx._responsive._responsiveOnlyHidden()) !== -1
-		: false;
-});
+	return ctx._responsive ?
+		$.inArray( false, ctx._responsive.s.current ) !== -1 :
+		false;
+} );
 
-Api.registerPlural(
-	'columns().responsiveHidden()',
-	'column().responsiveHidden()',
-	function () {
-		return this.iterator(
-			'column',
-			function (settings, column) {
-				return settings._responsive
-					? settings._responsive._responsiveOnlyHidden()[column]
-					: false;
-			},
-			1
-		);
-	}
-);
 
 /**
  * Version information
@@ -1853,32 +1201,32 @@ Api.registerPlural(
  * @name Responsive.version
  * @static
  */
-Responsive.version = '3.0.8';
+Responsive.version = '2.1.0';
+
 
 $.fn.dataTable.Responsive = Responsive;
 $.fn.DataTable.Responsive = Responsive;
 
 // Attach a listener to the document which listens for DataTables initialisation
 // events so we can automatically initialise
-$(document).on('preInit.dt.dtr', function (e, settings, json) {
-	if (e.namespace !== 'dt') {
+$(document).on( 'preInit.dt.dtr', function (e, settings, json) {
+	if ( e.namespace !== 'dt' ) {
 		return;
 	}
 
-	if (
-		$(settings.nTable).hasClass('responsive') ||
-		$(settings.nTable).hasClass('dt-responsive') ||
-		settings.oInit.responsive ||
-		DataTable.defaults.responsive
+	if ( $(settings.nTable).hasClass( 'responsive' ) ||
+		 $(settings.nTable).hasClass( 'dt-responsive' ) ||
+		 settings.oInit.responsive ||
+		 DataTable.defaults.responsive
 	) {
 		var init = settings.oInit.responsive;
 
-		if (init !== false) {
-			new Responsive(settings, $.isPlainObject(init) ? init : {});
+		if ( init !== false ) {
+			new Responsive( settings, $.isPlainObject( init ) ? init : {}  );
 		}
 	}
-});
+} );
 
 
-return DataTable;
+return Responsive;
 }));
