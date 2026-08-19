@@ -120,9 +120,13 @@ function fn_GridList(formValid) {
             columns: [
                 // COLUNA - control (sempre visível — prioridade máxima)
                 { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
-                // COLUNA - imagem (some primeiro no mobile)
+                // COLUNA - imagem (some só no mobile - "min-tablet" continua normal no
+                // desktop/tablet). responsivePriority sozinho não garante isso: o
+                // Responsive mede a largura mínima pelo TEXTO DO CABEÇALHO ("Imagem", uma
+                // palavra curta) num clone isolado, não pelo conteúdo real (a <img>), então
+                // ela "cabia" no orçamento mesmo sem espaço de verdade, sufocando Título.
                 {
-                    data: 'imagem', className: 'text-center', responsivePriority: 10004,
+                    data: 'imagem', className: 'text-center min-tablet', responsivePriority: 10004,
                     render: function (data, type, full, row) {
                         //console.log("imagem data ::: ", data);
                         //console.log("extensao type ::: ", type);
@@ -138,11 +142,14 @@ function fn_GridList(formValid) {
                         return `<img name="myImg" decoding="async" fetchpriority="low" class="td-img cmyImg" alt="${full.titulo}" src="${imgData}">`;
                     }
                 },
-                // COLUNA - Tipo (2ª a aparecer no mobile)
-                { data: 'downloadTipo', className: 'text-center', width: '90px', responsivePriority: 2 },
-                // COLUNA - Titulo (3ª a aparecer no mobile)
+                // COLUNA - Tipo (2ª a aparecer no mobile) - width reduzido de 90px pra 70px,
+                // diferença foi pro Título.
+                { data: 'downloadTipo', className: 'text-center', width: '70px', responsivePriority: 2 },
+                // COLUNA - Titulo (3ª a aparecer no mobile) - width aumentado de 120px pra
+                // 175px (140 + ~35px compensando a redução de padding da coluna control em
+                // Download.cshtml), pra dar prioridade real de espaço ao título no mobile.
                 {
-                    data: 'titulo', className: 'text-center text-nowrap', width: '120px', responsivePriority: 3,
+                    data: 'titulo', className: 'text-center text-nowrap', width: '175px', responsivePriority: 3,
                     render: function (data, type, full) {
                         if (!data || full.Id === 0 || type !== 'display') return '';
 

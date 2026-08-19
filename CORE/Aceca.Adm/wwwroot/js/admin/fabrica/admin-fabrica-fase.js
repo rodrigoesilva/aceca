@@ -96,6 +96,12 @@ function fn_GridList(formValid) {
                 {
                     data: 'id',
                     targets: 1,
+                    // "never" (não "none"!) exclui essa coluna (só usada pra seleção em
+                    // massa) do modal de detalhes no mobile - visible:false sozinho não
+                    // basta, e "none" só afeta a visibilidade normal da coluna
+                    // (col.includeIn), não o modal (_detailsObj só verifica col.never,
+                    // setado apenas pela palavra literal "never" na className).
+                    className: 'never',
                     visible: false,
                     checkboxes: true,
                     render: function () {
@@ -105,16 +111,18 @@ function fn_GridList(formValid) {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
                 },
-                // COLUNA - Descricao
+                // COLUNA - Descricao (1ª a aparecer no mobile)
                 {
                     data: 'descricao',
                     targets: 2,
+                    responsivePriority: 1,
                 },
-                // COLUNA - Status                    
+                // COLUNA - Status (2ª a aparecer no mobile)
                 {
                     targets: -2,
                     data: 'ativo',
                     className: "text-center",
+                    responsivePriority: 2,
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -139,13 +147,14 @@ function fn_GridList(formValid) {
                         return data;
                     }
                 },
-                // COLUNA - Botoes Acoes
+                // COLUNA - Botoes Acoes (some no mobile)
                 {
                     data: 'id',
                     targets: -1,
                     className: "text-center",
                     orderable: false,
                     searchable: false,
+                    responsivePriority: 10004,
                     render: function (data, type, full, meta) {
 
                         let btns = '';
@@ -257,7 +266,9 @@ function fn_GridList(formValid) {
                     display: $.fn.dataTable.Responsive.display.modal({
                         header: function (row) {
                             var data = row.data();
-                            return 'Detalhes de ' + data['full_name'];
+                            var titulo = data.nome || data.Nome || data.descricao || data.Descricao ||
+                                data.NomeUsuario || data.nomeUsuario || data.socioNome || data.titulo || '';
+                            return titulo ? ('Detalhes de ' + titulo) : 'Detalhes';
                         }
                     }),
                     type: 'column',

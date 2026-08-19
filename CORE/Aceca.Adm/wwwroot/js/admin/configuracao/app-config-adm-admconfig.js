@@ -101,6 +101,12 @@ function fn_GridList() {
                 // COLUNA - ID checkbox
                 {
                     targets: 1,
+                    // "never" (não "none"!) exclui essa coluna (só usada pra seleção em
+                    // massa) do modal de detalhes no mobile - visible:false sozinho não
+                    // basta, e "none" só afeta a visibilidade normal da coluna
+                    // (col.includeIn), não o modal (_detailsObj só verifica col.never,
+                    // setado apenas pela palavra literal "never" na className).
+                    className: 'never',
                     visible: false,
                     checkboxes: true,
                     render: function () {
@@ -110,10 +116,12 @@ function fn_GridList() {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
                 }, 
-                // COLUNA - Botoes Acoes
+                // COLUNA - Botoes Acoes (some no mobile - só controle/Parâmetro/Descrição
+                // ficam visíveis, ver responsivePriority abaixo)
                 {
                     targets: 2,
                     /*title: 'Ações',*/
+                    responsivePriority: 10004,
                     orderable: false,
                     searchable: false,
                     render: function (data, type, full, meta) {
@@ -143,24 +151,28 @@ function fn_GridList() {
                         return (btns);
                     }
                 },
-                // COLUNA - Parametro
+                // COLUNA - Parametro (1ª a aparecer no mobile)
                 {
                     targets: 3,
+                    responsivePriority: 1,
                     //className: "text-center",
                 },
-                // COLUNA - Descricao
+                // COLUNA - Descricao (2ª a aparecer no mobile)
                 {
                     targets: 4,
+                    responsivePriority: 2,
                     //className: "text-center",
                 },
-                // COLUNA - Valor
+                // COLUNA - Valor (some no mobile)
                 {
                     targets: 5,
+                    responsivePriority: 10005,
                     //className: "text-center",
                 },
-                // COLUNA - Status
+                // COLUNA - Status (some no mobile)
                 {
                     targets: 6,
+                    responsivePriority: 10006,
                     //orderable: true,
                     //searchable: false,
                     //visible: false
@@ -272,7 +284,9 @@ function fn_GridList() {
                     display: $.fn.dataTable.Responsive.display.modal({
                         header: function (row) {
                             var data = row.data();
-                            return 'Detalhes de ' + data['full_name'];
+                            var titulo = data.nome || data.Nome || data.descricao || data.Descricao ||
+                                data.NomeUsuario || data.nomeUsuario || data.socioNome || data.titulo || '';
+                            return titulo ? ('Detalhes de ' + titulo) : 'Detalhes';
                         }
                     }),
                     type: 'column',

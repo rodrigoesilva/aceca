@@ -96,6 +96,12 @@ function fn_GridList(formValid) {
                 {
                     data: 'id',
                     targets: 1,
+                    // "never" (não "none"!) exclui essa coluna (só usada pra seleção em
+                    // massa) do modal de detalhes no mobile - visible:false sozinho não
+                    // basta, e "none" só afeta a visibilidade normal da coluna
+                    // (col.includeIn), não o modal (_detailsObj só verifica col.never,
+                    // setado apenas pela palavra literal "never" na className).
+                    className: 'never',
                     visible: false,
                     render: function () {
                         return '<input type="checkbox" class="dt-checkboxes form-check-input">';
@@ -251,7 +257,9 @@ function fn_GridList(formValid) {
                     display: $.fn.dataTable.Responsive.display.modal({
                         header: function (row) {
                             var data = row.data();
-                            return 'Detalhes de ' + data['full_name'];
+                            var titulo = data.nome || data.Nome || data.descricao || data.Descricao ||
+                                data.NomeUsuario || data.nomeUsuario || data.socioNome || data.titulo || '';
+                            return titulo ? ('Detalhes de ' + titulo) : 'Detalhes';
                         }
                     }),
                     type: 'column',
