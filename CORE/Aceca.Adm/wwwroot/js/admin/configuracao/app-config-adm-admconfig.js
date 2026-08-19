@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
 //#region GRID
 function fn_GridList() {
 
-    var varLang_UrlTranslate = 'https://cdn.datatables.net/plug-ins/1.12.1/i18n/pt-BR.json',
+    var varLang_UrlTranslate = '/vendor/libs/datatables-bs5/i18n/pt-BR.json',
 
         varAjax_UrlController = `${var_Controller}/ListGrid`,
         varAjax_TypeAction = 'GET',

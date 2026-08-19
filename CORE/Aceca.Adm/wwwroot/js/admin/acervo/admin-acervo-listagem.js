@@ -576,8 +576,8 @@ function fn_FiltrarDados() {
                     let bInteresseColecao = (full?.Interesse === true || full?.Interesse === 1);
 
                     let liColecaoIncluir = bPossuiColecao
-                        ? `<li><a href="javascript:void(0);" class="dropdown-item colecao-ja-incluida" data-bs-toggle="tooltip" title="Incluído na Coleção"><i class="icon-base ri ri-archive-2-fill text-success icon-md me-2"></i>Já na Coleção</a></li>`
-                        : `<li><a href="javascript:void(0);" class="dropdown-item edit-record btn-colecao-incluir" data-obj="${itemObjJson}"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Incluir na Coleção</a></li>`;
+                        ? `<li><a href="javascript:void(0);" class="dropdown-item colecao-ja-incluida" data-bs-toggle="tooltip" title="Incluído na Minha Coleção"><i class="icon-base ri ri-archive-2-fill text-success icon-md me-2"></i>Já na Minha Coleção</a></li>`
+                        : `<li><a href="javascript:void(0);" class="dropdown-item edit-record btn-colecao-incluir" data-obj="${itemObjJson}"><i class="icon-base ri ri-mail-check-line icon-md me-2"></i>Incluir na Minha Coleção</a></li>`;
 
                     // Item já incluído na Coleção não pode (nem faz sentido) ser marcado como
                     // Interesse - o próprio backend zera o flag Interesse ao incluir na Coleção -

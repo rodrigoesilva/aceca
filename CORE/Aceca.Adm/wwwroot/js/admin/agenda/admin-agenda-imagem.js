@@ -75,7 +75,7 @@ function fn_GridList(formValid) {
                 type: varAjax_TypeAction,
                 //dataSrc: ''
                 dataSrc: function (result) {
-                    //console.log("data fn :: ", result)
+                    console.log("data fn :: ", result)
                     return result.data;
                 }
             },
@@ -110,9 +110,9 @@ function fn_GridList(formValid) {
                     data: 'imagem',
                     targets: 2,
                 },
-                // COLUNA - Agenda
+                // COLUNA - Descricao
                 {
-                    data: 'agenda',
+                    data: 'descricao',
                     targets: 3,
                 },
                 // COLUNA - Status                    
