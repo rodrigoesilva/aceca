@@ -540,9 +540,18 @@ function fn_Pop(obj, action) {
 
     // Contador de tentativas de captura de tela - só contexto pra administração decidir se
     // libera; o campo em si (checkbox acima) é quem efetivamente desbloqueia.
-    document.getElementById('lblQtdInfracoesPrint').textContent = (obj === null || !obj.QtdInfracoesPrint)
-        ? ''
-        : `${obj.QtdInfracoesPrint} tentativa(s) registrada(s)`;
+    (function () {
+        const qtd = obj?.QtdInfracoesPrint || 0;
+        const badge = document.getElementById('lblQtdInfracoesPrint');
+        if (qtd > 0) {
+            badge.textContent = qtd;
+            badge.title = `${qtd} tentativa(s) de captura de tela registrada(s)`;
+            badge.style.display = '';
+        } else {
+            badge.textContent = '';
+            badge.style.display = 'none';
+        }
+    })();
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');

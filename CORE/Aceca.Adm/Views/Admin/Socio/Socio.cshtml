@@ -23,6 +23,7 @@
                                         <th>id</th>
                                         <th>Nome</th>
                                         <th>Tipo</th>
+                                        <th>Bloqueio</th>
                                         <th>Status</th>
                                         <th>A&ccedil;&otilde;es</th>
                                     </tr>
@@ -163,8 +164,12 @@
                         <div class="form-check form-switch mb-2">
                             <input type="checkbox" id="pop_line_item_14" class="form-check-input dt-line-14"
                                    name="pop_line_item_14" placeholder="Bloqueado" aria-label="Bloqueado" />
-                            <label class="form-check-label text-nowrap" for="pop_line_item_14">Bloqueado</label>
-                            <small class="d-block text-muted" id="lblQtdInfracoesPrint"></small>
+                            <label class="form-check-label text-nowrap" for="pop_line_item_14"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="Bloqueio automático por tentativas de captura de tela (print) nas imagens do acervo. A cada tentativa o tempo de bloqueio dobra; na 5ª tentativa o sócio fica bloqueado até a administração liberar aqui.">
+                                Bloqueado
+                                <span class="badge rounded-pill bg-label-danger" id="lblQtdInfracoesPrint" style="display:none;"></span>
+                            </label>
                         </div>
                     </div>
 

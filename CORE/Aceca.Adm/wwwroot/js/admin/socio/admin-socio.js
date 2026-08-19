@@ -53,7 +53,7 @@ function fn_GridList(formValid) {
         varAjax_TypeAction = 'POST',
         varAjax_TypeContent = 'application/json; charset=utf-8',
 
-        varCol_Exportar = [2, 3, 4],
+        varCol_Exportar = [2, 3, 4, 5],
         varCol_Ordenacao = [[2, 'asc']],
 
         varItems_QtdPorPage = 50,
@@ -179,6 +179,27 @@ function fn_GridList(formValid) {
                         } else {
                             return '';
                         }
+                    }
+                },
+                // COLUNA - Bloqueio (tentativas de captura de tela - ver ReportImageAccess/Login)
+                {
+                    targets: 4,
+                    data: 'QtdInfracoesPrint',
+                    className: "text-center",
+                    render: function (data, type, full) {
+                        if (type !== 'display') return data || 0;
+
+                        const qtd = data || 0;
+
+                        if (full.Bloqueado) {
+                            return '<span class="badge rounded-pill bg-label-danger" title="Bloqueado após ' + qtd + ' tentativa(s) de captura de tela - aguardando liberação da administração">Bloqueado</span>';
+                        }
+
+                        if (qtd > 0) {
+                            return '<span class="badge rounded-pill bg-label-warning" title="' + qtd + ' tentativa(s) de captura de tela registrada(s)">' + qtd + '</span>';
+                        }
+
+                        return '<span class="text-muted">-</span>';
                     }
                 },
                 // COLUNA - Status
@@ -549,9 +570,18 @@ function fn_Pop(obj, action) {
 
     // Contador de tentativas de captura de tela - só contexto pra decidir se libera; o
     // campo em si (checkbox acima) é quem efetivamente desbloqueia.
-    document.getElementById('lblQtdInfracoesPrint').textContent = (obj === null || !obj.QtdInfracoesPrint)
-        ? ''
-        : `${obj.QtdInfracoesPrint} tentativa(s) registrada(s)`;
+    (function () {
+        const qtd = obj?.QtdInfracoesPrint || 0;
+        const badge = document.getElementById('lblQtdInfracoesPrint');
+        if (qtd > 0) {
+            badge.textContent = qtd;
+            badge.title = `${qtd} tentativa(s) de captura de tela registrada(s)`;
+            badge.style.display = '';
+        } else {
+            badge.textContent = '';
+            badge.style.display = 'none';
+        }
+    })();
 
     // Pop Action
     (popAddNewItem.querySelector('.offcanvas-title').textContent = (action === 'Edit') ? 'Alterar Registro' : 'Novo Registro');

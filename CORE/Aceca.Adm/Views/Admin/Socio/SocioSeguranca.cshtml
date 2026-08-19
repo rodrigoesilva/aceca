@@ -98,9 +98,11 @@
                     <div class="form-check form-switch mb-2">
                         <input type="checkbox" id="pop_line_item_06" class="form-check-input dt-line-06"
                                name="pop_line_item_06" placeholder="Bloqueado" aria-label="Bloqueado"/>
-                        <label class="form-check-label" for="pop_line_item_06">
-                            Bloqueado (captura de tela) &mdash;
-                            <small class="text-muted" id="lblQtdInfracoesPrint"></small>
+                        <label class="form-check-label" for="pop_line_item_06"
+                               data-bs-toggle="tooltip" data-bs-placement="top"
+                               title="Bloqueio automático por tentativas de captura de tela (print) nas imagens do acervo. A cada tentativa o tempo de bloqueio dobra; na 5ª tentativa o sócio fica bloqueado até a administração liberar aqui.">
+                            Bloqueado (captura de tela)
+                            <span class="badge rounded-pill bg-label-danger" id="lblQtdInfracoesPrint" style="display:none;"></span>
                         </label>
                     </div>
                 </div>
