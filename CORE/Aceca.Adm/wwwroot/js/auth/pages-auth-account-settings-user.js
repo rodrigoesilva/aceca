@@ -84,6 +84,7 @@ function fn_GridColecao(dt_project_table) {
                 {
                     // Nome da fase
                     targets: 1,
+                    orderable: false,
                     responsivePriority: 1,
                     render: function (data, type, full, meta) {
                         return '<span class="text-truncate fw-medium text-heading">' + (full.nomeFase || '-') + '</span>';
@@ -92,6 +93,7 @@ function fn_GridColecao(dt_project_table) {
                 {
                     // Tipo (maço, box, ...)
                     targets: 2,
+                    orderable: false,
                     //visible: false,
                     render: function (data, type, full, meta) {
                         return '<span class="text-heading">' + (full.tipo || '-') + '</span>';
@@ -100,14 +102,17 @@ function fn_GridColecao(dt_project_table) {
                 {
                     // Coleção (% do catálogo dessa Fase+Tipo que o sócio possui)
                     targets: 3,
+                    orderable: false,
                     render: function (data, type, full, meta) {
                         return fn_RenderProgressoColecao(full.percentPossui, full.qtdPossui, full.totalCatalogo);
                     }
                 },
                 {
-                    // Status (quantidade de itens dessa Fase+Tipo na coleção)
+                    // Status (quantidade de itens dessa Fase+Tipo na coleção) - "Tenho".
+                    // Coluna usada pro sort inicial (order abaixo): maior quantidade primeiro.
                     targets: 4,
                     className: 'text-center',
+                    orderable: false,
                     render: function (data, type, full, meta) {
                         return fn_RenderBadgeQtd(full.qtdPossui, 'ri-checkbox-circle-line', 'text-success');
                     }
@@ -116,13 +121,19 @@ function fn_GridColecao(dt_project_table) {
                     // Interesses (quantidade de Interesse dessa Fase+Tipo)
                     targets: 5,
                     className: 'text-center',
+                    orderable: false,
                     render: function (data, type, full, meta) {
                         return fn_RenderBadgeQtd(full.qtdInteresse, 'ri-shield-star-line', 'text-warning');
                     }
                 }
             ],
-            order: [[3, 'desc']],
-            ordering: false,
+            // Ordena por "Tenho" (qtdPossui, coluna 4) - maior quantidade primeiro. Antes
+            // apontava pra coluna errada (3 = % de Coleção) E "ordering: false" fazia o
+            // DataTables ignorar esse order inicial por completo (só respeitava a ordem
+            // que veio da API). Colunas continuam não-clicáveis (orderable: false cada uma),
+            // então isso não libera o usuário pra reordenar manualmente - só garante que a
+            // ordem inicial de verdade seja aplicada.
+            order: [[4, 'desc']],
             dom: 't',
             displayLength: varItems_QtdPorPage,
             lengthMenu: varItems_DivPage,
