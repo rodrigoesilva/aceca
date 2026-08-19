@@ -143,12 +143,36 @@ function fn_GridColecao(dt_project_table) {
             // no mobile - a coluna "control" (target 0) e os responsivePriority acima já
             // estavam prontos pra isso, só faltava ligar a extensão (ver VendorStyles/
             // VendorScripts em AccountSettingsProfileUser.cshtml). Colunas de menor
-            // prioridade (Tipo, % Coleção) somem primeiro e viram uma lista de detalhes
-            // ao clicar no "+" da 1ª coluna.
+            // prioridade (Tipo, % Coleção) somem primeiro.
+            //
+            // renderer customizado (em vez do padrão da extensão) - o vendor
+            // dataTables.responsive.js aqui é a versão 2.1.0 (2014-2016), de antes do
+            // DataTables 2.x usado no projeto; o renderer padrão (lista automática de
+            // colunas ocultas) não expande direito nessa combinação de versões - mesmo
+            // motivo pelo qual Acervo/Listagem (admin-acervo-listagem.js) também usa
+            // renderer próprio em vez do padrão.
             responsive: {
                 details: {
                     type: 'column',
-                    target: 0
+                    target: 0,
+                    renderer: function (api, rowIdx) {
+                        var full = api.row(rowIdx).data();
+
+                        var linhas = [
+                            ['Status da Minha Coleção', fn_RenderProgressoColecao(full.percentPossui, full.qtdPossui, full.totalCatalogo)],
+                            ['Tenho', fn_RenderBadgeQtd(full.qtdPossui, 'ri-checkbox-circle-line', 'text-success')],
+                            ['Meus Interesses', fn_RenderBadgeQtd(full.qtdInteresse, 'ri-shield-star-line', 'text-warning')]
+                        ];
+
+                        var html = '<div class="p-2">' + linhas.map(function (linha) {
+                            return '<div class="d-flex justify-content-between align-items-center py-1 gap-3">' +
+                                '<span class="fw-medium text-heading">' + linha[0] + '</span>' +
+                                linha[1] +
+                                '</div>';
+                        }).join('') + '</div>';
+
+                        return $(html);
+                    }
                 }
             },
             language: {
