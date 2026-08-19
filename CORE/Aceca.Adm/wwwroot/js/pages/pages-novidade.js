@@ -337,7 +337,11 @@ function fn_FiltrarDados() {
             // COLUNA - codigoAceca (2ª a aparecer no mobile)
             // COLUNA - codigoAceca (2ª a aparecer no mobile)
             {
-                data: 'CodigoAceca', className: 'text-center text-nowrap', width: '90px', responsivePriority: 2, orderable: true,
+                // width reduzido de 90px pra 70px (o conteúdo real, "PLH6376", nunca
+                // precisou de 90px) - a diferença foi pra NomeMarca abaixo. Soma total
+                // continua 210px, então o cálculo do Responsive de quantas colunas cabem
+                // não muda, só a proporção entre as duas.
+                data: 'CodigoAceca', className: 'text-center text-nowrap', width: '70px', responsivePriority: 2, orderable: true,
                 render: function (data, type, full) {
                     if (!data || full.Id === 0 || type !== 'display') return '';
 
@@ -346,8 +350,9 @@ function fn_FiltrarDados() {
                     return codigoAceca;
                 }
             },
-            // COLUNA - nomeMarca (3ª a aparecer no mobile)
-            { data: 'NomeMarca', className: 'text-center', width: '120px' , responsivePriority: 3 },
+            // COLUNA - nomeMarca (3ª a aparecer no mobile) - width aumentado de 120px pra
+            // 140px (ver comentário acima em CodigoAceca) pra dar mais espaço real ao nome.
+            { data: 'NomeMarca', className: 'text-center', width: '140px' , responsivePriority: 3 },
             // COLUNA - imagem (some primeiro no mobile)
             {
                 data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004,
