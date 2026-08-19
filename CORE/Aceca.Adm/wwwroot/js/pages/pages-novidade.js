@@ -355,16 +355,25 @@ function fn_FiltrarDados() {
             // de padding da coluna control em Novidade.cshtml, pra manter a largura total
             // que o Responsive mede e não repetir o bug da coluna Imagem reaparecendo.
             { data: 'NomeMarca', className: 'text-center', width: '175px' , responsivePriority: 3 },
-            // COLUNA - imagem (some primeiro no mobile)
+            // COLUNA - imagem (nunca aparece como coluna no mobile - só no card expandido).
+            // responsivePriority sozinho não garante isso: o Responsive mede a largura
+            // mínima pelo TEXTO DO CABEÇALHO ("Imagem", uma palavra curta) num clone
+            // isolado, não pelo conteúdo real (uma <img> 64x64px) - então ele "cabia" no
+            // orçamento mesmo sem espaço de verdade, sufocando Nome. className "none" tira
+            // essa coluna do cálculo de vez (ela continua aparecendo no card expandido, que
+            // usa row.ImgPrincipalFull direto no renderer, sem depender da visibilidade
+            // da coluna).
             {
-                data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004,
+                data: 'ImgPrincipalFull', className: 'text-center none', responsivePriority: 10004,
                 render: function (data, type, row) {
                     return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${data}">`;
                 }
             },
             // COLUNA - imagemDetalhe
             {
-                data: 'ImgDetalheFull', className: 'text-center', responsivePriority: 10005,
+                // Mesmo problema/fix da coluna Imagem acima ("Detalhe" também é uma
+                // palavra curta - tomou o lugar de Imagem assim que ela ficou "none").
+                data: 'ImgDetalheFull', className: 'text-center none', responsivePriority: 10005,
                 render: function (data, type, row) {
                     return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row.CodigoAceca}" src="${data}">`;
                 }
