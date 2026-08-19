@@ -195,10 +195,16 @@
                 <tr>
                     <th></th>
                     <th class="text-nowrap text-center">C&oacute;d. ACECA</th>
-                    <th class="text-start w-25">Nome</th>
+                    <!-- w-25/w-50 removidas (só aqui, Listagem.cshtml não foi tocado): o
+                         Responsive mede a largura mínima de cada coluna clonando só o <th>
+                         num <div> escondido de 1px de largura - width:25%/50% nesse contexto
+                         resolve pra uma fração de 1px, fazendo o Responsive achar que Nome/
+                         Descrição não precisam de espaço nenhum no cálculo de quantas colunas
+                         cabem no mobile (por isso Imagem aparecia mesmo sem caber de verdade). -->
+                    <th class="text-start">Nome</th>
                     <th>Imagem</th>
                     <th>Detalhe</th>
-                    <th class="text-start w-50">Descri&ccedil;&atilde;o</th>
+                    <th class="text-start">Descri&ccedil;&atilde;o</th>
                     <th>F&aacute;brica</th>
                     <th>Tipo</th>
                     <th>Finalidade</th>
