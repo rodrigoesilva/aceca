@@ -120,6 +120,8 @@ function fn_GridList(formValid) {
             scrollCollapse: true,
             ordering: true,
             destroy: true,
+            autoWidth: false,
+            scrollX: false,
 
             ajax: {
                 url: varAjax_UrlController,
@@ -156,7 +158,9 @@ function fn_GridList(formValid) {
                     data: 'Id',
                     targets: 0,
                     className: 'control',
-                    visible: false,
+                    width: '1%',
+                    searchable: false,
+                    orderable: false,
                     render: function (data, type, full, meta) {
                         return '';
                     }
