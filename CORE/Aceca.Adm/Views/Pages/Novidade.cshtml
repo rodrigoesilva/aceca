@@ -81,13 +81,11 @@
 
 @section PageScripts {
 
-    <!-- O core local (vendor/libs/flatpickr/flatpickr.js) é um build webpack diferente do
-         pacote oficial - não tem suporte real a "rContainer", que o plugin monthSelect
-         (qualquer versão do pacote oficial) precisa. Resultado: TypeError "Cannot read
-         properties of undefined (reading 'addEventListener')" em bindEvents. Em vez de trocar
-         o core global (usado em outras páginas), carrega aqui o core oficial via CDN, pinado
-         na mesma versão do plugin - substitui window.flatpickr só nesta página. -->
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.js" defer></script>
+    <!-- Causa real do erro (Cannot read properties of undefined (reading 'addEventListener')
+         em bindEvents): o flatpickr detecta user-agent mobile e troca pro <input type="date">
+         nativo em vez de montar o calendário, e o plugin monthSelect não lida com esse modo -
+         corrigido com disableMobile:true na chamada flatpickr() em pages-novidade.js. Versão
+         do plugin fixada em 4.6.13 só por consistência com o core local. -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/pt.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/plugins/monthSelect/index.js" defer></script>
 

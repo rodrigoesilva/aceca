@@ -71,6 +71,13 @@ document.addEventListener('DOMContentLoaded', function () {
 $(function () {
     let dt_InicialPick = flatpickr('#dt_Periodo', {
         locale: 'pt',
+        // Sem isso, o flatpickr detecta user-agent mobile (Android/iPhone/etc - é
+        // exatamente o que a emulação de dispositivo do DevTools também dispara) e troca
+        // pro <input type="date"> nativo do navegador em vez de montar o calendário
+        // customizado - só que o plugin monthSelect não lida com esse modo e quebra
+        // (TypeError: Cannot read properties of undefined (reading 'addEventListener')
+        // em bindEvents, porque prevMonthNav/nextMonthNav nunca chegam a ser criados).
+        disableMobile: true,
         plugins: [
             new monthSelectPlugin({
                 shorthand: true, //defaults to false
