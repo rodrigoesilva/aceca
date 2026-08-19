@@ -1,5 +1,11 @@
 @{
     ViewData["Title"] = "Account settings - Pages";
+
+    // Cache-busting manual (Program.cs aplica Cache-Control: max-age=604800 em TODO
+    // arquivo estático) - sem isso, o navegador continua servindo a versão antiga do
+    // vendor em cache mesmo depois do arquivo ser atualizado no servidor (foi exatamente
+    // isso que aconteceu na atualização 2.1.0 -> 3.0.8 do Responsive).
+    var urlResponsiveBs5Css = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css");
 }
 
 @section VendorStyles {
@@ -8,7 +14,7 @@
     <link rel="stylesheet" href="~/vendor/libs/animate-css/animate.css" />
     <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
     <link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css">
-    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css">
+    <link rel="stylesheet" href="@urlResponsiveBs5Css">
     <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css">
     <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css">
     <style>

@@ -18,12 +18,21 @@
     </style>
 }
 
+@{
+    // Cache-busting manual (Program.cs aplica Cache-Control: max-age=604800 em TODO
+    // arquivo estático) - sem isso, o navegador continua servindo a versão antiga do
+    // vendor em cache mesmo depois do arquivo ser atualizado no servidor. Ver
+    // Helper/AssetUrlHelper.cs.
+    var urlResponsiveCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css");
+    var urlResponsiveJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js");
+}
+
 @section VendorStyles {
-    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css" />
+    <link rel="stylesheet" href="@urlResponsiveCss" />
 }
 
 @section VendorScripts {
-    <script src="~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js" defer></script>
+    <script src="@urlResponsiveJs" defer></script>
 }
 
 @section PageScripts {
@@ -192,7 +201,7 @@
             </div>
             <hr class="my-0">
             <div class="card-datatable table-responsive pb-0 mb-n4 pt-3">
-                <table id="tblColecaoTopFases" class="table datatable-project table-border-bottom-0">
+                <table id="tblColecaoTopFases" class="table datatable-project table-border-bottom-0" width="100%">
                     <thead>
                         <tr>
                             <th></th>

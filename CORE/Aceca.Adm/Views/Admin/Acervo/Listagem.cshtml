@@ -9,6 +9,13 @@
     var urlAdminAcervoListagem = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/admin/acervo/admin-acervo-listagem.js");
     var urlModalMarca = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/modal/modal-marca.js");
     var urlFormsSelects = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/forms-selects.js");
+
+    // Cache-busting manual (Program.cs aplica Cache-Control: max-age=604800 em TODO
+    // arquivo estático) - sem isso, o navegador continua servindo a versão antiga do
+    // vendor em cache mesmo depois do arquivo ser atualizado no servidor (foi exatamente
+    // isso que aconteceu na atualização 2.1.0 -> 3.0.8 do Responsive).
+    var urlResponsiveCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css");
+    var urlResponsiveJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js");
 }
 
 @section VendorStyles {
@@ -18,15 +25,12 @@
     <!-- CSS PAGE -->
     <link rel="stylesheet" href="~/css/zoom.css" asp-append-version="true">
 
-    <!--  <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.8/css/responsive.dataTables.min.css">-->
-    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css" />
+    <link rel="stylesheet" href="@urlResponsiveCss" />
 }
 
 @section VendorScripts {
-
-    <!--<script src="https://cdn.datatables.net/responsive/2.1.0/js/dataTables.responsive.js" defer></script>-->
-    <script src="~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js" defer></script>
-} 
+    <script src="@urlResponsiveJs" defer></script>
+}
 
 @section PageScripts {
     <script src="@urlAdminAcervoListagem" defer></script>
@@ -174,7 +178,7 @@
 
 <!-- The Modal Zoom -->
 <div id="myModal" class="img-zoom-modal">
-    <span id="caption">img</span>
+    <span id="caption"></span>
     <img class="img-zoom-content" id="img01">
 </div>
 

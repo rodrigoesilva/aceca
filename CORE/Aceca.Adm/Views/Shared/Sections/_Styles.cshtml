@@ -24,7 +24,10 @@
     <!-- Kit padrão admin (grids/forms) — antes repetido em quase toda view via VendorStyles.
          Centralizado aqui pra não precisar mais declarar em cada página. -->
     <link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css" />
-    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css" />
+    <!-- asp-append-version pra forçar o navegador a buscar a versão nova depois da
+         atualização 2.1.0 -> 3.0.8 do Responsive (Program.cs cacheia arquivo estático
+         por 7 dias, inclusive em Development) -->
+    <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css" />
     <link rel="stylesheet" href="~/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.css" />
     <link rel="stylesheet" href="~/vendor/libs/@@form-validation/form-validation.css" />

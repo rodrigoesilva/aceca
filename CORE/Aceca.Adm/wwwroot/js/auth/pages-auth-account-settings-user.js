@@ -135,6 +135,13 @@ function fn_GridColecao(dt_project_table) {
             // ordem inicial de verdade seja aplicada.
             order: [[4, 'desc']],
             dom: 't',
+            // autoWidth:true (padrão) trava a largura de cada coluna via estilo inline
+            // (<col>/th) calculado uma única vez na inicialização - isso atrapalha o
+            // recálculo de colunas ocultas/visíveis do Responsive a cada redraw/resize.
+            // Acervo/Listagem (admin-acervo-listagem.js, página que já funciona no mobile)
+            // usa autoWidth:false + scrollX:false pelo mesmo motivo.
+            autoWidth: false,
+            scrollX: false,
             displayLength: varItems_QtdPorPage,
             lengthMenu: varItems_DivPage,
             info: false,
