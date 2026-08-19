@@ -61,10 +61,13 @@
 
 @section PageScripts {
 
-    <!-- Versão fixada em 4.6.13 pra bater com o core local (vendor/libs/flatpickr/flatpickr.js) -
-         sem isso, o CDN serve sempre a versão mais recente do pacote, que pode ficar
-         incompatível com o core antigo e quebrar o bindEvents do plugin (mesmo problema já
-         visto com a extensão Responsive do DataTables - ver commit 9b2fcca). -->
+    <!-- O core local (vendor/libs/flatpickr/flatpickr.js) é um build webpack diferente do
+         pacote oficial - não tem suporte real a "rContainer", que o plugin monthSelect
+         (qualquer versão do pacote oficial) precisa. Resultado: TypeError "Cannot read
+         properties of undefined (reading 'addEventListener')" em bindEvents. Em vez de trocar
+         o core global (usado em outras páginas), carrega aqui o core oficial via CDN, pinado
+         na mesma versão do plugin - substitui window.flatpickr só nesta página. -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/pt.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/plugins/monthSelect/index.js" defer></script>
 
