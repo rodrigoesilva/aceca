@@ -471,9 +471,10 @@ function fn_FiltrarDados() {
         columns: [
             // COLUNA - control (sempre visível — prioridade máxima)
             { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
-            // COLUNA - codigoAceca (2ª a aparecer no mobile)
+            // COLUNA - codigoAceca (2ª a aparecer no mobile) - width reduzido de 90px pra
+            // 70px (conteúdo real nunca precisou de 90px); diferença foi pra NomeMarca.
             {
-                data: 'CodigoAceca', className: 'text-center text-nowrap', width: '90px', responsivePriority: 2, orderable: true,
+                data: 'CodigoAceca', className: 'text-center text-nowrap', width: '70px', responsivePriority: 2, orderable: true,
                 render: function (data, type, full) {
                     if (!data || full.Id === 0 || type !== 'display') return '';
 
@@ -482,19 +483,25 @@ function fn_FiltrarDados() {
                     return codigoAceca;
                 }
             },
-            // COLUNA - nomeMarca (3ª a aparecer no mobile)
-            { data: 'NomeMarca', className: 'text-start', width: '120px' , responsivePriority: 3 },
-            // COLUNA - imagem (some primeiro no mobile)
+            // COLUNA - nomeMarca (3ª a aparecer no mobile) - width aumentado de 120px pra
+            // 175px (140 + ~35px compensando a redução de padding da coluna control em
+            // Listagem.cshtml), pra dar prioridade real de espaço ao nome no mobile.
+            { data: 'NomeMarca', className: 'text-start', width: '175px' , responsivePriority: 3 },
+            // COLUNA - imagem (some só no mobile - "min-tablet" continua normal no
+            // desktop/tablet). responsivePriority sozinho não garante isso: o Responsive
+            // mede a largura mínima pelo TEXTO DO CABEÇALHO ("Imagem", uma palavra curta)
+            // num clone isolado, não pelo conteúdo real (uma <img> 64x64px) - então ela
+            // "cabia" no orçamento mesmo sem espaço de verdade, sufocando Nome.
             {
-                data: 'ImgPrincipalFull', className: 'text-center', responsivePriority: 10004, orderable: false,
+                data: 'ImgPrincipalFull', className: 'text-center min-tablet', responsivePriority: 10004, orderable: false,
                 render: function (data, type, row) {
                     if (type !== 'display') return data || '';
                     return `<img name="myImg" class="td-img cmyImg lazy-img" alt="${row?.CodigoAceca}" data-src="${data}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">`;
                 }
             },
-            // COLUNA - imagemDetalhe
+            // COLUNA - imagemDetalhe (mesmo fix acima)
             {
-                data: 'ImgDetalheFull', className: 'text-center', responsivePriority: 10005, orderable: false,
+                data: 'ImgDetalheFull', className: 'text-center min-tablet', responsivePriority: 10005, orderable: false,
                 render: function (data, type, row) {
                     if (type !== 'display') return data || '';
                     return `<img name="myImg" class="td-img cmyImg lazy-img" alt="Detalhe :: ${row?.CodigoAceca}" data-src="${data}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">`;

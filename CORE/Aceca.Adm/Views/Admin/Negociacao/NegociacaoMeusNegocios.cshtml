@@ -23,6 +23,21 @@
     var urlZoomCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/zoom.css");
 }
 
+@section PageStyles {
+    <style>
+        /* Mobile: a coluna de controle (só o ícone de expandir) herdava o padding padrão
+           do tema (~1.25rem cada lado) mesmo vazia - sobrava espaço em branco, sufocando
+           a coluna Nome. Reduz só o padding (a largura declarada no columnDefs, que é o
+           que o Responsive usa pra calcular quantas colunas cabem, foi compensada em
+           negociacao-meus-negocios.js). */
+        #tblNegociacaoMeusNegocios thead th:first-child,
+        #tblNegociacaoMeusNegocios tbody td.control {
+            padding-left: 0.25rem !important;
+            padding-right: 0 !important;
+        }
+    </style>
+}
+
 @section VendorStyles {
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="@urlRowGroupCss">
@@ -172,15 +187,20 @@
 @*************** Content List Table ************** *@
 <div class="card">
     <div class="card-datatable table-responsive pt-0">
-        <table class="datatables-basic table table-hover display responsive" width="100%">
+        <table id="tblNegociacaoMeusNegocios" class="datatables-basic table table-hover display responsive" width="100%">
             <thead>
                 <tr>
                     <th></th>
                     <th class="text-nowrap text-center">C&oacute;d. ACECA</th>
-                    <th class="text-start w-25">Nome</th>
+                    <!-- w-25/w-50 removidas: o Responsive mede a largura mínima de cada
+                         coluna clonando só o <th> num <div> de 1px de largura - width:%
+                         nesse contexto resolve pra uma fração de pixel, fazendo o
+                         Responsive achar que Nome/Descrição não precisam de espaço nenhum
+                         no cálculo de quantas colunas cabem no mobile. -->
+                    <th class="text-start">Nome</th>
                     <th>Imagem</th>
                     <th>Detalhe</th>
-                    <th class="text-start w-50">Descri&ccedil;&atilde;o</th>
+                    <th class="text-start">Descri&ccedil;&atilde;o</th>
                     <th>F&aacute;brica</th>
                     <th>Tipo</th>
                     <th>Fase</th>                                   
