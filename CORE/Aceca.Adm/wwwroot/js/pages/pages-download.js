@@ -143,19 +143,30 @@ function fn_GridList(formValid) {
                     }
                 },
                 // COLUNA - Tipo (2ª a aparecer no mobile) - width reduzido de 90px pra 70px,
-                // diferença foi pro Título.
-                { data: 'downloadTipo', className: 'text-center', width: '70px', responsivePriority: 2 },
+                // diferença foi pro Título. O Responsive mede a largura mínima clonando a
+                // TABELA INTEIRA (cabeçalho + linhas da página atual), não só o cabeçalho -
+                // um downloadTipo real mais longo que "Tipo" incha a coluna inteira e
+                // consome o orçamento que sobraria pro Título no mobile (mesmo bug do
+                // Código ACECA/Nome). O span trava a largura renderizada em 70px.
+                {
+                    data: 'downloadTipo', className: 'text-center', width: '70px', responsivePriority: 2,
+                    render: function (data, type) {
+                        if (type !== 'display') return data;
+                        return `<span style="display:inline-block;max-width:70px;word-break:break-word;">${data ?? ''}</span>`;
+                    }
+                },
                 // COLUNA - Titulo (3ª a aparecer no mobile) - width aumentado de 120px pra
                 // 175px (140 + ~35px compensando a redução de padding da coluna control em
                 // Download.cshtml), pra dar prioridade real de espaço ao título no mobile.
+                // Mesmo span trava a largura renderizada, independente do tamanho real.
                 {
-                    data: 'titulo', className: 'text-center text-nowrap', width: '175px', responsivePriority: 3,
+                    data: 'titulo', className: 'text-center', width: '175px', responsivePriority: 3,
                     render: function (data, type, full) {
                         if (!data || full.Id === 0 || type !== 'display') return '';
 
                         const nomeTitulo = data?.trim()?.split('-').join("<br>");
 
-                        return nomeTitulo;
+                        return `<span style="display:inline-block;max-width:175px;word-break:break-word;">${nomeTitulo}</span>`;
                     }
                 },
                 // COLUNA - descricao

@@ -73,3 +73,26 @@ body.no-export .dt-export-btn {
 .dataTables_wrapper #divFilter_ChkStatus {
     width: 100%;
 }
+
+/* Coluna control (ícone de expandir) do DataTables Responsive - min-width fixo em
+   TODAS as grids que usam esse recurso (".dtr-column" só existe em tabelas com
+   responsive.details.type = 'column'). Sem isso, quando as colunas visíveis no
+   mobile ocupam quase toda a largura do card, a coluna control é espremida
+   abaixo da largura que o ícone (~24px) precisa pra não ficar cortado/sem clique. */
+table.dataTable.dtr-column > thead > tr > th:first-child,
+table.dataTable.dtr-column > tbody > tr > td.control {
+    padding-left: 0.25rem !important;
+    padding-right: 0 !important;
+    min-width: 28px !important;
+    width: 28px !important;
+}
+
+/* Modal "Detalhes" do DataTables Responsive (renderer customizado usado em Agenda,
+   AgendaImagem, SocioContato, PaisCategoria etc.) - o <td> do valor não quebra
+   linha por padrão, então um valor sem espaços (e-mail, telefone, código) maior
+   que a largura do modal simplesmente transborda pra fora do card, cortado. */
+div.dtr-modal .table td,
+.modal.dtr-bs-modal .table td {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}

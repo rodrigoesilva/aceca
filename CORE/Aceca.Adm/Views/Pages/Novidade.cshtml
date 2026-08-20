@@ -44,23 +44,9 @@
             word-break: break-word;
             overflow-wrap: anywhere;
         }
-
-        /* A coluna de controle (só o ícone de expandir) herdava o padding padrão do tema
-           (~1.25rem cada lado) mesmo tendo conteúdo vazio - sobrava muito espaço em branco.
-           Reduz só o padding (não a largura declarada no columnDefs, que é o que o
-           Responsive usa pra calcular quantas colunas cabem) - o espaço ganho aqui foi
-           compensado aumentando o width de NomeMarca em pages-novidade.js, pra não mudar
-           a largura total medida e não repetir o bug da coluna Imagem reaparecendo. */
-        #tblNovidade thead th:first-child,
-        #tblNovidade tbody td.control {
-            padding-left: 0.25rem !important;
-            padding-right: 0 !important;
-            /* Sem isso, com Código ACECA + Nome ocupando quase toda a largura no
-               mobile, sobra pouco espaço pra essa coluna e o ícone de expandir
-               (~24px) fica maior que a célula, espremendo/cortando o clique. */
-            min-width: 28px !important;
-            width: 28px !important;
-        }
+        /* O fix da coluna control (min-width/padding) virou regra global em site.css
+           (table.dataTable.dtr-column ...), pois o mesmo padrão se repete em todas as
+           telas de grid admin com esse ícone de expandir. */
     </style>
 }
 

@@ -26,21 +26,6 @@
     var urlPickrJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/pickr/pickr.js");
 }
 
-@section PageStyles {
-    <style>
-        /* Mobile: a coluna de controle (só o ícone de expandir) herdava o padding padrão
-           do tema (~1.25rem cada lado) mesmo vazia - sobrava espaço em branco, sufocando
-           a coluna Título. Reduz só o padding (a largura declarada no columnDefs, que é o
-           que o Responsive usa pra calcular quantas colunas cabem, foi compensada em
-           pages-download.js). */
-        #tblDownload thead th:first-child,
-        #tblDownload tbody td.control {
-            padding-left: 0.25rem !important;
-            padding-right: 0 !important;
-        }
-    </style>
-}
-
 @section VendorStyles {
 
     <!-- Row Group CSS -->

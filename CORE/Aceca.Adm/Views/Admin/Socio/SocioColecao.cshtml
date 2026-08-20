@@ -24,26 +24,6 @@
     var urlZoomCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/zoom.css");
 }
 
-@section PageStyles {
-    <style>
-        /* Mobile: a coluna de controle (só o ícone de expandir) herdava o padding padrão
-           do tema (~1.25rem cada lado) mesmo vazia - sobrava espaço em branco, sufocando
-           a coluna Nome. Reduz só o padding (a largura declarada no columnDefs, que é o
-           que o Responsive usa pra calcular quantas colunas cabem, foi compensada em
-           admin-socio-colecao.js). */
-        #tblSocioColecao thead th:first-child,
-        #tblSocioColecao tbody td.control {
-            padding-left: 0.25rem !important;
-            padding-right: 0 !important;
-            /* Sem isso, com Código ACECA + Nome ocupando quase toda a largura no
-               mobile, sobra pouco espaço pra essa coluna e o ícone de expandir
-               (~24px) fica maior que a célula, espremendo/cortando o clique. */
-            min-width: 28px !important;
-            width: 28px !important;
-        }
-    </style>
-}
-
 @section VendorStyles {
     <!-- Row Group CSS -->
     <link rel="stylesheet" href="@urlRowGroupCss">
