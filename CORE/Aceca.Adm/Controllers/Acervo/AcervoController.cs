@@ -93,7 +93,7 @@ namespace Aceca.Adm.Controllers.Acervo
 
             return View("~/Views/Admin/Acervo/Listagem.cshtml", modelMarcas);
         }
-        //[Authorize(Roles = "Administracao")]
+        [Authorize(Roles = "Administracao")]
         public ActionResult Cadastro()
         {
             return View("~/Views/Admin/Acervo/Cadastro.cshtml");
