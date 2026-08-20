@@ -365,6 +365,13 @@ namespace Aceca.Adm.Models
         [Column("eh_conta_teste")] public bool EhContaTeste { get; set; }
         [Column("teste_expira_em")] public DateTime? TesteExpiraEm { get; set; }
 
+        // true só enquanto um auto-cadastro (teste grátis) ainda não passou pela etapa de
+        // dados pessoais (RegisterMultiSteps) - bloqueia login normal até concluir. Default
+        // 0/false garante que nenhum sócio existente (ou criado pelo admin) seja afetado;
+        // só o próprio fluxo de auto-cadastro liga essa flag. Ver AuthController.LoginUpdate/
+        // FinalizarCadastroCompleto e Program.cs::OnValidatePrincipal.
+        [Column("pendente_cadastro")] public bool PendenteCadastro { get; set; }
+
         public SocioPerfil? SocioPerfil { get; set; }
 
         //[ValidateNever] public ICollection<SocioColecao>? ColecaoSocios { get; set; }

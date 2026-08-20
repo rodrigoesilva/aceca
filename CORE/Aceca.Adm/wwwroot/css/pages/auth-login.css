@@ -436,6 +436,38 @@ html:not([dir=rtl]) .authentication-wrapper.authentication-cover .authentication
     box-shadow: 0 4px 16px rgba(71, 0, 123, .28);
 }
 
+/* RegisterMultiSteps (dados pessoais/endereço) - formulário bem maior que o de
+   login/cadastro, então usa um card mais largo, mas só a partir de tablet - a regra
+   fica dentro de min-width de propósito, pra nunca competir em especificidade/ordem
+   com os !important dos blocos MOBILE (≤480px / 481-767px) mais abaixo no arquivo,
+   que continuam sendo os únicos donos da largura no mobile. */
+@media (min-width: 768px) {
+    .login-wrap-wide {
+        max-width: 700px;
+    }
+
+    .login-card-wide {
+        max-width: none;
+    }
+}
+
+.ms-secao {
+    color: #47007b;
+    font-size: .78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin: 20px 0 12px;
+    padding-top: 12px;
+    border-top: 1px solid #ede6f8;
+}
+
+.ms-secao:first-of-type {
+    margin-top: 4px;
+    padding-top: 0;
+    border-top: none;
+}
+
 .swal-btn-cancelar {
     background: #f4f0f9;
     color: #6b4a9a;

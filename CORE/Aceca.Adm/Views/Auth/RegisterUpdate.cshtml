@@ -13,7 +13,14 @@
 
 @* ************** Content ************** *@
 
-<div class="position-relative">
+@* Causa real de um bug pré-existente descoberto agora (não é só do auto-cadastro): sem
+   a classe "pg-login" em algum elemento da página, site.js (carregado globalmente)
+   acha que esta é uma tela autenticada, chama fn_AuthSession -> GetSessionData, que
+   falha (não tem sessão nesta tela por design) -> fn_CleanUser() redireciona pra
+   /Auth/Index antes da pessoa conseguir usar o link do e-mail. Mesmo marcador (sem
+   nenhum CSS visual associado, só o body.pg-login{} em style.css) já usado em
+   Login/RegisterCover/VerifyEmailCover. *@
+<div class="position-relative pg-login">
   <div class="authentication-wrapper authentication-basic container-p-y">
     <div class="authentication-inner py-6 mx-4">
 

@@ -190,10 +190,21 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                     var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
                     var socioStatus = await db.Socio.AsNoTracking()
                         .Where(s => s.Id == socioId)
-                        .Select(s => new { s.Ativo, s.EhContaTeste, s.TesteExpiraEm })
+                        .Select(s => new { s.Ativo, s.EhContaTeste, s.TesteExpiraEm, s.PendenteCadastro })
                         .FirstOrDefaultAsync();
 
                     if (socioStatus == null || !socioStatus.Ativo)
+                    {
+                        ctx.RejectPrincipal();
+                        await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        return;
+                    }
+
+                    // Auto-cadastro (teste grátis) ainda não terminou a etapa de dados
+                    // pessoais - não deveria nunca ter um cookie de sessão válido nesse estado
+                    // (o fluxo não faz login automático), mas isso aqui é uma rede de segurança
+                    // caso algum código futuro crie uma sessão precocemente por engano.
+                    if (socioStatus.PendenteCadastro)
                     {
                         ctx.RejectPrincipal();
                         await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -466,6 +477,7 @@ using (var scopeTeste = app.Services.CreateScope())
     {
         ("eh_conta_teste", "TINYINT(1) NOT NULL DEFAULT 0"),
         ("teste_expira_em", "DATETIME NULL"),
+        ("pendente_cadastro", "TINYINT(1) NOT NULL DEFAULT 0"),
     };
 
     foreach (var (coluna, tipoSql) in colunasSocioTeste)

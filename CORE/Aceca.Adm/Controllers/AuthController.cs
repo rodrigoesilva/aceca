@@ -845,6 +845,17 @@ namespace Aceca.Adm.Controllers
                         message = "Seu período de teste grátis expirou. Solicite sua associação em https://www.aceca.com.br/#contato para continuar."
                     });
 
+                // Auto-cadastro que nunca terminou a etapa de dados pessoais (RegisterMultiSteps)
+                // - login normal com e-mail/senha não é o caminho pra continuar de onde parou
+                // (o token de continuidade, se ainda válido, só chega pelo e-mail de verificação).
+                if (user.Socio.EhContaTeste && user.Socio.PendenteCadastro)
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Seu cadastro ainda não foi concluído. Verifique o e-mail de confirmação para continuar de onde parou."
+                    });
+
                 var financeiroPendente = await _db.SocioFinanceiro
                     .AsNoTracking()
                     .AnyAsync(f => f.SocioId == user.SocioId && f.PagamentoEmDia == 0);
@@ -1082,15 +1093,17 @@ namespace Aceca.Adm.Controllers
                 return View("~/Views/Auth/VerifyEmailCover.cshtml");
             }
 
-            var sucesso = await FinalizarCadastroTesteAsync(registro);
+            var proximoToken = await FinalizarCadastroTesteAsync(registro);
 
-            if (!sucesso)
+            if (proximoToken == null)
             {
                 ViewBag.LinkInvalido = true;
                 return View("~/Views/Auth/VerifyEmailCover.cshtml");
             }
 
-            return RedirectToAction("Inicio", "Home");
+            // Não faz login automático - a pessoa ainda precisa definir senha (RegisterUpdate)
+            // e completar os dados pessoais (RegisterMultiSteps) antes de ter acesso de verdade.
+            return RedirectToAction("NewRegistration", new { token = proximoToken, email = registro.Email });
         }
 
         [HttpPost]
@@ -1108,12 +1121,18 @@ namespace Aceca.Adm.Controllers
                     || !registro.TokenExpiraEm.HasValue || registro.TokenExpiraEm.Value < DateTime.UtcNow)
                     return Ok(new { bResult = false, type = "ERRO", message = "Código inválido ou expirado." });
 
-                var sucesso = await FinalizarCadastroTesteAsync(registro);
+                var proximoToken = await FinalizarCadastroTesteAsync(registro);
 
-                if (!sucesso)
+                if (proximoToken == null)
                     return Ok(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
 
-                return Ok(new { bResult = true, type = "OK", redirectUrl = Url.Action("Inicio", "Home") });
+                // Não faz login automático - próxima etapa é definir senha (RegisterUpdate).
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    redirectUrl = Url.Action("NewRegistration", new { token = proximoToken, email = registro.Email })
+                });
             }
             catch (Exception ex)
             {
@@ -1122,27 +1141,21 @@ namespace Aceca.Adm.Controllers
             }
         }
 
-        // Cria o sócio de teste (perfil Socio, ativo, com prazo vindo de AdmConfig
-        // "TesteGratisDuracaoHoras") e já efetua o login (mesmo mecanismo de cookie/claims do
-        // login normal) - quem acaba de verificar o e-mail cai direto dentro da área do sócio,
-        // sem precisar de senha (uma senha aleatória é gerada só pra existir o registro, caso
-        // precise depois recuperar acesso via "Esqueceu a senha?").
-        private async Task<bool> FinalizarCadastroTesteAsync(Models.CadastroTeste registro)
+        // Cria o sócio (perfil Socio, ATIVO mas PendenteCadastro=true) e devolve um token de
+        // continuidade pro fluxo de "primeiro acesso" (RegisterUpdate -> RegisterMultiSteps) -
+        // NÃO faz login automático e NÃO inicia a contagem do teste grátis (TesteExpiraEm só é
+        // definido quando os dados pessoais são concluídos, em FinalizarCadastroCompleto). Ativo
+        // precisa ser true aqui porque LoginUpdate rejeita sócio inativo antes de chegar na senha.
+        private async Task<string?> FinalizarCadastroTesteAsync(Models.CadastroTeste registro)
         {
             var strategy = _db.Database.CreateExecutionStrategy();
 
-            Func<Task<bool>> operation = async () =>
+            Func<Task<string?>> operation = async () =>
             {
                 using var transaction = await _db.Database.BeginTransactionAsync();
 
                 try
                 {
-                    var duracaoStr = await _db.AdmConfig
-                        .Where(c => c.Parametro == "TesteGratisDuracaoHoras")
-                        .Select(c => c.Valor)
-                        .FirstOrDefaultAsync();
-                    var duracaoHoras = int.TryParse(duracaoStr, out var h) && h > 0 ? h : 24;
-
                     var socio = new Socio
                     {
                         SocioPerfilId = (int)EPerfil.Socio,
@@ -1150,12 +1163,14 @@ namespace Aceca.Adm.Controllers
                         Ativo = true,
                         MostrarSite = false,
                         EhContaTeste = true,
-                        TesteExpiraEm = DateTime.UtcNow.AddHours(duracaoHoras),
+                        PendenteCadastro = true,
+                        TesteExpiraEm = null,
                     };
                     _db.Socio.Add(socio);
                     await _db.SaveChangesAsync();
 
                     var senhaTemporaria = _helperController.GenerateStringPassword(12);
+                    var tokenContinuacao = _helperController.GenerateSecuretToken();
                     var seguranca = new Models.SocioSeguranca
                     {
                         SocioId = socio.Id!.Value,
@@ -1165,6 +1180,8 @@ namespace Aceca.Adm.Controllers
                         SenhaAberta = senhaTemporaria,
                         SenhaAtualizada = false,
                         UltimoLogin = DateTime.UtcNow,
+                        ResetPasswordToken = tokenContinuacao,
+                        ResetPasswordTokenExpiry = DateTime.UtcNow.AddMinutes(30),
                     };
                     _db.SocioSeguranca.Add(seguranca);
 
@@ -1184,21 +1201,174 @@ namespace Aceca.Adm.Controllers
                     await _db.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    // SocioPerfil precisa estar carregado pra LoginSetClaimsAsync montar a
-                    // claim de role (ClaimTypes.Role = socio.SocioPerfil?.Descricao).
-                    socio.SocioPerfil = await _db.SocioPerfil.AsNoTracking()
-                        .FirstOrDefaultAsync(p => p.Id == socio.SocioPerfilId);
-
-                    return await LoginSetClaimsAsync(seguranca, socio);
+                    return tokenContinuacao;
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError("ERRO :: {Method} :: {Message}", nameof(FinalizarCadastroTesteAsync), ex.Message);
-                    return false;
+                    return null;
                 }
             };
 
             return await strategy.ExecuteAsync(operation);
+        }
+
+        public record FinalizarCadastroCompletoIn(
+            string Token, string Email, string Nome, string? DataNascimento, string? Telefone,
+            string? Endereco, string? Numero, string? Complemento, string? Bairro, string? Cidade,
+            string? Estado, string? CEP);
+
+        [HttpGet]
+        public async Task<IActionResult> RegisterMultiSteps(string? token, string? email)
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Inicio", "Home");
+
+            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(email))
+                return RedirectToAction("Index");
+
+            var user = await _db.SocioSeguranca.Include(x => x.Socio).AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Email == email.Trim().ToLowerInvariant());
+
+            if (user == null || !user.Socio.EhContaTeste || !user.Socio.PendenteCadastro
+                || user.ResetPasswordToken != token
+                || !user.ResetPasswordTokenExpiry.HasValue || user.ResetPasswordTokenExpiry.Value < DateTime.UtcNow)
+                return RedirectToAction("Index");
+
+            ViewBag.Token = token;
+            ViewBag.Email = email;
+            ViewBag.Nome = user.Socio.Nome;
+
+            return View("~/Views/Auth/RegisterMultiSteps.cshtml");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> FinalizarCadastroCompleto([FromBody] FinalizarCadastroCompletoIn dto)
+        {
+            try
+            {
+                var email = dto.Email?.Trim().ToLowerInvariant();
+
+                var user = await _db.SocioSeguranca.Include(x => x.Socio)
+                    .FirstOrDefaultAsync(x => x.Email == email);
+
+                if (user == null || !user.Socio.EhContaTeste || !user.Socio.PendenteCadastro
+                    || user.ResetPasswordToken != dto.Token
+                    || !user.ResetPasswordTokenExpiry.HasValue || user.ResetPasswordTokenExpiry.Value < DateTime.UtcNow)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Sessão de cadastro inválida ou expirada. Solicite um novo cadastro." });
+
+                if (string.IsNullOrWhiteSpace(dto.Nome))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Informe seu nome completo." });
+
+                var strategy = _db.Database.CreateExecutionStrategy();
+
+                Func<Task<bool>> operation = async () =>
+                {
+                    using var transaction = await _db.Database.BeginTransactionAsync();
+
+                    try
+                    {
+                        user.Socio.Nome = dto.Nome.Trim();
+
+                        var (dia, mes, ano) = ParseDataNascimento(dto.DataNascimento);
+                        _db.SocioAniversario.Add(new Models.SocioAniversario
+                        {
+                            SocioId = user.SocioId,
+                            Dia = dia,
+                            Mes = mes,
+                            Ano = ano,
+                        });
+
+                        _db.SocioEndereco.Add(new Models.SocioEndereco
+                        {
+                            SocioId = user.SocioId,
+                            Endereco = dto.Endereco,
+                            Numero = dto.Numero,
+                            Complemento = dto.Complemento,
+                            Bairro = dto.Bairro,
+                            Cidade = dto.Cidade,
+                            Estado = dto.Estado,
+                            CEP = !string.IsNullOrEmpty(dto.CEP) ? dto.CEP.Replace("-", string.Empty) : string.Empty,
+                        });
+
+                        var contato = await _db.SocioContato.FirstOrDefaultAsync(c => c.SocioId == user.SocioId);
+                        if (contato != null)
+                        {
+                            var (ddd, numeroTel) = ParseTelefone(dto.Telefone);
+                            contato.DDD = ddd;
+                            contato.Telefone = numeroTel;
+                        }
+
+                        var duracaoStr = await _db.AdmConfig
+                            .Where(c => c.Parametro == "TesteGratisDuracaoHoras")
+                            .Select(c => c.Valor)
+                            .FirstOrDefaultAsync();
+                        var duracaoHoras = int.TryParse(duracaoStr, out var h) && h > 0 ? h : 24;
+
+                        // Só agora, com o cadastro de verdade concluído, o relógio do teste
+                        // grátis começa a contar - e a conta passa a poder logar normalmente.
+                        user.Socio.TesteExpiraEm = DateTime.UtcNow.AddHours(duracaoHoras);
+                        user.Socio.PendenteCadastro = false;
+                        user.ResetPasswordToken = null;
+                        user.ResetPasswordTokenExpiry = null;
+
+                        await _db.SaveChangesAsync();
+                        await transaction.CommitAsync();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError("ERRO :: {Method} :: {Message}", nameof(FinalizarCadastroCompleto), ex.Message);
+                        return false;
+                    }
+                };
+
+                var sucesso = await strategy.ExecuteAsync(operation);
+
+                if (!sucesso)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
+
+                return Ok(new { bResult = true, type = "OK", redirectUrl = Url.Action("Index") });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(FinalizarCadastroCompleto), ex.Message);
+                return Ok(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
+            }
+        }
+
+        private static (int? Dia, int? Mes, int? Ano) ParseDataNascimento(string? data)
+        {
+            if (string.IsNullOrWhiteSpace(data))
+                return (null, null, null);
+
+            var partes = data.Split('/');
+
+            int? dia = partes.Length > 0 && int.TryParse(partes[0].Trim(), out var d) ? d : null;
+            int? mes = partes.Length > 1 && int.TryParse(partes[1].Trim(), out var m) ? m : null;
+            int? ano = partes.Length > 2 && int.TryParse(partes[2].Trim(), out var a) ? a : null;
+
+            return (dia, mes, ano);
+        }
+
+        // Telefone vem como "(11) 91234-5678" - com guarda de índice (SocioController.cs teve
+        // um IndexOutOfRangeException real por não checar isso antes de fazer Split(")")[1]).
+        private static (int? DDD, long? Telefone) ParseTelefone(string? telefone)
+        {
+            if (string.IsNullOrWhiteSpace(telefone))
+                return (null, null);
+
+            var partes = telefone.Split(')');
+            if (partes.Length < 2)
+                return (null, null);
+
+            var dddStr = partes[0].Replace("(", string.Empty).Trim();
+            var numeroStr = partes[1].Replace("-", string.Empty).Trim();
+
+            int? ddd = int.TryParse(dddStr, out var d) ? d : null;
+            long? numero = long.TryParse(numeroStr, out var n) ? n : null;
+
+            return (ddd, numero);
         }
 
         #endregion
@@ -1668,6 +1838,22 @@ namespace Aceca.Adm.Controllers
                         return Ok(new { bResult = false, type = "ERRO", message = "Sessão inválida para atualizar esses dados." });
                 }
 
+                // Auto-cadastro (teste grátis): o CPF digitado aqui precisa ser o MESMO que foi
+                // validado no início do fluxo (RegisterCover) - sem isso, alguém com o link/token
+                // (ex.: reenviado por e-mail) poderia trocar o CPF associado ao cadastro no meio
+                // do caminho.
+                if (user.Socio.EhContaTeste && user.Socio.PendenteCadastro)
+                {
+                    var cpfDigitado = Aceca.Adm.Helper.CpfHelper.SomenteDigitos(dto.Username);
+                    var cpfOriginal = await _db.CadastroTeste
+                        .Where(c => c.SocioIdGerado == user.SocioId)
+                        .Select(c => c.Cpf)
+                        .FirstOrDefaultAsync();
+
+                    if (!Aceca.Adm.Helper.CpfHelper.EhValido(cpfDigitado) || cpfDigitado != cpfOriginal)
+                        return Ok(new { bResult = false, type = "ERRO", message = "CPF não corresponde ao cadastro iniciado." });
+                }
+
                 var hash = _helperController.GenerateHashPassword(dto.Senha);
 
                 user.Senha = hash;
@@ -1676,12 +1862,33 @@ namespace Aceca.Adm.Controllers
                 user.NomeUsuario = dto.Username;
                 user.UltimoLogin = DateTime.UtcNow.AddHours(-3);
 
+                user.Socio.MostrarSite = dto.ChkTermo;
+                user.Socio.Ativo = true;
+
+                // Auto-cadastro ainda precisa passar pela etapa de dados pessoais
+                // (RegisterMultiSteps) - não libera acesso normal ainda, e o token vira um novo
+                // (curto) só pra essa próxima etapa, em vez de ser invalidado feito no caminho
+                // normal abaixo.
+                if (user.Socio.EhContaTeste && user.Socio.PendenteCadastro)
+                {
+                    var proximoToken = _helperController.GenerateSecuretToken();
+                    user.ResetPasswordToken = proximoToken;
+                    user.ResetPasswordTokenExpiry = DateTime.UtcNow.AddMinutes(30);
+
+                    await _db.SaveChangesAsync();
+
+                    return Ok(new
+                    {
+                        bResult = true,
+                        nome = user.Socio.Nome,
+                        pswuptd = true,
+                        proximaEtapa = Url.Action("RegisterMultiSteps", new { token = proximoToken, email = user.Email })
+                    });
+                }
+
                 // Invalida o token após uso (mesmo padrão do ResetPassword)
                 user.ResetPasswordToken = null;
                 user.ResetPasswordTokenExpiry = null;
-
-                user.Socio.MostrarSite = dto.ChkTermo;
-                user.Socio.Ativo = true;
 
                 await _db.SaveChangesAsync();
 

@@ -95,10 +95,18 @@ async function fn_RegUpdtAuth() {
                     btn.disabled = false;
                     btn.textContent = 'Entrar';
 
+                    regUpdtSubmitButton.disabled = false;
+
+                    // Auto-cadastro (teste grátis): ainda falta preencher os dados pessoais -
+                    // não é "sucesso final" ainda, então nem grava sessão nem mostra a tela de
+                    // "pode entrar" - vai direto pra próxima etapa.
+                    if (user?.proximaEtapa) {
+                        window.location.href = user.proximaEtapa;
+                        return;
+                    }
+
                     fn_RegUpdtCkSet(_cka, user?.nome?.split(" ")[0], 60);
                     sessionStorage.setItem('aceca_sessao', JSON.stringify(user));
-
-                    regUpdtSubmitButton.disabled = false;
 
                     if (user?.pswuptd === false) {
                         Swal.fire({
