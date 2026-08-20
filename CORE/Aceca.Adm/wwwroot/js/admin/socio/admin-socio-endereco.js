@@ -138,11 +138,19 @@ function fn_GridList(formValid) {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
                 },
-                // COLUNA - Nome
+                // COLUNA - Nome (2ª a aparecer no mobile) - span trava a largura
+                // renderizada independente do tamanho real do nome (mesma técnica usada
+                // em Código ACECA/Nome, pra não deixar o conteúdo real inflar a coluna e
+                // sufocar o orçamento de largura calculado pelo Responsive no mobile).
                 {
                     data: 'NomeSocio',
                     targets: 2,
+                    width: '175px',
                     responsivePriority: 2,
+                    render: function (data, type) {
+                        if (type !== 'display') return data;
+                        return `<span style="display:inline-block;max-width:175px;word-break:break-word;">${data ?? ''}</span>`;
+                    }
                 },
                 // COLUNA - Endereco (render.text() escapa HTML - evita XSS armazenado
                 // em campo de texto livre preenchido pelo admin no cadastro)
@@ -194,12 +202,12 @@ function fn_GridList(formValid) {
                     className: "text-center",
                     responsivePriority: 10010,
                 },
-                // COLUNA - Status
+                // COLUNA - Status (3ª a aparecer no mobile)
                 {
                     targets: -2,
                     data: 'SocioAtivo',
                     className: "text-center",
-                    responsivePriority: 4,
+                    responsivePriority: 3,
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -231,7 +239,7 @@ function fn_GridList(formValid) {
                     className: "text-center",
                     orderable: false,
                     searchable: false,
-                    responsivePriority: 3,
+                    responsivePriority: 10011,
                     render: function (data, type, full, meta) {
 
                         let btns = '';

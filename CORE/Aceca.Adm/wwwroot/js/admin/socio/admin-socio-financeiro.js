@@ -153,12 +153,13 @@ function fn_GridList(formValid) {
                 }
             },
             columnDefs: [
-                // COLUNA - Responsive
+                // COLUNA - Responsive (sempre visível — prioridade máxima)
                 {
                     data: 'Id',
                     targets: 0,
                     className: 'control',
-                    width: '1%',
+                    width: '30px',
+                    responsivePriority: 1,
                     searchable: false,
                     orderable: false,
                     render: function (data, type, full, meta) {
@@ -177,16 +178,32 @@ function fn_GridList(formValid) {
                     className: 'never',
                     visible: false,
                 },
-                // COLUNA - Nome
+                // COLUNA - Nome (2ª a aparecer no mobile) - span trava a largura
+                // renderizada independente do tamanho real do nome (mesma técnica usada
+                // em Código ACECA/Nome, pra não deixar o conteúdo real inflar a coluna e
+                // sufocar o orçamento de largura calculado pelo Responsive no mobile).
                 {
                     data: 'NomeSocio',
                     targets: 2,
+                    width: '175px',
+                    responsivePriority: 2,
+                    render: function (data, type) {
+                        if (type !== 'display') return data;
+                        return `<span style="display:inline-block;max-width:175px;word-break:break-word;">${data ?? ''}</span>`;
+                    }
                 },
-                // COLUNA - Status Socio
+                // COLUNA - Status Socio (3ª a aparecer no mobile) - width travado via
+                // wrapper, senão o badge + ícone de ordenação do cabeçalho consomem
+                // espaço que sobraria pra Pagamento no mobile. orderable:false porque
+                // ordenar por um badge Ativo/Inativo não agrega e o ícone de ordenação
+                // sozinho já consumia boa parte do orçamento de largura no mobile.
                 {
                     targets: 3,
                     data: 'SocioAtivo',
                     className: "text-center",
+                    width: '65px',
+                    orderable: false,
+                    responsivePriority: 3,
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -203,7 +220,7 @@ function fn_GridList(formValid) {
 
                             statusText = data ? 'Ativo' : 'Inativo';
 
-                            statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '"> ' + statusText + '</span> ';
+                            statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '" style="display:inline-block;max-width:65px;word-break:break-word;white-space:normal;"> ' + statusText + '</span> ';
 
                             return statusLayout
                         }
@@ -216,6 +233,7 @@ function fn_GridList(formValid) {
                     data: 'TipoPagamentoId',
                     targets: 4,
                     className: "text-center",
+                    responsivePriority: 10005,
                     render: function (data, type, full) {
                         let id = full.Id;
 
@@ -264,6 +282,7 @@ function fn_GridList(formValid) {
                     data: 'DataUltimoPagamento',
                     targets: 5,
                     className: "text-center",
+                    responsivePriority: 10006,
                     render: function (data, type, full) {
                         let id = full.Id;
 
@@ -276,11 +295,15 @@ function fn_GridList(formValid) {
                         }
                     }
                 },
-                // COLUNA - pagamentoEmDia
+                // COLUNA - pagamentoEmDia (4ª a aparecer no mobile - "Pagamento") -
+                // width travado via wrapper, mesmo motivo da coluna Status acima.
                 {
                     data: 'PagamentoEmDia',
                     targets: - 2,
                     className: "text-center",
+                    width: '90px',
+                    orderable: false,
+                    responsivePriority: 4,
                     render: function (data, type, full) {
                         let id = full.Id;
 
@@ -294,7 +317,7 @@ function fn_GridList(formValid) {
 
                             statusText = data ? 'Em Dia' : 'Atrasado';
 
-                            statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '"> ' + statusText + '</span> ';
+                            statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '" style="display:inline-block;max-width:90px;word-break:break-word;white-space:normal;"> ' + statusText + '</span> ';
 
                             return statusLayout
 
@@ -308,6 +331,7 @@ function fn_GridList(formValid) {
                     data: 'Id',
                     targets: -1,
                     className: "text-center",
+                    responsivePriority: 10007,
                     orderable: false,
                     searchable: false,
                     render: function (data, type, full, meta) {

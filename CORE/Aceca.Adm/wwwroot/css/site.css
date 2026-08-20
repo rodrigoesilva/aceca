@@ -88,11 +88,21 @@ table.dataTable.dtr-column > tbody > tr > td.control {
 }
 
 /* Modal "Detalhes" do DataTables Responsive (renderer customizado usado em Agenda,
-   AgendaImagem, SocioContato, PaisCategoria etc.) - o <td> do valor não quebra
-   linha por padrão, então um valor sem espaços (e-mail, telefone, código) maior
-   que a largura do modal simplesmente transborda pra fora do card, cortado. */
-div.dtr-modal .table td,
-.modal.dtr-bs-modal .table td {
+   AgendaImagem, SocioContato, PaisCategoria etc.) - cada linha tem 2 <td>: label
+   (ex. "Descrição:") e valor. O <td> do valor não quebra linha por padrão, então
+   um valor sem espaços (e-mail, telefone, código) maior que a largura do modal
+   transborda pra fora do card, cortado - por isso só ELE recebe word-break. Dar
+   esse mesmo word-break pro <td> do label (1ª coluna) quebra palavras curtas
+   como "Descrição"/"Categoria" letra por letra, porque o table-layout:auto passa
+   a poder espremer essa coluna ao extremo - por isso o label fica com nowrap,
+   preservando a largura natural que ele já tinha antes desse fix. */
+div.dtr-modal .table td:first-child,
+.modal.dtr-bs-modal .table td:first-child {
+    white-space: nowrap;
+}
+
+div.dtr-modal .table td:last-child,
+.modal.dtr-bs-modal .table td:last-child {
     word-break: break-word;
     overflow-wrap: break-word;
 }

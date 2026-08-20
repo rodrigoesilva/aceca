@@ -1,8 +1,14 @@
 @* ! Brand demo (display only for navbar-full and hide on below xl) *@
+@{
+    // Por enquanto, exibidos só para o perfil Administração - mesmo flag
+    // (TempData "isPerfil") já usado no topo deste arquivo para diferenciar
+    // o "Ambiente de Administração/Sócio" na marca.
+    var isPerfil = Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True";
+}
 
 @if (ViewData["navbarFull"] != null)
 {
-    var isPerfil = Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True";
+    @* var isPerfil = Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True"; *@
 
     <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-6">
         <a href="@(Url.Action("Index", "Home"))" class="app-brand-link gap-2">
@@ -88,13 +94,7 @@
                     <div class="dropdown-divider"></div>
                 </li>
 
-                @{
-                    // Por enquanto, exibidos só para o perfil Administração - mesmo flag
-                    // (TempData "isPerfil") já usado no topo deste arquivo para diferenciar
-                    // o "Ambiente de Administração/Sócio" na marca.
-                    var isAdministracao = Convert.ToBoolean(@TempData.Peek("isPerfil")).ToString() == "True";
-                }
-                @if (isAdministracao)
+                @if (isPerfil)
                 {
                     <li id="limenu-meu-perfil">
                         <a class="dropdown-item" asp-controller="Auth" asp-action="AccountSettingsProfileUser">
