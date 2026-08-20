@@ -301,8 +301,17 @@ app.UseStaticFiles(new StaticFileOptions
 {
     OnPrepareResponse = ctx =>
     {
-        ctx.Context.Response.Headers.Append(
-            "Cache-Control", "public,max-age=604800");
+        // sw.js e manifest.json não podem herdar o cache de 7 dias dos demais
+        // estáticos - o browser precisa sempre buscar o sw.js mais recente pra
+        // detectar atualização do Service Worker (senão o PWA trava numa versão
+        // antiga por até uma semana), e o manifest precisa refletir mudança de
+        // ícone/nome sem esperar expirar.
+        var path = ctx.Context.Request.Path.Value ?? "";
+        var cacheControl = path.EndsWith("/sw.js") || path.EndsWith("/manifest.json")
+            ? "no-cache"
+            : "public,max-age=604800";
+
+        ctx.Context.Response.Headers.Append("Cache-Control", cacheControl);
     }
 });
 

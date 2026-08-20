@@ -47,6 +47,15 @@
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="~/img/favicon/favicon.ico" />
 
+  <!-- PWA: manifest + ícones/comportamento em iOS (Safari ignora <link rel="manifest">
+       e a maioria dos itens do manifest.json, por isso os meta apple-* abaixo) -->
+  <link rel="manifest" href="~/manifest.json" />
+  <meta name="theme-color" content="#3d0a66" />
+  <link rel="apple-touch-icon" href="~/img/pwa/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ACECA" />
+
   <!-- Core Styles -->
   @await Html.PartialAsync("Sections/_Styles" + ViewData["frontVar"])
 
@@ -78,6 +87,18 @@
   @RenderSection("VendorScripts", required: false)
 
   <script src='~/js/@ViewData["main"]main.js' defer></script>
+
+  @* Registro do Service Worker do PWA - roda em toda página (login incluso), pra
+     assets estáticos já ficarem em cache antes do usuário logar. *@
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function (err) {
+          console.warn('Falha ao registrar Service Worker:', err);
+        });
+      });
+    }
+  </script>
 
   @* Globais compartilhados por admin/negociação/auth: swalWithBootstrapButtons, borderColor/
      bodyBg/headingColor, busyLoadSetup e o datepicker padrão. Depende de main.js (isDarkStyle/
