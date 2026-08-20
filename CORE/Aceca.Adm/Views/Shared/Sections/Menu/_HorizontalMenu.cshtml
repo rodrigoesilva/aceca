@@ -183,15 +183,18 @@
                                 <div data-i18n="Cadastro">Cadastro</div>
                             </a>
                             <ul class="menu-sub">
-                                <!-- Acervo -->
-                                <li class='menu-item@(currentPage == "/Cadastro/Acervo" ? " active" : "")'>
-                                    <a asp-controller="Acervo" asp-action="Cadastro" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-archive-line"></i>
-                                        <div data-i18n="Marcas">Marcas</div>
-                                    </a>
-                                </li>
+                                <!-- Acervo - só Administracao (mesma restrição do Acervo/Cadastro no backend) -->
+                                @if (User.IsInRole("Administracao"))
+                                {
+                                    <li class='menu-item@(currentPage == "/Cadastro/Acervo" ? " active" : "")'>
+                                        <a asp-controller="Acervo" asp-action="Cadastro" class="menu-link">
+                                            <i class="menu-icon tf-icons ri-archive-line"></i>
+                                            <div data-i18n="Marcas">Marcas</div>
+                                        </a>
+                                    </li>
+                                }
 
-                                <!-- ///// -->                               
+                                <!-- ///// -->
                                 <li class='menu-item@(currentPage == "/Cadastro/Dimensao" ? " active" : "")'>
                                     <a asp-controller="MarcaDimensao" asp-action="Index" class="menu-link">
                                         <i class="menu-icon tf-icons ri-box-3-line"></i>
