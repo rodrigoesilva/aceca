@@ -1,6 +1,5 @@
 
 @{
-    Layout = $"~/Views/Shared/{@TempData["Layout"]}.cshtml";
 
     // Dentro de @section, 2+ tags <link>/<script> com "~/" estático quebram a resolução
     // da Tag Helper pra parte delas (bug conhecido do Razor - ver Helper/AssetUrlHelper.cs).

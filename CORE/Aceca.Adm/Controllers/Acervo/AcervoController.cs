@@ -87,7 +87,6 @@ namespace Aceca.Adm.Controllers.Acervo
 
         #region Index
 
-        [Route("Index/{id}")]
         public async Task<ActionResult> Index(int id)
         {
             var modelMarcas = new Marcas { MarcaAcervoId = id };
