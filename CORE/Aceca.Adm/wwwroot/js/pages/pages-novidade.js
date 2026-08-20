@@ -334,27 +334,36 @@ function fn_FiltrarDados() {
         columns: [
             // COLUNA - control (sempre visível — prioridade máxima)
             { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
-            // COLUNA - codigoAceca (2ª a aparecer no mobile)
-            // COLUNA - codigoAceca (2ª a aparecer no mobile)
+            // COLUNA - codigoAceca (2ª a aparecer no mobile) - width reduzido de 90px pra
+            // 70px (a diferença foi pra NomeMarca abaixo). O Responsive mede a largura
+            // mínima da coluna clonando a TABELA INTEIRA (cabeçalho + linhas da página
+            // atual), não só o cabeçalho - então um registro real cujo código, com
+            // "text-nowrap", vira uma linha longa sem quebra, incha a coluna inteira e
+            // consome o orçamento de largura que sobraria pra Nome no mobile (visto com
+            // container=328px / minWidth medido=180px pra essa coluna, quando o esperado
+            // era ~70-90px). Por isso o span abaixo trava a largura renderizada em 70px
+            // com quebra de linha (word-break), independente do tamanho do conteúdo real.
             {
-                // width reduzido de 90px pra 70px (o conteúdo real, "PLH6376", nunca
-                // precisou de 90px) - a diferença foi pra NomeMarca abaixo. Soma total
-                // continua 210px, então o cálculo do Responsive de quantas colunas cabem
-                // não muda, só a proporção entre as duas.
-                data: 'CodigoAceca', className: 'text-center text-nowrap', width: '70px', responsivePriority: 2, orderable: true,
+                data: 'CodigoAceca', className: 'text-center', width: '70px', responsivePriority: 2, orderable: true,
                 render: function (data, type, full) {
                     if (!data || full.Id === 0 || type !== 'display') return '';
 
                     const codigoAceca = data.split('/').join("<br><br>");
 
-                    return codigoAceca;
+                    return `<span style="display:inline-block;max-width:70px;word-break:break-word;">${codigoAceca}</span>`;
                 }
             },
             // COLUNA - nomeMarca (3ª a aparecer no mobile) - width aumentado de 120px pra
             // 175px: 140 (ver comentário acima em CodigoAceca) + ~35px compensando a redução
             // de padding da coluna control em Novidade.cshtml, pra manter a largura total
             // que o Responsive mede e não repetir o bug da coluna Imagem reaparecendo.
-            { data: 'NomeMarca', className: 'text-center', width: '175px' , responsivePriority: 3 },
+            {
+                data: 'NomeMarca', className: 'text-center', width: '175px', responsivePriority: 3,
+                render: function (data, type) {
+                    if (type !== 'display') return data;
+                    return `<span style="display:inline-block;max-width:175px;word-break:break-word;">${data ?? ''}</span>`;
+                }
+            },
             // COLUNA - imagem (some só no mobile, continua normal no desktop/tablet).
             // responsivePriority sozinho não garante isso: o Responsive mede a largura
             // mínima pelo TEXTO DO CABEÇALHO ("Imagem", uma palavra curta) num clone

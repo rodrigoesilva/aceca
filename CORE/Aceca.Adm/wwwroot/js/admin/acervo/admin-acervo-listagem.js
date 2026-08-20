@@ -473,20 +473,31 @@ function fn_FiltrarDados() {
             { data: null, defaultContent: '', className: 'control', orderable: false, width: '30px', responsivePriority: 1 },
             // COLUNA - codigoAceca (2ª a aparecer no mobile) - width reduzido de 90px pra
             // 70px (conteúdo real nunca precisou de 90px); diferença foi pra NomeMarca.
+            // O Responsive mede a largura mínima clonando a TABELA INTEIRA (cabeçalho +
+            // linhas da página atual), não só o cabeçalho - um código real longo, com
+            // "text-nowrap", vira uma linha sem quebra que incha a coluna inteira e
+            // consome o orçamento que sobraria pra Nome no mobile. O span trava a
+            // largura renderizada em 70px com quebra de linha, independente do conteúdo.
             {
-                data: 'CodigoAceca', className: 'text-center text-nowrap', width: '70px', responsivePriority: 2, orderable: true,
+                data: 'CodigoAceca', className: 'text-center', width: '70px', responsivePriority: 2, orderable: true,
                 render: function (data, type, full) {
                     if (!data || full.Id === 0 || type !== 'display') return '';
 
                     const codigoAceca = data.split('/').join("<br><br>");
 
-                    return codigoAceca;
+                    return `<span style="display:inline-block;max-width:70px;word-break:break-word;">${codigoAceca}</span>`;
                 }
             },
             // COLUNA - nomeMarca (3ª a aparecer no mobile) - width aumentado de 120px pra
             // 175px (140 + ~35px compensando a redução de padding da coluna control em
             // Listagem.cshtml), pra dar prioridade real de espaço ao nome no mobile.
-            { data: 'NomeMarca', className: 'text-start', width: '175px' , responsivePriority: 3 },
+            {
+                data: 'NomeMarca', className: 'text-start', width: '175px', responsivePriority: 3,
+                render: function (data, type) {
+                    if (type !== 'display') return data;
+                    return `<span style="display:inline-block;max-width:175px;word-break:break-word;">${data ?? ''}</span>`;
+                }
+            },
             // COLUNA - imagem (some só no mobile - "min-tablet" continua normal no
             // desktop/tablet). responsivePriority sozinho não garante isso: o Responsive
             // mede a largura mínima pelo TEXTO DO CABEÇALHO ("Imagem", uma palavra curta)

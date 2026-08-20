@@ -55,6 +55,11 @@
         #tblNovidade tbody td.control {
             padding-left: 0.25rem !important;
             padding-right: 0 !important;
+            /* Sem isso, com Código ACECA + Nome ocupando quase toda a largura no
+               mobile, sobra pouco espaço pra essa coluna e o ícone de expandir
+               (~24px) fica maior que a célula, espremendo/cortando o clique. */
+            min-width: 28px !important;
+            width: 28px !important;
         }
     </style>
 }
