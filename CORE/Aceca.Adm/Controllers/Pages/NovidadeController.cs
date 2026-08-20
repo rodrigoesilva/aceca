@@ -232,7 +232,7 @@ namespace Aceca.Adm.Controllers.Pages.Novidade
 
                          -- m.codigoAcecaNew,
                         CASE
-                            WHEN m.codigoAcecaNew IS NOT NULL
+                            WHEN m.codigoAcecaNew IS NOT NULL AND m.codigoAcecaNew <> m.CodigoAceca
                             THEN CONCAT(m.codigoAcecaNew, '/', m.CodigoAceca)
                             ELSE m.CodigoAceca
                         END AS CodigoAceca,
