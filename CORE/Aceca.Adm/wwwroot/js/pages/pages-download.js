@@ -386,121 +386,59 @@ function fn_GridList(formValid) {
                             $('#imgZoomModal').css('display', 'flex');
                         };
 
-                        // ✅ Imagens clicáveis com cursor pointer e chamada ao zoom
-                        var imgPrincipal = row.ImgPrincipalFull
-                            ? `<img name="myImg" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${row.ImgPrincipalFull}"
-                                        onclick="fn_ZoomImg('${row.ImgPrincipalFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px; 
-                                        border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
-                                        onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
-                            : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px; 
-                                        display:flex;align-items:center;justify-content:center;
-                                        font-size:11px;color:#aaa;">sem img</div>`;
+                        // ✅ Imagem clicável com cursor pointer e chamada ao zoom - mesma URL
+                        // da coluna "imagem" do grid (varResultFull.arqUrlBase + imgDefault),
+                        // Download só tem UMA imagem por item (não duas como Acervo/Novidade).
+                        var imgDefault = `${varResultFull.arqUrlBase}/img/download.png`;
+                        var imgUrl = row.imagem ? `${varResultFull.arqUrlBase}/img/${row.imagem}` : imgDefault;
+                        var imgHtml = `<img name="myImg" class="td-img cmyImg" alt="${row.titulo || ''}" src="${imgUrl}"
+                                    onclick="fn_ZoomImg('${imgUrl}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
+                                    border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
+                                    onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`;
 
-                        var imgDetalhe = row.ImgDetalheFull
-                            ? `<img name="myImg" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${row.ImgDetalheFull}"
-                                        onclick="fn_ZoomImg('${row.ImgDetalheFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
-                                        border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
-                                        onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
-                            : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px;
-                                        display:flex;align-items:center;justify-content:center;
-                                        font-size:11px;color:#aaa;">sem detalhe</div>`;
+                        // Incluído por como texto puro
+                        var incluidoPorTexto = row.incluidoPor ? row.incluidoPor.split('/').join(', ') : '';
 
-                        // Fábrica
-                        var fabrica = (row.TxtFabrica === "" || row.TxtFabrica === null)
-                            ? row.NomeFabrica
-                            : row.TxtFabrica;
-
-                        // Avatares incluídoPor
-                        var avatarHtml = '';
-                        if (row.IncluidoPor) {
-                            var pessoas = row.IncluidoPor.split("/");
-                            avatarHtml = pessoas.map(function (p, i) {
-                                return `<img src="../img/avatars/${i}.png" alt="${p}" title="${p}"
-                                            style="width:28px;height:28px;border-radius:50%;border:1.5px solid #fff;margin-right:2px;">`;
-                            }).join('');
-                        }
-
-                        // ✅ incluidoPor como TEXTO PURO no card mobile
-                        var incluidoPorTexto = '';
-
-                        if (row.IncluidoPor) {
-                            // Substitui "/" por separador legível
-                            incluidoPorTexto = row.IncluidoPor.split('/').join(', ');
-                        }
-
-                        // Botão editar
-                        var itemObjJson = encodeURIComponent(JSON.stringify(row));
-                        var btnEditar = `<a href="javascript:fn_Modal(${itemObjJson},'Edit');"
-                                                class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body">
-                                                <i class="ri-edit-box-line ri-22px"></i>
-                                            </a>`;
+                        // Link de download - mesma URL da coluna "Ações" do grid
+                        var urlDownload = `${varResultFull.arqUrlBase}/${row.downloadTipo?.toLowerCase()}/${row.nome}.${row.extensao}`;
 
                         var card = `<div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:12px;padding:1rem;margin:6px 0;">
 
-                                <!-- ✅ MUDANÇA 1 — Primeira linha: SOMENTE as duas imagens, centralizadas -->
-                                <div style="display:flex;justify-content:center;gap:100px;padding-bottom:12px;border-bottom:0.5px solid #eee;margin-bottom:12px;">
-                                    <div>
-                                        <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Imagem</div>
-                                        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">${row.CodigoAceca || ''}</div>
-                                        <div>${imgPrincipal || ''}</div>
-                                    </div>
-                                    <div>
-                                        <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:200;">Detalhe</div>
-                                        <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">${row.CodigoAceca || ''}</div>
-                                        <div>${imgDetalhe || ''}</div>
-                                    </div>
+                                <!-- Imagem centralizada -->
+                                <div style="display:flex;justify-content:center;padding-bottom:12px;border-bottom:0.5px solid #eee;margin-bottom:12px;">
+                                    <div>${imgHtml}</div>
                                 </div>
 
                     <!-- Grid de campos -->
-                    <!-- ✅label em negrito (font-weight:600), valor em normal (font-weight:400) -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;">
                         <div>
-                            <div style="font-size:13px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Fase</div>
-                            <div style="font-size:11px;color:#aaa;font-weight:400;">${row.NomeFase || ''}</div>
+                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Tipo</div>
+                            <div style="font-size:13px;color:#aaa;font-weight:400;">${row.downloadTipo || ''}</div>
                         </div>
                         <div>
-                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Código ACECA</div>
-                            <div style="font-size:13px;color:#aaa;font-weight:400;">${row.CodigoAceca || ''}</div>
+                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Formato</div>
+                            <div style="font-size:13px;color:#aaa;font-weight:400;">${(row.extensao || '').toUpperCase()}</div>
                         </div>
-                        <div>
-                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Finalidade</div>
-                            <div style="font-size:13px;color:#aaa;font-weight:400;">${row.NomeFinalidade || ''}</div>
-                        </div>                                            
-                        <div>
-                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">SubTipo</div>
-                            <div style="font-size:13px;color:#aaa;font-weight:400;">${row.SubTipo || ''}</div>
-                        </div>
-                        <!--
-                        <div>
-                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Marca</div>
-                            <div style="font-size:13px;color:#aaa;font-weight:400;">${row.NomeMarca || ''}</div>
-                        </div>
-                        -->
-                        <div>
-                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Fábrica</div>
-                            <div style="font-size:13px;color:#aaa;font-weight:400;">${fabrica || ''}</div>
-                        </div>
-                        <div>
+                        <div style="grid-column:1 / -1;">
                             <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;">Incluído por</div>
                             <div style="font-size:13px;color:#aaa;font-weight:400;">${incluidoPorTexto || ''}</div>
-                        </div>
-                    </div>
-
-                    <!-- Footer: incluidoPor em texto + botão editar -->
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:0.5px solid #eee;">
-                        <div>
-                            <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">Marca</div>
-                            <div style="font-size:13px;color:#aaa;">${row.NomeMarca}</div>
                         </div>
                     </div>
 
                     <!-- Descrição -->
                     <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid #eee;">
                         <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.4px;font-weight:400;margin-bottom:4px;">Descrição</div>
-                        <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.Descricao || ''}</div>
+                        <div style="font-size:12px;color:#aaa;line-height:1.5;font-weight:400;">${row.descricao || ''}</div>
                     </div>
 
-                
+                    <!-- Baixar -->
+                    <div style="display:flex;justify-content:flex-end;margin-top:10px;padding-top:10px;border-top:0.5px solid #eee;">
+                        <a href="${urlDownload}" target="_blank"
+                            class="btn btn-sm btn-icon btn-text-secondary waves-effect rounded-pill text-body">
+                            <i class="ri-download-cloud-line ri-22px"></i>
+                        </a>
+                    </div>
+
                 </div>`;
 
                         return $(card);
