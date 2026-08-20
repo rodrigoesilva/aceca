@@ -188,12 +188,26 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 if (int.TryParse(socioIdClaim, out var socioId))
                 {
                     var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-                    var ativo = await db.Socio.AsNoTracking()
+                    var socioStatus = await db.Socio.AsNoTracking()
                         .Where(s => s.Id == socioId)
-                        .Select(s => s.Ativo)
+                        .Select(s => new { s.Ativo, s.EhContaTeste, s.TesteExpiraEm })
                         .FirstOrDefaultAsync();
 
-                    if (!ativo)
+                    if (socioStatus == null || !socioStatus.Ativo)
+                    {
+                        ctx.RejectPrincipal();
+                        await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                        return;
+                    }
+
+                    // Conta de auto-cadastro (teste grátis): vencido o prazo (AdmConfig
+                    // "TesteGratisDuracaoHoras", gravado em Socio.TesteExpiraEm no momento da
+                    // verificação de e-mail), a sessão encerra sozinha aqui, na próxima
+                    // requisição - igual ao teto de 24h acima, sem depender de novo login pra
+                    // ser bloqueado. Ver AuthController.Login para o bloqueio simétrico caso a
+                    // pessoa tente logar de novo já com o teste vencido.
+                    if (socioStatus.EhContaTeste && socioStatus.TesteExpiraEm.HasValue
+                        && DateTime.UtcNow >= socioStatus.TesteExpiraEm.Value)
                     {
                         ctx.RejectPrincipal();
                         await ctx.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -435,6 +449,91 @@ using (var scopeConfigPrint = app.Services.CreateScope())
     catch (Exception ex)
     {
         configPrintLogger.LogWarning(ex, "Não foi possível garantir o parâmetro PrintScreenBloqueioMinutos em adm_config");
+    }
+}
+
+// Auto-cadastro (teste grátis) — colunas em socios (Socio.EhContaTeste/TesteExpiraEm),
+// tabela permanente cadastro_teste (chave antifraude: cpf único) e parâmetro configurável
+// de duração do teste em adm_config. Ver AuthController.RegisterCover/CadastroTesteIniciar/
+// VerifyEmailCover e OnValidatePrincipal (checagem de vencimento) mais abaixo.
+using (var scopeTeste = app.Services.CreateScope())
+{
+    var dbTeste = scopeTeste.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var testeLogger = scopeTeste.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var errorLogTeste = scopeTeste.ServiceProvider.GetRequiredService<Aceca.Adm.Services.ErrorLogService>();
+
+    var colunasSocioTeste = new[]
+    {
+        ("eh_conta_teste", "TINYINT(1) NOT NULL DEFAULT 0"),
+        ("teste_expira_em", "DATETIME NULL"),
+    };
+
+    foreach (var (coluna, tipoSql) in colunasSocioTeste)
+    {
+        try
+        {
+            if (await Aceca.Adm.Helper.DbSchemaHelper.ColunaExisteAsync(dbTeste.Database, "socios", coluna))
+                continue;
+
+            await dbTeste.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE socios ADD COLUMN " + coluna + " " + tipoSql);
+        }
+        catch (Exception ex)
+        {
+            testeLogger.LogWarning(ex, "Não foi possível garantir a coluna {Coluna} em socios", coluna);
+            await errorLogTeste.RegistrarExcecaoAsync(null, ex);
+        }
+    }
+
+    try
+    {
+        await dbTeste.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS cadastro_teste (
+                Id INT NOT NULL AUTO_INCREMENT,
+                Cpf VARCHAR(11) NOT NULL,
+                Nome VARCHAR(255) NOT NULL,
+                Email VARCHAR(255) NOT NULL,
+                token_verificacao VARCHAR(64) NULL,
+                codigo_verificacao VARCHAR(12) NULL,
+                token_expira_em DATETIME NULL,
+                Verificado TINYINT(1) NOT NULL DEFAULT 0,
+                data_verificacao DATETIME NULL,
+                qtd_reenvios INT NOT NULL DEFAULT 0,
+                ultimo_reenvio DATETIME NULL,
+                socio_id_gerado INT NULL,
+                Ip VARCHAR(64) NULL,
+                user_agent VARCHAR(500) NULL,
+                Latitude VARCHAR(32) NULL,
+                Longitude VARCHAR(32) NULL,
+                data_criacao DATETIME NOT NULL,
+                PRIMARY KEY (Id),
+                UNIQUE KEY uk_cadastro_teste_cpf (Cpf)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+    catch (Exception ex)
+    {
+        testeLogger.LogWarning(ex, "Não foi possível garantir a tabela cadastro_teste");
+        await errorLogTeste.RegistrarExcecaoAsync(null, ex);
+    }
+
+    try
+    {
+        var existeParametroTeste = await dbTeste.AdmConfig.AnyAsync(c => c.Parametro == "TesteGratisDuracaoHoras");
+
+        if (!existeParametroTeste)
+        {
+            dbTeste.AdmConfig.Add(new Aceca.Adm.Models.AdmConfig
+            {
+                Parametro = "TesteGratisDuracaoHoras",
+                Descricao = "Duração (em horas) do acesso de teste grátis gerado pelo auto-cadastro (Login > Faça um teste grátis).",
+                Valor = "24"
+            });
+            await dbTeste.SaveChangesAsync();
+        }
+    }
+    catch (Exception ex)
+    {
+        testeLogger.LogWarning(ex, "Não foi possível garantir o parâmetro TesteGratisDuracaoHoras em adm_config");
     }
 }
 

@@ -1,50 +1,85 @@
 @{
-  Layout = "_BlankLayout";
-  ViewData["Title"] = "Verify Email Cover - Pages";
+    Layout = $"~/Views/Shared/_BlankLayout.cshtml";
+
+    var urlStyleCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/style.css");
+    var urlAuthLoginCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/pages/auth-login.css");
+
+    var emailParcial = ViewBag.Email as string ?? "";
+    var linkInvalido = ViewBag.LinkInvalido as bool? ?? false;
 }
 
 @section PageStyles {
-<link rel="stylesheet" href="~/vendor/css/pages/page-auth.css">
+    <link rel="stylesheet" href="@urlAuthLoginCss">
+    <link rel="stylesheet" href="@urlStyleCss">
+}
+
+@section PageScripts {
+    <script>window.__cadastroTesteEmail = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(emailParcial));</script>
+    <script src="~/js/auth/pages-auth-verify.js" asp-append-version="true" defer></script>
 }
 
 @* ************** Content ************** *@
 
-<div class="authentication-wrapper authentication-cover">
-  <!-- Logo -->
-  <a href="/" class="auth-cover-brand d-flex align-items-center gap-3">
-    <span class="app-brand-logo demo">@await Html.PartialAsync("../_Partials/_Macros")</span>
-    <span class="app-brand-text demo text-heading fw-semibold">@TempData.Peek("appName")</span>
-  </a>
-  <!-- /Logo -->
-  <div class="authentication-inner row m-0">
+        <div class="position-relative login-bg-img">
+            <div class="authentication-wrapper authentication-basic container-p-y">
+                <div class="authentication-inner py-6 mx-4">
+                    <div class="pg-login">
+                        <div class="login-bg">
+                            <div class="" style="position: absolute;inset: 0;"></div>
+                        </div>
 
-    <!-- /Left Section -->
-    <div class="d-none d-lg-flex col-lg-7 col-xl-8 align-items-center justify-content-center p-12 pb-2">
-      <div>
-        <img src="~/img/illustrations/auth-cover-verify-email-illustration-light.png" class="authentication-image-model d-none d-lg-block" alt="auth-model" data-app-light-img="illustrations/auth-cover-verify-email-illustration-light.png" data-app-dark-img="illustrations/auth-cover-verify-email-illustration-dark.png">
-      </div>
-      <img src="~/img/illustrations/tree-2.png" alt="tree" class="authentication-image-tree z-n1">
-      <img src="~/img/illustrations/auth-cover-mask-light.png" class="scaleX-n1-rtl authentication-image d-none d-lg-block w-75" height="362" alt="triangle-bg" data-app-light-img="illustrations/auth-cover-mask-light.png" data-app-dark-img="illustrations/auth-cover-mask-dark.png">
-    </div>
-    <!-- /Left Section -->
+                        <div class="login-wrap">
+                            <div class="login-card mt-1">
+                                <div class="lc-logo">
+                                    <div class="lc-circle">
+                                        <img src="~/img/logo/logo.webp" loading="lazy" decoding="async" title="ACECA" alt="ACECA">
+                                    </div>
+                                    <div>
+                                        <span class="lc-aceca custom_text">ACECA</span>
+                                        <span class="lc-area">&Aacute;rea do S&oacute;cio</span>
+                                    </div>
+                                </div>
 
-    <!--  Verify email -->
-    <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-5 px-12 py-4">
-      <div class="w-px-400 mx-auto pt-5 pt-lg-0">
-        <h4 class="mb-1">Verify your email ✉️</h4>
-        <p class="text-start mb-0">
-          Account activation link sent to your email address: <span class="h6">hello&#64;example.com</span> Please follow the link inside to continue.
-        </p>
-        <a class="btn btn-primary w-100 my-5" href="/">
-          Skip for now
-        </a>
-        <p class="text-center">Didn't get the mail?
-          <a href="javascript:void(0);">
-            Resend
-          </a>
-        </p>
-      </div>
-    </div>
-    <!-- / Verify email -->
-  </div>
-</div>
+                                @if (linkInvalido)
+                                {
+                                    <h2>Link expirado</h2>
+                                    <p class="lc-sub">Esse link (ou código) já foi usado ou passou de <strong>5 minutos</strong>. Peça um novo abaixo.</p>
+                                }
+                                else
+                                {
+                                    <h2>Confirme seu e-mail</h2>
+                                    <p class="lc-sub">Enviamos um link para <strong id="lcEmailDestino">@emailParcial</strong>. Clique nele ou digite o código de 6 caracteres abaixo.</p>
+                                }
+
+                                <div id="verifyErr" class="login-err" style="display:none"></div>
+                                <div id="verifyOk" class="login-ok" style="display:none"></div>
+
+                                <form id="frmVerificarCodigo" class="form" autocomplete="off" novalidate>
+                                    <div class="fg">
+                                        <label for="vEmail">E-mail</label>
+                                        <input class="form-control" type="email" id="vEmail" name="vEmail" value="@emailParcial" required autocomplete="email" inputmode="email">
+                                    </div>
+
+                                    <div class="fg">
+                                        <label for="vCodigo">C&oacute;digo de verifica&ccedil;&atilde;o</label>
+                                        <input class="form-control" type="text" id="vCodigo" name="vCodigo" placeholder="Ex: RRQSVG" required maxlength="8" style="text-transform:uppercase;letter-spacing:2px;">
+                                    </div>
+
+                                    <button type="submit" class="btn-entrar" id="btnConfirmarCodigo">
+                                        <span class="btn-text">Confirmar e-mail</span>
+                                        <span class="btn-spinner" style="display:none;" aria-hidden="true">
+                                            <i class="ri-loader-4-line ri-spin"></i> Verificando…
+                                        </span>
+                                    </button>
+                                </form>
+
+                                <p class="text-center-reenviar">N&atilde;o recebeu? <a href="javascript:void(0);" id="btnReenviarCodigo">Reenviar e-mail</a></p>
+
+                                <p class="lc-cadastro">J&aacute; &eacute; S&oacute;cio? <a href="/Auth/Index">Fazer login</a></p>
+                                <a href="https://www.aceca.com.br/" class="back-site">&larr; Voltar ao Site</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>

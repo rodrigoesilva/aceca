@@ -154,7 +154,8 @@ namespace Aceca.Adm.Helper
             EsqueceuSenha = 1,
             ColecaoInteresse = 2,
             AcessoImagemIndevido = 3,
-            FinanceiroPendente = 4
+            FinanceiroPendente = 4,
+            VerificacaoCadastroTeste = 5
         }
 
         public enum EColecaoAcao
@@ -771,6 +772,31 @@ namespace Aceca.Adm.Helper
         }
         #endregion
 
+        #region Bloqueio de e-mail descartável
+
+        // Lista estática dos domínios de e-mail temporário/descartável mais comuns - só
+        // bloqueia o abuso mais óbvio no auto-cadastro (RegisterCover); o CPF é que faz o
+        // trabalho pesado de travar reincidência (ver AuthController.CadastroTesteIniciar).
+        private static readonly HashSet<string> _dominiosEmailDescartavel = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "mailinator.com", "guerrillamail.com", "10minutemail.com", "yopmail.com",
+            "tempmail.com", "temp-mail.org", "trashmail.com", "getnada.com",
+            "sharklasers.com", "throwawaymail.com", "fakeinbox.com", "maildrop.cc",
+            "mailnesia.com", "dispostable.com", "mintemail.com", "moakt.com"
+        };
+
+        public bool IsEmailDescartavel(string? email)
+        {
+            var arroba = email?.LastIndexOf('@') ?? -1;
+            if (arroba < 0 || arroba == email!.Length - 1)
+                return false;
+
+            var dominio = email[(arroba + 1)..].Trim();
+            return _dominiosEmailDescartavel.Contains(dominio);
+        }
+
+        #endregion
+
         #region Envio Email
 
         /// <summary>
@@ -778,7 +804,7 @@ namespace Aceca.Adm.Helper
         /// Configure as chaves: Email:Host, Email:Port, Email:EnableSsl,
         ///                      Email:From, Email:User, Email:Password, Email:DisplayName
         /// </summary>
-        public async Task<IActionResult> EnviarEmailAsync(ETipoEmail eTipoMail, string toEmail, string socioNome, string resetLink)
+        public async Task<IActionResult> EnviarEmailAsync(ETipoEmail eTipoMail, string toEmail, string socioNome, string resetLink, string? codigoAlternativo = null)
         {
             var smtpHost = _appConfiguration["Email:Host"] ?? "smtp.gmail.com";
             var smtpPort = int.Parse(_appConfiguration["Email:Port"] ?? "587");
@@ -843,6 +869,46 @@ namespace Aceca.Adm.Helper
                                 </div>
                                 <p style=""font-size:13px;color:#888;"">Você só conseguirá acessar a Área do Sócio depois de concluir esta etapa.
                                    Se você não reconhece este cadastro, entre em contato conosco.</p>
+                                <hr style=""border:none;border-top:1px solid #eee;margin:24px 0;"">
+                                <p style=""font-size:12px;color:#aaa;text-align:center;"">
+                                  © ACECA - Associação dos Colecionadores de Embalagens de Cigarros e Afins
+                                </p>
+                            </div>
+                        </body>
+                    </html>";
+            }
+            else if (eTipoMail.Equals(ETipoEmail.VerificacaoCadastroTeste))
+            {
+                strSubject = "Confirme seu e-mail para começar seu teste grátis - ACECA";
+
+                var blocoCodigo = string.IsNullOrEmpty(codigoAlternativo) ? "" : $@"
+                                <p style=""text-align:center;color:#888;font-size:13px;"">Ou copie e cole o código no site</p>
+                                <div style=""text-align:center;margin:0 0 24px;"">
+                                    <span style=""display:inline-block;background:#f4f0f9;color:#47007b;font-weight:700;
+                                        letter-spacing:2px;font-size:18px;padding:10px 20px;border-radius:6px;"">{codigoAlternativo}</span>
+                                </div>";
+
+                strBody = $@"
+                    <!DOCTYPE html>
+                    <html lang=""pt-BR"">
+                        <head><meta charset=""UTF-8""></head>
+                        <body style=""font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;"">
+                            <div style=""max-width:520px;margin:0 auto;background:#fff;border-radius:10px;padding:36px 40px;box-shadow:0 2px 12px rgba(0,0,0,.08);"">
+                                <div style=""text-align:center;"">
+                                    <img src=""https://www.aceca.com.br/img/logo/logo02.png"" alt=""ACECA"" width=""250"" style=""max-width:100%;"">
+                                </div>
+                                <h2 style=""color:#47007b;margin-top:0;"">Confirme seu e-mail para continuar</h2>
+                                <p>Olá, {socioNome}</p>
+                                <p>Recebemos seu pedido de teste grátis de sócio ACECA. Clique no botão abaixo para confirmar
+                                   que o e-mail <strong>{toEmail}</strong> é válido e liberar seu acesso.</p>
+                                <p><em>Este link (e o código abaixo) são válidos por apenas <strong>5 minutos</strong>.</em></p>
+                                <div style=""text-align:center;margin:32px 0;"">
+                                    <a href=""{resetLink}"" style=""background:#47007b;color:#fff;padding:14px 32px;border-radius:6px; text-decoration:none;font-size:16px;display:inline-block;"">
+                                        Confirmar e-mail
+                                    </a>
+                                </div>
+                                {blocoCodigo}
+                                <p style=""font-size:13px;color:#888;"">Se você não solicitou este teste, pode ignorar este e-mail.</p>
                                 <hr style=""border:none;border-top:1px solid #eee;margin:24px 0;"">
                                 <p style=""font-size:12px;color:#aaa;text-align:center;"">
                                   © ACECA - Associação dos Colecionadores de Embalagens de Cigarros e Afins

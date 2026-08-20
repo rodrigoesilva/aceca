@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -33,6 +34,7 @@ namespace Aceca.Adm.Controllers
 
         private readonly AppDbContext _db;
         private readonly HelperExtensionsController _helperController;
+        private readonly IMemoryCache _cache;
         private EPerfil _socioPerfil;
 
         private readonly string _urlBaseImg = string.Empty;
@@ -53,8 +55,9 @@ namespace Aceca.Adm.Controllers
             , IConfiguration cfg
             , IServiceProvider serviceProvider
             , IHttpClientFactory httpClientFactory
-            , HelperExtensionsController helperController)
-        { 
+            , HelperExtensionsController helperController
+            , IMemoryCache cache)
+        {
             _logger = logger;
             _db = db;
             _appEnvironment = env;
@@ -62,6 +65,7 @@ namespace Aceca.Adm.Controllers
             _serviceProvider = serviceProvider;
             _httpClientFactory = httpClientFactory;
             _helperController = helperController;
+            _cache = cache;
 
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
@@ -828,6 +832,19 @@ namespace Aceca.Adm.Controllers
                     });
                 }
 
+                // Conta de auto-cadastro (teste grátis) vencida: bloqueia o login diretamente
+                // aqui também (o mesmo prazo já é fiscalizado a cada request por
+                // OnValidatePrincipal em Program.cs, mas essa checagem cobre quem nunca chegou
+                // a ficar logado depois do vencimento e tenta logar de novo com a senha antiga).
+                if (user.Socio.EhContaTeste && user.Socio.TesteExpiraEm.HasValue
+                    && DateTime.UtcNow >= user.Socio.TesteExpiraEm.Value)
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Seu período de teste grátis expirou. Solicite sua associação em https://www.aceca.com.br/#contato para continuar."
+                    });
+
                 var financeiroPendente = await _db.SocioFinanceiro
                     .AsNoTracking()
                     .AnyAsync(f => f.SocioId == user.SocioId && f.PagamentoEmDia == 0);
@@ -862,6 +879,313 @@ namespace Aceca.Adm.Controllers
                 _logger.LogError("ERRO :: {Method} :: {Message}", nameof(Login), ex.Message);
                 return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
+        }
+
+        #endregion
+
+        // ──────────────────────────────────────────────
+        // AUTO-CADASTRO (TESTE GRÁTIS)
+        // ──────────────────────────────────────────────
+
+        #region Auto-Cadastro (Teste Grátis)
+
+        public record CadastroTesteIn(string Nome, string Cpf, string Email, string? Latitude, string? Longitude);
+        public record VerificarCodigoIn(string Email, string Codigo);
+        public record ReenviarCadastroTesteIn(string Email);
+
+        [HttpGet]
+        public async Task<IActionResult> RegisterCover()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Inicio", "Home");
+
+            var duracaoStr = await _db.AdmConfig
+                .Where(c => c.Parametro == "TesteGratisDuracaoHoras")
+                .Select(c => c.Valor)
+                .FirstOrDefaultAsync();
+            ViewBag.DuracaoTesteHoras = int.TryParse(duracaoStr, out var h) && h > 0 ? h : 24;
+
+            return View("~/Views/Auth/RegisterCover.cshtml");
+        }
+
+        // Limite simples por IP - não impede um abuso determinado (rede móvel compartilha IP
+        // entre pessoas reais, e um IP novo é trivial via VPN/4G); só encarece um script
+        // batendo repetidamente neste endpoint. A defesa real contra reincidência é o CPF
+        // (UNIQUE em cadastro_teste, checado abaixo).
+        private bool IpExcedeuLimiteCadastro(string ip)
+        {
+            var chave = $"cadastro_teste_ip_{ip}";
+            var tentativas = _cache.Get<int?>(chave) ?? 0;
+
+            if (tentativas >= 5)
+                return true;
+
+            _cache.Set(chave, tentativas + 1, TimeSpan.FromHours(1));
+            return false;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CadastroTesteIniciar([FromBody] CadastroTesteIn dto)
+        {
+            try
+            {
+                var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "desconhecido";
+
+                if (IpExcedeuLimiteCadastro(ip))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Muitas tentativas de cadastro deste endereço. Tente novamente mais tarde." });
+
+                var nome = dto.Nome?.Trim();
+                var email = dto.Email?.Trim().ToLowerInvariant();
+                var cpfDigitos = Aceca.Adm.Helper.CpfHelper.SomenteDigitos(dto.Cpf);
+
+                if (string.IsNullOrWhiteSpace(nome))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Informe seu nome." });
+
+                if (!_helperController.IsValidEmailUsingMailAddress(email))
+                    return Ok(new { bResult = false, type = "ERRO", message = "E-mail inválido." });
+
+                if (_helperController.IsEmailDescartavel(email))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Use um e-mail pessoal válido - e-mails temporários não são aceitos." });
+
+                if (!Aceca.Adm.Helper.CpfHelper.EhValido(cpfDigitos))
+                    return Ok(new { bResult = false, type = "ERRO", message = "CPF inválido." });
+
+                // E-mail já é de um sócio de verdade - direciona pro login em vez de deixar
+                // tentar abrir um segundo cadastro por cima de uma conta existente.
+                var jaEhSocio = await _db.SocioSeguranca.AsNoTracking().AnyAsync(s => s.Email == email);
+                if (jaEhSocio)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Este e-mail já pertence a um sócio. Faça login ou use \"Esqueceu a senha?\"." });
+
+                // Chave antifraude: um CPF só passa por aqui uma vez, para sempre - vencido ou
+                // não, verificado ou não. O UNIQUE KEY no banco é a garantia real; esta
+                // consulta só existe pra devolver uma mensagem amigável em vez de erro de SQL.
+                var jaTentouTeste = await _db.CadastroTeste.AsNoTracking().AnyAsync(c => c.Cpf == cpfDigitos);
+                if (jaTentouTeste)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Este CPF já utilizou o período de teste grátis. Solicite sua associação em https://www.aceca.com.br/#contato para continuar." });
+
+                var token = _helperController.GenerateSecuretToken();
+                var codigo = _helperController.GenerateStringPassword(6).ToUpperInvariant();
+
+                var registro = new Models.CadastroTeste
+                {
+                    Cpf = cpfDigitos,
+                    Nome = nome,
+                    Email = email,
+                    TokenVerificacao = token,
+                    CodigoVerificacao = codigo,
+                    TokenExpiraEm = DateTime.UtcNow.AddMinutes(5),
+                    Ip = ip,
+                    UserAgent = Request.Headers["User-Agent"].ToString(),
+                    Latitude = dto.Latitude,
+                    Longitude = dto.Longitude,
+                    DataCriacao = DateTime.UtcNow,
+                };
+
+                _db.CadastroTeste.Add(registro);
+
+                try
+                {
+                    await _db.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    // Corrida rara entre dois envios simultâneos com o mesmo CPF - o UNIQUE
+                    // KEY do banco é quem garante de verdade; aqui só devolvemos mensagem
+                    // amigável em vez do erro de SQL cru.
+                    return Ok(new { bResult = false, type = "ERRO", message = "Este CPF já utilizou o período de teste grátis." });
+                }
+
+                var link = $"{_urlBaseApp}/Auth/VerifyEmailCover?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(email)}";
+
+                await _helperController.EnviarEmailAsync(ETipoEmail.VerificacaoCadastroTeste, email, nome, link, codigo);
+
+                return Ok(new { bResult = true, type = "OK", email });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(CadastroTesteIniciar), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReenviarCadastroTeste([FromBody] ReenviarCadastroTesteIn dto)
+        {
+            // Mensagem sempre igual, exista ou não o cadastro pendente - mesmo padrão
+            // anti-enumeração usado em ForgotPassword/ResendCadastroEmail.
+            var mensagemGenerica = new { bResult = true, type = "OK", message = "Se o cadastro existir e ainda não tiver sido confirmado, um novo e-mail foi enviado." };
+
+            try
+            {
+                var email = dto.Email?.Trim().ToLowerInvariant();
+                var registro = await _db.CadastroTeste.FirstOrDefaultAsync(c => c.Email == email && !c.Verificado);
+
+                if (registro == null)
+                    return Ok(mensagemGenerica);
+
+                if (registro.UltimoReenvio.HasValue && registro.UltimoReenvio.Value.AddSeconds(60) > DateTime.UtcNow)
+                    return Ok(mensagemGenerica);
+
+                if (registro.QtdReenvios >= 5)
+                    return Ok(mensagemGenerica);
+
+                registro.TokenVerificacao = _helperController.GenerateSecuretToken();
+                registro.CodigoVerificacao = _helperController.GenerateStringPassword(6).ToUpperInvariant();
+                registro.TokenExpiraEm = DateTime.UtcNow.AddMinutes(5);
+                registro.QtdReenvios += 1;
+                registro.UltimoReenvio = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+
+                var link = $"{_urlBaseApp}/Auth/VerifyEmailCover?token={Uri.EscapeDataString(registro.TokenVerificacao)}&email={Uri.EscapeDataString(registro.Email)}";
+                await _helperController.EnviarEmailAsync(ETipoEmail.VerificacaoCadastroTeste, registro.Email, registro.Nome, link, registro.CodigoVerificacao);
+
+                return Ok(mensagemGenerica);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(ReenviarCadastroTeste), ex.Message);
+                return Ok(mensagemGenerica);
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> VerifyEmailCover(string? email, string? token)
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Inicio", "Home");
+
+            ViewBag.Email = email;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(token))
+                return View("~/Views/Auth/VerifyEmailCover.cshtml");
+
+            var registro = await _db.CadastroTeste.FirstOrDefaultAsync(c => c.Email == email.Trim().ToLowerInvariant());
+
+            if (registro == null || registro.Verificado
+                || registro.TokenVerificacao != token
+                || !registro.TokenExpiraEm.HasValue || registro.TokenExpiraEm.Value < DateTime.UtcNow)
+            {
+                ViewBag.LinkInvalido = true;
+                return View("~/Views/Auth/VerifyEmailCover.cshtml");
+            }
+
+            var sucesso = await FinalizarCadastroTesteAsync(registro);
+
+            if (!sucesso)
+            {
+                ViewBag.LinkInvalido = true;
+                return View("~/Views/Auth/VerifyEmailCover.cshtml");
+            }
+
+            return RedirectToAction("Inicio", "Home");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> VerificarCodigoCadastroTeste([FromBody] VerificarCodigoIn dto)
+        {
+            try
+            {
+                var email = dto.Email?.Trim().ToLowerInvariant();
+                var codigo = dto.Codigo?.Trim().ToUpperInvariant();
+
+                var registro = await _db.CadastroTeste.FirstOrDefaultAsync(c => c.Email == email);
+
+                if (registro == null || registro.Verificado
+                    || registro.CodigoVerificacao != codigo
+                    || !registro.TokenExpiraEm.HasValue || registro.TokenExpiraEm.Value < DateTime.UtcNow)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Código inválido ou expirado." });
+
+                var sucesso = await FinalizarCadastroTesteAsync(registro);
+
+                if (!sucesso)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
+
+                return Ok(new { bResult = true, type = "OK", redirectUrl = Url.Action("Inicio", "Home") });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(VerificarCodigoCadastroTeste), ex.Message);
+                return Ok(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
+            }
+        }
+
+        // Cria o sócio de teste (perfil Socio, ativo, com prazo vindo de AdmConfig
+        // "TesteGratisDuracaoHoras") e já efetua o login (mesmo mecanismo de cookie/claims do
+        // login normal) - quem acaba de verificar o e-mail cai direto dentro da área do sócio,
+        // sem precisar de senha (uma senha aleatória é gerada só pra existir o registro, caso
+        // precise depois recuperar acesso via "Esqueceu a senha?").
+        private async Task<bool> FinalizarCadastroTesteAsync(Models.CadastroTeste registro)
+        {
+            var strategy = _db.Database.CreateExecutionStrategy();
+
+            Func<Task<bool>> operation = async () =>
+            {
+                using var transaction = await _db.Database.BeginTransactionAsync();
+
+                try
+                {
+                    var duracaoStr = await _db.AdmConfig
+                        .Where(c => c.Parametro == "TesteGratisDuracaoHoras")
+                        .Select(c => c.Valor)
+                        .FirstOrDefaultAsync();
+                    var duracaoHoras = int.TryParse(duracaoStr, out var h) && h > 0 ? h : 24;
+
+                    var socio = new Socio
+                    {
+                        SocioPerfilId = (int)EPerfil.Socio,
+                        Nome = registro.Nome,
+                        Ativo = true,
+                        MostrarSite = false,
+                        EhContaTeste = true,
+                        TesteExpiraEm = DateTime.UtcNow.AddHours(duracaoHoras),
+                    };
+                    _db.Socio.Add(socio);
+                    await _db.SaveChangesAsync();
+
+                    var senhaTemporaria = _helperController.GenerateStringPassword(12);
+                    var seguranca = new Models.SocioSeguranca
+                    {
+                        SocioId = socio.Id!.Value,
+                        Email = registro.Email,
+                        NomeUsuario = registro.Nome,
+                        Senha = _helperController.GenerateHashPassword(senhaTemporaria),
+                        SenhaAberta = senhaTemporaria,
+                        SenhaAtualizada = false,
+                        UltimoLogin = DateTime.UtcNow,
+                    };
+                    _db.SocioSeguranca.Add(seguranca);
+
+                    _db.SocioContato.Add(new Models.SocioContato
+                    {
+                        SocioId = socio.Id,
+                        DDI = 55,
+                        DDD = 0,
+                        Telefone = null,
+                        Email = registro.Email,
+                    });
+
+                    registro.Verificado = true;
+                    registro.DataVerificacao = DateTime.UtcNow;
+                    registro.SocioIdGerado = socio.Id;
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    // SocioPerfil precisa estar carregado pra LoginSetClaimsAsync montar a
+                    // claim de role (ClaimTypes.Role = socio.SocioPerfil?.Descricao).
+                    socio.SocioPerfil = await _db.SocioPerfil.AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.Id == socio.SocioPerfilId);
+
+                    return await LoginSetClaimsAsync(seguranca, socio);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("ERRO :: {Method} :: {Message}", nameof(FinalizarCadastroTesteAsync), ex.Message);
+                    return false;
+                }
+            };
+
+            return await strategy.ExecuteAsync(operation);
         }
 
         #endregion

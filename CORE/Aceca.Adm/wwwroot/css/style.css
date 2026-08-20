@@ -370,6 +370,8 @@ body.pg-login{background:var(--d);min-height:100vh;display:flex;align-items:cent
 .btn-entrar:disabled{opacity:.65;transform:none;cursor:not-allowed}
 .lc-cadastro{text-align:center;margin-top:16px;font-size:.78rem;color:#6b4a9a}
 .lc-cadastro a{color:var(--d);font-weight:600}
+.lc-teste-gratis{text-align:center;margin-top:8px;font-size:.78rem;color:#6b4a9a}
+.lc-teste-gratis a{color:var(--m);font-weight:600}
 .back-site{display:block;text-align:center;margin-top:10px;font-size:.76rem;color:#9b80bb;transition:color .2s}
 .back-site:hover{color:var(--d)}
 

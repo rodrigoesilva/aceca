@@ -359,10 +359,16 @@ namespace Aceca.Adm.Models
         public string? ImgAvatar { get; set; } = null;
         public bool? MostrarSite { get; set; }
 
+        // Conta criada pelo auto-cadastro (teste grátis) - ver AuthController.RegisterCover/
+        // VerifyEmailCover e Program.cs::OnValidatePrincipal, que encerra a sessão sozinho
+        // quando TesteExpiraEm passa, sem exigir nenhuma ação do sócio ou da administração.
+        [Column("eh_conta_teste")] public bool EhContaTeste { get; set; }
+        [Column("teste_expira_em")] public DateTime? TesteExpiraEm { get; set; }
+
         public SocioPerfil? SocioPerfil { get; set; }
 
         //[ValidateNever] public ICollection<SocioColecao>? ColecaoSocios { get; set; }
-    }    
+    }
 
     [Table("socio_aniversario")]
     public class SocioAniversario
@@ -490,6 +496,51 @@ namespace Aceca.Adm.Models
         // esse valor, o que derruba qualquer sessão anterior (outro device/navegador)
         // na próxima requisição dela.
         [Column("session_stamp")] public string? SessionStamp { get; set; }
+    }
+
+    // Registro permanente de toda tentativa de auto-cadastro (teste grátis) - NUNCA é
+    // apagado, mesmo depois do teste vencer, porque é ele quem impede a mesma pessoa
+    // (identificada pelo CPF, chave antifraude principal) de se cadastrar de novo. Ver
+    // AuthController.RegisterCover/CadastroTesteIniciar/VerifyEmailCover.
+    [Table("cadastro_teste")]
+    public class CadastroTeste
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int? Id { get; set; }
+
+        // Chave antifraude: um CPF só pode aparecer aqui uma vez (unicidade garantida por
+        // índice único no banco, ver Program.cs) - trava reincidência independente de quantos
+        // e-mails diferentes a pessoa tentar usar.
+        public string Cpf { get; set; } = null!;
+        public string Nome { get; set; } = null!;
+        public string Email { get; set; } = null!;
+
+        // Verificação do e-mail (link ou código, validade curta - ver AdmConfig futuro se
+        // precisar tornar configurável; por ora fixo em 5 minutos no código).
+        [Column("token_verificacao")] public string? TokenVerificacao { get; set; }
+        [Column("codigo_verificacao")] public string? CodigoVerificacao { get; set; }
+        [Column("token_expira_em")] public DateTime? TokenExpiraEm { get; set; }
+        public bool Verificado { get; set; }
+        [Column("data_verificacao")] public DateTime? DataVerificacao { get; set; }
+
+        // Reenvio de e-mail: throttle simples (ver AuthController.ReenviarCadastroTeste).
+        [Column("qtd_reenvios")] public int QtdReenvios { get; set; }
+        [Column("ultimo_reenvio")] public DateTime? UltimoReenvio { get; set; }
+
+        // Sócio de teste gerado após a verificação (nulo enquanto pendente).
+        [Column("socio_id_gerado")] public int? SocioIdGerado { get; set; }
+
+        // Captura de contexto no momento do cadastro (o máximo possível, sem depender da
+        // API paga de geolocalização usada no login - ver LoginLog/GetGeoInfoAsync) - usado
+        // só como sinal auxiliar/registro, nunca como bloqueio automático (rede compartilhada
+        // geraria falso positivo entre pessoas reais diferentes).
+        public string? Ip { get; set; }
+        [Column("user_agent")] public string? UserAgent { get; set; }
+        public string? Latitude { get; set; }
+        public string? Longitude { get; set; }
+
+        [Column("data_criacao")] public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
     }
 
     #endregion

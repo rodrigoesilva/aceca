@@ -91,6 +91,7 @@ namespace Aceca.Adm.Data
         public DbSet<SocioLogAcesso> SocioLogAcesso { get; set; }
         public DbSet<SocioPerfil> SocioPerfil { get; set; }
         public DbSet<SocioSeguranca> SocioSeguranca { get; set; }
+        public DbSet<CadastroTeste> CadastroTeste { get; set; }
         #endregion
 
         #region Tipo

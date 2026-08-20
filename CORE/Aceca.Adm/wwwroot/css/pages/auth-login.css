@@ -321,3 +321,94 @@ html:not([dir=rtl]) .authentication-wrapper.authentication-cover .authentication
         width: 100% !important;
     }
 }
+
+/* ─── Auto-cadastro (RegisterCover / VerifyEmailCover) ────────── */
+.btn-google-fake {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e0d5f0;
+    background: #fff;
+    color: #6b4a9a;
+    font-size: .9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: not-allowed;
+    opacity: .7;
+    margin-bottom: 14px;
+}
+
+.badge-em-breve {
+    margin-left: 6px;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #9b80bb;
+    background: #f4f0f9;
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.divisor-ou {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #9b80bb;
+    font-size: .78rem;
+    margin: 14px 0;
+}
+
+.divisor-ou::before,
+.divisor-ou::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #ede6f8;
+}
+
+.divisor-ou span {
+    padding: 0 10px;
+}
+
+.btn-voltar-escolha {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: none;
+    border: none;
+    color: #6b4a9a;
+    font-size: .82rem;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.form-check-teste {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.form-check-teste input {
+    margin-top: 3px;
+    accent-color: var(--m);
+}
+
+.form-check-teste label {
+    font-size: .78rem;
+    color: #6b4a9a;
+    font-weight: 400;
+}
+
+.text-center-reenviar {
+    text-align: center;
+    margin-top: 14px;
+    font-size: .8rem;
+    color: #6b4a9a;
+}
+
+.text-center-reenviar a {
+    color: var(--d);
+    font-weight: 600;
+}
