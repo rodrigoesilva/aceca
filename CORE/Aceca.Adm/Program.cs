@@ -2,6 +2,7 @@ using Aceca.Adm.Data;
 using Aceca.Adm.Helper;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
@@ -274,6 +275,25 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
                 return Task.CompletedTask;
             }
         };
+    })
+    // Esquema secundário só pra guardar o ticket do Google entre o callback e a decisão
+    // de negócio (ver ExternalGoogleScheme acima) - cookie de vida curta, nunca usado
+    // pelo restante da aplicação (OnValidatePrincipal etc. só olham o esquema principal).
+    .AddCookie(Aceca.Adm.Helper.AuthSchemes.ExternalGoogle, options =>
+    {
+        options.Cookie.Name = "aceca_external_google";
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+        options.SlidingExpiration = false;
+    })
+    // Login com Google (auto-cadastro/teste grátis) - só substitui a etapa de provar o
+    // e-mail (Google já verifica); o CPF continua sendo pedido depois, exatamente como
+    // no fluxo por e-mail+código. Ver AuthController.GoogleLogin/GoogleCallback.
+    .AddGoogle(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+        options.CallbackPath = "/signin-google";
+        options.SignInScheme = Aceca.Adm.Helper.AuthSchemes.ExternalGoogle;
     });
 
 #endregion

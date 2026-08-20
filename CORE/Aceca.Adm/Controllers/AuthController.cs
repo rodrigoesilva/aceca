@@ -3,6 +3,7 @@ using Aceca.Adm.Helper;
 using Aceca.Adm.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -919,7 +920,7 @@ namespace Aceca.Adm.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> RegisterCover()
+        public async Task<IActionResult> RegisterCover(string? googleToken, string? emailJaCadastrado)
         {
             if (User.Identity?.IsAuthenticated == true)
                 return RedirectToAction("Inicio", "Home");
@@ -930,7 +931,75 @@ namespace Aceca.Adm.Controllers
                 .FirstOrDefaultAsync();
             ViewBag.DuracaoTesteHoras = int.TryParse(duracaoStr, out var h) && h > 0 ? h : 24;
 
+            // E-mail confirmado pelo Google (GoogleCallback) já pertence a um sócio - mesma
+            // UX do fluxo por e-mail: RegisterCover.js mostra o Swal perguntando se quer ir
+            // direto pro login.
+            ViewBag.EmailJaCadastrado = emailJaCadastrado == "1";
+
+            // Token opaco (ver GoogleCallback) que carrega nome/e-mail já verificados pelo
+            // Google, guardados em cache no servidor - nunca confiamos num e-mail vindo de
+            // campo editável do cliente pra essa etapa, só nesse token.
+            if (!string.IsNullOrWhiteSpace(googleToken))
+            {
+                if (_cache.TryGetValue($"google_cadastro_{googleToken}", out (string Email, string Nome) dadosGoogle))
+                {
+                    ViewBag.GoogleToken = googleToken;
+                    ViewBag.GoogleEmail = dadosGoogle.Email;
+                    ViewBag.GoogleNome = dadosGoogle.Nome;
+                }
+                else
+                {
+                    ViewBag.GoogleTokenExpirado = true;
+                }
+            }
+
             return View("~/Views/Auth/RegisterCover.cshtml");
+        }
+
+        [HttpGet]
+        public IActionResult GoogleLogin()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Inicio", "Home");
+
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action(nameof(GoogleCallback), "Auth"),
+            };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        // Só substitui a etapa de provar o e-mail (Google já verifica) - o CPF continua
+        // sendo pedido depois, na volta pro RegisterCover (mesma trava antifraude de
+        // sempre). Nunca autentica a sessão real da aplicação por aqui.
+        [HttpGet]
+        public async Task<IActionResult> GoogleCallback()
+        {
+            var resultadoExterno = await HttpContext.AuthenticateAsync(Aceca.Adm.Helper.AuthSchemes.ExternalGoogle);
+            await HttpContext.SignOutAsync(Aceca.Adm.Helper.AuthSchemes.ExternalGoogle);
+
+            var email = resultadoExterno.Succeeded
+                ? resultadoExterno.Principal?.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant()
+                : null;
+
+            if (string.IsNullOrWhiteSpace(email))
+                return RedirectToAction(nameof(RegisterCover));
+
+            if (_helperController.IsEmailDescartavel(email))
+                return RedirectToAction(nameof(RegisterCover));
+
+            var jaEhSocio = await _db.SocioSeguranca.AsNoTracking().AnyAsync(s => s.Email == email);
+            if (jaEhSocio)
+                return RedirectToAction(nameof(RegisterCover), new { emailJaCadastrado = "1" });
+
+            var nome = resultadoExterno.Principal!.FindFirstValue(ClaimTypes.Name);
+
+            var googleToken = _helperController.GenerateSecuretToken();
+            _cache.Set($"google_cadastro_{googleToken}",
+                (Email: email, Nome: string.IsNullOrWhiteSpace(nome) ? _helperController.NomePlaceholderDoEmail(email) : nome),
+                TimeSpan.FromMinutes(15));
+
+            return RedirectToAction(nameof(RegisterCover), new { googleToken });
         }
 
         // Limite simples por IP - não impede um abuso determinado (rede móvel compartilha IP
@@ -1052,6 +1121,94 @@ namespace Aceca.Adm.Controllers
             catch (Exception ex)
             {
                 _logger.LogError("ERRO :: {Method} :: {Message}", nameof(CadastroTesteIniciar), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
+            }
+        }
+
+        public record CadastroTesteGoogleIn(string Cpf, string GoogleToken, string? Latitude, string? Longitude, string? Ip);
+
+        // Equivalente a CadastroTesteIniciar, mas pra quem chegou via "Continuar com o
+        // Google" (GoogleCallback) - o e-mail já foi verificado pelo Google (por isso não
+        // repete os checks de formato/domínio/descartável nem manda código por e-mail), só
+        // falta o CPF, que é a trava antifraude real e continua obrigatória do mesmo jeito.
+        [HttpPost]
+        public async Task<IActionResult> CadastroTesteGoogleFinalizar([FromBody] CadastroTesteGoogleIn dto)
+        {
+            try
+            {
+                if (!_cache.TryGetValue($"google_cadastro_{dto.GoogleToken}", out (string Email, string Nome) dadosGoogle))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Sessão do Google expirada. Clique em \"Continuar com o Google\" novamente." });
+
+                var ip = !string.IsNullOrWhiteSpace(dto.Ip)
+                    ? dto.Ip.Trim()
+                    : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "desconhecido";
+
+                if (IpExcedeuLimiteCadastro(ip))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Muitas tentativas de cadastro deste endereço. Tente novamente mais tarde." });
+
+                var cpfDigitos = Aceca.Adm.Helper.CpfHelper.SomenteDigitos(dto.Cpf);
+                if (!Aceca.Adm.Helper.CpfHelper.EhValido(cpfDigitos))
+                    return Ok(new { bResult = false, type = "ERRO", message = "CPF inválido." });
+
+                // Defensivo: repete a checagem que o GoogleCallback já fez antes de gerar o
+                // token, cobrindo o caso raro de a pessoa virar sócio nesse meio-tempo.
+                var jaEhSocio = await _db.SocioSeguranca.AsNoTracking().AnyAsync(s => s.Email == dadosGoogle.Email);
+                if (jaEhSocio)
+                    return Ok(new { bResult = false, type = "EMAIL_JA_CADASTRADO", message = "Este e-mail já pertence a um sócio." });
+
+                var jaTentouTeste = await _db.CadastroTeste.AsNoTracking().AnyAsync(c => c.Cpf == cpfDigitos);
+                if (jaTentouTeste)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Este CPF já utilizou o período de teste grátis. Solicite sua associação em https://www.aceca.com.br/#contato para continuar." });
+
+                var contexto = await MontarContextoCadastroTesteAsync(ip, dto.Latitude, dto.Longitude);
+
+                var registro = new Models.CadastroTeste
+                {
+                    Cpf = cpfDigitos,
+                    Nome = dadosGoogle.Nome,
+                    Email = dadosGoogle.Email,
+                    Verificado = true,
+                    DataVerificacao = DateTime.UtcNow,
+                    Ip = ip,
+                    UserAgent = Request.Headers["User-Agent"].ToString(),
+                    Latitude = contexto.Latitude ?? dto.Latitude,
+                    Longitude = contexto.Longitude ?? dto.Longitude,
+                    OS = contexto.OS,
+                    Browser = contexto.Browser,
+                    Device = contexto.Device,
+                    Operadora = contexto.Operadora,
+                    Estado = contexto.Estado,
+                    Cidade = contexto.Cidade,
+                    DataCriacao = DateTime.UtcNow,
+                };
+
+                _db.CadastroTeste.Add(registro);
+
+                try
+                {
+                    await _db.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    return Ok(new { bResult = false, type = "ERRO", message = "Este CPF já utilizou o período de teste grátis." });
+                }
+
+                _cache.Remove($"google_cadastro_{dto.GoogleToken}");
+
+                var proximoToken = await FinalizarCadastroTesteAsync(registro);
+                if (proximoToken == null)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    redirectUrl = Url.Action(nameof(NewRegistration), new { token = proximoToken, email = registro.Email })
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(CadastroTesteGoogleFinalizar), ex.Message);
                 return BadRequest(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
             }
         }

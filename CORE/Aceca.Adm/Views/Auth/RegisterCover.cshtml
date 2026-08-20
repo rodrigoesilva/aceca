@@ -41,12 +41,17 @@
                                 <p class="lc-sub">Experimente ser S&oacute;cio ACECA gratuitamente por <strong>@ViewBag.DuracaoTesteHoras horas</strong>, sem compromisso.</p>
                                 <div id="registerErr" class="login-err" style="display:none"></div>
 
+                                @* Flags vindas do servidor (GoogleCallback/RegisterCover) - nunca do cliente,
+                                   pra JS decidir qual passo mostrar sem confiar em nada editável. *@
+                                <div id="registerServerFlags" style="display:none"
+                                     data-email-ja-cadastrado="@(ViewBag.EmailJaCadastrado == true ? "1" : "0")"
+                                     data-google-token-expirado="@(ViewBag.GoogleTokenExpirado == true ? "1" : "0")"></div>
+
                                 <!-- Passo 1: escolha do método -->
-                                <div id="passoEscolha">
-                                    <button type="button" class="btn-google-fake" id="btnGoogleEmBreve" disabled title="Em breve">
+                                <div id="passoEscolha" style="@(ViewBag.GoogleToken != null ? "display:none" : "")">
+                                    <a href="/Auth/GoogleLogin" class="btn-google-fake" id="btnGoogleLogin">
                                         <i class="ri-google-fill ri-20px"></i> Continuar com o Google
-                                        <span class="badge-em-breve">em breve</span>
-                                    </button>
+                                    </a>
 
                                     <div class="divisor-ou"><span>ou</span></div>
 
@@ -85,6 +90,41 @@
                                     </button>
 
                                     <button type="button" class="btn-voltar-escolha" id="btnVoltarEscolha">&larr; Voltar</button>
+                                </form>
+
+                                @* Passo 2b: só o CPF - usado quando o e-mail já veio verificado pelo Google
+                                   (GoogleCallback). Nome/e-mail não são campos editáveis aqui de propósito -
+                                   quem garante que baterem com o que o Google confirmou é o ggToken, guardado
+                                   em cache no servidor (ver AuthController.CadastroTesteGoogleFinalizar). *@
+                                <form id="frmCadastroGoogle" class="form" style="@(ViewBag.GoogleToken != null ? "" : "display:none")" autocomplete="off" novalidate>
+                                    <p class="lc-google-continuando">
+                                        Continuando como <strong>@ViewBag.GoogleNome</strong><br>
+                                        <span class="text-muted">@ViewBag.GoogleEmail</span>
+                                    </p>
+
+                                    <input type="hidden" id="ggToken" value="@ViewBag.GoogleToken">
+
+                                    <div class="fg">
+                                        <label for="ggCpf">CPF</label>
+                                        <input class="form-control" type="text" id="ggCpf" name="ggCpf" placeholder="000.000.000-00" required inputmode="numeric" maxlength="14">
+                                        <span class="fg-erro-campo" id="ggCpfErro"></span>
+                                    </div>
+
+                                    <div class="mb-3 py-1">
+                                        <div class="form-check-teste">
+                                            <input type="checkbox" id="ggTermos" name="ggTermos" required>
+                                            <label for="ggTermos">Concordo com os Termos de Uso e a Pol&iacute;tica de Privacidade da ACECA.</label>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn-entrar" id="btnContinuarCadastroGoogle">
+                                        <span class="btn-text">Continuar</span>
+                                        <span class="btn-spinner" style="display:none;" aria-hidden="true">
+                                            <i class="ri-loader-4-line ri-spin"></i> Enviando…
+                                        </span>
+                                    </button>
+
+                                    <a href="/Auth/RegisterCover" class="btn-voltar-escolha">&larr; Voltar</a>
                                 </form>
 
                                 <p class="lc-cadastro">J&aacute; &eacute; S&oacute;cio? <a href="/Auth/Index">Fazer login</a></p>

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const passoEscolha = document.getElementById('passoEscolha');
     const frmCadastro = document.getElementById('frmCadastroTeste');
+    const frmCadastroGoogle = document.getElementById('frmCadastroGoogle');
     const err = document.getElementById('registerErr');
     const btnContinuarEmail = document.getElementById('btnContinuarEmail');
     const btnVoltarEscolha = document.getElementById('btnVoltarEscolha');
@@ -14,6 +15,38 @@ document.addEventListener('DOMContentLoaded', function () {
     const btn = document.getElementById('btnContinuarCadastro');
 
     if (!frmCadastro) return;
+
+    // Swal reaproveitado nos dois fluxos (e-mail e Google) pra quando o e-mail já
+    // pertence a um sócio - "Sim, fazer login" é a ação mais provável, por isso fica em
+    // destaque (não usa swalWithBootstrapButtons, que é pensado pra confirmação
+    // destrutiva com o botão de ação apagado).
+    function mostrarSwalEmailJaCadastrado(aoRecusar) {
+        Swal.fire({
+            title: 'E-mail já cadastrado',
+            icon: 'info',
+            html: 'Este e-mail já pertence a um sócio. Deseja ir para a tela de login?',
+            showCancelButton: true,
+            confirmButtonText: '<i class="ri-login-box-line"></i> &nbsp;Sim, fazer login',
+            cancelButtonText: 'Não',
+            buttonsStyling: false,
+            customClass: { confirmButton: 'swal-btn-confirmar', cancelButton: 'swal-btn-cancelar' }
+        }).then((swalResult) => {
+            if (swalResult.isConfirmed) {
+                window.location.href = '/Auth/Index';
+            } else if (aoRecusar) {
+                aoRecusar();
+            }
+        });
+    }
+
+    // Flags vindas do servidor (GoogleCallback/RegisterCover) - ver comentário no cshtml.
+    const flags = document.getElementById('registerServerFlags');
+    if (flags?.dataset.emailJaCadastrado === '1') {
+        mostrarSwalEmailJaCadastrado();
+    } else if (flags?.dataset.googleTokenExpirado === '1') {
+        err.textContent = '❌ A sessão do Google expirou. Clique em "Continuar com o Google" novamente.';
+        err.style.display = 'block';
+    }
 
     btnContinuarEmail?.addEventListener('click', function () {
         passoEscolha.style.display = 'none';
@@ -166,28 +199,12 @@ document.addEventListener('DOMContentLoaded', function () {
             // a pessoa quer ir direto pro login (Sim) ou só limpar os campos e continuar
             // tentando outro e-mail (Não).
             if (result?.type === 'EMAIL_JA_CADASTRADO') {
-                // Swal próprio (não swalWithBootstrapButtons, que é pra confirmação
-                // destrutiva com o botão de ação apagado) - aqui "Sim, fazer login" é a
-                // ação mais provável, então é ela que fica em destaque.
-                Swal.fire({
-                    title: 'E-mail já cadastrado',
-                    icon: 'info',
-                    html: 'Este e-mail já pertence a um sócio. Deseja ir para a tela de login?',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="ri-login-box-line"></i> &nbsp;Sim, fazer login',
-                    cancelButtonText: 'Não',
-                    buttonsStyling: false,
-                    customClass: { confirmButton: 'swal-btn-confirmar', cancelButton: 'swal-btn-cancelar' }
-                }).then((swalResult) => {
-                    if (swalResult.isConfirmed) {
-                        window.location.href = '/Auth/Index';
-                    } else {
-                        inputCpf.value = '';
-                        inputEmail.value = '';
-                        cpfErro.textContent = '';
-                        emailErro.textContent = '';
-                        inputCpf.focus();
-                    }
+                mostrarSwalEmailJaCadastrado(function () {
+                    inputCpf.value = '';
+                    inputEmail.value = '';
+                    cpfErro.textContent = '';
+                    emailErro.textContent = '';
+                    inputCpf.focus();
                 });
                 return;
             }
@@ -201,4 +218,92 @@ document.addEventListener('DOMContentLoaded', function () {
             setLoading(false);
         }
     });
+
+    // ── Continuação via Google (CPF-only, e-mail já verificado pelo Google) ──
+    if (frmCadastroGoogle) {
+        const inputGgCpf = document.getElementById('ggCpf');
+        const ggCpfErro = document.getElementById('ggCpfErro');
+        const ggToken = document.getElementById('ggToken');
+        const btnGg = document.getElementById('btnContinuarCadastroGoogle');
+
+        inputGgCpf?.addEventListener('input', function () {
+            let digitos = this.value.replace(/\D/g, '').slice(0, 11);
+            let formatado = digitos;
+            if (digitos.length > 9) formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9)}`;
+            else if (digitos.length > 6) formatado = `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6)}`;
+            else if (digitos.length > 3) formatado = `${digitos.slice(0, 3)}.${digitos.slice(3)}`;
+            this.value = formatado;
+
+            if (digitos.length < 11) { ggCpfErro.textContent = ''; return; }
+            ggCpfErro.textContent = cpfValido(digitos) ? '' : 'CPF inválido - confira os números digitados.';
+        });
+
+        function setLoadingGg(isLoading) {
+            btnGg.disabled = isLoading;
+            btnGg.querySelector('.btn-text').style.display = isLoading ? 'none' : 'inline';
+            btnGg.querySelector('.btn-spinner').style.display = isLoading ? 'inline-flex' : 'none';
+        }
+
+        frmCadastroGoogle.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            err.style.display = 'none';
+
+            const chkTermosGg = document.getElementById('ggTermos');
+            if (!chkTermosGg.checked) {
+                err.textContent = '❌ É obrigatório concordar com os Termos de Uso e a Política de Privacidade para continuar.';
+                err.style.display = 'block';
+                chkTermosGg.focus();
+                return;
+            }
+
+            const digitosCpf = inputGgCpf.value.replace(/\D/g, '');
+            if (!cpfValido(digitosCpf)) {
+                ggCpfErro.textContent = 'CPF inválido - confira os números digitados.';
+                inputGgCpf.focus();
+                return;
+            }
+
+            setLoadingGg(true);
+
+            try {
+                const [coords, ipReal] = await Promise.all([obterCoordenadas(), obterIpReal()]);
+
+                const body = {
+                    cpf: digitosCpf,
+                    googleToken: ggToken.value,
+                    latitude: coords ? String(coords.latitude) : null,
+                    longitude: coords ? String(coords.longitude) : null,
+                    ip: ipReal,
+                };
+
+                const response = await fetch('/Auth/CadastroTesteGoogleFinalizar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.bResult) {
+                    window.location.href = result.redirectUrl;
+                    return;
+                }
+
+                setLoadingGg(false);
+
+                if (result?.type === 'EMAIL_JA_CADASTRADO') {
+                    mostrarSwalEmailJaCadastrado();
+                    return;
+                }
+
+                err.textContent = `❌ ${result?.message ?? 'Não foi possível concluir o cadastro.'}`;
+                err.style.display = 'block';
+            } catch (ex) {
+                console.error('CadastroTesteGoogleFinalizar:', ex);
+                err.textContent = '❌ Não foi possível concluir o cadastro. Tente novamente.';
+                err.style.display = 'block';
+                setLoadingGg(false);
+            }
+        });
+    }
 });
