@@ -78,6 +78,23 @@ function fn_UpdateClock() {
 
 function fn_AuthOut() {
     //console.log(`fn_AuthOut ::`);
+
+    // Precisa ser marcado ANTES do AJAX de logout, não só dentro do success: o
+    // setInterval(fn_CheckSession, 1000) roda em paralelo e, assim que o
+    // sessionStorage é limpo abaixo, ele mesmo detecta "sessão inválida" e manda pra
+    // /Auth/AccessDenied - competindo com o redirect correto (só pro /Auth/Index,
+    // depois do Swal) que este método faz no final. Sem essa guarda, o usuário via a
+    // tela de "não autorizado" piscar antes de cair no login de verdade.
+    _sessionInvalidating = true;
+
+    // session-guard.js (arquivo separado, com seu próprio estado interno) também
+    // redireciona sozinho pra /Auth/SessionExpired em qualquer 401 - e como o cookie
+    // já foi limpo no servidor pelo /Auth/Logout abaixo, a próxima chamada AJAX
+    // qualquer (ex.: avatar da navbar) que ainda estiver em voo vira um 401 e dispara
+    // esse outro redirect, competindo com o desta função do mesmo jeito. Flag global,
+    // já que são dois arquivos/closures diferentes sem variável compartilhada.
+    window.__acecaLoggingOut = true;
+
     try {
         $.ajax({
             url: '/Auth/Logout',

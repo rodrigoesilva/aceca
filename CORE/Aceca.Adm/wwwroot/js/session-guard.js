@@ -38,6 +38,11 @@
     // Redirecionamentos — cada cenário tem sua própria função e destino
 
     function redirectToSessionExpired() {
+        // Logout intencional em andamento (fn_AuthOut em site.js) - o cookie já foi
+        // limpo de propósito; qualquer 401 daqui em diante faz parte disso, não é uma
+        // sessão expirando "sozinha". Sem essa checagem, esse redirect corria contra o
+        // fluxo normal de logout (Swal + redirect só pro /Auth/Index).
+        if (window.__acecaLoggingOut) return;
         if (redirecting) return;
         redirecting = true;
         try {
@@ -48,6 +53,7 @@
     }
 
     function redirectToAccessDenied() {
+        if (window.__acecaLoggingOut) return;
         if (redirecting) return;
         redirecting = true;
         window.location.href = ACCESS_DENIED_URL;
