@@ -959,7 +959,9 @@ namespace Aceca.Adm.Controllers
                 // tentar abrir um segundo cadastro por cima de uma conta existente.
                 var jaEhSocio = await _db.SocioSeguranca.AsNoTracking().AnyAsync(s => s.Email == email);
                 if (jaEhSocio)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Este e-mail já pertence a um sócio. Faça login ou use \"Esqueceu a senha?\"." });
+                    // type diferenciado (não "ERRO" genérico) - o front usa isso pra mostrar um
+                    // SweetAlert com opção de ir direto pro login em vez do banner de erro comum.
+                    return Ok(new { bResult = false, type = "EMAIL_JA_CADASTRADO", message = "Este e-mail já pertence a um sócio." });
 
                 // Chave antifraude: um CPF só passa por aqui uma vez, para sempre - vencido ou
                 // não, verificado ou não. O UNIQUE KEY no banco é a garantia real; esta

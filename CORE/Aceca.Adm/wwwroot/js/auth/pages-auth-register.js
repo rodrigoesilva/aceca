@@ -101,6 +101,17 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
         err.style.display = 'none';
 
+        // <form novalidate> desliga a validação nativa do HTML (mesmo padrão do login em
+        // pages-auth.js) - então o "required" do checkbox de Termos não bloqueia nada por
+        // conta própria; a checagem precisa ser explícita aqui.
+        const chkTermos = document.getElementById('rTermos');
+        if (!chkTermos.checked) {
+            err.textContent = '❌ É obrigatório concordar com os Termos de Uso e a Política de Privacidade para continuar.';
+            err.style.display = 'block';
+            chkTermos.focus();
+            return;
+        }
+
         const digitosCpf = inputCpf.value.replace(/\D/g, '');
         if (!cpfValido(digitosCpf)) {
             cpfErro.textContent = 'CPF inválido - confira os números digitados.';
@@ -133,9 +144,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            setLoading(false);
+
+            // E-mail já pertence a um sócio - em vez do banner de erro comum, pergunta se
+            // a pessoa quer ir direto pro login (Sim) ou só limpar os campos e continuar
+            // tentando outro e-mail (Não).
+            if (result?.type === 'EMAIL_JA_CADASTRADO') {
+                swalWithBootstrapButtons.fire({
+                    title: 'E-mail já cadastrado',
+                    icon: 'info',
+                    html: 'Este e-mail já pertence a um sócio. Deseja ir para a tela de login?',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="ri-login-box-line"></i> &nbsp; Sim, fazer login',
+                    cancelButtonText: '<i class="ri-close-line"></i> &nbsp; Não',
+                    reverseButtons: true
+                }).then((swalResult) => {
+                    if (swalResult.isConfirmed) {
+                        window.location.href = '/Auth/Index';
+                    } else {
+                        inputCpf.value = '';
+                        inputEmail.value = '';
+                        cpfErro.textContent = '';
+                        emailErro.textContent = '';
+                        inputCpf.focus();
+                    }
+                });
+                return;
+            }
+
             err.textContent = `❌ ${result?.message ?? 'Não foi possível concluir o cadastro.'}`;
             err.style.display = 'block';
-            setLoading(false);
         } catch (ex) {
             console.error('CadastroTesteIniciar:', ex);
             err.textContent = '❌ Não foi possível concluir o cadastro. Tente novamente.';
