@@ -795,6 +795,42 @@ namespace Aceca.Adm.Helper
             return _dominiosEmailDescartavel.Contains(dominio);
         }
 
+        // Confirma que o domínio do e-mail resolve de verdade via DNS (registro A/AAAA) -
+        // pega domínio inventado ou digitado errado antes de mandar o e-mail de verificação
+        // pra um endereço que nunca vai receber nada. .NET não tem API nativa pra consultar
+        // registro MX especificamente sem lib externa; A/AAAA já cobre a esmagadora maioria
+        // dos domínios de e-mail reais do dia a dia.
+        public async Task<bool> DominioResolveAsync(string dominio)
+        {
+            if (string.IsNullOrWhiteSpace(dominio))
+                return false;
+
+            try
+            {
+                var enderecos = await System.Net.Dns.GetHostAddressesAsync(dominio);
+                return enderecos.Length > 0;
+            }
+            catch (System.Net.Sockets.SocketException)
+            {
+                return false;
+            }
+        }
+
+        // Nome-placeholder a partir da parte local do e-mail (ex.: "joao.silva99@..." ->
+        // "Joao Silva99") - usado só quando o auto-cadastro não pede nome (CadastroTesteIniciar).
+        // A pessoa corrige o nome de verdade depois em "Meus Dados", já dentro da área do sócio.
+        public string NomePlaceholderDoEmail(string email)
+        {
+            var parteLocal = email.Split('@')[0];
+            var partes = parteLocal.Split(['.', '_', '-'], StringSplitOptions.RemoveEmptyEntries);
+
+            if (partes.Length == 0)
+                return "Sócio";
+
+            return string.Join(" ", partes.Select(p =>
+                p.Length > 1 ? char.ToUpperInvariant(p[0]) + p[1..] : p.ToUpperInvariant()));
+        }
+
         #endregion
 
         #region Envio Email

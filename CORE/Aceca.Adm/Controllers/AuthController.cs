@@ -889,7 +889,7 @@ namespace Aceca.Adm.Controllers
 
         #region Auto-Cadastro (Teste Grátis)
 
-        public record CadastroTesteIn(string Nome, string Cpf, string Email, string? Latitude, string? Longitude);
+        public record CadastroTesteIn(string Cpf, string Email, string? Latitude, string? Longitude);
         public record VerificarCodigoIn(string Email, string Codigo);
         public record ReenviarCadastroTesteIn(string Email);
 
@@ -934,18 +934,23 @@ namespace Aceca.Adm.Controllers
                 if (IpExcedeuLimiteCadastro(ip))
                     return Ok(new { bResult = false, type = "ERRO", message = "Muitas tentativas de cadastro deste endereço. Tente novamente mais tarde." });
 
-                var nome = dto.Nome?.Trim();
                 var email = dto.Email?.Trim().ToLowerInvariant();
                 var cpfDigitos = Aceca.Adm.Helper.CpfHelper.SomenteDigitos(dto.Cpf);
-
-                if (string.IsNullOrWhiteSpace(nome))
-                    return Ok(new { bResult = false, type = "ERRO", message = "Informe seu nome." });
 
                 if (!_helperController.IsValidEmailUsingMailAddress(email))
                     return Ok(new { bResult = false, type = "ERRO", message = "E-mail inválido." });
 
                 if (_helperController.IsEmailDescartavel(email))
                     return Ok(new { bResult = false, type = "ERRO", message = "Use um e-mail pessoal válido - e-mails temporários não são aceitos." });
+
+                // Domínio precisa resolver de verdade (DNS) - pega e-mail com domínio
+                // inventado/digitado errado, que passaria pelo regex acima mas nunca
+                // entregaria nada. Não é uma verificação de MX de verdade (.NET não tem
+                // suporte nativo a esse tipo de registro sem lib externa), mas qualquer
+                // domínio de e-mail real do dia a dia tem também registro A/AAAA.
+                var dominioEmail = email![(email.LastIndexOf('@') + 1)..];
+                if (!await _helperController.DominioResolveAsync(dominioEmail))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Não conseguimos confirmar o domínio desse e-mail. Verifique se digitou corretamente." });
 
                 if (!Aceca.Adm.Helper.CpfHelper.EhValido(cpfDigitos))
                     return Ok(new { bResult = false, type = "ERRO", message = "CPF inválido." });
@@ -965,6 +970,12 @@ namespace Aceca.Adm.Controllers
 
                 var token = _helperController.GenerateSecuretToken();
                 var codigo = _helperController.GenerateStringPassword(6).ToUpperInvariant();
+
+                // Tela de cadastro só pede CPF/e-mail (o resto é atrito extra num teste
+                // grátis) - nome vira um placeholder a partir do e-mail, e a pessoa pode
+                // corrigir depois em "Meus Dados" (AuthController.UpdateProfile) já dentro
+                // da área do sócio.
+                var nome = _helperController.NomePlaceholderDoEmail(email);
 
                 var registro = new Models.CadastroTeste
                 {

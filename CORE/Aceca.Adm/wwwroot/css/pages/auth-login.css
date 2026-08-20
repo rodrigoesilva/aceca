@@ -412,3 +412,11 @@ html:not([dir=rtl]) .authentication-wrapper.authentication-cover .authentication
     color: var(--d);
     font-weight: 600;
 }
+
+.fg-erro-campo {
+    display: block;
+    color: #d63031;
+    font-size: .74rem;
+    margin-top: 4px;
+    min-height: 1em;
+}

@@ -59,18 +59,15 @@
                                 <form id="frmCadastroTeste" class="form" style="display:none" autocomplete="off" novalidate>
 
                                     <div class="fg">
-                                        <label for="rNome">Nome completo</label>
-                                        <input class="form-control" type="text" id="rNome" name="rNome" placeholder="Seu nome completo" required autocomplete="name">
-                                    </div>
-
-                                    <div class="fg">
                                         <label for="rCpf">CPF</label>
                                         <input class="form-control" type="text" id="rCpf" name="rCpf" placeholder="000.000.000-00" required inputmode="numeric" maxlength="14">
+                                        <span class="fg-erro-campo" id="rCpfErro"></span>
                                     </div>
 
                                     <div class="fg">
                                         <label for="rEmail">E-mail pessoal</label>
                                         <input class="form-control" type="email" id="rEmail" name="rEmail" placeholder="seu@email.com.br" required autocomplete="email" inputmode="email">
+                                        <span class="fg-erro-campo" id="rEmailErro"></span>
                                     </div>
 
                                     <div class="mb-3 py-1">
