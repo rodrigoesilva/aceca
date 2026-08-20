@@ -99,12 +99,15 @@ function fn_GridList(formValid) {
                 }
             },
             columnDefs: [
-                // COLUNA - Responsive
+                // COLUNA - Responsive (control) - width/min-width fixo pra sempre sobrar
+                // espaço pro ícone de expandir, mesmo com Data+Titulo ocupando o resto do
+                // card no mobile (mesmo tratamento aplicado em SocioColecao/Acervo/etc.).
                 {
                     data: 'id',
                     targets: 0,
                     className: 'control',
-                    width: '1%',
+                    width: '30px',
+                    responsivePriority: 1,
                     searchable: false,
                     orderable: false,
                     render: function (data, type, full, meta) {
@@ -122,6 +125,7 @@ function fn_GridList(formValid) {
                     // setado apenas pela palavra literal "never" na className).
                     className: 'never',
                     visible: false,
+                    responsivePriority: 10011,
                     checkboxes: true,
                     render: function () {
                         return '<input type="checkbox" class="dt-checkboxes form-check-input">';
@@ -130,10 +134,13 @@ function fn_GridList(formValid) {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
                 },
-                // COLUNA - imagem
+                // COLUNA - imagem (some só no mobile - "min-tablet" continua normal no
+                // desktop/tablet, igual ao tratamento em SocioColecao/Acervo/Novidade).
                 {
                     data: 'agendaImagem.imagem',
                     targets: 2,
+                    className: 'min-tablet',
+                    responsivePriority: 10004,
                     render: function (data, type, row) {
                         //console.log("data ::: ", data);
                         //console.log("row ::: ", row);
@@ -144,35 +151,53 @@ function fn_GridList(formValid) {
                         return `<img name="myImg" class="td-img cmyImg" alt="${row.titulo}" src="${dataFormat}">`;
                     }
                 },
-                // COLUNA - Data
+                // COLUNA - Data (2ª a aparecer no mobile) - formato fixo dd/mm/aaaa, não
+                // precisa de span com max-width/word-break (sem risco de inflar a coluna).
                 {
                     data: 'data',
                     targets: 3,
+                    className: 'text-center text-nowrap',
+                    width: '80px',
+                    responsivePriority: 2,
                 },
-                // COLUNA - titulo
+                // COLUNA - titulo (3ª a aparecer no mobile) - span trava a largura
+                // renderizada independente do tamanho real do título (mesma técnica usada
+                // em Código ACECA/Nome pra evitar que o conteúdo real infle a coluna e
+                // sufoque o espaço calculado pelo Responsive no mobile).
                 {
                     data: 'titulo',
                     targets: 4,
+                    className: 'text-start',
+                    width: '175px',
+                    responsivePriority: 3,
+                    render: function (data, type) {
+                        if (type !== 'display') return data;
+                        return `<span style="display:inline-block;max-width:175px;word-break:break-word;">${data ?? ''}</span>`;
+                    }
                 },
                 // COLUNA - subtitulo
                 {
                     data: 'subTitulo',
                     targets: 5,
+                    responsivePriority: 10006,
                 },
                 // COLUNA - brevedesc
                 {
                     data: 'breveDesc',
                     targets: 6,
+                    responsivePriority: 10007,
                 },
                 // COLUNA - descricao
                 {
                     data: 'descricao',
                     targets: 7,
+                    responsivePriority: 10008,
                 },
-                // COLUNA - Status                    
+                // COLUNA - Status
                 {
                     targets: -2,
                     data: 'ativo',
+                    responsivePriority: 10009,
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -202,6 +227,7 @@ function fn_GridList(formValid) {
                     data: 'id',
                     targets: -1,
                     className: "text-center",
+                    responsivePriority: 10010,
                     orderable: false,
                     searchable: false,
                     render: function (data, type, full, meta) {

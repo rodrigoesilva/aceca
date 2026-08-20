@@ -59,3 +59,17 @@ body.no-export .dt-export-btn {
     height: 100%;
     object-fit: cover;
 }
+
+/* Checkbox "Exibir Somente Ativos" (injetado via JS em fn_GridComplete, antes do campo
+   Pesquisar - ver fnhelper_CheckVerAtivos em helper-ui-common.js) fica no mesmo container
+   flex (col-md-6 d-flex) do campo de busca do DataTables - sem quebra de linha, os dois
+   espremem/sobrepõem um no outro no mobile. Regra global porque o mesmo padrão (mesmo dom:
+   do DataTables, mesmo #divFilter_ChkStatus) se repete em todas as telas de grid admin
+   que têm filtro de "somente ativos".*/
+.dataTables_wrapper .col-md-6.d-flex {
+    flex-wrap: wrap;
+}
+
+.dataTables_wrapper #divFilter_ChkStatus {
+    width: 100%;
+}

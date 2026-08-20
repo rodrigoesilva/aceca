@@ -29,6 +29,24 @@
     <script src="@urlQuillJs" defer></script>
 }
 
+@section PageStyles {
+    <style>
+        /* Mobile: a coluna de controle (só o ícone de expandir) precisa de largura
+           mínima garantida - sem isso, com Data+Titulo ocupando quase todo o card,
+           o ícone fica espremido/cortado (mesmo tratamento de SocioColecao/Acervo). */
+        #tblAgenda thead th:first-child,
+        #tblAgenda tbody td.control {
+            padding-left: 0.25rem !important;
+            padding-right: 0 !important;
+            min-width: 28px !important;
+            width: 28px !important;
+        }
+        /* O fix do checkbox "Exibir Somente Ativos" colidindo com Pesquisar virou
+           regra global em site.css (.dataTables_wrapper ...), pois o mesmo padrão
+           se repete em todas as telas de grid admin. */
+    </style>
+}
+
 @section PageScripts {
     <script src="~/js/admin/agenda/admin-agenda.js" asp-append-version="true" defer></script>
 }
@@ -36,7 +54,7 @@
 @* ************** Content ************** *@
 <div class="card">
     <div class="card-datatable table-responsive pt-0">
-        <table class="datatables-basic table table-bordered" width="100%">
+        <table id="tblAgenda" class="datatables-basic table table-bordered" width="100%">
             <thead>
                 <tr>
                     <th></th>

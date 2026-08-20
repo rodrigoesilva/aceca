@@ -80,12 +80,15 @@ function fn_GridList(formValid) {
                 }
             },
             columnDefs: [
-                // COLUNA - Responsive
+                // COLUNA - Responsive (control) - width/min-width fixo pra sempre sobrar
+                // espaço pro ícone de expandir, mesmo com Imagem+Descrição ocupando o
+                // resto do card no mobile (mesmo tratamento de SocioColecao/Agenda/etc.).
                 {
                     data: 'id',
                     targets: 0,
                     className: 'control',
-                    width: '1%',
+                    width: '30px',
+                    responsivePriority: 1,
                     searchable: false,
                     orderable: false,
                     render: function (data, type, full, meta) {
@@ -103,6 +106,7 @@ function fn_GridList(formValid) {
                     // setado apenas pela palavra literal "never" na className).
                     className: 'never',
                     visible: false,
+                    responsivePriority: 10011,
                     checkboxes: true,
                     render: function () {
                         return '<input type="checkbox" class="dt-checkboxes form-check-input">';
@@ -111,21 +115,39 @@ function fn_GridList(formValid) {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
                 },
-                // COLUNA - Imagem
+                // COLUNA - Imagem (2ª a aparecer no mobile) - miniatura em vez do nome
+                // cru do arquivo. Largura da <img> travada, então não infla a coluna
+                // (mesmo problema do Código ACECA/Nome resolvido com span em outras telas).
                 {
                     data: 'imagem',
                     targets: 2,
+                    className: 'text-center',
+                    width: '60px',
+                    responsivePriority: 2,
+                    orderable: false,
+                    render: function (data, type, full) {
+                        if (type !== 'display') return data;
+                        if (!data) return '';
+                        return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${full?.descricao || ''}" src="https://www.aceca.com.br/midia/agenda/capa/${data}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">`;
+                    }
                 },
-                // COLUNA - Descricao
+                // COLUNA - Descricao (3ª a aparecer no mobile) - span trava a largura
+                // renderizada independente do tamanho real da descrição.
                 {
                     data: 'descricao',
                     targets: 3,
+                    responsivePriority: 3,
+                    render: function (data, type) {
+                        if (type !== 'display') return data;
+                        return `<span style="display:inline-block;max-width:175px;word-break:break-word;">${data ?? ''}</span>`;
+                    }
                 },
-                // COLUNA - Status                    
+                // COLUNA - Status
                 {
                     targets: -2,
                     data: 'ativo',
                     className: "text-center",
+                    responsivePriority: 10006,
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -155,6 +177,7 @@ function fn_GridList(formValid) {
                     data: 'id',
                     targets: -1,
                     className: "text-center",
+                    responsivePriority: 10007,
                     orderable: false,
                     searchable: false,
                     render: function (data, type, full, meta) {
