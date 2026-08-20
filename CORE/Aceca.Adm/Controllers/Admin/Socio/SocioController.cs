@@ -713,6 +713,16 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                     _db.SocioAniversario.RemoveRange(_db.SocioAniversario.Where(x => x.SocioId == id));
                     _db.SocioFinanceiro.RemoveRange(_db.SocioFinanceiro.Where(x => x.SocioId == id));
                     _db.SocioSeguranca.RemoveRange(_db.SocioSeguranca.Where(x => x.SocioId == id));
+                    // As 3 abaixo faltavam - ficavam órfãs (nunca dava erro, só sobrava lixo
+                    // sem dono no banco): histórico de login, coleção pessoal e as notas da
+                    // coleção. Não incluído aqui de propósito: cadastro_teste.socio_id_gerado
+                    // (auditoria antifraude permanente, nunca deve ser apagada) e
+                    // download.SocioId/marcas.IncluidoPorSocioId (campo de atribuição "quem
+                    // incluiu", não é dado pessoal do sócio - apagar o registro junto
+                    // removeria conteúdo visível pra outros sócios sem motivo).
+                    _db.SocioLogAcesso.RemoveRange(_db.SocioLogAcesso.Where(x => x.SocioId == id));
+                    _db.SocioColecao.RemoveRange(_db.SocioColecao.Where(x => x.SocioId == id));
+                    _db.SocioColecaoInfo.RemoveRange(_db.SocioColecaoInfo.Where(x => x.SocioId == id));
                     _db.Socio.Remove(model);
 
                     await _db.SaveChangesAsync();
