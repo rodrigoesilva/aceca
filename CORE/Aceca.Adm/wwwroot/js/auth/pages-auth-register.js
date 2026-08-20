@@ -66,6 +66,21 @@ document.addEventListener('DOMContentLoaded', function () {
             : '';
     });
 
+    // IP real do visitante via ipify.org (mesmo padrão de fn_LoginAuthGeo em pages-auth.js) -
+    // HttpContext.Connection.RemoteIpAddress no servidor fica preso a loopback/IP interno
+    // atrás de proxy/IIS em produção, então o IP de verdade precisa vir do próprio navegador.
+    // Best-effort: se a chamada falhar (rede, bloqueio de terceiros), segue sem IP - o
+    // servidor cai de volta pro RemoteIpAddress como antes.
+    async function obterIpReal() {
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            return data?.ip || null;
+        } catch (e) {
+            return null;
+        }
+    }
+
     // Geolocalização best-effort (mesmo espírito do login - fn_LoginAuthGeo em
     // pages-auth.js): timeout curto, nunca trava o envio do formulário.
     function obterCoordenadas() {
@@ -122,13 +137,14 @@ document.addEventListener('DOMContentLoaded', function () {
         setLoading(true);
 
         try {
-            const coords = await obterCoordenadas();
+            const [coords, ipReal] = await Promise.all([obterCoordenadas(), obterIpReal()]);
 
             const body = {
                 cpf: digitosCpf,
                 email: inputEmail.value.trim(),
                 latitude: coords ? String(coords.latitude) : null,
                 longitude: coords ? String(coords.longitude) : null,
+                ip: ipReal,
             };
 
             const response = await fetch('/Auth/CadastroTesteIniciar', {

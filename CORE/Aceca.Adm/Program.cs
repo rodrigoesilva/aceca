@@ -517,6 +517,12 @@ using (var scopeTeste = app.Services.CreateScope())
                 user_agent VARCHAR(500) NULL,
                 Latitude VARCHAR(32) NULL,
                 Longitude VARCHAR(32) NULL,
+                OS VARCHAR(64) NULL,
+                Browser VARCHAR(64) NULL,
+                Device VARCHAR(64) NULL,
+                Operadora VARCHAR(120) NULL,
+                Estado VARCHAR(64) NULL,
+                Cidade VARCHAR(120) NULL,
                 data_criacao DATETIME NOT NULL,
                 PRIMARY KEY (Id),
                 UNIQUE KEY uk_cadastro_teste_cpf (Cpf)
@@ -526,6 +532,35 @@ using (var scopeTeste = app.Services.CreateScope())
     {
         testeLogger.LogWarning(ex, "Não foi possível garantir a tabela cadastro_teste");
         await errorLogTeste.RegistrarExcecaoAsync(null, ex);
+    }
+
+    // Colunas adicionadas depois da criação original da tabela (bancos já existentes,
+    // dev e produção) - mesmo padrão idempotente de colunasSocioTeste acima.
+    var colunasCadastroTeste = new[]
+    {
+        ("OS", "VARCHAR(64) NULL"),
+        ("Browser", "VARCHAR(64) NULL"),
+        ("Device", "VARCHAR(64) NULL"),
+        ("Operadora", "VARCHAR(120) NULL"),
+        ("Estado", "VARCHAR(64) NULL"),
+        ("Cidade", "VARCHAR(120) NULL"),
+    };
+
+    foreach (var (coluna, tipoSql) in colunasCadastroTeste)
+    {
+        try
+        {
+            if (await Aceca.Adm.Helper.DbSchemaHelper.ColunaExisteAsync(dbTeste.Database, "cadastro_teste", coluna))
+                continue;
+
+            await dbTeste.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE cadastro_teste ADD COLUMN " + coluna + " " + tipoSql);
+        }
+        catch (Exception ex)
+        {
+            testeLogger.LogWarning(ex, "Não foi possível garantir a coluna {Coluna} em cadastro_teste", coluna);
+            await errorLogTeste.RegistrarExcecaoAsync(null, ex);
+        }
     }
 
     try

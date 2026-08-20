@@ -538,14 +538,25 @@ namespace Aceca.Adm.Models
         // Sócio de teste gerado após a verificação (nulo enquanto pendente).
         [Column("socio_id_gerado")] public int? SocioIdGerado { get; set; }
 
-        // Captura de contexto no momento do cadastro (o máximo possível, sem depender da
-        // API paga de geolocalização usada no login - ver LoginLog/GetGeoInfoAsync) - usado
-        // só como sinal auxiliar/registro, nunca como bloqueio automático (rede compartilhada
-        // geraria falso positivo entre pessoas reais diferentes).
+        // Captura de contexto no momento do cadastro - usado só como sinal auxiliar/registro
+        // pra revisão manual (ex.: mesmo IP/dispositivo com CPFs diferentes = indício de
+        // fraude organizada), nunca como bloqueio automático (rede compartilhada geraria
+        // falso positivo entre pessoas reais diferentes). Ip vem do próprio cliente (ipify.org,
+        // mesmo padrão do login em fn_LoginAuthGeo) - HttpContext.Connection.RemoteIpAddress
+        // sozinho fica preso a loopback/IP interno atrás de proxy/IIS em produção, sem
+        // UseForwardedHeaders configurado. OS/Browser/Device/Operadora/Estado/Cidade vêm do
+        // mesmo enriquecimento best-effort via GetGeoInfoAsync (ipgeolocation.io) já usado em
+        // LoginLog - se a chamada falhar (rede, cota da API), ficam null sem bloquear o cadastro.
         public string? Ip { get; set; }
         [Column("user_agent")] public string? UserAgent { get; set; }
         public string? Latitude { get; set; }
         public string? Longitude { get; set; }
+        public string? OS { get; set; }
+        public string? Browser { get; set; }
+        public string? Device { get; set; }
+        public string? Operadora { get; set; }
+        public string? Estado { get; set; }
+        public string? Cidade { get; set; }
 
         [Column("data_criacao")] public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
     }

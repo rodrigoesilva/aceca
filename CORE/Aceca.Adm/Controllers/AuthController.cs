@@ -900,7 +900,10 @@ namespace Aceca.Adm.Controllers
 
         #region Auto-Cadastro (Teste Grátis)
 
-        public record CadastroTesteIn(string Cpf, string Email, string? Latitude, string? Longitude);
+        // Ip vem do próprio cliente via ipify.org (mesmo padrão de fn_LoginAuthGeo em
+        // pages-auth.js) - não confiar em HttpContext.Connection.RemoteIpAddress aqui, que
+        // fica preso a loopback/IP interno atrás de proxy/IIS sem UseForwardedHeaders.
+        public record CadastroTesteIn(string Cpf, string Email, string? Latitude, string? Longitude, string? Ip);
         public record VerificarCodigoIn(string Email, string Codigo);
         public record ReenviarCadastroTesteIn(string Email);
 
@@ -940,7 +943,9 @@ namespace Aceca.Adm.Controllers
         {
             try
             {
-                var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "desconhecido";
+                var ip = !string.IsNullOrWhiteSpace(dto.Ip)
+                    ? dto.Ip.Trim()
+                    : HttpContext.Connection.RemoteIpAddress?.ToString() ?? "desconhecido";
 
                 if (IpExcedeuLimiteCadastro(ip))
                     return Ok(new { bResult = false, type = "ERRO", message = "Muitas tentativas de cadastro deste endereço. Tente novamente mais tarde." });
@@ -990,6 +995,8 @@ namespace Aceca.Adm.Controllers
                 // da área do sócio.
                 var nome = _helperController.NomePlaceholderDoEmail(email);
 
+                var contexto = await MontarContextoCadastroTesteAsync(ip, dto.Latitude, dto.Longitude);
+
                 var registro = new Models.CadastroTeste
                 {
                     Cpf = cpfDigitos,
@@ -1000,8 +1007,14 @@ namespace Aceca.Adm.Controllers
                     TokenExpiraEm = DateTime.UtcNow.AddMinutes(5),
                     Ip = ip,
                     UserAgent = Request.Headers["User-Agent"].ToString(),
-                    Latitude = dto.Latitude,
-                    Longitude = dto.Longitude,
+                    Latitude = contexto.Latitude ?? dto.Latitude,
+                    Longitude = contexto.Longitude ?? dto.Longitude,
+                    OS = contexto.OS,
+                    Browser = contexto.Browser,
+                    Device = contexto.Device,
+                    Operadora = contexto.Operadora,
+                    Estado = contexto.Estado,
+                    Cidade = contexto.Cidade,
                     DataCriacao = DateTime.UtcNow,
                 };
 
@@ -1029,6 +1042,69 @@ namespace Aceca.Adm.Controllers
             {
                 _logger.LogError("ERRO :: {Method} :: {Message}", nameof(CadastroTesteIniciar), ex.Message);
                 return BadRequest(new { bResult = false, type = "ERRO", message = "Não foi possível concluir o cadastro." });
+            }
+        }
+
+        private record ContextoCadastroTeste(
+            string? OS, string? Browser, string? Device, string? Operadora,
+            string? Estado, string? Cidade, string? Latitude, string? Longitude);
+
+        // Enriquecimento best-effort de IP/UA - mesmo padrão já usado em LoginLog para
+        // login normal (GetGeoInfoAsync via ipgeolocation.io + reverse geocoding via
+        // Nominatim quando o navegador cedeu lat/long). Só um sinal auxiliar de revisão
+        // manual (ver comentário em Models.CadastroTeste) - qualquer falha (rede, cota da
+        // API paga) devolve tudo null em vez de derrubar o cadastro.
+        private async Task<ContextoCadastroTeste> MontarContextoCadastroTesteAsync(string ip, string? latitude, string? longitude)
+        {
+            var vazio = new ContextoCadastroTeste(null, null, null, null, null, null, null, null);
+
+            if (string.IsNullOrWhiteSpace(ip) || ip is "desconhecido" or "::1" or "127.0.0.1")
+                return vazio;
+
+            try
+            {
+                var responseGeo = await GetGeoInfoAsync(ip);
+                var jObjResult  = ((ObjectResult)responseGeo).Value;
+
+                var jsonGeo   = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
+                var jsonAgent = jObjResult?.GetType()?.GetProperty("jsonAgent")?.GetValue(jObjResult, null)?.ToString();
+
+                if (string.IsNullOrEmpty(jsonGeo))
+                    return vazio;
+
+                JsonNode nodeGeo   = JsonNode.Parse(jsonGeo)!;
+                JsonNode nodeAgent = !string.IsNullOrEmpty(jsonAgent) ? JsonNode.Parse(jsonAgent)! : null;
+
+                string? bairroPreciso = null;
+                string? cidadePrecisa = null;
+                string? latPrecisa = null;
+                string? lngPrecisa = null;
+
+                if (!string.IsNullOrWhiteSpace(latitude) && !string.IsNullOrWhiteSpace(longitude))
+                {
+                    (bairroPreciso, cidadePrecisa) = await ReverseGeocodeAsync(latitude, longitude);
+                    latPrecisa = latitude;
+                    lngPrecisa = longitude;
+                }
+
+                var osBruto = nodeAgent?["operating_system"]?["name"]?.GetValue<string>();
+
+                return new ContextoCadastroTeste(
+                    OS: CorrigirNomeSistemaOperacional(osBruto, null),
+                    Browser: nodeAgent?["name"]?.GetValue<string>(),
+                    Device: nodeAgent?["device"]?["type"]?.GetValue<string>(),
+                    Operadora: nodeGeo["asn"]?["organization"]?.GetValue<string>(),
+                    Estado: nodeGeo["location"]?["state_code"]?.GetValue<string>(),
+                    Cidade: !string.IsNullOrWhiteSpace(cidadePrecisa)
+                        ? (!string.IsNullOrWhiteSpace(bairroPreciso) ? $"{bairroPreciso}, {cidadePrecisa}" : cidadePrecisa)
+                        : nodeGeo["location"]?["city"]?.GetValue<string>(),
+                    Latitude: latPrecisa ?? nodeGeo["location"]?["latitude"]?.ToString()?.Trim('"'),
+                    Longitude: lngPrecisa ?? nodeGeo["location"]?["longitude"]?.ToString()?.Trim('"'));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("ERRO :: {Method} :: {Message}", nameof(MontarContextoCadastroTesteAsync), ex.Message);
+                return vazio;
             }
         }
 
