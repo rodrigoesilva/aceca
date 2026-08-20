@@ -550,6 +550,11 @@ function fn_FormataDataAniversario(dia, mes, ano) {
     return ano ? `${pad2(dia)}/${pad2(mes)}/${ano}` : `${pad2(dia)}/${pad2(mes)}`;
 }
 
+function fn_FormataTelefone(ddd, telefone) {
+    if (!ddd && !telefone) return '';
+    return `(${ddd ?? ''}) ${telefone ?? ''}`;
+}
+
 function fn_Pop(obj, action) {
     //console.log("fn_Pop varItems_Row !", obj);
     //console.log("fn_Pop action !", action);
@@ -557,24 +562,28 @@ function fn_Pop(obj, action) {
     const popAddNewItem = document.querySelector('#pop-add-new-item');
 
     popAddNewItemEl = new bootstrap.Offcanvas(popAddNewItem);
-    
-        // Pop ID
-        (popAddNewItem.querySelector('#hdId').value = (obj === null ? 0 : obj.Id)),
-        (popAddNewItem.querySelector('#hdSocioContatoId').value = (obj === null ? 0 : obj.SocioContatoId)),
-        (popAddNewItem.querySelector('#hdSocioEnderecoId').value = (obj === null ? 0 : obj.SocioEnderecoId)),
-        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj === null ? 0 : obj.SocioAniversarioId)),
-        (popAddNewItem.querySelector('#hdSocioPerfilId').value = (obj === null ? 0 : obj.SocioPerfilId)),
+
+        // Pop ID - "?? default" cobre tanto obj null (registro novo) quanto obj existente
+        // mas com o sub-registro (contato/endereço/aniversário) ainda não criado - nesse
+        // 2º caso, "obj === null ? default : obj.X" deixava passar null puro, e
+        // input.value = null vira literalmente o texto "null" na tela (peculiaridade do
+        // DOM), não vazio. Ver LEFT JOIN em SocioController.FiltrarDados/Edit.
+        (popAddNewItem.querySelector('#hdId').value = (obj?.Id ?? 0)),
+        (popAddNewItem.querySelector('#hdSocioContatoId').value = (obj?.SocioContatoId ?? 0)),
+        (popAddNewItem.querySelector('#hdSocioEnderecoId').value = (obj?.SocioEnderecoId ?? 0)),
+        (popAddNewItem.querySelector('#hdSocioAniversarioId').value = (obj?.SocioAniversarioId ?? 0)),
+        (popAddNewItem.querySelector('#hdSocioPerfilId').value = (obj?.SocioPerfilId ?? 0)),
         // Pop Dados
-        (popAddNewItem.querySelector('.dt-line-01').value = (obj === null ? '' : obj.NomeSocio)),
-        (popAddNewItem.querySelector('.dt-line-02').value = (obj === null ? '' : obj.Email)),
-        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : `(${obj.Ddd}) ${obj.Telefone}`)),
-        (popAddNewItem.querySelector('.dt-line-04').value = (obj === null ? '' : obj.Cep)),
-        (popAddNewItem.querySelector('.dt-line-05').value = (obj === null ? '' : obj.Endereco)),
-        (popAddNewItem.querySelector('.dt-line-06').value = (obj === null ? '' : obj.Numero)),
-        (popAddNewItem.querySelector('.dt-line-07').value = (obj === null ? '' : obj.Complemento)),
-        (popAddNewItem.querySelector('.dt-line-08').value = (obj === null ? '' : obj.Bairro)),
-        (popAddNewItem.querySelector('.dt-line-09').value = (obj === null ? '' : obj.Estado)),
-        (popAddNewItem.querySelector('.dt-line-10').value = (obj === null ? '' : obj.Cidade)),
+        (popAddNewItem.querySelector('.dt-line-01').value = (obj?.NomeSocio ?? '')),
+        (popAddNewItem.querySelector('.dt-line-02').value = (obj?.Email ?? '')),
+        (popAddNewItem.querySelector('.dt-line-03').value = (obj === null ? '' : fn_FormataTelefone(obj.Ddd, obj.Telefone))),
+        (popAddNewItem.querySelector('.dt-line-04').value = (obj?.Cep ?? '')),
+        (popAddNewItem.querySelector('.dt-line-05').value = (obj?.Endereco ?? '')),
+        (popAddNewItem.querySelector('.dt-line-06').value = (obj?.Numero ?? '')),
+        (popAddNewItem.querySelector('.dt-line-07').value = (obj?.Complemento ?? '')),
+        (popAddNewItem.querySelector('.dt-line-08').value = (obj?.Bairro ?? '')),
+        (popAddNewItem.querySelector('.dt-line-09').value = (obj?.Estado ?? '')),
+        (popAddNewItem.querySelector('.dt-line-10').value = (obj?.Cidade ?? '')),
         (popAddNewItem.querySelector('.dt-line-11').value = (obj === null ? '' : fn_FormataDataAniversario(obj.Dia, obj.Mes, obj.Ano))),
         (popAddNewItem.querySelector('.dt-line-12').checked = (obj === null ? true : obj.SocioAtivo));
         (popAddNewItem.querySelector('.dt-line-13').checked = (obj === null ? true : obj.MostrarSite));

@@ -64,11 +64,18 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                 if (request == null)
                     return BadRequest("Request inválido");
 
+                // LEFT JOIN em aniversario/contato/endereco (não INNER): um sócio cujo
+                // cadastro não completou todas as etapas (ex.: criado direto, ou um fluxo
+                // que falhou/foi interrompido antes de gravar esses sub-registros) tem que
+                // continuar aparecendo aqui pra alguém conseguir corrigir - com INNER JOIN
+                // ele fica invisível na grid inteira, sem nenhum aviso, mesmo sem filtro de
+                // busca. Ver SocioController.Edit, que agora sabe criar o sub-registro que
+                // faltar em vez de tentar (e falhar) atualizar um que nunca existiu.
                 var sqlFrom = new StringBuilder(@"
                 FROM socios s
-                INNER JOIN socio_aniversario sa ON s.id = sa.SocioId
-                INNER JOIN socio_contato sc ON s.id = sc.SocioId
-                INNER JOIN socio_endereco se ON s.id = se.SocioId
+                LEFT JOIN socio_aniversario sa ON s.id = sa.SocioId
+                LEFT JOIN socio_contato sc ON s.id = sc.SocioId
+                LEFT JOIN socio_endereco se ON s.id = se.SocioId
                 INNER JOIN socio_perfil sp ON s.socioPerfilId = sp.id
                 LEFT JOIN socio_seguranca sg ON s.id = sg.SocioId
                 WHERE 1=1
@@ -538,9 +545,14 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                         });
 
+                    // Sócio com cadastro incompleto (ver LEFT JOIN em FiltrarDados) não tem
+                    // linha em socio_contato ainda - SocioContatoId chega 0/null nesse caso,
+                    // e tentar "atualizar" um Id que não existe faz o EF lançar
+                    // DbUpdateConcurrencyException (UPDATE afeta 0 linhas). Cria em vez de
+                    // atualizar quando não há um Id de verdade.
                     var newModelSocioContato = new Models.SocioContato
                     {
-                        Id = model?.SocioContatoId,
+                        Id = model?.SocioContatoId > 0 ? model.SocioContatoId : null,
                         SocioId = model?.Id,
                         DDI = model?.DDI != null ? model?.DDI : 55,
                         DDD = !string.IsNullOrEmpty(model?.Telefone) ? Convert.ToInt16(model?.Telefone?.Split(")")[0]?.Trim().Replace("(", string.Empty)) : null,
@@ -548,7 +560,11 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         Email = model?.Email,
                     };
 
-                    _db.Entry(newModelSocioContato).State = EntityState.Modified;
+                    if (model?.SocioContatoId > 0)
+                        _db.Entry(newModelSocioContato).State = EntityState.Modified;
+                    else
+                        _db.SocioContato.Add(newModelSocioContato);
+
                     _db.SaveChanges();
 
                     model.SocioContatoId = newModelSocioContato?.Id;
@@ -567,7 +583,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     var newModelSocioEndereco = new Models.SocioEndereco
                     {
-                        Id = model.SocioEnderecoId,
+                        Id = model.SocioEnderecoId > 0 ? model.SocioEnderecoId : null,
                         SocioId = model.Id,
                         Endereco = model.Endereco,
                         Numero = model.Numero,
@@ -578,7 +594,11 @@ namespace Aceca.Adm.Controllers.Admin.Socio
                         CEP = !string.IsNullOrEmpty(model.CEP) ? model.CEP.Replace("-", string.Empty) : string.Empty,
                     };
 
-                    _db.Entry(newModelSocioEndereco).State = EntityState.Modified;
+                    if (model.SocioEnderecoId > 0)
+                        _db.Entry(newModelSocioEndereco).State = EntityState.Modified;
+                    else
+                        _db.SocioEndereco.Add(newModelSocioEndereco);
+
                     _db.SaveChanges();
 
                     model.SocioEnderecoId = newModelSocioEndereco?.Id;
@@ -599,14 +619,18 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                     var newModelSocioAniversario = new Models.SocioAniversario
                     {
-                        Id = model.SocioAniversarioId,
+                        Id = model.SocioAniversarioId > 0 ? model.SocioAniversarioId : null,
                         SocioId = model.Id,
                         Dia = dataAniversarioEdit.Dia,
                         Mes = dataAniversarioEdit.Mes,
                         Ano = dataAniversarioEdit.Ano,
                     };
 
-                    _db.Entry(newModelSocioAniversario).State = EntityState.Modified;
+                    if (model.SocioAniversarioId > 0)
+                        _db.Entry(newModelSocioAniversario).State = EntityState.Modified;
+                    else
+                        _db.SocioAniversario.Add(newModelSocioAniversario);
+
                     _db.SaveChanges();
 
                     model.SocioAniversarioId = newModelSocioAniversario?.Id;
