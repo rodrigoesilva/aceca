@@ -150,14 +150,18 @@ document.addEventListener('DOMContentLoaded', function () {
             // a pessoa quer ir direto pro login (Sim) ou só limpar os campos e continuar
             // tentando outro e-mail (Não).
             if (result?.type === 'EMAIL_JA_CADASTRADO') {
-                swalWithBootstrapButtons.fire({
+                // Swal próprio (não swalWithBootstrapButtons, que é pra confirmação
+                // destrutiva com o botão de ação apagado) - aqui "Sim, fazer login" é a
+                // ação mais provável, então é ela que fica em destaque.
+                Swal.fire({
                     title: 'E-mail já cadastrado',
                     icon: 'info',
                     html: 'Este e-mail já pertence a um sócio. Deseja ir para a tela de login?',
                     showCancelButton: true,
-                    confirmButtonText: '<i class="ri-login-box-line"></i> &nbsp; Sim, fazer login',
-                    cancelButtonText: '<i class="ri-close-line"></i> &nbsp; Não',
-                    reverseButtons: true
+                    confirmButtonText: '<i class="ri-login-box-line"></i> &nbsp;Sim, fazer login',
+                    cancelButtonText: 'Não',
+                    buttonsStyling: false,
+                    customClass: { confirmButton: 'swal-btn-confirmar', cancelButton: 'swal-btn-cancelar' }
                 }).then((swalResult) => {
                     if (swalResult.isConfirmed) {
                         window.location.href = '/Auth/Index';

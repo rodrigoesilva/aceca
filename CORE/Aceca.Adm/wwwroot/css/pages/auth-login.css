@@ -420,3 +420,28 @@ html:not([dir=rtl]) .authentication-wrapper.authentication-cover .authentication
     margin-top: 4px;
     min-height: 1em;
 }
+
+/* Botões do SweetAlert de "e-mail já cadastrado" (RegisterCover) - propositalmente
+   próprios, não o swalWithBootstrapButtons das telas admin (aquele é pensado pra
+   confirmação destrutiva, com o botão "seguro" em destaque e o de ação apagado; aqui
+   "Sim, fazer login" é a ação mais provável, então precisa ser o botão em destaque). */
+.swal-btn-confirmar {
+    background: var(--grad);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: .88rem;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(71, 0, 123, .28);
+}
+
+.swal-btn-cancelar {
+    background: #f4f0f9;
+    color: #6b4a9a;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: .88rem;
+    font-weight: 600;
+}
