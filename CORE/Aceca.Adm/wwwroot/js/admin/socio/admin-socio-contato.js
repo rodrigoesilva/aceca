@@ -157,10 +157,17 @@ function fn_GridList(formValid) {
                         }
                     }
                 },
-                // COLUNA - Email
+                // COLUNA - Email - quebra sempre antes do "@" no card de detalhes no
+                // mobile (o "@" fica no início da 2ª linha, junto do domínio), em vez
+                // de deixar o navegador escolher onde quebrar (word-break:break-word
+                // cortaria no meio do domínio, por exemplo).
                 {
                     data: 'Email',
                     targets: 4,
+                    render: function (data, type) {
+                        if (type !== 'display' || !data) return data;
+                        return data.split('@').join('<br>@');
+                    }
                 },
                 // COLUNA - Status
                 {

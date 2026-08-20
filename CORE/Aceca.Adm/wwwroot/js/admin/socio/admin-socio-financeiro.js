@@ -192,18 +192,14 @@ function fn_GridList(formValid) {
                         return `<span style="display:inline-block;max-width:175px;word-break:break-word;">${data ?? ''}</span>`;
                     }
                 },
-                // COLUNA - Status Socio (3ª a aparecer no mobile) - width travado via
-                // wrapper, senão o badge + ícone de ordenação do cabeçalho consomem
-                // espaço que sobraria pra Pagamento no mobile. orderable:false porque
-                // ordenar por um badge Ativo/Inativo não agrega e o ícone de ordenação
-                // sozinho já consumia boa parte do orçamento de largura no mobile.
+                // COLUNA - Status Socio (não aparece no mobile - só control+Sócio+Pagto)
                 {
                     targets: 3,
                     data: 'SocioAtivo',
                     className: "text-center",
                     width: '65px',
                     orderable: false,
-                    responsivePriority: 3,
+                    responsivePriority: 10008,
                     render: function (data, type, full, meta) {
 
                         //console.log("Status data ::: ", data);
@@ -295,15 +291,16 @@ function fn_GridList(formValid) {
                         }
                     }
                 },
-                // COLUNA - pagamentoEmDia (4ª a aparecer no mobile - "Pagamento") -
-                // width travado via wrapper, mesmo motivo da coluna Status acima.
+                // COLUNA - pagamentoEmDia (3ª a aparecer no mobile - "Pagto") - com
+                // Status fora do mobile, sobra espaço de sobra pra essa coluna, então
+                // o badge fica com white-space:nowrap (sem quebrar "Atrasado" ao meio).
                 {
                     data: 'PagamentoEmDia',
                     targets: - 2,
                     className: "text-center",
                     width: '90px',
                     orderable: false,
-                    responsivePriority: 4,
+                    responsivePriority: 3,
                     render: function (data, type, full) {
                         let id = full.Id;
 
@@ -317,7 +314,7 @@ function fn_GridList(formValid) {
 
                             statusText = data ? 'Em Dia' : 'Atrasado';
 
-                            statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '" style="display:inline-block;max-width:90px;word-break:break-word;white-space:normal;"> ' + statusText + '</span> ';
+                            statusLayout = '<span name="spStatus" data-status=' + data + ' class="badge rounded-pill ' + statusClass + '" style="white-space:nowrap;"> ' + statusText + '</span> ';
 
                             return statusLayout
 
