@@ -1,0 +1,36 @@
+@{
+    Layout = $"~/Views/Shared/_BlankLayout.cshtml";
+    ViewBag.Title = "Política de Privacidade e Termos de Uso - ACECA";
+}
+
+@{
+    var urlStyleCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/style.css");
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="@urlStyleCss">
+    <style>
+        .politica-conteudo { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; color: #444; }
+        .politica-conteudo h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 24px; text-align: center; }
+        .politica-conteudo h2 { font-size: 1.15rem; margin-top: 28px; }
+        .politica-conteudo h3 { font-size: 1rem; margin-top: 20px; }
+        .politica-conteudo section + section { margin-top: 40px; padding-top: 24px; border-top: 1px solid #eee; }
+        @@media (max-width: 480px) {
+            .politica-conteudo { padding: 16px 12px 32px; font-size: .92rem; }
+        }
+    </style>
+}
+
+@* ************** Content ************** *@
+
+<div class="politica-conteudo pg-login">
+    <h1>ACECA - Política de Privacidade e Termos de Uso</h1>
+
+    <section id="politica-privacidade">
+        @await Html.PartialAsync("~/Views/_Partials/_PolicyPrivacidadeTexto.cshtml")
+    </section>
+
+    <section id="termos-condicoes">
+        @await Html.PartialAsync("~/Views/_Partials/_TermosCondicoesTexto.cshtml")
+    </section>
+</div>

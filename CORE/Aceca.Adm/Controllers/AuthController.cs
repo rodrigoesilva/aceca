@@ -907,6 +907,17 @@ namespace Aceca.Adm.Controllers
         public record VerificarCodigoIn(string Email, string Codigo);
         public record ReenviarCadastroTesteIn(string Email);
 
+        // Página pública com URL própria (não modal) - necessária pra campos como o
+        // "Link da política de privacidade" da tela de consentimento OAuth (Google e
+        // qualquer outro provedor exigem uma URL de verdade, não uma modal escondida
+        // dentro de outra página). Mesmo texto do ModalPolicyTerms.cshtml, via os
+        // partials compartilhados _PolicyPrivacidadeTexto/_TermosCondicoesTexto.
+        [HttpGet]
+        public IActionResult PoliticaPrivacidade()
+        {
+            return View("~/Views/Auth/PoliticaPrivacidade.cshtml");
+        }
+
         [HttpGet]
         public async Task<IActionResult> RegisterCover()
         {
