@@ -318,7 +318,7 @@ body.pg-login{background:var(--d);min-height:100vh;display:flex;align-items:cent
 /**/
 
 .login-bg-img {
-    background-image: url("img/backgrounds/bg-login.webp");
+    background-image: url("/img/backgrounds/bg-login.webp");
     /* Scale the image to cover the entire background area */
     background-size: cover;
     /* Center the image both vertically and horizontally */

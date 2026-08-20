@@ -216,17 +216,40 @@ html:not([dir=rtl]) .authentication-wrapper.authentication-cover .authentication
 /* ─── MOBILE  (≤ 480px) ──────────────────────────────────────── */
 @media (max-width: 480px) {
 
-    /* Remove padding lateral excessivo */
-    .authentication-inner {
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+    /* .pg-login é o wrapper INVISÍVEL que envolve o fundo + o card (ver
+       Login.cshtml) - não é o card branco (.login-card). Estilizar
+       .pg-login aqui não tinha efeito visual nenhum; o card real ficava
+       com o padding fixo de desktop (38px 34px) e sem largura própria,
+       resultando em ~60% da tela em vez de "quase toda a tela" como o
+       comentário original pretendia. Zera os insets da cadeia de
+       ancestrais (.authentication-inner tem mx-4 do Bootstrap + padding
+       própria; .pg-login e .login-wrap têm padding própria) e dá a
+       largura de 90% direto no elemento visível (.login-card). */
+    .authentication-wrapper .authentication-inner {
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
-    /* Card de login ocupa quase toda a tela */
     .pg-login {
-        border-radius: 12px;
-        padding: 1.5rem 1.25rem !important;
+        padding: 0 !important;
         width: 100% !important;
+    }
+
+    .login-wrap {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .login-card {
+        width: 90% !important;
+        max-width: 90% !important;
+        margin-inline: auto !important;
+        padding: 1.75rem 1.25rem !important;
+        border-radius: 12px;
     }
 
     /* Logo menor */
@@ -288,7 +311,9 @@ html:not([dir=rtl]) .authentication-wrapper.authentication-cover .authentication
 
 /* ─── MOBILE  (481px – 767px) ────────────────────────────────── */
 @media (min-width: 481px) and (max-width: 767px) {
-    .pg-login {
+    /* Mesmo caso do bloco ≤480px acima: .pg-login não é o card visível
+       (.login-card) - o padding certo é no elemento certo. */
+    .login-card {
         padding: 2rem 1.75rem !important;
     }
 
