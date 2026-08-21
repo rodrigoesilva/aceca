@@ -120,12 +120,17 @@
             </div>
 
             <!-- LINHA 02 -->
-            @* pt-8 (2rem), não pt-4 (1rem) - precisa bater com o gap real entre os campos
-               dentro de cada linha (gy-4/gap-4 medem 32px = 2rem na prática), senão essa
-               transição entre a LINHA 01 e a LINHA 02 fica menor que o espaçamento comum
-               entre campos "colegas" e passa a impressão de "Listar sem Variantes" colado
-               em "Tipo" (medido: 16px aqui contra 32px em todos os outros pares). *@
-            <div class="row gy-4 gy-sm-1 pt-8 gap-4 gap-md-0">
+            @* pt-8 (2rem) no lg+/xs, mas pt-sm-4 (1rem) no sm-md: nesse intervalo o <hr> do
+               último campo da LINHA 01 fica visível (d-sm-block d-lg-none) e já contribui
+               16px de margin-bottom próprio - pt-8 cheio ali dobrava a conta (16 do hr + 32
+               do pt = ~48-55px, "muito distante da linha de dropdown"). pt-sm-4 (16px) fecha
+               os 32px certos só quando o hr está à mostra; pt-lg-8 restaura os 32px cheios
+               quando o hr desaparece (d-lg-none) e não tem mais nada compensando.
+               gy-sm-8 (2rem): a 3ª coluna (Botoes) quebra pra linha nova nesse mesmo
+               intervalo sm-md (2 col-sm-6 já enchem 100% antes dela) e usava só gy-sm-1
+               (4px, herdado do gutter padrão) - sem nenhum <hr> divisor ali (só os 2
+               primeiros campos têm), 4px ficava "colado" no botão Limpar. *@
+            <div class="row gy-4 gy-sm-8 pt-8 pt-sm-4 pt-lg-8 gap-4 gap-md-0">
 
                 <!-- Flag Listar Sem Variacao -->
                 <div class="div_PesquisarSemVariante d-flex justify-content-center col-sm-6 col-lg-4">
