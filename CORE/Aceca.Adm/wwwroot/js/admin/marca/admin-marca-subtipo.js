@@ -575,7 +575,7 @@ function fnItem_Delete(varItems_Row) {
 
     var varItems_Id = varItems_Row.id;
 
-    var varAjax_UrlController = `${var_Controller}/Delete`, //'/TipoMidia/Delete',
+    var varAjax_UrlController = `${var_Controller}/Delete/${varItems_Id}`, // rota exige o id no path (Delete(int id) no controller); antes o id só ia no body do DELETE, que o model binder padrão não lê pra tipo simples sem [FromBody] - sempre chegava 0 no servidor
         varAjax_TypeAction = 'DELETE',
         varAjax_TypeData = 'JSON';
 
@@ -605,7 +605,7 @@ function fnItem_Delete(varItems_Row) {
                     type: varAjax_TypeAction,
                     //dataType: varAjax_TypeData,
                     url: varAjax_UrlController,
-                    data: {id: varItems_Id},
+
                     success: function (result) {
                         //console.log("result  :: ", result);
                         //console.log("result bResult :: ", result.bResult);
