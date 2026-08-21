@@ -97,7 +97,11 @@
                 </div>
 
                 <div class="div-endereco-estado-cidade d-sm-flex">
-                    <div class="div-endereco-estado form-floating form-floating-outline me-3">
+                    @* mb-5 estava faltando aqui (todo outro par de campos dessa tela tem) - em
+                       telas < sm, "d-sm-flex" deixa de valer e os 2 campos empilham como bloco
+                       normal; sem a margem inferior própria, ficam colados um no outro (medido
+                       via CDP: bottom do Estado == top do Cidade, 0px de gap). *@
+                    <div class="div-endereco-estado form-floating form-floating-outline me-3 mb-5">
                         <select id="cmb_SocioEstado" class="select2 form-select form-select dt-line-09">
                                 <option value="">-- Selecionar --</option>
                                 <option value="AC">Acre</option>
@@ -130,7 +134,7 @@
                         </select>
                         <label for="cmb_SocioEstado">Estado</label>
                     </div>
-                    <div class="div-endereco-cidade form-floating form-floating-outline mr-3">
+                    <div class="div-endereco-cidade form-floating form-floating-outline me-3 mb-5">
                         <input type="text" id="pop_line_item_10" class="form-control dt-line-10" name="pop_line_item_10" placeholder="Cidade" aria-label="Cidade" />
                         <label for="pop_line_item_10">Cidade</label>
                     </div>
