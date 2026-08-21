@@ -110,7 +110,11 @@
 <!-- User Profile Content -->
 <div class="row">
     <!-- Sobre User -->
-    <div id="div_sobre" class="col-xl-3 col-lg-3 col-md-3">
+    @* col-md-3 tirado de propósito: 3 colunas de 25%/25%/50% cabem bem em desktop, mas em
+       tablet (iPad Air 820px, Samsung 8" ~800-1280px - já caem no breakpoint md, ≥768px)
+       25% de largura é pouco pro conteúdo real (endereço, telefone, e-mail), quebrando
+       linha feio. Empilha até lg (992px), só forma 3 colunas a partir daí. *@
+    <div id="div_sobre" class="col-12 col-lg-3 col-xl-3">
         <div class="card card-action mb-6 h-100">
             <div class="card-header align-items-center">
                 <h5 class="card-action-title mb-0"><i class='ri-questionnaire-line ri-24px text-body me-4'></i>Sobre</h5>
@@ -145,7 +149,7 @@
     </div>
 
     <!--/ Actividade Login -->
-    <div id="div_atividade" class="col-xl-3 col-lg-3 col-md-3">
+    <div id="div_atividade" class="col-12 col-lg-3 col-xl-3">
         <div class="card card-action mb-6 h-100">
             <div class="card-header align-items-center">
                 <h5 class="card-action-title mb-0"><i class='ri-bar-chart-2-line ri-24px text-body me-4'></i>Atividade</h5>
@@ -224,7 +228,7 @@
     </div>
 
     <!--/ Grid Colecao -->
-    <div id="div_grid_colecao" class="col-xl-6 col-lg-6 col-md-6">
+    <div id="div_grid_colecao" class="col-12 col-lg-6 col-xl-6">
         <div class="card card-action mb-6 h-100">
             <div class="card-header align-items-center">
                 <h5 class="card-action-title mb-0"><i class='ri-archive-line ri-24px text-body me-4'></i>Coleção</h5>
