@@ -477,105 +477,10 @@ function fn_PopValidator(formAddNewItem) {
 }
 
 function fnItem_Delete(varItems_Row) {
-
-    //console.log("DELETE OBJ ::: ", varItems_Row);
-
-    var varItems_Id = varItems_Row.id;
-
-    var varAjax_UrlController = `${var_Controller}/Delete/${varItems_Id}`, // rota exige o id no path (Delete(int id) no controller); antes o id só ia no body do DELETE, que o model binder padrão não lê pra tipo simples sem [FromBody] - sempre chegava 0 no servidor
-        varAjax_TypeAction = 'DELETE',
-        varAjax_TypeData = 'JSON';
-
-    const swalWithBootstrapButtons = Swal.mixin({
-        customClass: {
-            confirmButton: "btn btn-label-success waves-effect",
-            cancelButton: "btn btn-label-danger waves-effect"
-        },
-        buttonsStyling: false
-    });
-
-    swalWithBootstrapButtons.fire({
-        title: "Tem certeza?",
-        icon: "warning",
-        html: `<b> Essa a&ccedil;&atilde;o ir&aacute; excluir esse item </b> <br><br> voc&ecirc; n&atilde;o poder&aacute; reverter isso!`,
-        showCancelButton: true,
-        confirmButtonText: `<i class="ri-chat-delete-line"></i> &nbsp; Sim, confirmar!`,
-        cancelButtonText: `<i class="ri-check-double-line"></i> &nbsp; N&atilde;o, cancelar!`,
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-
-            $.busyLoadFull("show");
-
-            $.ajax(
-                {
-                    type: varAjax_TypeAction,
-                    //dataType: varAjax_TypeData,
-                    url: varAjax_UrlController,
-
-                    success: function (result) {
-                        //console.log("result  :: ", result);
-                        //console.log("result bResult :: ", result.bResult);
-
-                        var varTbl;
-
-                        if ($.fn.dataTable.isDataTable('.datatables-basic')) {
-                            //console.log("YES :: ");
-                            varTbl = varTbl_Obj.DataTable();
-
-                            $.busyLoadFull("hide");
-
-                            Swal.fire({
-                                title: 'Deletado!',
-                                icon: 'success',
-                                html: 'Item exclu&iacute;do com sucesso !!',
-                                customClass: {
-                                    confirmButton: 'btn btn-success waves-effect waves-light'
-                                }
-                            }).then((result) => {
-                                varTbl.ajax.reload(null, false);
-                            });
-                        } else {
-                            // console.log("NO :: ");
-                            varTbl = $('#example').DataTable({
-                                paging: false
-                            });
-                        }
-                    },
-                    error: function (XMLHttpRequest, textStatus, errorThrown) {
-                        console.log("XMLHttpRequest  :: ", XMLHttpRequest);
-                        console.log("textStatus  :: ", textStatus);
-                        console.log("errorThrown  :: ", errorThrown);
-                        console.log("result  :: Error while posting SendResult");
-
-                        Swal.fire({
-                            title: 'OPS!!',
-                            icon: 'error',
-                            html: `<b> Erro ocorrido <br><br>` + errorThrown.msg + `</b>`,
-                            focusConfirm: false,
-                            confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                            customClass: {
-                                confirmButton: 'btn btn-label-danger waves-effect'
-                            }
-                        });
-
-                        return false;
-                    }
-                });
-
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-            swalWithBootstrapButtons.fire({
-                title: "Cancelado",
-                icon: "info",
-                html: "Nenhuma a&ccedil;&atilde;o foi realizada !!",
-                focusConfirm: true,
-                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
-                customClass: {
-                    confirmButton: 'btn btn-label-secondary waves-effect'
-                }
-            });
-        }
-    });
+    // Delegado pro helper comum (helper-ui-common.js) - antes cada tela tinha sua
+    // propria copia praticamente identica desta funcao (~25 arquivos); agora um
+    // ajuste em fnhelper_ItemDelete vale pra todas de uma vez.
+    fnhelper_ItemDelete(varItems_Row, var_Controller);
 }
 
 function fnItem_Edit(varItems_Row) {
