@@ -60,7 +60,12 @@
             <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
 
                 <!-- Status Colecao  -->
-                <div class="col-sm-6 col-lg-3">
+                @* col-lg (não col-lg-3): "Sub-Tipo" só aparece quando um Tipo é selecionado
+                   (escondido por padrão via JS) - com largura fixa, quando só 3 das 4 colunas
+                   estão visíveis sobra 1/4 de vão morto à direita. col-lg divide o espaço
+                   disponível igualmente entre as colunas visíveis de fato (ver SocioColecao.cshtml
+                   pro raciocínio completo). *@
+                <div class="col-sm-6 col-lg">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Status</p>
@@ -71,9 +76,9 @@
                     </div>
                     <hr class="d-none d-sm-block d-lg-none me-6">
                 </div>
-               
+
                 <!-- Fase -->
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-sm-6 col-lg">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Fase</p>
@@ -86,7 +91,7 @@
                 </div>
 
                 <!-- Tipo-->
-                <div class="div_MarcaTipo col-sm-6 col-lg-3">
+                <div class="div_MarcaTipo col-sm-6 col-lg">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Tipo</p>
@@ -99,7 +104,7 @@
                 </div>
 
                 <!-- Sub-Tipo -->
-                <div class="div_MarcaSubTipo col-sm-6 col-lg-3">
+                <div class="div_MarcaSubTipo col-sm-6 col-lg">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Sub-Tipo</p>
