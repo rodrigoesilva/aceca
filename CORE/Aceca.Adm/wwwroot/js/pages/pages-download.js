@@ -148,11 +148,19 @@ function fn_GridList(formValid) {
                 // um downloadTipo real mais longo que "Tipo" incha a coluna inteira e
                 // consome o orçamento que sobraria pro Título no mobile (mesmo bug do
                 // Código ACECA/Nome). O span trava a largura renderizada em 70px.
+                // white-space:nowrap (não word-break:break-word): downloadTipo é sempre uma
+                // palavra única sem espaço ("Arquivo", "Planilha", "Mapa", "Revista" - a maior
+                // mede ~56px, cabe à vontade em 70px) - word-break quebrava a palavra no meio
+                // ("Arquiv" + "o" em linhas separadas) mesmo sobrando espaço, porque o
+                // algoritmo de table-layout às vezes calcula a largura disponível do inline-block
+                // antes de aplicar o max-width. nowrap garante uma linha só; se um valor novo
+                // algum dia for maior que 70px, ele só estoura visualmente (aceitável) em vez
+                // de partir a palavra.
                 {
                     data: 'downloadTipo', className: 'text-center', width: '70px', responsivePriority: 2,
                     render: function (data, type) {
                         if (type !== 'display') return data;
-                        return `<span style="display:inline-block;max-width:70px;word-break:break-word;">${data ?? ''}</span>`;
+                        return `<span style="display:inline-block;max-width:70px;white-space:nowrap;">${data ?? ''}</span>`;
                     }
                 },
                 // COLUNA - Titulo (3ª a aparecer no mobile) - width aumentado de 120px pra
