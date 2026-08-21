@@ -170,7 +170,12 @@
                 </div>
 
                 <!-- Botoes -->
-                <div class="div_Botoes d-flex col-sm-6 col-lg-4">
+                @* justify-content-center: sem essa classe na coluna, o card-widget-1 interno
+                   (item flex agora, não bloco, desde que essa coluna ganhou d-flex) encolhe
+                   pro tamanho do próprio conteúdo e fica colado na borda esquerda em vez de
+                   centralizado - diferente das 2 colunas vizinhas de toggle, que já tinham
+                   justify-content-center na própria coluna. *@
+                <div class="div_Botoes d-flex justify-content-center col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-center card-widget-1 row gap-4 gap-md-0">
                         <div class="d-flex justify-content-center align-content-center flex-wrap gap-4">
                             <button type="button" class="btn btn-label-secondary waves-effect btn-filter-clear">
