@@ -115,7 +115,12 @@
             </div>
 
             <!-- LINHA 02 -->
-            <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
+            @* pt-8 (2rem), não pt-4 (1rem) - precisa bater com o gap real entre os campos
+               dentro de cada linha (gy-4/gap-4 medem 32px = 2rem na prática), senão essa
+               transição entre a LINHA 01 e a LINHA 02 fica menor que o espaçamento comum
+               entre campos "colegas" e passa a impressão de "Listar sem Variantes" colado
+               em "Tipo" (medido: 16px aqui contra 32px em todos os outros pares). *@
+            <div class="row gy-4 gy-sm-1 pt-8 gap-4 gap-md-0">
                 
                 <!-- Flag Listar Sem Variacao -->
                 <div class="div_PesquisarSemVariante d-flex justify-content-center col-sm-6 col-lg-4">
