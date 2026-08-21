@@ -29,6 +29,21 @@
     }
 })();
 
+// Duas Swal.fire() concorrentes sem a anterior ter sido fechada (ex.: uma tela que já
+// mostra um Swal de sucesso ao carregar e o usuário clica rápido numa ação que abre
+// outro Swal por cima) deixam botões de diálogos diferentes empilhados na mesma tela -
+// o efeito visual é "botões do Swal se encavalando/sobrepondo". Fecha qualquer Swal
+// ainda aberto antes de abrir um novo, pra qualquer chamada em qualquer página (direto
+// em Swal.fire ou via Swal.mixin(...).fire, usado em várias telas) - sem precisar achar
+// e corrigir chamada por chamada.
+const _swalFireOriginal = Swal.fire;
+Swal.fire = function (...args) {
+    if (Swal.isVisible()) {
+        Swal.close();
+    }
+    return _swalFireOriginal.apply(this, args);
+};
+
 const swalWithBootstrapButtons = Swal.mixin({
     customClass: {
         confirmButton: "btn btn-label-secondary waves-effect",

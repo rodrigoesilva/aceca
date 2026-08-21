@@ -106,3 +106,14 @@ div.dtr-modal .table td:last-child,
     word-break: break-word;
     overflow-wrap: break-word;
 }
+
+/* SweetAlert2 (confirmar exclusão etc., usado com buttonsStyling:false + classes Bootstrap
+   em ~30 telas): o CSS do tema só dá espaçamento entre botões via
+   ".swal2-actions button + button { margin-left: ... }" - pensado pra quando os 2 botões
+   ficam lado a lado. ".swal2-actions" é flex com wrap; em tela estreita (mobile) os
+   botões não cabem lado a lado e a lib empilha em coluna - margin-left não gera espaço
+   nenhum na vertical, e os botões ficam colados (medido via CDP: 0px de gap entre eles).
+   gap resolve os dois casos de uma vez, não depende da direção do wrap. */
+.swal2-actions {
+    gap: 0.5rem;
+}
