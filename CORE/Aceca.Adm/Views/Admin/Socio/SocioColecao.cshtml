@@ -121,21 +121,29 @@
                entre campos "colegas" e passa a impressão de "Listar sem Variantes" colado
                em "Tipo" (medido: 16px aqui contra 32px em todos os outros pares). *@
             <div class="row gy-4 gy-sm-1 pt-8 gap-4 gap-md-0">
-                
+
                 <!-- Flag Listar Sem Variacao -->
                 <div class="div_PesquisarSemVariante d-flex justify-content-center col-sm-6 col-lg-4">
-                    <div class="d-flex justify-content-between align-items-end card-widget-1 row gap-4 gap-md-0">
+                    @* align-items-center aqui (na coluna, não só dentro dela) é o que de fato
+                       centraliza verticalmente entre os 3 itens da linha: a coluna estica (stretch,
+                       padrão do Bootstrap grid) até a altura da coluna mais alta das 3, e o
+                       align-items-center do card-widget-1 abaixo centra o conteúdo real (checkbox
+                       ou botão) dentro dessa altura cheia. O antigo pt-lg-8 empurrava o conteúdo
+                       um valor fixo pra baixo em vez de centralizar de fato, e como checkbox (18px)
+                       e botão (38px) têm alturas diferentes, esse empurrão fixo deixava os centros
+                       desalinhados por ~9px mesmo depois de igualar as alturas das colunas. *@
+                    <div class="d-flex justify-content-between align-items-center card-widget-1 row gap-4 gap-md-0">
                         <div>
-                            @* pt-8 (2rem) só faz sentido em telas ≥lg, onde os 3 itens desta linha
-                               ficam lado a lado numa única fileira - abaixo disso (tablet incluso,
-                               onde col-sm-6 empilha 2 por linha) só inflava a altura de cada item
-                               sem alinhar com nada, sobrando um vão enorme entre os campos. *@
-                            <div class="pt-lg-8">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox"
-                                           id="chk_PesquisarSemVariante">
-                                    <label class="form-check-label" for="chk_PesquisarSemVariante">Listar sem Variantes</label>
-                                </div>
+                            @* mb-0: o tema define margin-bottom: 8px padrão em .form-check, e
+                               como essa <div> é item flex (cria seu próprio contexto de bloco),
+                               essa margem não colapsa pra fora - fica "presa" dentro da altura
+                               que o flexbox usa pra centralizar, deslocando o checkbox ~4px pra
+                               cima do centro real da linha. Aqui é item único na coluna, então
+                               a margem não tem função nenhuma (não empurra nada abaixo). *@
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox"
+                                       id="chk_PesquisarSemVariante">
+                                <label class="form-check-label" for="chk_PesquisarSemVariante">Listar sem Variantes</label>
                             </div>
                         </div>
                     </div>
@@ -144,14 +152,12 @@
 
                 <!-- Flag Pesquisar na Descricao -->
                 <div class="div_PesquisarDescricao d-flex justify-content-center col-sm-6 col-lg-4">
-                    <div class="d-flex justify-content-between align-items-end card-widget-1 row gap-4 gap-md-0">
+                    <div class="d-flex justify-content-between align-items-center card-widget-1 row gap-4 gap-md-0">
                         <div>
-                            <div class="pt-lg-8">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox"
-                                    id="chk_PesquisarDescricao">
-                                    <label class="form-check-label" for="chk_PesquisarDescricao">Pesquisar na Descrição</label>
-                                </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox"
+                                id="chk_PesquisarDescricao">
+                                <label class="form-check-label" for="chk_PesquisarDescricao">Pesquisar na Descrição</label>
                             </div>
                         </div>
                     </div>
@@ -159,9 +165,9 @@
                 </div>
 
                 <!-- Botoes -->
-                <div class="div_Botoes col-sm-6 col-lg-4">
-                    <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-                        <div class="d-flex justify-content-center align-content-center flex-wrap gap-4 pt-lg-8">
+                <div class="div_Botoes d-flex col-sm-6 col-lg-4">
+                    <div class="d-flex justify-content-between align-items-center card-widget-1 row gap-4 gap-md-0">
+                        <div class="d-flex justify-content-center align-content-center flex-wrap gap-4">
                             <button type="button" class="btn btn-label-secondary waves-effect btn-filter-clear">
                                 <span class="tf-icons ri-eraser-line ri-16px me-1_5"></span>Limpar
                             </button>

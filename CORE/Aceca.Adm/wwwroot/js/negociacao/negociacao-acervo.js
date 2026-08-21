@@ -234,9 +234,11 @@ function fn_FiltrosHide() {
 function fn_FiltrosShow() {
     $('.div_MarcaTipo').attr('style', 'display: block !important');
     //$('.div_MarcaSubTipo').attr('style', 'display: block !important');
-    $('.div_PesquisarDescricao').attr('style', 'display: block !important');
-    $('.div_PesquisarSemVariante').attr('style', 'display: block !important');
-    $('.div_Botoes').attr('style', 'display: block !important');
+    // flex (não block): essas 3 colunas usam d-flex no markup para centralizar
+    // verticalmente checkbox/botão entre si - "block" sobrescrevia o d-flex e quebrava o alinhamento.
+    $('.div_PesquisarDescricao').attr('style', 'display: flex !important');
+    $('.div_PesquisarSemVariante').attr('style', 'display: flex !important');
+    $('.div_Botoes').attr('style', 'display: flex !important');
 }
 
 function fn_FiltrosChange() {
