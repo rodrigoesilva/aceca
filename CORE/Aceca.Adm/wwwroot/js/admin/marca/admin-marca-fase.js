@@ -46,7 +46,7 @@ function fn_GridList(formValid) {
         varAjax_TypeAction = 'GET',
 
         varCol_Exportar = [2, 3, 4, 5],
-        varCol_Ordenacao = [[4, 'asc']],
+        varCol_Ordenacao = [[3, 'asc']],
 
         varItems_QtdPorPage = 50,
         varItems_DivPage = [5, 10, 25, 50, 75, 100],
@@ -110,27 +110,17 @@ function fn_GridList(formValid) {
                     checkboxes: {
                         selectAllRender: '<input type="checkbox" class="form-check-input">'
                     }
-                },
-                // COLUNA - Imagem
-                {
-                    data: 'imagem',
-                    targets: 2,
-                    visible: false,
-                    render: function (data, type, row, meta) {
-                        return data; //`<img name="myImg" class="td-img cmyImg" alt="${row.descricao}" src="${data}">`;
-                    }
-                },
+                },                
                 // COLUNA - Descricao
                 {
                     data: 'descricao',
-                    targets: 3,
+                    targets: 2,
                 },
                 // COLUNA - Ordem
                 {
                     data: 'ordem',
-                    targets: 4,
+                    targets: 3,
                 },
-
                 // COLUNA - Status                    
                 {
                     targets: -2,
