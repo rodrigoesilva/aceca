@@ -12,10 +12,13 @@
             display: none !important;
         }
 
-        /* Mobile: em vez de depender da extensão DataTables Responsive (já causou
-           incompatibilidade de versão com o DataTables core do projeto - ver commit
-           9b2fcca), empilha cada linha em formato de cartão via CSS puro. Solução
-           independente de qualquer lib/versão, então não quebra de novo. */
+        /* Mobile de verdade (viewport inteira estreita): em vez de depender da extensão
+           DataTables Responsive (já causou incompatibilidade de versão com o DataTables
+           core do projeto - ver commit 9b2fcca), empilha cada linha em formato de cartão
+           via CSS puro. Solução independente de qualquer lib/versão, então não quebra de
+           novo. As mesmas regras (seletores idênticos) se repetem no @@container abaixo -
+           duplicado de propósito, não fatorável num único @@-rule porque as duas condições
+           de disparo são fundamentalmente diferentes (ver comentário lá). */
         @@media (max-width: 575.98px) {
             #tblColecaoTopFases thead {
                 display: none;
@@ -26,6 +29,82 @@
                 width: 100% !important;
                 /* Espaçamento lateral - sem isso os cartões ficavam colados na borda
                    do card pai. box-sizing:border-box pra caber nos mesmos 100% da tbody/tr. */
+                padding: 0 0.5rem;
+                box-sizing: border-box;
+            }
+
+            #tblColecaoTopFases tbody,
+            #tblColecaoTopFases tr,
+            #tblColecaoTopFases td {
+                display: block;
+                width: 100% !important;
+            }
+
+            #tblColecaoTopFases tr {
+                margin-bottom: 0.75rem;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 0.5rem 0.75rem;
+                box-sizing: border-box;
+            }
+
+            #tblColecaoTopFases td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.35rem 0 !important;
+                border: none !important;
+                text-align: right;
+            }
+
+            #tblColecaoTopFases td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #566a7f;
+                text-align: left;
+            }
+        }
+
+        /* Este card divide a linha com "Sobre"/"Atividade" (col-lg-6) a partir de 992px -
+           então mesmo em tela desktop larga, a tabela só tem ~50% da largura da viewport
+           pra caber Fase/Tipo/barra de progresso/2 badges (foi isso que gerou "grid estourando
+           o card com scroll" reportado em desktop, não só em mobile). Um @@media de viewport
+           não sabe disso (uma tela de 1300px "parece" ter bastante espaço, mas a tabela só
+           vê a metade) - container-type torna ESTE card a referência de largura pro
+           @@container abaixo, que reage à largura renderizada de verdade, não à da viewport.
+           Mesmas regras do @@media acima, só o gatilho é diferente. */
+        #div_grid_colecao .card-datatable {
+            container-type: inline-size;
+            container-name: colecao-tabela;
+        }
+
+        /* Mesmo problema do card de Coleção acima, agora no de Atividade: ".timeline-header"
+           (tema, ver core.css) só empilha título/data em coluna abaixo de 575.98px de
+           VIEWPORT - não considera que esse card já vive espremido a 25% da tela a partir de
+           992px. Com título+data lado a lado sem espaço, a data quebra em várias linhas
+           dentro de uma faixa estreita à direita (exatamente o "textos espremidos"
+           reportado). container-type aqui de novo, reagindo à largura real do card. */
+        #div_atividade .card-body {
+            container-type: inline-size;
+            container-name: atividade-card;
+        }
+
+        @@container atividade-card (max-width: 500px) {
+            #div_atividade .timeline-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @@container colecao-tabela (max-width: 700px) {
+            #tblColecaoTopFases thead {
+                display: none;
+            }
+
+            #tblColecaoTopFases {
+                display: block;
+                width: 100% !important;
                 padding: 0 0.5rem;
                 box-sizing: border-box;
             }
@@ -124,16 +203,20 @@
 
                 @* <small class="card-text text-uppercase text-muted small">Sobre</small> *@
                 <ul class="list-unstyled my-3 py-1">
-                    <li class="d-flex align-items-center mb-4"><i class="ri-user-3-line ri-24px"></i><span class="fw-medium mx-2">Nome:</span> <span id="sp_Nome">-</span></li>
-                    <li class="d-flex align-items-center mb-4"><i class="ri-check-line ri-24px"></i><span class="fw-medium mx-2">Usuário:</span> <span id="sp_Usuario">-</span></li>
-                    <li class="d-flex align-items-center mb-4"><i class="ri-star-smile-line ri-24px"></i><span class="fw-medium mx-2">Perfil:</span> <span id="sp_Perfil">-</span></li>
-                    <li class="d-flex align-items-center mb-4"><i class="ri-calendar-line ri-24px"></i><span class="fw-medium mx-2">Aniversário:</span> <span id="sp_Aniversario">-</span></li>
+                    <li class="d-flex align-items-center flex-wrap mb-4"><i class="ri-user-3-line ri-24px"></i><span class="fw-medium mx-2">Nome:</span> <span id="sp_Nome" class="text-break">-</span></li>
+                    <li class="d-flex align-items-center flex-wrap mb-4"><i class="ri-check-line ri-24px"></i><span class="fw-medium mx-2">Usuário:</span> <span id="sp_Usuario" class="text-break">-</span></li>
+                    <li class="d-flex align-items-center flex-wrap mb-4"><i class="ri-star-smile-line ri-24px"></i><span class="fw-medium mx-2">Perfil:</span> <span id="sp_Perfil" class="text-break">-</span></li>
+                    <li class="d-flex align-items-center flex-wrap mb-4"><i class="ri-calendar-line ri-24px"></i><span class="fw-medium mx-2">Aniversário:</span> <span id="sp_Aniversario" class="text-break">-</span></li>
                 </ul>
 
                 <small class="card-text text-uppercase text-muted small">Contatos</small>
                 <ul class="list-unstyled my-3 py-1">
-                    <li class="d-flex align-items-center mb-4"><i class="ri-phone-line ri-24px"></i><span class="fw-medium mx-2">Telefone:</span> <span id="sp_Telefone">-</span></li>
-                    <li class="d-flex align-items-center mb-2"><i class="ri-mail-open-line ri-24px"></i><span class="fw-medium mx-2">E-mail:</span> <span id="sp_Email">-</span></li>
+                    @* flex-wrap + text-break: sem isso, um valor comprido (e-mail principalmente,
+                       mas também o telefone formatado) não tem onde quebrar dentro do <li> flex e
+                       ou estoura pra fora do card ou é cortado, em vez de quebrar linha. Mesmo
+                       tratamento que "Endereço" já tinha (abaixo), só faltava aqui. *@
+                    <li class="d-flex align-items-center flex-wrap mb-4"><i class="ri-phone-line ri-24px"></i><span class="fw-medium mx-2">Telefone:</span> <span id="sp_Telefone" class="text-break">-</span></li>
+                    <li class="d-flex align-items-center flex-wrap mb-2"><i class="ri-mail-open-line ri-24px"></i><span class="fw-medium mx-2">E-mail:</span> <span id="sp_Email" class="text-break">-</span></li>
                 </ul>
 
                 <small class="card-text text-uppercase text-muted small">Correspondência</small>
