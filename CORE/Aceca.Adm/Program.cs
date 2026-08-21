@@ -394,6 +394,8 @@ using (var scopeLog = app.Services.CreateScope())
                 mensagem_humanizada VARCHAR(500) NULL,
                 mensagem_original TEXT NULL,
                 stack_trace TEXT NULL,
+                ambiente VARCHAR(50) NULL,
+                origem VARCHAR(255) NULL,
                 email_enviado TINYINT(1) NOT NULL DEFAULT 0,
                 data_criacao DATETIME NULL,
                 PRIMARY KEY (Id)
@@ -402,6 +404,31 @@ using (var scopeLog = app.Services.CreateScope())
     catch (Exception ex)
     {
         logTableLogger.LogWarning(ex, "Não foi possível garantir a tabela log_erros");
+    }
+
+    // Colunas adicionadas depois da criação original da tabela (bancos já existentes,
+    // dev e produção) - mesmo padrão idempotente de colunasSocioTeste em outro bloco deste
+    // arquivo.
+    var colunasLogErro = new[]
+    {
+        ("ambiente", "VARCHAR(50) NULL"),
+        ("origem", "VARCHAR(255) NULL"),
+    };
+
+    foreach (var (coluna, tipoSql) in colunasLogErro)
+    {
+        try
+        {
+            if (await Aceca.Adm.Helper.DbSchemaHelper.ColunaExisteAsync(dbLog.Database, "log_erros", coluna))
+                continue;
+
+            await dbLog.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE log_erros ADD COLUMN " + coluna + " " + tipoSql);
+        }
+        catch (Exception ex)
+        {
+            logTableLogger.LogWarning(ex, "Não foi possível garantir a coluna {Coluna} em log_erros", coluna);
+        }
     }
 }
 
