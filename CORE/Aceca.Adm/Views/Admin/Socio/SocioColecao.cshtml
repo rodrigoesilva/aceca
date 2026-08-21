@@ -121,7 +121,11 @@
                 <div class="div_PesquisarSemVariante d-flex justify-content-center col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-end card-widget-1 row gap-4 gap-md-0">
                         <div>
-                            <div class="pt-8">
+                            @* pt-8 (2rem) só faz sentido em telas ≥lg, onde os 3 itens desta linha
+                               ficam lado a lado numa única fileira - abaixo disso (tablet incluso,
+                               onde col-sm-6 empilha 2 por linha) só inflava a altura de cada item
+                               sem alinhar com nada, sobrando um vão enorme entre os campos. *@
+                            <div class="pt-lg-8">
                                 <div class="form-check form-switch mb-2">
                                     <input class="form-check-input" type="checkbox"
                                            id="chk_PesquisarSemVariante">
@@ -137,7 +141,7 @@
                 <div class="div_PesquisarDescricao d-flex justify-content-center col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-end card-widget-1 row gap-4 gap-md-0">
                         <div>
-                            <div class="pt-8">
+                            <div class="pt-lg-8">
                                 <div class="form-check form-switch mb-2">
                                     <input class="form-check-input" type="checkbox"
                                     id="chk_PesquisarDescricao">
@@ -152,7 +156,7 @@
                 <!-- Botoes -->
                 <div class="div_Botoes col-sm-6 col-lg-4">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
-                        <div class="d-flex justify-content-center align-content-center flex-wrap gap-4 pt-8">                            
+                        <div class="d-flex justify-content-center align-content-center flex-wrap gap-4 pt-lg-8">
                             <button type="button" class="btn btn-label-secondary waves-effect btn-filter-clear">
                                 <span class="tf-icons ri-eraser-line ri-16px me-1_5"></span>Limpar
                             </button>
