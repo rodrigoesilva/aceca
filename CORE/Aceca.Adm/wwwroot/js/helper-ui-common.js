@@ -432,9 +432,15 @@ function fnhelper_ItemEdit(objFormData, controller) {
     });
 }
 
-// item precisa ter .id (o objeto completo da linha, como já é passado pelas telas que
-// chamam isso a partir da coluna de Ações).
+// item precisa ter .id OU .Id (o objeto completo da linha, como já é passado pelas telas
+// que chamam isso a partir da coluna de Ações) - grids em EF (Ok(new{data=lstModel}))
+// serializam em camelCase ("id"), mas grids com Dapper cru sobre dynamic/ExpandoObject
+// (ex.: SocioController.FiltrarDados, "s.id AS Id") mantêm a grafia literal do alias SQL
+// ("Id") sem passar pela política de camelCase - aceitar os dois evita esse helper
+// quebrar silenciosamente (item.id vira undefined) em telas que usam esse 2º padrão.
 function fnhelper_ItemDelete(item, controller) {
+    const id = item?.id ?? item?.Id;
+
     Swal.fire({
         title: 'Tem certeza?',
         icon: 'warning',
@@ -454,7 +460,7 @@ function fnhelper_ItemDelete(item, controller) {
         $.busyLoadFull("show");
 
         $.ajax({
-            url: `${controller}/Delete?id=${item.id}`,
+            url: `${controller}/Delete?id=${id}`,
             type: 'DELETE',
             success: function (response) {
                 $.busyLoadFull("hide");
