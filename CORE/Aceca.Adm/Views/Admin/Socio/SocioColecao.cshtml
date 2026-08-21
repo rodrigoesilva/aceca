@@ -61,7 +61,12 @@
             <div class="row gy-4 gy-sm-1 pt-4 gap-4 gap-md-0">
 
                 <!-- Status Colecao  -->
-                <div class="col-sm-6 col-lg-3">
+                @* col-lg (não col-lg-3): "Sub-Tipo" só aparece quando um Tipo é selecionado
+                   (escondido por padrão via JS) - com largura fixa de 25% cada, quando só 3
+                   das 4 colunas estão visíveis sobra 25% de vão morto à direita. col-lg divide
+                   o espaço disponível igualmente entre as colunas que estiverem visíveis de
+                   fato (3 ou 4), sem precisar de JS/media query pra recalcular nada. *@
+                <div class="col-sm-6 col-lg">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Status</p>
@@ -74,7 +79,7 @@
                 </div>
                
                 <!-- Fase -->
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-sm-6 col-lg">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Fase</p>
@@ -87,7 +92,7 @@
                 </div>
 
                 <!-- Tipo-->
-                <div class="div_MarcaTipo col-sm-6 col-lg-3">
+                <div class="div_MarcaTipo col-sm-6 col-lg">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Tipo</p>
@@ -100,7 +105,7 @@
                 </div>
 
                 <!-- Sub-Tipo -->
-                <div class="div_MarcaSubTipo col-sm-6 col-lg-3">
+                <div class="div_MarcaSubTipo col-sm-6 col-lg">
                     <div class="d-flex justify-content-between align-items-start card-widget-1 row gap-4 gap-md-0">
                         <div>
                             <p class="mb-1">* Sub-Tipo</p>
