@@ -162,7 +162,7 @@ function fn_GridList(formValid) {
                 {
                     data: 'titulo', className: 'text-center', width: '175px', responsivePriority: 3,
                     render: function (data, type, full) {
-                        if (!data || full.Id === 0 || type !== 'display') return '';
+                        if (!data || full.id === 0 || type !== 'display') return '';
 
                         const nomeTitulo = data?.trim()?.split('-').join("<br>");
 
@@ -218,7 +218,7 @@ function fn_GridList(formValid) {
                     data: 'incluidoPor', className: 'text-center', responsivePriority: 10011,
                     render: function (data, type, full) {
 
-                        if (!data || full.Id === 0 || type !== 'display') return '';
+                        if (!data || full.id === 0 || type !== 'display') return '';
                         var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
                         var items = data.split('/').map(function (nome, i) {
                             //console.log("IncluidoPor nome ::: ", nome);
