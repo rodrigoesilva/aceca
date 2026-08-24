@@ -411,14 +411,14 @@ function fn_FiltrarDados() {
             {
                 data: 'ImgPrincipalFull', className: 'text-center min-tablet', responsivePriority: 10004, orderable: false,
                 render: function (data, type, row) {
-                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row?.CodigoAceca}" src="${data}">`;
+                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row?.CodigoAceca}" src="${data}" onerror="this.onerror=null;this.src='${strUrlImgInexistente}';">`;
                 }
             },
             // COLUNA - imagemDetalhe (mesmo fix acima)
             {
                 data: 'ImgDetalheFull', className: 'text-center min-tablet', responsivePriority: 10005, orderable: false,
                 render: function (data, type, row) {
-                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row?.CodigoAceca}" src="${data}">`;
+                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row?.CodigoAceca}" src="${data}" onerror="this.onerror=null;this.src='${strUrlImgInexistente}';">`;
                 }
             },
             // COLUNA - descricao
@@ -458,7 +458,7 @@ function fn_FiltrarDados() {
                     if (!data || full.Id === 0 || type !== 'display') return '';
                     var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
                     var items = data.split('/').map(function (nome, i) {
-                        let pathAvatar = nome == "Aceca" ? `../img/avatars/socio/imgAvatarAceca` : `../img/avatars/${i}`;
+                        let pathAvatar = nome == "Aceca" ? `${assetsPath}img/avatars/socio/imgAvatarAceca` : `${assetsPath}img/avatars/${i}`;
                         return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
                             title="${nome}" style="z-index:1;">
                             <img src="${pathAvatar}.png" alt="Avatar" class="rounded-circle">
@@ -656,16 +656,18 @@ function fn_FiltrarDados() {
                     // ✅ Imagens clicáveis com cursor pointer e chamada ao zoom
                     var imgPrincipal = row.ImgPrincipalFull
                         ? `<img name="myImg" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${row.ImgPrincipalFull}"
-                                    onclick="fn_ZoomImg('${row.ImgPrincipalFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px; 
+                                    onerror="this.onerror=null;this.src='${strUrlImgInexistente}';"
+                                    onclick="fn_ZoomImg(this.src)" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
-                        : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px; 
+                        : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px;
                                     display:flex;align-items:center;justify-content:center;
                                     font-size:11px;color:#aaa;">sem img</div>`;
 
                     var imgDetalhe = row.ImgDetalheFull
                         ? `<img name="myImg" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${row.ImgDetalheFull}"
-                                    onclick="fn_ZoomImg('${row.ImgDetalheFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
+                                    onerror="this.onerror=null;this.src='${strUrlImgInexistente}';"
+                                    onclick="fn_ZoomImg(this.src)" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
                         : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px;

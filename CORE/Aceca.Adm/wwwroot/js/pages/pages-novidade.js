@@ -26,6 +26,8 @@ var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
 let modalMarca = document.getElementById('ModalMarca');
 
+let strUrlImgInexistente = "https://www.aceca.com.br/assets/img/img_inexistente.jpg";
+
 let idMarcaMes,idMarcaFase;
 
 let param_Data, param_DataIni, param_DataIniStrSel, param_DataIniSel, param_DataIniMes, param_DataIniAno;
@@ -375,7 +377,7 @@ function fn_FiltrarDados() {
             {
                 data: 'ImgPrincipalFull', className: 'text-center min-tablet', responsivePriority: 10004,
                 render: function (data, type, row) {
-                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${data}">`;
+                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${data}" onerror="this.onerror=null;this.src='${strUrlImgInexistente}';">`;
                 }
             },
             // COLUNA - imagemDetalhe
@@ -383,7 +385,7 @@ function fn_FiltrarDados() {
                 // Mesmo fix da coluna Imagem acima.
                 data: 'ImgDetalheFull', className: 'text-center min-tablet', responsivePriority: 10005,
                 render: function (data, type, row) {
-                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row.CodigoAceca}" src="${data}">`;
+                    return `<img name="myImg" loading="lazy" class="td-img cmyImg" alt="Detalhe :: ${row.CodigoAceca}" src="${data}" onerror="this.onerror=null;this.src='${strUrlImgInexistente}';">`;
                 }
             },
             // COLUNA - descricao
@@ -425,7 +427,7 @@ function fn_FiltrarDados() {
                     var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
                     var items = data.split('/').map(function (nome, i) {
                         //console.log("IncluidoPor nome ::: ", nome);
-                        let pathAvatar = nome == "Aceca" ? `../img/avatars/socio/imgAvatarAceca` : `../img/avatars/${i}`;
+                        let pathAvatar = nome == "Aceca" ? `${assetsPath}img/avatars/socio/imgAvatarAceca` : `${assetsPath}img/avatars/${i}`;
 
                         return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
                             title="${nome}" style="z-index:1;">
@@ -578,16 +580,18 @@ function fn_FiltrarDados() {
                     // ✅ Imagens clicáveis com cursor pointer e chamada ao zoom
                     var imgPrincipal = row.ImgPrincipalFull
                         ? `<img name="myImg" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${row.ImgPrincipalFull}"
-                                    onclick="fn_ZoomImg('${row.ImgPrincipalFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px; 
+                                    onerror="this.onerror=null;this.src='${strUrlImgInexistente}';"
+                                    onclick="fn_ZoomImg(this.src)" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
-                        : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px; 
+                        : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px;
                                     display:flex;align-items:center;justify-content:center;
                                     font-size:11px;color:#aaa;">sem img</div>`;
 
                     var imgDetalhe = row.ImgDetalheFull
                         ? `<img name="myImg" class="td-img cmyImg" alt="${row.CodigoAceca}" src="${row.ImgDetalheFull}"
-                                    onclick="fn_ZoomImg('${row.ImgDetalheFull}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
+                                    onerror="this.onerror=null;this.src='${strUrlImgInexistente}';"
+                                    onclick="fn_ZoomImg(this.src)" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`
                         : `<div style="width:64px;height:64px;background:#f4f4f4;border-radius:8px;
@@ -604,7 +608,7 @@ function fn_FiltrarDados() {
                     if (row.IncluidoPor) {
                         var pessoas = row.IncluidoPor.split("/");
                         avatarHtml = pessoas.map(function (p, i) {
-                            return `<img src="../img/avatars/${i}.png" alt="${p}" title="${p}"
+                            return `<img src="${assetsPath}img/avatars/${i}.png" alt="${p}" title="${p}"
                                         style="width:28px;height:28px;border-radius:50%;border:1.5px solid #fff;margin-right:2px;">`;
                         }).join('');
                     }
@@ -1191,8 +1195,9 @@ function fnItem_PopImgPrincipal(obj) {
 
         //preview img
         const img = document.getElementById('img_ImgPrincipal');
-        img.src = obj.ImgPrincipalFull;
-        img.alt = obj.CodigoAceca;
+        img.onerror = function () { this.onerror = null; this.src = strUrlImgInexistente; };
+        img.src = obj.ImgPrincipalFull ?? strUrlImgInexistente;
+        img.alt = obj.CodigoAceca ?? "Imagem Inexistente";
 
         //
         const fileInput = document.querySelector('#txt_ImgPrincipal');
@@ -1235,8 +1240,9 @@ function fnItem_PopImgDetalhe(obj) {
 
         //preview img
         const img = document.getElementById('img_ImgDetalhe');
-        img.src = obj.ImgDetalheFull;
-        img.alt = obj.CodigoAceca;
+        img.onerror = function () { this.onerror = null; this.src = strUrlImgInexistente; };
+        img.src = obj.ImgDetalheFull ?? strUrlImgInexistente;
+        img.alt = obj.CodigoAceca ?? "Imagem Inexistente";
 
         //
         const fileInput = document.querySelector('#txt_ImgDetalhe');

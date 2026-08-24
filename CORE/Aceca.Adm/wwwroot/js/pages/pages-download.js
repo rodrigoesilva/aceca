@@ -139,7 +139,7 @@ function fn_GridList(formValid) {
                         // visível na página atual — lazy só atrasava o disparo do request
                         // até depois do grid inteiro estar montado. fetchpriority="low" evita
                         // competir com o XHR do DataTables/demais recursos da página.
-                        return `<img name="myImg" decoding="async" fetchpriority="low" class="td-img cmyImg" alt="${full.titulo}" src="${imgData}">`;
+                        return `<img name="myImg" decoding="async" fetchpriority="low" class="td-img cmyImg" alt="${full.titulo}" src="${imgData}" onerror="this.onerror=null;this.src='${varResultFull.imgDefault}';">`;
                     }
                 },
                 // COLUNA - Tipo (2ª a aparecer no mobile) - width reduzido de 90px pra 70px,
@@ -230,7 +230,7 @@ function fn_GridList(formValid) {
                         var ul = `<ul class="m-0 avatar-group d-flex align-items-center justify-content-center" style="list-style:none;">`;
                         var items = data.split('/').map(function (nome, i) {
                             //console.log("IncluidoPor nome ::: ", nome);
-                            let pathAvatar = nome == "Aceca" ? `../img/avatars/socio/imgAvatarAceca` : `../img/avatars/${i}`;
+                            let pathAvatar = nome == "Aceca" ? `${assetsPath}img/avatars/socio/imgAvatarAceca` : `${assetsPath}img/avatars/${i}`;
 
                             return `<li class="avatar avatar-lg pull-up" data-bs-toggle="tooltip" data-bs-placement="top"
                                 title="${nome}" style="z-index:1;">
@@ -400,7 +400,8 @@ function fn_GridList(formValid) {
                         var imgDefault = `${varResultFull.arqUrlBase}/img/download.png`;
                         var imgUrl = row.imagem ? `${varResultFull.arqUrlBase}/img/${row.imagem}` : imgDefault;
                         var imgHtml = `<img name="myImg" class="td-img cmyImg" alt="${row.titulo || ''}" src="${imgUrl}"
-                                    onclick="fn_ZoomImg('${imgUrl}')" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
+                                    onerror="this.onerror=null;this.src='${varResultFull.imgDefault}';"
+                                    onclick="fn_ZoomImg(this.src)" style="width:64px;height:64px;object-fit:cover;border-radius:8px;
                                     border:0.5px solid #ddd;cursor:pointer;transition:opacity .2s;"
                                     onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">`;
 
