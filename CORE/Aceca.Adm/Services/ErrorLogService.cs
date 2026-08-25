@@ -37,10 +37,35 @@ namespace Aceca.Adm.Services
         /// <summary>
         /// Exceção de verdade — catch local (ex.: SocioFinanceiroCheckService, rotina de
         /// índices no Program.cs) ou exceção não tratada capturada pelo middleware global.
-        /// Grava em log_erros e envia e-mail de alerta.
+        /// Grava em log_erros e envia e-mail de alerta - exceto quando é só o cliente
+        /// (navegador) tendo abandonado a requisição no meio do caminho (ver
+        /// <see cref="EhDesconexaoDeCliente"/>), que fica só no log, sem e-mail.
         /// </summary>
         public Task RegistrarExcecaoAsync(HttpContext? httpContext, Exception ex) =>
-            RegistrarAsync("Exception", httpContext, ex, ex.Message, enviarEmail: true);
+            RegistrarAsync("Exception", httpContext, ex, ex.Message, enviarEmail: !EhDesconexaoDeCliente(httpContext, ex));
+
+        // O usuário digitou de novo no filtro/busca antes da requisição anterior terminar
+        // (DataTables aborta o ajax pendente sozinho ao disparar um novo), fechou a aba, ou a
+        // conexão caiu no meio da leitura/escrita - nenhum desses é um bug da aplicação, é o
+        // cliente indo embora. Sem esse filtro, todo IOException "The client has disconnected"
+        // (comum em requisições mais lentas, ex.: Acervo.FiltrarDados checando existência de
+        // imagem por HTTP) virava e-mail de "erro real" pro time de TI.
+        private static bool EhDesconexaoDeCliente(HttpContext? httpContext, Exception ex)
+        {
+            var clienteAbandonouRequisicao = httpContext?.RequestAborted.IsCancellationRequested == true;
+
+            return ex switch
+            {
+                // OperationCanceledException tem outras causas legítimas (timeout de uma
+                // chamada HTTP interna, por ex.) - só conta como "cliente foi embora" se o
+                // token cancelado for justamente o da requisição do navegador.
+                OperationCanceledException => clienteAbandonouRequisicao,
+                IOException => clienteAbandonouRequisicao
+                            && (ex.Message.Contains("client has disconnected", StringComparison.OrdinalIgnoreCase)
+                             || ex.Message.Contains("client disconnected", StringComparison.OrdinalIgnoreCase)),
+                _ => ex.InnerException != null && EhDesconexaoDeCliente(httpContext, ex.InnerException)
+            };
+        }
 
         /// <summary>
         /// BadRequest devolvido por uma action (ver Filters/BadRequestLogFilter) — fica só

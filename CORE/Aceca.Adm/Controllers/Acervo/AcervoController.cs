@@ -406,6 +406,15 @@ namespace Aceca.Adm.Controllers.Acervo
         }
 
         // Checa (com cache) se a imagem existe no caminho informado via HTTP HEAD.
+        //
+        // Timeout curto (3s) é essencial aqui: sem ele, o HttpClient usa o padrão de 100s, e
+        // como FiltrarDados dispara um HEAD destes POR LINHA da página em paralelo (Task.WhenAll),
+        // uma única imagem/host lento travaria a resposta inteira do grid por até 100s - tempo
+        // mais que suficiente pro usuário digitar de novo no filtro (DataTables aborta o ajax
+        // anterior automaticamente) ou simplesmente desistir, gerando "The client has
+        // disconnected" no meio da leitura da próxima requisição. Cache alongado pra 24h porque
+        // o resultado só muda quando alguém reenvia a imagem (evento raro) - 10min forçava
+        // recheck via rede a toda hora, multiplicado por linha e por usuário.
         private async Task<bool> ExisteImagemAsync(string url)
         {
             var cacheKey = $"ImgExiste::{url}";
@@ -415,9 +424,10 @@ namespace Aceca.Adm.Controllers.Acervo
 
             try
             {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
                 using var client = _httpClientFactory.CreateClient();
                 using var request = new HttpRequestMessage(HttpMethod.Head, url);
-                using var response = await client.SendAsync(request);
+                using var response = await client.SendAsync(request, cts.Token);
 
                 bExiste = response.IsSuccessStatusCode;
             }
@@ -428,7 +438,7 @@ namespace Aceca.Adm.Controllers.Acervo
                 bExiste = false;
             }
 
-            _cache.Set(cacheKey, bExiste, TimeSpan.FromMinutes(10));
+            _cache.Set(cacheKey, bExiste, TimeSpan.FromHours(24));
 
             return bExiste;
         }
