@@ -510,6 +510,74 @@ using (var scopeConfigPrint = app.Services.CreateScope())
     }
 }
 
+// Mesmo problema do id de adm_config (INT sem AUTO_INCREMENT no servidor em uso, todo
+// Create via EF falhava com "Field 'id' doesn't have a default value") - varredura em
+// 2026-08-26 por TODAS as tabelas do banco (INFORMATION_SCHEMA: toda coluna de chave
+// primária inteira, comparando extra contra "auto_increment") achou mais 2 tabelas na
+// mesma situação: socio_financeiro (já disparava o erro de verdade em produção, ver
+// SocioFinanceiroController.Create) e download_tipo (sem tela de Create hoje, mas mesmo
+// defeito de esquema - corrigido preventivamente antes que alguém crie um CRUD pra ela;
+// tratada num bloco à parte logo abaixo por causa da FK que aponta pra ela).
+// Corrige uma vez, de forma idempotente - o MySQL calcula o próximo valor automaticamente
+// a partir do MAX(id) já existente, então é seguro rodar com a tabela já populada.
+using (var scopeAutoIncrement = app.Services.CreateScope())
+{
+    var dbAutoIncrement = scopeAutoIncrement.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var autoIncrementLogger = scopeAutoIncrement.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        if (!await Aceca.Adm.Helper.DbSchemaHelper.ColunaEhAutoIncrementAsync(dbAutoIncrement.Database, "socio_financeiro", "id"))
+        {
+            await dbAutoIncrement.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE socio_financeiro MODIFY id INT UNSIGNED NOT NULL AUTO_INCREMENT");
+        }
+    }
+    catch (Exception ex)
+    {
+        autoIncrementLogger.LogWarning(ex, "Não foi possível garantir AUTO_INCREMENT em socio_financeiro.id");
+    }
+}
+
+// download_tipo.id também sem AUTO_INCREMENT (mesmo achado da varredura acima), mas é
+// referenciada por download.downloadTipoId (FK_download_download_tipo) - o MySQL do
+// servidor em uso recusa MODIFY ... AUTO_INCREMENT direto numa coluna usada em FK
+// ("Cannot change column 'id': used in a foreign key constraint"), então precisa soltar
+// a constraint, alterar, e recriar idêntica. Sem tela de Create pra download_tipo hoje
+// (só leitura via combo em Download.cshtml), então isso nunca gerou erro real pro
+// usuário - corrigido preventivamente.
+using (var scopeDownloadTipo = app.Services.CreateScope())
+{
+    var dbDownloadTipo = scopeDownloadTipo.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var downloadTipoLogger = scopeDownloadTipo.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        if (!await Aceca.Adm.Helper.DbSchemaHelper.ColunaEhAutoIncrementAsync(dbDownloadTipo.Database, "download_tipo", "id"))
+        {
+            try
+            {
+                await dbDownloadTipo.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE download DROP FOREIGN KEY FK_download_download_tipo");
+            }
+            catch (Exception exDropFk)
+            {
+                downloadTipoLogger.LogWarning(exDropFk, "FK_download_download_tipo não pôde ser removida (talvez já não exista) - tentando o MODIFY mesmo assim");
+            }
+
+            await dbDownloadTipo.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE download_tipo MODIFY id INT UNSIGNED NOT NULL AUTO_INCREMENT");
+
+            await dbDownloadTipo.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE download ADD CONSTRAINT FK_download_download_tipo FOREIGN KEY (downloadTipoId) REFERENCES download_tipo(id)");
+        }
+    }
+    catch (Exception ex)
+    {
+        downloadTipoLogger.LogWarning(ex, "Não foi possível garantir AUTO_INCREMENT em download_tipo.id");
+    }
+}
+
 // Auto-cadastro (teste grátis) — colunas em socios (Socio.EhContaTeste/TesteExpiraEm),
 // tabela permanente cadastro_teste (chave antifraude: cpf único) e parâmetro configurável
 // de duração do teste em adm_config. Ver AuthController.RegisterCover/CadastroTesteIniciar/

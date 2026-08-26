@@ -100,10 +100,13 @@
             <div class="col-sm-12">
                 <div class="input-group input-group-merge">
                     <div class="form-check form-switch mb-2">
+                        @* Calculado automaticamente (ver fn_AtualizarPagamentoEmDia em
+                           admin-socio-financeiro.js) a partir de Último Pagamento + Tipo
+                           Pagamento - não é mais um campo que o admin marca manualmente. *@
                         <input type="checkbox" id="pop_line_item_03" class="form-check-input dt-line-03"
                                name="pop_line_item_03" placeholder="StatusPagamento" aria-label="StatusPagamento"
-                               aria-describedby="line_item_03"/>
-                        <label class="form-check-label" for="pop_line_item_03">Em Dia</label>
+                               aria-describedby="line_item_03" disabled/>
+                        <label class="form-check-label" for="pop_line_item_03"><span id="lbl_pop_line_item_03">Em Dia</span> <small class="text-muted">(calculado automaticamente)</small></label>
                     </div>
                 </div>
             </div>
@@ -112,25 +115,19 @@
                 <div class="input-group input-group-merge">
                     <span id="line_item_04" class="input-group-text"></span>
                     <div class="form-floating form-floating-outline">
+                        @* data-date-format sobrescreve, só neste campo, o formato padrão
+                           "dd/mm" que o helper-ui-common.js aplica a todo .dt-calendar do site -
+                           sem isso, selecionar uma data de ano anterior no calendário perdia o
+                           ano (virava o ano atual, com dia/mês embaralhados). Mesmo fix já usado
+                           em Socio.cshtml (pop_line_item_11, Data de Aniversário). *@
                         <input type="text" id="pop_line_item_04" class="form-control dt-calendar dt-line-04"
                                name="pop_line_item_04" placeholder="DD/MM/YYYY" aria-label="UltimoPagamento"
-                               aria-describedby="line_item_04" />
+                               aria-describedby="line_item_04" data-date-format="dd/mm/yyyy" />
                         <label for="pop_line_item_04">&Uacute;ltimo Pagamento</label>
                     </div>
                 </div>
             </div>
-            <!--
-            <div class="col-sm-12">
-                <div class="input-group input-group-merge">
-                    <div class="form-check form-switch mb-2">
-                        <input type="checkbox" id="pop_line_item_05" class="form-check-input dt-line-05"
-                               name="pop_line_item_05" placeholder="Ativo" aria-label="Ativo"
-                               aria-describedby="line_item_05"/>
-                        <label class="form-check-label" for="pop_line_item_05">Ativo</label>
-                    </div>
-                </div>
-            </div>
-            -->
+
             <div class="col-sm-12">
                 <button type="submit" class="btn btn-primary data-submit me-sm-4 me-1">Adicionar</button>
                 <button type="reset" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Cancelar</button>

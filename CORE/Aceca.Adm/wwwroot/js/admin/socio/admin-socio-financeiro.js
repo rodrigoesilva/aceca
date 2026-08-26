@@ -32,8 +32,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         fn_LoadCmb_Socio();
 
+        // Ao Adicionar Novo, o campo Nome (.dt-line-01) fica oculto mas é obrigatório
+        // pro FormValidation (ver fn_PopValidator) e é o que fn_PopGetObj manda pro
+        // backend - sem sincronizar aqui, ele fica sempre vazio: o Salvar mostra a
+        // mensagem de validação presa num campo escondido (parece que "nada acontece")
+        // e, mesmo se passasse, gravaria Nome vazio.
         $('#cmb_Socio').on('change', function () {
             $('#hdSocioFinanceiroId').val($(this).val());
+            $('#pop_line_item_01').val($(this).val() === '-1' ? '' : $('#cmb_Socio option:selected').text());
         });
 
         // Form validation
@@ -59,6 +65,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 dtUltimoPagamento = $('#pop_line_item_04').val().replace(/\s/g, '');
                 //console.log("dtUltimoPagamento ::: ", dtUltimoPagamento);
             }
+
+            fn_AtualizarPagamentoEmDia();
         });
 
         $("#pop_line_item_04").on('hide', function (picker) {
@@ -67,7 +75,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (picker.date === undefined) {
                 $(this).val('');
             }
+
+            fn_AtualizarPagamentoEmDia();
         });
+
+        // "Em Dia" (pop_line_item_03) não é mais um campo manual - é sempre recalculado
+        // a partir de Último Pagamento + Tipo Pagamento (ver fn_AtualizarPagamentoEmDia).
+        $('#cmb_TipoPagamento').on('change', fn_AtualizarPagamentoEmDia);
     })();
 });
 
@@ -580,6 +594,62 @@ function fn_GridComplete(grid) {
 
 // fnhelper_CheckVerAtivos é comum (helper-ui-common.js).
 
+// "Em Dia" (pop_line_item_03) não é mais um campo que o admin marca manualmente - é sempre
+// recalculado a partir de Último Pagamento + Tipo Pagamento, comparando com a data de hoje:
+//   Anual     -> em dia se o último pagamento tem 12 meses ou menos
+//   Semestral -> em dia se tem 6 meses ou menos
+//   Mensal    -> em dia se tem 1 mês ou menos
+//   Isento    -> sempre em dia, independente de data
+// Combina pelo TEXTO do Tipo Pagamento selecionado (não pelo Id) porque o Id vem do banco
+// (tabela tipo_pagamento, cadastro livre em Admin/TipoPagamento) e não é garantido ser
+// sempre o mesmo em todo ambiente.
+//
+// O rótulo (#lbl_pop_line_item_03) acompanha o flag, igual à coluna "Pagto" da grid:
+// só vira "Atrasado" quando já existe uma Data de Último Pagamento preenchida e ela cai
+// fora da regra. Sem data ainda (ou sem Tipo Pagamento selecionado) o flag fica
+// desmarcado (false) mas o texto continua "Em Dia" - "Atrasado" é reservado pro caso em
+// que já dá pra avaliar a regra e ela não bate.
+function fn_AtualizarPagamentoEmDia() {
+    var chkEmDia = $('#pop_line_item_03');
+    var lblEmDia = $('#lbl_pop_line_item_03');
+
+    if (!chkEmDia.length) return;
+
+    function setEstado(checked, atrasado) {
+        chkEmDia.prop('checked', checked);
+        lblEmDia.text(atrasado ? 'Atrasado' : 'Em Dia');
+    }
+
+    var tipoTexto = ($('#cmb_TipoPagamento option:selected').text() || '').trim().toLowerCase();
+
+    if (!tipoTexto || tipoTexto.includes('selecionar')) {
+        setEstado(false, false);
+        return;
+    }
+
+    if (tipoTexto.includes('isento')) {
+        setEstado(true, false);
+        return;
+    }
+
+    var limiteMeses = tipoTexto.includes('anual') ? 12
+        : tipoTexto.includes('semestral') ? 6
+        : tipoTexto.includes('mensal') ? 1
+        : null;
+
+    var dataPagamento = moment($('#pop_line_item_04').val(), 'DD/MM/YYYY', true);
+
+    if (limiteMeses === null || !dataPagamento.isValid()) {
+        setEstado(false, false);
+        return;
+    }
+
+    var mesesDesdePagamento = moment().diff(dataPagamento, 'months');
+    var emDia = mesesDesdePagamento <= limiteMeses;
+
+    setEstado(emDia, !emDia);
+}
+
 function fn_LoadCmb_SocioTipoPagamento() {
     //console.log("fn_LoadCmb_SocioTipoPagamento ::: ");
 
@@ -665,6 +735,10 @@ function fn_Pop(obj, action) {
 
         //console.log("fn_Pop ex val ::: ", $("#cmb_SocioEstado").val());
     }
+
+    // "Em Dia" é sempre recalculado ao abrir o pop (não fica preso ao valor gravado antes -
+    // reflete a comparação com a data de hoje toda vez que o registro é aberto/editado).
+    fn_AtualizarPagamentoEmDia();
 
     // Open Pop
     popAddNewItemEl.show();
