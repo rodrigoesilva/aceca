@@ -6,7 +6,6 @@ using FluentFTP;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Globalization;
@@ -28,8 +27,6 @@ namespace Aceca.Adm.Controllers.Acervo
         private readonly IConfiguration _appConfiguration;
         private readonly IWebHostEnvironment _appEnvironment;
         private readonly AppDbContext _db;
-        private readonly IMemoryCache _cache;
-        private readonly IHttpClientFactory _httpClientFactory;
 
         private readonly string _urlBaseImg = string.Empty;
         private readonly string _urlBaseSite = string.Empty;
@@ -64,16 +61,12 @@ namespace Aceca.Adm.Controllers.Acervo
         public AcervoController(ILogger<AcervoController> logger,
             AppDbContext db,
             IWebHostEnvironment env,
-            IConfiguration cfg,
-            IMemoryCache cache,
-            IHttpClientFactory httpClientFactory)
+            IConfiguration cfg)
         {
             _logger = logger;
             _db = db;
             _appEnvironment = env;
             _appConfiguration = cfg;
-            _cache = cache;
-            _httpClientFactory = httpClientFactory;
 
             _urlBaseImg = _appConfiguration["Url:Img"]!;
             _urlBaseSite = _appConfiguration["Url:Site"]!;
@@ -332,12 +325,8 @@ namespace Aceca.Adm.Controllers.Acervo
                             @ImgDefault) AS ImgPrincipalFull,
 
                         m.ImgDetalhe,
-
-                        -- Caminho padrao (pasta /detalhes/ compartilhada). A resolucao do
-                        -- caminho especifico da fase (pasta {{MarcaFaseId}}/detalhes/) e feita
-                        -- em C# (FiltrarDados), checando se o arquivo realmente existe la.
                         IF(m.ImgDetalhe IS NOT NULL,
-                            CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),
                             @ImgDefault) AS ImgDetalheFull,
 
                         COALESCE(sc.possui, 0) AS Possui,
@@ -363,8 +352,6 @@ namespace Aceca.Adm.Controllers.Acervo
                     .Cast<IDictionary<string, object>>()
                     .ToList();
 
-                await ResolverImgDetalheFasePorExistenciaAsync(lstData, imgBase);
-
                 return Ok(new
                 {
                     draw = request.Draw,
@@ -379,68 +366,6 @@ namespace Aceca.Adm.Controllers.Acervo
 
                 return BadRequest(new { error = true, message = ex.Message });
             }
-        }
-
-        // Para cada linha com ImgDetalhe, verifica se existe a imagem na pasta
-        // /{MarcaFaseId}/detalhes/ (padrão novo, por fase). Se existir, usa esse
-        // caminho; senão mantém o caminho padrão /detalhes/ já vindo do SQL.
-        private async Task ResolverImgDetalheFasePorExistenciaAsync(List<IDictionary<string, object>> lstData, string imgBase)
-        {
-            await Task.WhenAll(lstData.Select(async row =>
-            {
-                var imgDetalhe = row.TryGetValue("ImgDetalhe", out var imgDetalheObj) ? imgDetalheObj as string : null;
-
-                if (string.IsNullOrWhiteSpace(imgDetalhe))
-                    return;
-
-                var idMarcaFase = row.TryGetValue("IdMarcaFase", out var idMarcaFaseObj) ? idMarcaFaseObj : null;
-
-                if (idMarcaFase == null)
-                    return;
-
-                var urlImgDetalheFase = $"{imgBase}/{idMarcaFase}/detalhes/{imgDetalhe}";
-
-                if (await ExisteImagemAsync(urlImgDetalheFase))
-                    row["ImgDetalheFull"] = urlImgDetalheFase;
-            }));
-        }
-
-        // Checa (com cache) se a imagem existe no caminho informado via HTTP HEAD.
-        //
-        // Timeout curto (3s) é essencial aqui: sem ele, o HttpClient usa o padrão de 100s, e
-        // como FiltrarDados dispara um HEAD destes POR LINHA da página em paralelo (Task.WhenAll),
-        // uma única imagem/host lento travaria a resposta inteira do grid por até 100s - tempo
-        // mais que suficiente pro usuário digitar de novo no filtro (DataTables aborta o ajax
-        // anterior automaticamente) ou simplesmente desistir, gerando "The client has
-        // disconnected" no meio da leitura da próxima requisição. Cache alongado pra 24h porque
-        // o resultado só muda quando alguém reenvia a imagem (evento raro) - 10min forçava
-        // recheck via rede a toda hora, multiplicado por linha e por usuário.
-        private async Task<bool> ExisteImagemAsync(string url)
-        {
-            var cacheKey = $"ImgExiste::{url}";
-
-            if (_cache.TryGetValue(cacheKey, out bool bExiste))
-                return bExiste;
-
-            try
-            {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-                using var client = _httpClientFactory.CreateClient();
-                using var request = new HttpRequestMessage(HttpMethod.Head, url);
-                using var response = await client.SendAsync(request, cts.Token);
-
-                bExiste = response.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Falha ao checar existência de imagem em {Url}", url);
-
-                bExiste = false;
-            }
-
-            _cache.Set(cacheKey, bExiste, TimeSpan.FromHours(24));
-
-            return bExiste;
         }
 
         #endregion

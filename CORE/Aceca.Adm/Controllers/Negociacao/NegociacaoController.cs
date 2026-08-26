@@ -317,7 +317,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                         m.ImgDetalhe,
                         IF(m.ImgDetalhe IS NOT NULL,
-                            CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),
                             @ImgDefault) AS ImgDetalheFull
 
                     {sqlFrom}
@@ -699,7 +699,7 @@ namespace Aceca.Adm.Controllers.Admin.Socio
 
                         m.ImgDetalhe,
                         IF(m.ImgDetalhe IS NOT NULL,
-                            CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),
                             @ImgDefault) AS ImgDetalheFull,
 
                         COALESCE(sc.possui, 0) AS possui,

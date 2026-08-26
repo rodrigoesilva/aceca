@@ -343,7 +343,7 @@ namespace Aceca.Adm.Controllers.Pages
 
                         m.ImgDetalhe,
                         IF(m.ImgDetalhe IS NOT NULL,
-                            CONCAT(@ImgBase,'/detalhes/',m.ImgDetalhe),
+                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),
                             @ImgDefault) AS ImgDetalheFull,
 
                         sc.observacao
