@@ -47,9 +47,12 @@ namespace Aceca.Adm.Services
         // O usuário digitou de novo no filtro/busca antes da requisição anterior terminar
         // (DataTables aborta o ajax pendente sozinho ao disparar um novo), fechou a aba, ou a
         // conexão caiu no meio da leitura/escrita - nenhum desses é um bug da aplicação, é o
-        // cliente indo embora. Sem esse filtro, todo IOException "The client has disconnected"
-        // (comum em requisições mais lentas, ex.: Acervo.FiltrarDados checando existência de
-        // imagem por HTTP) virava e-mail de "erro real" pro time de TI.
+        // cliente indo embora. Sem esse filtro, todo IOException de desconexão virava e-mail de
+        // "erro real" pro time de TI - tanto "The client has disconnected" (lido na PRÓXIMA
+        // requisição, comum quando Acervo.FiltrarDados demora checando existência de imagem por
+        // HTTP) quanto "The client reset the request stream" (Kestrel/ConnectionResetException,
+        // lançada durante a leitura do CORPO da própria requisição quando o navegador aborta o
+        // ajax anterior via RST_STREAM antes do servidor terminar de ler).
         private static bool EhDesconexaoDeCliente(HttpContext? httpContext, Exception ex)
         {
             var clienteAbandonouRequisicao = httpContext?.RequestAborted.IsCancellationRequested == true;
@@ -62,7 +65,8 @@ namespace Aceca.Adm.Services
                 OperationCanceledException => clienteAbandonouRequisicao,
                 IOException => clienteAbandonouRequisicao
                             && (ex.Message.Contains("client has disconnected", StringComparison.OrdinalIgnoreCase)
-                             || ex.Message.Contains("client disconnected", StringComparison.OrdinalIgnoreCase)),
+                             || ex.Message.Contains("client disconnected", StringComparison.OrdinalIgnoreCase)
+                             || ex.Message.Contains("reset the request stream", StringComparison.OrdinalIgnoreCase)),
                 _ => ex.InnerException != null && EhDesconexaoDeCliente(httpContext, ex.InnerException)
             };
         }

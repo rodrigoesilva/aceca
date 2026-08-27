@@ -125,6 +125,7 @@ namespace Aceca.Adm.Controllers.Acervo
                 LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
                 LEFT JOIN socio_colecao sc ON sc.marcaId = m.id AND sc.socioId = @SocioIdAutenticado
                 WHERE 1=1
+                AND m.ativo = 1
                 ");
 
                 var parameters = new DynamicParameters();
@@ -1063,7 +1064,7 @@ namespace Aceca.Adm.Controllers.Acervo
                                     .OrderByDescending(x => x.CodigoAceca)
                                     .Take(2);
                             }
-                            break;
+                            break; 
                         case EFase.QRCode136:
                             {
                                 query = _db.Marca
