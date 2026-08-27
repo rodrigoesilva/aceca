@@ -16,9 +16,13 @@ let var_Nome = 'Listagem',
 
 let var_Filtrado = false,
     var_ImgAlt = "ACECA",
-    urlImgModal = "../img/logo/logo.png",
-    urlImgModalIcon = "../img/logo/logo01.png",
-    urlImgModaltext = "../img/logo/logo02.png";
+    // Caminho raiz-absoluto (nao "../...") - a pagina desta tela e servida em
+    // /Acervo/Index/{id} (3 segmentos depois da raiz), entao "../img/..." resolvia
+    // pra /Acervo/img/... (errado) em vez de /img/... - por isso a logo nao
+    // aparecia nos Swal.fire com imageUrl (imagem quebrada, naturalWidth 0).
+    urlImgModal = "/img/logo/logo.png",
+    urlImgModalIcon = "/img/logo/logo01.png",
+    urlImgModaltext = "/img/logo/logo02.png";
 
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
