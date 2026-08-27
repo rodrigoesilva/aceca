@@ -419,10 +419,15 @@ function fn_ImageProtect() {
 
     var _devOpen = false;
 
-    function _setDevToolsOpen(open) {
+    function _setDevToolsOpen(open, reason) {
         if (open && !_devOpen) {
             _devOpen = true;
-            _reportar(_lastImg, 'devtools-open');
+            // reason carrega qual heurística disparou (bySize/byTiming) e os valores
+            // medidos no 2º hit consecutivo - diagnóstico temporário (ver nota acima da
+            // detecção) pra confirmar a causa raiz de falsos positivos relatados em
+            // produção antes de decidir o próximo ajuste. Some do 'acao' assim que o
+            // diagnóstico feito, não é informação que precisa ficar salva pra sempre.
+            _reportar(_lastImg, 'devtools-open' + (reason ? (' [' + reason + ']') : ''));
             document.querySelectorAll(SEL).forEach(function (el) {
                 el.style.filter = 'blur(14px)';
             });
@@ -442,6 +447,7 @@ function fn_ImageProtect() {
     // Exigir 2 detecções seguidas (checks rodam a cada 800ms) filtra esse ruído mantendo
     // a detecção real (que fica aberta por segundos, não um instante só).
     var _hits = 0;
+    var _lastHitReason = '';
 
     function _devCheck() {
         // Aba em segundo plano ou janela sem foco: o browser já throttla os timers
@@ -460,15 +466,19 @@ function fn_ImageProtect() {
         var t0        = performance.now();
         // eslint-disable-next-line no-debugger
         debugger;
-        var byTiming  = (performance.now() - t0) > 150;
+        var elapsed   = performance.now() - t0;
+        var byTiming  = elapsed > 150;
 
         if (bySize || byTiming) {
             _hits++;
+            _lastHitReason = 'bySize=' + bySize + ' wDiff=' + wDiff + ' hDiff=' + hDiff
+                + ' byTiming=' + byTiming + ' ms=' + elapsed.toFixed(1)
+                + ' dpr=' + window.devicePixelRatio + ' hits=' + _hits;
         } else {
             _hits = 0;
         }
 
-        _setDevToolsOpen(_hits >= 2);
+        _setDevToolsOpen(_hits >= 2, _lastHitReason);
     }
 
     // Navegadores mobile "normais" (sem cabo + Web Inspector habilitado no Mac)
