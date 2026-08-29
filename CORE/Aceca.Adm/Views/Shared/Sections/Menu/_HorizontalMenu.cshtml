@@ -187,10 +187,20 @@
                                 @if (User.IsInRole("Administracao"))
                                 {
                                     <li class='menu-item@(currentPage == "/Cadastro/Acervo" ? " active" : "")'>
-                                        <a asp-controller="Acervo" asp-action="Cadastro" class="menu-link">
+                                        <a asp-controller="Cadastro" asp-action="CadastroAcervo" class="menu-link">
                                             <i class="menu-icon tf-icons ri-archive-line"></i>
                                             <div data-i18n="Marcas">Marcas</div>
                                         </a>
+                                    </li>
+
+                                    <li class='menu-item@(currentPage == "/Cadastro/Aprovacao" ? " active" : "")'>
+                                        <a asp-controller="Cadastro" asp-action="Index" class="menu-link">
+                                            <i class="menu-icon icon-base ri ri-checkbox-multiple-line"></i>
+                                            <div data-i18n="Lista de Aprovação">Lista de Aprovação</div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <div class="dropdown-divider"></div>
                                     </li>
                                 }
 
@@ -483,6 +493,31 @@
                         </li>
 
                         <!-- Cadastro -->
+                        <li class='menu-item@(currentPage.StartsWith("/Cadastro") ? " active" : "")'>
+                            <a href="javascript:void(0)" class="menu-link menu-toggle">
+                                <i class="menu-icon icon-base ri ri-checkbox-multiple-blank-line"></i>
+                                <div data-i18n="Cadastro">Cadastro</div>
+                            </a>
+                            <ul class="menu-sub">
+                                <!-- Marcas/Aprovação - abertos a qualquer role da classe (Administracao,
+                                     Fundador, MembroHonra, Socio); a Aprovação já filtra server-side
+                                     (Administracao vê tudo, os demais só o que eles mesmos enviaram). -->
+                                <li class='menu-item@(currentPage == "/Cadastro/Acervo" ? " active" : "")'>
+                                    <a asp-controller="Cadastro" asp-action="CadastroAcervo" class="menu-link">
+                                        <i class="menu-icon tf-icons ri-archive-line"></i>
+                                        <div data-i18n="Marcas">Marcas</div>
+                                    </a>
+                                </li>
+
+                                <li class='menu-item@(currentPage == "/Cadastro/Aprovacao" ? " active" : "")'>
+                                    <a asp-controller="Cadastro" asp-action="Index" class="menu-link">
+                                        <i class="menu-icon tf-icons ri-checkbox-multiple-line"></i>
+                                        <div data-i18n="Lista de Aprovação">Lista de Aprovação</div>
+                                    </a>
+                                </li>
+                                
+                            </ul>
+                        </li>
 
                     </ul>
                 </li>

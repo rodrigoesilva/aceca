@@ -318,6 +318,56 @@ namespace Aceca.Adm.Models
 
     #endregion
 
+    #region Marca Cadsatro
+
+    [Table("marcas_cadastro")]
+    public class MarcaCadastro : BaseModel
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int? Id { get; set; }
+        public int? MarcaAcervoId { get; set; }
+        public int? MarcaDimensaoId { get; set; }
+        public int? MarcaFabricaId { get; set; }
+        [Column("fabrica_txt")] public string? TxtFabrica { get; set; } = null;
+        public int? MarcaFaseId { get; set; }
+        public int? MarcaFaseAcervoId { get; set; }
+
+        public int? MarcaFinalidadeId { get; set; }
+        public int? MarcaImpressoraId { get; set; }
+        [Column("impressora")] public string? TxtImpressora { get; set; } = null;
+        public int? MarcaQualidadeImagemId { get; set; }
+        public int? MarcaRaridadeId { get; set; }
+        public int? MarcaSubTipoId { get; set; }
+        public string? CodigoAceca { get; set; } = null;
+        public string? CodigoAcecaNew { get; set; } = null;
+        [Column("codigoSC")] public string? CodigoFabrica { get; set; } = null;
+        public string? ImgPrincipal { get; set; } = null;
+        public string? ImgDetalhe { get; set; } = null;
+        public string? Nome { get; set; } = null;
+        public string? Descricao { get; set; } = null;
+        public string? Valor1PI { get; set; } = null;
+        public string? Valor2PI { get; set; } = null;
+        public string? Valor { get; set; } = null;
+        public string? IncluidoPor { get; set; } = null;
+        public string? IncluidoPorSocioId { get; set; } = null;
+        public string? AprovadoPorSocioId { get; set; } = null;
+        public int? StatusCadastro { get; set; }
+        public MarcaAcervo? MarcaAcervo { get; set; }
+        public MarcaDimensao? MarcaDimensao { get; set; }
+        public MarcaFabrica? MarcaFabrica { get; set; }
+        public MarcaFase? MarcaFase { get; set; }
+        public MarcaFinalidade? MarcaFinalidade { get; set; }
+        public MarcaImpressora? MarcaImpressora { get; set; }
+        public MarcaQualidadeImagem? MarcaQualidadeImagem { get; set; }
+        public MarcaRaridade? MarcaRaridade { get; set; }
+        public MarcaSubTipo? MarcaSubTipo { get; set; }
+        //[ValidateNever] public ICollection<SocioColecao>? SociosColecao { get; set; }
+    }
+
+
+    #endregion
+
     #region Pais
     [Table("paises")]
     public class Pais : BaseModel
