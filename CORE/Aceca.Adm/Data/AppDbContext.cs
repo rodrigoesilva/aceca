@@ -63,6 +63,7 @@ namespace Aceca.Adm.Data
 
         #region Marca
         public DbSet<Marcas> Marca { get; set; }
+        public DbSet<MarcaCadastro> MarcaCadastro { get; set; }
         public DbSet<MarcaDimensao> MarcaDimensao { get; set; }
         public DbSet<MarcaFabrica> MarcaFabrica { get; set; }
         public DbSet<MarcaFase> MarcaFase { get; set; }

@@ -396,3 +396,15 @@ table.dataTable.dtr-column > tbody > tr.parent > th.control::before {
             display: none
         }
     }
+
+/* ════ MENU - ícones do submenu de 2º nível (ex.: Cadastro > Marcas/Aprovação/
+   Dimensão/...) ════ */
+/* core.css (vendor) tem duas regras concorrentes pro mesmo nível de submenu, uma
+   pedindo 0.65rem e outra 12px - o resultado final dependia de qual delas "ganhava"
+   por especificidade/ordem, deixando o tamanho instável entre itens. Fixa um único
+   valor aqui, sobrepondo as duas. */
+.menu-horizontal .menu-inner > .menu-item > .menu-sub .menu-sub .menu-icon,
+.menu-horizontal .menu-inner > .menu-item > .menu-sub .menu-sub .menu-icon::before {
+    font-size: 12px !important;
+    line-height: 1 !important;
+}

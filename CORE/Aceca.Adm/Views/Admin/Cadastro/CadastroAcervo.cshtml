@@ -1,4 +1,5 @@
 @using Aceca.Adm.VMModels
+@using System.Security.Claims
 @model VMMarca
 
 @{
@@ -9,6 +10,11 @@
     // (admin-acervo-cadastro.js era a 2ª tag real aqui, atrás de forms-selects.js).
     var urlFormsSelects = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/forms-selects.js");
     var urlAdminAcervoCadastro = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/js/admin/acervo/admin-acervo-cadastro.js");
+
+    // Quem não é Administracao só pode se autocreditar como "Incluído por" - o
+    // JS trava o combo cmbPop_IncluidoSocio nesse Id (ver fn_TravarIncluidoPorNaoAdmin
+    // em admin-acervo-cadastro.js).
+    var socioLogadoId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0";
 }
 
 @section VendorStyles {
@@ -18,6 +24,11 @@
 }
 
 @section PageScripts {
+    <script>
+        let isAdministracao = @(User.IsInRole("Administracao") ? "true" : "false");
+        let socioLogadoId = @socioLogadoId;
+    </script>
+
     <!-- Select Dropdownlist -->
     <script src="@urlFormsSelects" defer></script>
 

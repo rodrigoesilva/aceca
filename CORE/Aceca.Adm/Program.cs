@@ -307,8 +307,11 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 else {
-    app.UseExceptionHandler("/Error");
-    
+    // ErrorController.HttpStatusCodeHandler exige {statusCode} na rota ("Error/{statusCode}")
+    // - "/Error" sozinho não bate com nenhuma rota (404 dentro do próprio exception handler,
+    // perdendo a tela de erro real). "/Error/500" sempre cai no branch default (genérico).
+    app.UseExceptionHandler("/Error/500");
+
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 
@@ -696,6 +699,102 @@ using (var scopeTeste = app.Services.CreateScope())
     catch (Exception ex)
     {
         testeLogger.LogWarning(ex, "Não foi possível garantir o parâmetro TesteGratisDuracaoHoras em adm_config");
+    }
+}
+
+// Fluxo de aprovação de Cadastro de Marcas — tabela de staging marcas_cadastro (Create do
+// Cadastro/Controller grava aqui com StatusCadastro=Pendente em vez de direto em `marcas`;
+// só é promovido pra `marcas` quando um Administracao Aprova via Cadastro/SetStatus).
+// Idempotente, mesmo padrão de cadastro_teste acima. CREATE TABLE cobre ambiente onde a
+// tabela ainda não existe; ADD COLUMN/MODIFY COLUMN cobrem o `aceca_db_dev` atual, onde a
+// tabela já foi criada manualmente sem a coluna criadoPorSocioId e com aprovadoPorSocioId
+// no tipo errado (tinyint(1), boolean) em vez de INT (id do sócio que aprovou/negou).
+using (var scopeMarcaCadastro = app.Services.CreateScope())
+{
+    var dbMarcaCadastro = scopeMarcaCadastro.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var marcaCadastroLogger = scopeMarcaCadastro.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var errorLogMarcaCadastro = scopeMarcaCadastro.ServiceProvider.GetRequiredService<Aceca.Adm.Services.ErrorLogService>();
+
+    try
+    {
+        await dbMarcaCadastro.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS marcas_cadastro (
+                id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                marcaAcervoId INT UNSIGNED NULL DEFAULT 1,
+                marcaDimensaoId INT UNSIGNED NULL,
+                marcaFabricaId INT UNSIGNED NULL,
+                fabrica_txt VARCHAR(255) NULL,
+                marcaFaseId INT UNSIGNED NULL DEFAULT 0,
+                marcaFaseAcervoId INT NULL,
+                marcaFinalidadeId INT UNSIGNED NULL,
+                marcaImpressoraId INT UNSIGNED NULL,
+                impressora VARCHAR(50) NULL,
+                marcaQualidadeImagemId INT UNSIGNED NULL,
+                marcaRaridadeId INT UNSIGNED NULL,
+                marcaSubTipoId INT UNSIGNED NULL,
+                codigoAceca VARCHAR(50) NULL,
+                codigoAcecaNew VARCHAR(50) NULL,
+                codigoSC VARCHAR(50) NULL,
+                imgPrincipal VARCHAR(100) NULL,
+                imgDetalhe VARCHAR(100) NULL,
+                nome VARCHAR(255) NULL,
+                descricao TEXT NULL,
+                valor1PI VARCHAR(10) NULL,
+                valor2PI VARCHAR(10) NULL,
+                valor VARCHAR(10) NULL,
+                incluidoPor VARCHAR(255) NULL,
+                incluidoPorSocioId VARCHAR(50) NULL,
+                criadoPorSocioId INT NULL,
+                aprovadoPorSocioId INT NULL,
+                statusCadastro INT NULL,
+                observacao VARCHAR(500) NULL,
+                ativo TINYINT NULL DEFAULT 1,
+                dataCriacao DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+                dataAtualizacao DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+    catch (Exception ex)
+    {
+        marcaCadastroLogger.LogWarning(ex, "Não foi possível garantir a tabela marcas_cadastro");
+        await errorLogMarcaCadastro.RegistrarExcecaoAsync(null, ex);
+    }
+
+    try
+    {
+        if (!await Aceca.Adm.Helper.DbSchemaHelper.ColunaExisteAsync(dbMarcaCadastro.Database, "marcas_cadastro", "criadoPorSocioId"))
+            await dbMarcaCadastro.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE marcas_cadastro ADD COLUMN criadoPorSocioId INT NULL");
+    }
+    catch (Exception ex)
+    {
+        marcaCadastroLogger.LogWarning(ex, "Não foi possível garantir a coluna criadoPorSocioId em marcas_cadastro");
+        await errorLogMarcaCadastro.RegistrarExcecaoAsync(null, ex);
+    }
+
+    try
+    {
+        if (!await Aceca.Adm.Helper.DbSchemaHelper.ColunaExisteAsync(dbMarcaCadastro.Database, "marcas_cadastro", "observacao"))
+            await dbMarcaCadastro.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE marcas_cadastro ADD COLUMN observacao VARCHAR(500) NULL");
+    }
+    catch (Exception ex)
+    {
+        marcaCadastroLogger.LogWarning(ex, "Não foi possível garantir a coluna observacao em marcas_cadastro");
+        await errorLogMarcaCadastro.RegistrarExcecaoAsync(null, ex);
+    }
+
+    try
+    {
+        // MODIFY COLUMN é idempotente por natureza (reaplicar o mesmo tipo não dá erro) -
+        // corrige o tipo errado (tinyint(1)/boolean) criado manualmente em aceca_db_dev.
+        await dbMarcaCadastro.Database.ExecuteSqlRawAsync(
+            "ALTER TABLE marcas_cadastro MODIFY COLUMN aprovadoPorSocioId INT NULL DEFAULT NULL");
+    }
+    catch (Exception ex)
+    {
+        marcaCadastroLogger.LogWarning(ex, "Não foi possível corrigir o tipo da coluna aprovadoPorSocioId em marcas_cadastro");
+        await errorLogMarcaCadastro.RegistrarExcecaoAsync(null, ex);
     }
 }
 

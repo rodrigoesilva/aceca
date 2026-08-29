@@ -1672,7 +1672,12 @@ function fnItem_Edit(varItems_Row) {
     //console.log("fnItem_Edit CLICK ::: ", varItems_Row);
     //var varPop_BtnAction = 'Edit';
 
-    var varAjax_UrlController = `${var_Controller}/Edit`,
+    // Bug real (não desta sessão): batia em `${var_Controller}/Edit` = "/Negociacao/Edit",
+    // que nunca existiu (NegociacaoController não tem Edit) - 404 garantido ao clicar
+    // "Editar" nesta tela. O payload (MarcaFaseId, MarcaTipoId, MarcaSubTipoId, Descricao,
+    // Valor etc.) é exatamente o mesmo que AcervoController.Edit espera - é o mesmo dado
+    // (Marcas), só apontando pro controller errado. Corrigido pra usar o endpoint real.
+    var varAjax_UrlController = `/Acervo/Edit`,
         varAjax_TypeAction = 'POST',
         varAjax_TypeData = 'JSON',
         varAjax_TypeContent = 'application/json; charset=utf-8';

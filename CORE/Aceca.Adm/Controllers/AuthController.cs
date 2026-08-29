@@ -2290,68 +2290,6 @@ namespace Aceca.Adm.Controllers
             return Ok(new { nameIdentifier, nome, cargo, isPerfil });
         }
 
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> GetCookieExpirationAsync()
-        {
-            try
-            {
-                var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                if (authenticateResult.Succeeded)
-                {
-                    var expiresUtc = authenticateResult.Properties.ExpiresUtc;
-                    if (expiresUtc.HasValue)
-                        Console.WriteLine($"Authentication cookie expires at: {expiresUtc.Value}");
-
-                    ViewBag.CookieExpiration = expiresUtc?.LocalDateTime.ToString() ?? "N/A";
-                }
-
-                string expirationDateString = HttpContext.Request.Cookies[
-                    $"{_appConfiguration["Cookie:Key"]?.ToString()}.ExpireDateTime"];
-
-                if (expirationDateString != null &&
-                    DateTimeOffset.TryParse(expirationDateString, out DateTimeOffset expirationDate))
-                    ViewBag.CookieExpiration = expirationDate.LocalDateTime;
-                else
-                    ViewBag.CookieExpiration = "Expiration date not found or invalid.";
-
-                return Ok(new { cookieExpiration = ViewBag.CookieExpiration });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(GetCookieExpirationAsync), ex.Message);
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        #endregion
-
-        // ──────────────────────────────────────────────
-        // ENVIO DE E-MAIL (Forgot Password)
-        // ──────────────────────────────────────────────
-
-        #region Email
-
-        /// <summary>
-        /// Envia o e-mail de reset de senha via SMTP configurado no appsettings.json.
-        /// Configure as chaves: Email:Host, Email:Port, Email:EnableSsl,
-        ///                      Email:From, Email:User, Email:Password, Email:DisplayName
-        /// </summary>
-        public async Task<IActionResult> EnviarEmailResetSenhaAsync(string toEmail, string socioNome, string resetLink)
-        {
-            // 3. Send asynchronously
-            try
-            {
-                await _helperController.EnviarEmailAsync(ETipoEmail.EsqueceuSenha, toEmail, socioNome, resetLink);
-            }
-            catch (SmtpException ex)
-            {
-                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(EnviarEmailResetSenhaAsync), ex.Message);
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-
-            return Ok(true);
-        }
-
         #endregion
 
         // ──────────────────────────────────────────────
@@ -2440,36 +2378,6 @@ namespace Aceca.Adm.Controllers
                 _logger.LogError("ERRO :: {Method} :: {Message}", nameof(GetGeoInfoAsync), ex.Message);
                 return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
             }
-        }
-
-        public async Task<string> GetGeoIPAsync()
-        {
-            string strIP = string.Empty;
-
-            try
-            {
-                var geoUrlBase = _appConfiguration["Geo:Url"]!;
-
-                if (string.IsNullOrEmpty(geoUrlBase))
-                    return strIP;
-
-                var result = await _httpClientFactory.CreateClient().GetStringAsync(geoUrlBase);
-
-                if (string.IsNullOrEmpty(result))
-                    return strIP;
-
-                var node = JsonNode.Parse(result);
-
-                strIP = (string)node["ip"];
-
-                return strIP;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(GetGeoIPAsync), ex.Message);
-                return strIP;
-            }
-
         }
 
         #endregion

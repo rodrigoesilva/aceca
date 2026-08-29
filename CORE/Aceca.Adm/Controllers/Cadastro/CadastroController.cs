@@ -86,7 +86,8 @@ namespace Aceca.Adm.Controllers.Cadastro
 
             return View("~/Views/Admin/Cadastro/CadastroAprovacao.cshtml", modelMarcas);
         }
-        [Authorize(Roles = "Administracao")]
+        // Qualquer role da classe (Administracao, Fundador, MembroHonra, Socio) pode
+        // enviar cadastro pra aprovação - antes era Administracao-only.
         public ActionResult CadastroAcervo()
         {
             return View("~/Views/Admin/Cadastro/CadastroAcervo.cshtml");
@@ -96,8 +97,13 @@ namespace Aceca.Adm.Controllers.Cadastro
 
         #region Consulta LISTAGEM
 
+
+        // Fila de aprovação (tela "Cadastro > Aprovação"). Administracao vê todas as
+        // submissões; qualquer outro usuário vê só as que ele mesmo enviou (CriadoPorSocioId).
+        // Como Aprovar remove a linha de marcas_cadastro (ver SetStatus), essa tabela só
+        // guarda Pendente/Negado - não precisa filtrar status à parte pro caso "minhas".
         [HttpPost]
-        public async Task<IActionResult> FiltrarDados([FromBody] FilterDataMarca request)
+        public async Task<IActionResult> FiltrarDadosAprovacao([FromBody] FilterDataMarca request)
         {
             try
             {
@@ -107,12 +113,13 @@ namespace Aceca.Adm.Controllers.Cadastro
                 var filtro = request.Filtros ?? new FiltroRequestMarca();
 
                 var socioIdAutenticado = GetSocioIdAutenticado();
+                var bVeTodas = User.IsInRole("Administracao");
 
                 var imgBase = _urlBaseImg;
                 var imgDefault = $"{_urlBaseSite}/assets/img/img_inexistente.jpg";
 
                 var sqlFrom = new StringBuilder(@"
-                FROM marcas m
+                FROM marcas_cadastro m
                 LEFT JOIN marcas_acervo ma ON m.marcaAcervoId = ma.id
                 LEFT JOIN marcas_fases mf ON m.marcaFaseId = mf.id
                 LEFT JOIN marcas_finalidade mfi ON m.marcaFinalidadeId = mfi.id
@@ -123,46 +130,30 @@ namespace Aceca.Adm.Controllers.Cadastro
                 LEFT JOIN marcas_raridade mq ON m.marcaQualidadeImagemId = mq.id
                 LEFT JOIN marcas_subtipos mst ON m.marcaSubTipoId = mst.id
                 LEFT JOIN marcas_tipos mt ON mst.marcaTipoId = mt.id
-                LEFT JOIN socio_colecao sc ON sc.marcaId = m.id AND sc.socioId = @SocioIdAutenticado
+                LEFT JOIN socios sCriou ON sCriou.id = m.criadoPorSocioId
+                LEFT JOIN socios sAprovou ON sAprovou.id = m.aprovadoPorSocioId
                 WHERE 1=1
                 AND m.ativo = 1
                 ");
 
                 var parameters = new DynamicParameters();
 
-                parameters.Add("@SocioIdAutenticado", socioIdAutenticado);
-
-                // =========================
-                // FILTROS
-                // =========================
-
-                if (filtro.MarcaAcervoId > 0)
+                if (!bVeTodas)
                 {
-                    if (filtro.MarcaAcervoId != 1 || !filtro.ExibirGeral)
-                    {
-                        sqlFrom.Append(" AND m.marcaAcervoId = @MarcaAcervoId");
-                        parameters.Add("@MarcaAcervoId", filtro.MarcaAcervoId);
-                    }
+                    sqlFrom.Append(" AND m.criadoPorSocioId = @SocioIdAutenticado");
+                    parameters.Add("@SocioIdAutenticado", socioIdAutenticado);
                 }
 
                 if (filtro.MarcaFaseId > 0)
                 {
-                    if (filtro.MarcaAcervoId != 1)
-                    {
-                        sqlFrom.Append(" AND m.marcafaseAcervoId = @MarcaFaseAcervoId");
-                        parameters.Add("@MarcaFaseAcervoId", filtro.MarcaFaseId);
-                    }
-                    else
-                    {
-                        sqlFrom.Append(" AND m.marcaFaseId = @MarcaFaseId");
-                        parameters.Add("@MarcaFaseId", filtro.MarcaFaseId);
-                    }
+                    sqlFrom.Append(" AND m.marcaFaseId = @MarcaFaseId");
+                    parameters.Add("@MarcaFaseId", filtro.MarcaFaseId);
                 }
 
-                if (filtro.MarcaTipoId > 0)
+                if (filtro.StatusCadastro > 0)
                 {
-                    sqlFrom.Append(" AND mst.marcaTipoId = @MarcaTipoId");
-                    parameters.Add("@MarcaTipoId", filtro.MarcaTipoId);
+                    sqlFrom.Append(" AND m.statusCadastro = @StatusCadastroFiltro");
+                    parameters.Add("@StatusCadastroFiltro", filtro.StatusCadastro);
                 }
 
                 if (filtro.MarcaSubTipoId > 0)
@@ -171,79 +162,21 @@ namespace Aceca.Adm.Controllers.Cadastro
                     parameters.Add("@MarcaSubTipoId", filtro.MarcaSubTipoId);
                 }
 
-                // =========================
-                // SEARCH
-                // =========================
-                if (!string.IsNullOrWhiteSpace(request.Search?.Value))
-                {
-                    var rawSearch = request.Search.Value.Trim();
-                    var normalized = Regex.Replace(rawSearch, @"[^\w\s]", " ");
-
-                    var fullTextSearch = string.Join(" ",
-                        normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                                  .Select(s => $"+{s}*")
-                    );
-
-                    bool incluirDescricao = filtro.PesquisarDescricao;
-                    bool termoCurto = rawSearch.Length < 3; // ← detecta termos que o FULLTEXT ignora
-
-                    sqlFrom.Append(" AND (");
-
-                    if (!termoCurto)
-                    {
-                        // FULLTEXT só para termos com 3+ caracteres
-                        sqlFrom.Append(@"
-                            MATCH(m.Nome, m.Descricao, m.CodigoAceca)
-                            AGAINST(@Search IN BOOLEAN MODE)
-                            OR ");
-                    }
-
-                    // LIKE sempre cobre CodigoAceca, codigoAcecaNew e Nome
-                    sqlFrom.Append(@"
-                        m.CodigoAceca LIKE @SearchLike
-                        OR m.codigoAcecaNew LIKE @SearchLike
-                        OR m.Nome LIKE @SearchLike
-                        ");
-
-                    // Descrição só se checkbox ativo
-                    if (incluirDescricao)
-                    {
-                        sqlFrom.Append(@" OR m.Descricao LIKE @SearchLike ");
-                    }
-
-                    sqlFrom.Append(")");
-
-                    parameters.Add("@Search", fullTextSearch);
-                    parameters.Add("@SearchLike", $"%{rawSearch}%");
-                }
-
-                // fallback
-                else if (!string.IsNullOrWhiteSpace(filtro.NomeMarca))
+                if (!string.IsNullOrWhiteSpace(filtro.NomeMarca))
                 {
                     sqlFrom.Append(" AND m.Nome LIKE @Nome");
                     parameters.Add("@Nome", $"%{filtro.NomeMarca}%");
                 }
 
-                if (filtro.PesquisarSemVariante)
-                {
-                    sqlFrom.Append(" AND m.codigoAceca REGEXP '[0-9]$'");
-                }
-
-                // =========================
-                // ORDENAÇÃO
-                // =========================
-
-                // Mapeia o índice de coluna enviado pelo DataTables (client) para a
-                // coluna SQL correspondente. Mantém alinhado com admin-acervo-listagem.js::columns.
                 var colunasOrdenaveis = new Dictionary<int, string>
                 {
-                    { 1, "m.CodigoAceca" },
-                    { 2, "m.Nome" },
-                    { 5, "m.Descricao" },
-                    { 6, "COALESCE(mfa.Nome, m.fabrica_txt)" },
-                    { 7, "mst.Descricao" },
-                    { 8, "mfi.Descricao" },
-                    { 9, "mf.Descricao" },
+                    { 1, "sCriou.Nome" },
+                    { 2, "ma.Descricao" },
+                    { 3, "mf.Descricao" },
+                    { 6, "m.CodigoAceca" },
+                    { 7, "m.Nome" },
+                    { 8, "m.Descricao" },
+                    { 9, "mt.Descricao" },
                 };
 
                 var orderByPartes = new List<string>();
@@ -261,64 +194,28 @@ namespace Aceca.Adm.Controllers.Cadastro
                 }
 
                 if (orderByPartes.Count == 0)
-                {
-                    orderByPartes.Add("m.Nome ASC");
-                }
+                    orderByPartes.Add("m.dataCriacao DESC");
 
                 var orderBySql = string.Join(", ", orderByPartes);
 
-                // =========================
-                // COUNT
-                // =========================
-
-                var totalSql = "SELECT COUNT(1) FROM marcas";
+                var totalSql = "SELECT COUNT(1) FROM marcas_cadastro WHERE ativo = 1" + (bVeTodas ? "" : " AND criadoPorSocioId = @SocioIdAutenticado");
                 var filteredSql = "SELECT COUNT(1) " + sqlFrom;
-
-                // =========================
-                // DATA
-                // =========================
 
                 var dataSql = $@"
                     SELECT
                         m.id AS Id,
-                        ma.id AS IdMarcaAcervo,
-                        mf.id AS IdMarcaFase,
-                        mfi.id AS IdMarcaFinalidade,
-                        mfa.id AS IdMarcaFabrica,
-                        md.id AS IdMarcaDimensao,
-                        mt.id AS IdMarcaTipo,
-                        mst.id AS IdMarcaSubTipo,
-                        mi.id AS IdMarcaImpressora,
-                        mr.id AS IdMarcaRaridade,
-                        mq.id AS IdQualidadeImagem,
-
-                         -- m.codigoAcecaNew,
-                        CASE
-                            WHEN m.codigoAcecaNew IS NOT NULL
-                            THEN CONCAT(m.codigoAcecaNew, '/', m.CodigoAceca)
-                            ELSE m.CodigoAceca
-                        END AS CodigoAceca,
-
-                        m.Nome AS NomeMarca,                        
+                        m.CodigoAceca,
+                        m.Nome AS NomeMarca,
                         ma.Descricao AS NomeAcervo,
                         mf.Descricao AS NomeFase,
-                        mfa.Nome AS NomeFabrica,
-                        md.Descricao AS NomeDimensao,
-                        mfi.Descricao AS NomeFinalidade,
-                        mi.Descricao AS NomeImpressora,
-                        mr.Descricao AS NomeRaridade,
-                        mq.Descricao AS NomeQualidade,
-                        mst.Descricao AS SubTipo,
                         mt.Descricao AS Tipo,
-                        m.fabrica_txt AS TxtFabrica,
-                        m.impressora AS TxtImpressora,
-
+                        mst.Descricao AS SubTipo,
                         m.Descricao,
-                        m.IncluidoPor,
-
-                        m.Valor,
-                        m.Valor1PI,
-                        m.Valor2PI,
+                        m.StatusCadastro,
+                        m.Observacao,
+                        sCriou.Nome AS CriadoPorNome,
+                        sAprovou.Nome AS AprovadoPorNome,
+                        m.dataCriacao AS DataCriacao,
 
                         m.ImgPrincipal,
                         IF(m.ImgPrincipal IS NOT NULL,
@@ -328,10 +225,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                         m.ImgDetalhe,
                         IF(m.ImgDetalhe IS NOT NULL,
                             CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),
-                            @ImgDefault) AS ImgDetalheFull,
-
-                        COALESCE(sc.possui, 0) AS Possui,
-                        COALESCE(sc.interesse, 0) AS Interesse
+                            @ImgDefault) AS ImgDetalheFull
 
                     {sqlFrom}
 
@@ -346,7 +240,11 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                 using var conn = _db.Database.GetDbConnection();
 
-                var total = await conn.ExecuteScalarAsync<int>(totalSql);
+                var totalParams = new DynamicParameters();
+                if (!bVeTodas)
+                    totalParams.Add("@SocioIdAutenticado", socioIdAutenticado);
+
+                var total = await conn.ExecuteScalarAsync<int>(totalSql, totalParams);
                 var filtered = await conn.ExecuteScalarAsync<int>(filteredSql, parameters);
 
                 var lstData = (await conn.QueryAsync(dataSql, parameters))
@@ -363,7 +261,7 @@ namespace Aceca.Adm.Controllers.Cadastro
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro FiltrarDados");
+                _logger.LogError(ex, "Erro FiltrarDadosAprovacao");
 
                 return BadRequest(new { error = true, message = ex.Message });
             }
@@ -371,169 +269,96 @@ namespace Aceca.Adm.Controllers.Cadastro
 
         #endregion
 
-        #region Filtros
+        #region Aprovação
 
-        [HttpPost]
-        public async Task<IActionResult> GetFullByIdFase(int idFase, string nome, bool bvariante)
+        public class VMSetStatusCadastro
         {
-            string strNovoCodigoAceca = string.Empty;
-
-            if (idFase < 1 || string.IsNullOrWhiteSpace(nome))
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "GetFullByIdFase - Id deve ser maior que 0",
-                    data = idFase
-                });
-
-            try
-            {
-                EFase FaseSel = (EFase)idFase;
-
-                var msgErroData = $"idMarcaFase :: {idFase} , NomeMarca :: {nome}";
-
-                var strLetraInicial = nome.Trim()[0].ToString();
-
-                var query = _db.Marca
-                    .AsNoTracking()
-                    .Where(x => x.MarcaFaseId.Equals(idFase));
-
-                if (FaseSel.Equals(EFase.SA)
-                    || (idFase >= 27 && idFase <= 29)
-                    || (idFase >= 32 && idFase <= 34)
-                    || FaseSel.Equals(EFase.Comemorativas)
-                    || (idFase >= 39 && idFase <= 41))
-                    {
-                        query = query.Where(x => x.CodigoAceca != null && x.Nome.Contains(nome.Trim().ToString()));
-                       // query = query.Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(nome.Trim()[0].ToString()))
-                   }
-
-                query.OrderByDescending(x => x.CodigoAceca);
-
-                var lstModel = await query
-                    .AsNoTracking()
-                    .AsQueryable()
-                    //.ToListAsync()
-                    .FirstOrDefaultAsync();
-
-                if (lstModel == null)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = true,
-                        type = "ERRO - GetFullByIdFase - lstModel",
-                        message = "listagem Nula",
-                        data = msgErroData
-                    });
-                }
-
-                //var strCodigoAceca = lstmodel?.OrderByDescending(c => c.CodigoAceca)?.FirstOrDefault()?.CodigoAceca?.ToString();
-                var strCodigoAceca = lstModel?.CodigoAceca?.ToString();
-
-                string strNumCodigoAceca = new string(strCodigoAceca?.Where(char.IsDigit).ToArray());
-
-                if (string.IsNullOrEmpty(strNumCodigoAceca))
-                {
-                    return BadRequest(new
-                    {
-                        bResult = true,
-                        type = "ERRO - GetFullByIdFase - lstModel",
-                        message = "strNumCodigoAceca Nula",
-                        data = msgErroData
-                    });
-                }
-
-                if (int.TryParse(strNumCodigoAceca, out int intNumCodigoAceca))
-                    if (!bvariante)
-                    {
-                        strNovoCodigoAceca = strCodigoAceca?.Replace(intNumCodigoAceca.ToString(), (intNumCodigoAceca + 1).ToString());
-                    }
-                    else
-                    {
-                        var strUltimaLetraCodigoAceca = strCodigoAceca[^1];
-
-                        char charProximaLetraCodigoAceca = (char)(strUltimaLetraCodigoAceca + 1);
-
-                        strNovoCodigoAceca = ReplaceInPosition(strCodigoAceca.ToString(), strCodigoAceca.Length - 1, charProximaLetraCodigoAceca);
-                    }
-
-                if (string.IsNullOrEmpty(strNovoCodigoAceca))
-                {
-                    return BadRequest(new
-                    {
-                        bResult = true,
-                        type = "ERRO - GetFullByIdFase - lstModel",
-                        message = "strNovoCodigoAceca Nula",
-                        data = msgErroData
-                    });
-                }
-
-                return Ok(new
-                {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = strNovoCodigoAceca
-                });
-            }
-            catch (Exception ex)
-            {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
-            }
+            public int Id { get; set; }
+            public int Status { get; set; }
+            public string Observacao { get; set; }
         }
 
+        // Admin decide o destino de uma submissão. Aprovar promove pra `marcas` (mesmo
+        // mapeamento de campos que o Create original fazia direto) e remove de
+        // marcas_cadastro; Negar/Pendente só atualizam a linha in-place. Quem setou o
+        // status (seja qual for) fica gravado em AprovadoPorSocioId.
         [HttpPost]
-        public async Task<IActionResult> GetTipoByIdFase(int id)
+        [Authorize(Roles = "Administracao")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetStatus([FromBody] VMSetStatusCadastro request)
         {
-            var msgErroData = $"idMarcaFase :: {id}";
-
-            if (id < 1)
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "GetTipoByIdFase - Id deve ser maior que 0",
-                    data = id
-                });
-
             try
             {
-                var lstModel = await _db.Marca
-                    .DistinctBy(x => x.MarcaSubTipo.MarcaTipoId)
-                    .Where(x => x.MarcaFaseId.Equals(id))
-                    .Include(x => x.MarcaSubTipo)
-                    .Include(x => x.MarcaSubTipo.MarcaTipo)
-                    .AsNoTracking()
-                    .OrderBy(x => x.MarcaSubTipo.MarcaTipoId)
-                    .ToListAsync();
+                if (request == null || request.Id < 1)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Id deve ser maior que 0" });
 
-                if (lstModel == null)
+                if (!Enum.IsDefined(typeof(EStatusCadastro), request.Status))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Status inválido" });
+
+                var statusNovo = (EStatusCadastro)request.Status;
+
+                if (statusNovo == EStatusCadastro.Negado && string.IsNullOrWhiteSpace(request.Observacao))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Observação é obrigatória para negar um cadastro" });
+
+                var model = await _db.MarcaCadastro.FirstOrDefaultAsync(x => x.Id == request.Id);
+
+                if (model == null)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Cadastro não encontrado" });
+
+                model.AprovadoPorSocioId = GetSocioIdAutenticado();
+                model.StatusCadastro = (int)statusNovo;
+                model.Observacao = statusNovo == EStatusCadastro.Negado ? request.Observacao.Trim() : null;
+
+                if (statusNovo == EStatusCadastro.Aprovado)
                 {
-                    return BadRequest(new
+                    var marca = new Marcas
                     {
-                        bResult = true,
-                        type = "ERRO - GetFullByIdFase - lstModel",
-                        message = "listagem Nula",
-                        data = msgErroData
-                    });
+                        Ativo = true,
+
+                        MarcaAcervoId = model.MarcaAcervoId,
+                        MarcaDimensaoId = model.MarcaDimensaoId,
+                        MarcaFabricaId = model.MarcaFabricaId,
+                        MarcaFaseId = model.MarcaFaseId,
+                        MarcaFaseAcervoId = model.MarcaFaseAcervoId,
+                        MarcaFinalidadeId = model.MarcaFinalidadeId,
+                        MarcaImpressoraId = model.MarcaImpressoraId,
+                        MarcaQualidadeImagemId = model.MarcaQualidadeImagemId,
+                        MarcaRaridadeId = model.MarcaRaridadeId,
+                        MarcaSubTipoId = model.MarcaSubTipoId,
+
+                        CodigoAceca = model.CodigoAceca,
+                        CodigoAcecaNew = model.CodigoAcecaNew,
+                        CodigoFabrica = model.CodigoFabrica,
+                        ImgPrincipal = model.ImgPrincipal,
+                        ImgDetalhe = model.ImgDetalhe,
+                        Nome = model.Nome,
+                        Descricao = model.Descricao,
+                        Valor1PI = model.Valor1PI,
+                        Valor2PI = model.Valor2PI,
+                        Valor = model.Valor,
+                        IncluidoPor = model.IncluidoPor,
+                        IncluidoPorSocioId = model.IncluidoPorSocioId,
+                        // EmQuarentena não existe em marcas_cadastro hoje - assume o
+                        // default (0) igual ao Create original quando nada é informado.
+                        EmQuarentena = 0,
+                        ExibirGeral = true,
+
+                        TxtFabrica = model.TxtFabrica,
+                        TxtImpressora = model.TxtImpressora,
+                    };
+
+                    _db.Marca.Add(marca);
+                    _db.MarcaCadastro.Remove(model);
                 }
+
+                await _db.SaveChangesAsync();
 
                 return Ok(new
                 {
                     bResult = true,
                     type = "OK",
                     message = "SUCESSO ::: ",
-                    data = lstModel,
+                    data = new { model.Id, StatusCadastro = model.StatusCadastro }
                 });
             }
             catch (Exception ex)
@@ -542,21 +367,19 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                 _logger.LogError(mensagemErro);
 
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
+                return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
             }
         }
 
         #endregion
 
+
         #region CRUD JS
 
+        // Qualquer role da classe pode enviar cadastro pra aprovação (antes era
+        // Administracao-only) - CriadoPorSocioId sempre é o autenticado, nunca vem do
+        // cliente, então não há como um sócio se passar por outro aqui.
         [HttpPost]
-        [Authorize(Roles = "Administracao")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string strObjModel, IFormFile iFileImgPrincipal, IFormFile iFileImgDetalhe)
         {
@@ -678,12 +501,15 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                 #endregion
 
-                #region obj Marca
+                #region obj MarcaCadastro
 
                 // 1. Convert to Title Case
                 TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
 
-                var model = new Marcas
+                // Etapa intermediária de aprovação: o cadastro não entra mais direto em
+                // `marcas` - fica em `marcas_cadastro` com StatusCadastro=Pendente até um
+                // Administracao Aprovar (ver SetStatus, que promove pra `marcas`) ou Negar.
+                var model = new MarcaCadastro
                 {
                     Ativo = true,
 
@@ -710,8 +536,12 @@ namespace Aceca.Adm.Controllers.Cadastro
                     Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor?.Trim() : null,
                     IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? textInfo.ToTitleCase(vmModel?.IncluidoPor?.Trim()?.ToLower()) : null,
                     IncluidoPorSocioId = !string.IsNullOrEmpty(vmModel?.IncluidoPorSocioId) ? string.Concat(vmModel?.IncluidoPorSocioId?.Trim(), ",") : null,
-                    EmQuarentena = !string.IsNullOrEmpty(vmModel?.EmQuarentena?.ToString()) ? vmModel?.EmQuarentena : 0,
-                    ExibirGeral = true,
+
+                    // Quem enviou de fato (autenticado no servidor - nunca vem do cliente),
+                    // diferente de IncluidoPorSocioId (crédito histórico de quem achou o
+                    // item, escolhido livremente no combo do formulário).
+                    CriadoPorSocioId = GetSocioIdAutenticado(),
+                    StatusCadastro = (int)EStatusCadastro.Pendente,
 
                     //
                     TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome?.Trim() : null,
@@ -720,7 +550,7 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                 #endregion
 
-                _db.Marca.Add(model);
+                _db.MarcaCadastro.Add(model);
                 await _db.SaveChangesAsync();
 
                 if (model?.Id <= 0)
@@ -761,13 +591,13 @@ namespace Aceca.Adm.Controllers.Cadastro
         [HttpPost]
         [Authorize(Roles = "Administracao")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Models.Marcas model)
+        public async Task<IActionResult> Edit(Models.MarcaCadastro model)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
-                    #region Marca
+                    #region MarcaCadastro
 
                     if (model.Id < 1)
                     {
@@ -904,7 +734,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                     });
                 }
 
-                var model = await _db.Marca.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+                var model = await _db.MarcaCadastro.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
 
                 if (model == null)
                     return Ok(new
@@ -915,7 +745,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                         data = id
                     });
 
-                _db.Marca.Remove(model);
+                _db.MarcaCadastro.Remove(model);
                 await _db.SaveChangesAsync();
 
                 return Ok(new
@@ -1362,31 +1192,6 @@ namespace Aceca.Adm.Controllers.Cadastro
             chars[index] = newChar;
             return new string(chars);
         }
-
-        public async Task<MarcaAcervo> GetMarcaAcervoById(int id)
-        {
-            try
-            {
-                if (id < 1)
-                    return null;
-
-                var model = await _db.MarcaAcervo.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
-
-                if (model == null)
-                    return null;
-
-                return model;
-            }
-            catch (Exception ex)
-            {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-
-                _logger.LogError(mensagemErro);
-
-                return null;
-            }
-        }
-
         #endregion
 
         #region Upload Img

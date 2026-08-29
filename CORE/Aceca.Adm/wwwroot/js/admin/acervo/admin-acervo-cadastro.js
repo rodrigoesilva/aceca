@@ -7,7 +7,7 @@
 //#region Declare
 
 let var_Nome = 'Cadastro',
-    var_Controller = '/Acervo',
+    var_Controller = '/Cadastro',
     var_ControllerCmb = '/HelperExtensions';
 
 let var_ImgAlt = "ACECA",
@@ -532,6 +532,13 @@ function fn_LoadCmb_MarcaVariante() {
                         $("#cmbPop_MarcaVariante").append($("<option></option>").val(result.value).html(result.text));
                         $("#cmbPop_IncluidoPor").append($("<option></option>").val(result.value).html(result.text));
                     });
+
+                    // Quem não é Administracao é sempre o próprio incluidor - trava o
+                    // toggle em "Sim" (valor 1 = ESimNao.Sim) e desabilita (ver
+                    // fn_LoadCmb_IncluidoSocio, que trava o combo de sócio correspondente).
+                    if (!isAdministracao) {
+                        $('#cmbPop_IncluidoPor').val('1').trigger('change').prop('disabled', true);
+                    }
                 },
                 error: function (xhr, textStatus, errorThrown) {
                     fnhelper_AlertErro(xhr, textStatus);
@@ -557,6 +564,13 @@ function fn_LoadCmb_IncluidoSocio() {
                         //console.log("fn_LoadCmb_IncluidoSocio  result ::: ", result);
                         $("#cmbPop_IncluidoSocio").append($("<option></option>").val(result.value).html(result.text));
                     });
+
+                    // Autocrédito obrigatório pra quem não é Administracao - não pode
+                    // escolher outro sócio nem cair no texto livre (txt_IncluidoPor).
+                    if (!isAdministracao) {
+                        $('#cmbPop_IncluidoSocio').val(String(socioLogadoId)).trigger('change').prop('disabled', true);
+                        $('#txt_IncluidoPor').val('').prop('disabled', true);
+                    }
                 },
                 error: function (xhr, textStatus, errorThrown) {
                     fnhelper_AlertErro(xhr, textStatus);

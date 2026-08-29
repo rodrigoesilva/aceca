@@ -65,12 +65,6 @@ namespace Aceca.Adm.Controllers.Pages.Novidade
             return View("~/Views/Pages/Novidade.cshtml");
         }
 
-        [Authorize(Roles = "Administracao")]
-        public ActionResult Cadastro()
-        {
-            return View("~/Views/Admin/Marca/MarcaCadastro.cshtml");
-        }
-
         #endregion
 
         #region Consulta LISTAGEM
@@ -299,67 +293,5 @@ namespace Aceca.Adm.Controllers.Pages.Novidade
 
         #endregion
 
-        #region Filtros
-
-        [HttpPost]
-        public async Task<IActionResult> GetTipoByIdFase(int id)
-        {
-            var msgErroData = $"idMarcaFase :: {id}";
-
-            if (id < 1)
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "GetTipoByIdFase - Id deve ser maior que 0",
-                    data = id
-                });
-
-            try
-            {
-                var lstModel = await _db.Marca
-                    .DistinctBy(x => x.MarcaSubTipo.MarcaTipoId)
-                    .Where(x => x.MarcaFaseId.Equals(id))
-                    .Include(x => x.MarcaSubTipo)
-                    .Include(x => x.MarcaSubTipo.MarcaTipo)
-                    .OrderBy(x => x.MarcaSubTipo.MarcaTipoId)
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                if (lstModel == null)
-                {
-                    return BadRequest(new
-                    {
-                        bResult = true,
-                        type = "ERRO - GetFullByIdFase - lstModel",
-                        message = "listagem Nula",
-                        data = msgErroData
-                    });
-                }
-
-                return Ok(new
-                {
-                    bResult = true,
-                    type = "OK",
-                    message = "SUCESSO ::: ",
-                    data = lstModel,
-                });
-            }
-            catch (Exception ex)
-            {
-                var mensagemErro = $"ERRO :: {MethodBase.GetCurrentMethod().Name} - {MethodBase.GetCurrentMethod().DeclaringType.Name} :: {ex?.Message}";
-
-                _logger.LogError(mensagemErro);
-
-                return BadRequest(new
-                {
-                    bResult = false,
-                    type = "ERRO",
-                    message = mensagemErro
-                });
-            }
-        }
-
-        #endregion
     }
 }

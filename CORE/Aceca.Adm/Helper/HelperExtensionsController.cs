@@ -179,6 +179,12 @@ namespace Aceca.Adm.Helper
             [Description("Meus Interesses")] Interesse = 2,
             [Description("Para Negociação")] DisponivelNegocio = 3,
         }
+        public enum EStatusCadastro
+        {
+            [Description("Pendente")] Pendente = 1,
+            [Description("Aprovado")] Aprovado = 2,
+            [Description("Negado")] Negado = 3,
+        }
         #endregion
 
         #region Combos Marcas
@@ -632,6 +638,34 @@ namespace Aceca.Adm.Helper
                     .Select(e => new SelectListItem()
                     {
                         Text = GetEnumDescription((EColecaoStatus)e),
+                        Value = Convert.ToInt32(e).ToString(),
+                    }))
+                .ToList();
+            }
+            catch (Exception ex)
+            {
+                var msg = !string.IsNullOrEmpty(ex.InnerException?.Message) ? ex.InnerException?.Message : ex.Message;
+
+                throw;
+            }
+
+            return enumData;
+        }
+        #endregion
+
+        #region Cadastro Aprovação
+
+        public async Task<IEnumerable<SelectListItem>> AsyncCmb_StatusCadastro()
+        {
+            var enumData = new List<SelectListItem>();
+
+            try
+            {
+                enumData = (Enum.GetValues(typeof(EStatusCadastro))
+                    .Cast<EStatusCadastro>()
+                    .Select(e => new SelectListItem()
+                    {
+                        Text = GetEnumDescription((EStatusCadastro)e),
                         Value = Convert.ToInt32(e).ToString(),
                     }))
                 .ToList();

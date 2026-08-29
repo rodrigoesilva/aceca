@@ -318,7 +318,7 @@ namespace Aceca.Adm.Models
 
     #endregion
 
-    #region Marca Cadsatro
+    #region Marca Cadastro
 
     [Table("marcas_cadastro")]
     public class MarcaCadastro : BaseModel
@@ -351,8 +351,10 @@ namespace Aceca.Adm.Models
         public string? Valor { get; set; } = null;
         public string? IncluidoPor { get; set; } = null;
         public string? IncluidoPorSocioId { get; set; } = null;
-        public string? AprovadoPorSocioId { get; set; } = null;
+        public int? CriadoPorSocioId { get; set; }
+        public int? AprovadoPorSocioId { get; set; } = null;
         public int? StatusCadastro { get; set; }
+        public string? Observacao { get; set; } = null;
         public MarcaAcervo? MarcaAcervo { get; set; }
         public MarcaDimensao? MarcaDimensao { get; set; }
         public MarcaFabrica? MarcaFabrica { get; set; }

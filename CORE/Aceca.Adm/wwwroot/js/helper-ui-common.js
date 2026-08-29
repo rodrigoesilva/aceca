@@ -93,11 +93,15 @@ $(function () {
 // AccountSettingsSecurity (grid de últimos acessos) - antes duplicado nos dois
 // arquivos de página.
 
-// Foto cadastrada em imgAvatar (coluna socio.imgAvatar) fica em
-// img/avatars/socio/imgAvatar{id}.png; sem cadastro, usa o avatar padrão da ACECA.
+// Foto cadastrada em imgAvatar (coluna socio.imgAvatar); sem cadastro, usa o avatar
+// padrão da ACECA. Usa o nome de arquivo que realmente veio do servidor (não
+// reconstrói como "imgAvatar{id}.png") - reconstruir por convenção quebrava o círculo
+// de avatar sempre que o valor salvo em socio.imgAvatar não batia com o id do próprio
+// sócio (achado real: registro de teste com imgAvatar apontando pro arquivo de outro
+// sócio, gerando uma URL que nunca existiu em disco).
 function fnhelper_UrlAvatar(id, imgAvatar) {
     return imgAvatar
-        ? `${assetsPath}img/avatars/socio/imgAvatar${id}.png`
+        ? `${assetsPath}img/avatars/socio/${imgAvatar}`
         : `${assetsPath}img/avatars/socio/imgAvatarAceca.png`;
 }
 

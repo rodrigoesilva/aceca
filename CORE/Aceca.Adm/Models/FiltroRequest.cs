@@ -21,6 +21,7 @@ namespace Aceca.Adm.Models
         public int? MarcaFabricaId { get; set; }
         public int? MarcaTipoId { get; set; }
         public int? MarcaSubTipoId { get; set; }
+        public int? StatusCadastro { get; set; }
 
         public int? MarcaMesId { get; set; }
         public int? MarcaAnoId { get; set; }

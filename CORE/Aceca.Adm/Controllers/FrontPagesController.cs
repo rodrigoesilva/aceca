@@ -11,5 +11,4 @@ public class FrontPagesController : Controller
   public IActionResult PricingPage() => View();
   public IActionResult CheckoutPage() => View();
   public IActionResult HelpCenterLanding() => View();
-  public IActionResult HelpCenterArticle() => View();
 }
