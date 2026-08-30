@@ -27,14 +27,13 @@
     <script>
         let isAdministracao = @(User.IsInRole("Administracao") ? "true" : "false");
         let socioLogadoId = @socioLogadoId;
+        let percentualMarcaDaguaPadrao = @ViewBag.PercentualMarcaDaguaPadrao;
     </script>
 
     <!-- Select Dropdownlist -->
     <script src="@urlFormsSelects" defer></script>
 
     <script src="@urlAdminAcervoCadastro" defer></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.23.0/sweetalert2.min.js" defer></script>
 }
 
 @* ************** Content ************** *@
@@ -56,12 +55,16 @@
             
             <div class="card-body">
                 <form id="formPage" class="row g-4">
+
+
+
                     @Html.AntiForgeryToken()
                     <!-- Dados da Marca -->
                     <div class="col-12">
                         <h6 id="h6Titulo">Dados do Item de Cadastro</h6>
                         <hr class="mt-0" />
                     </div>
+
 
                     <!-- 01 - Cabecalho -->
                     <div class="row mt-8 text-center">
@@ -132,13 +135,12 @@
                     -->
 
                     <div role="alert" class="alert alert-info alert-dismissible div_original_variante">
-                            <h4 class="alert-heading d-flex align-items-center">
-                                <span class="alert-icon rounded"><i class="icon-base ri ri-checkbox-circle-line icon-md"></i></span>
-                                Marca Original da Variante Informada
-                            </h4>
-                            <hr>
-                            <p id="p_NomePaiVariante" name="p_NomePaiVariante" class="mb-0" style="text-align: center;font-weight: 500;font-size: 0.9375rem;" />
-                        </div>
+                        <h4 class="alert-heading d-flex align-items-center">
+                            <span class="alert-icon rounded"><i class="icon-base ri ri-checkbox-circle-line icon-md"></i></span>Marca Original da Variante Informada
+                        </h4>
+                        <hr>
+                        <p id="p_NomePaiVariante" name="p_NomePaiVariante" class="mb-0" style="text-align: center;font-weight: 500;font-size: 0.9375rem;" />
+                    </div>
 
                     <div class="row mt-8 text-center div_codigo">
                         <div class="alert alert-solid-dark d-flex justify-content-center align-items-center flex-wrap row-gap-2" role="alert">
@@ -270,16 +272,31 @@
                         <!-- 06 -->
                         <div class="col-md-6 mt-8 div_descricao">
                             <div class="form-floating form-floating-outline">
-                                <textarea class="form-control h-px-100" id="txt_Descricao" name="txt_Descricao" placeholder="Descricao" rows="3"></textarea>
+                                <textarea class="form-control h-px-75" id="txt_Descricao" name="txt_Descricao" placeholder="Descricao" rows="3"></textarea>
                                 <label for="txt_Descricao">Descri&ccedil;&atilde;o</label>
                             </div>
                         </div>
                         <div class="col-md-6 mt-8 div_observacao">
                             <div class="form-floating form-floating-outline">
-                                <textarea class="form-control h-px-100" id="txt_Observacao" name="txt_Observacao" placeholder="Observacao" rows="3"></textarea>
+                                <textarea class="form-control h-px-75" id="txt_Observacao" name="txt_Observacao" placeholder="Observacao" rows="3"></textarea>
                                 <label for="txt_Observacao">Observa&ccedil;&atilde;o</label>
                             </div>
                         </div>
+                    
+                        @if (User.IsInRole("Administracao"))
+                        {
+                            <div class="row mt-12 text-center div_descricaocompleta">
+                                <div class="col-md-12 div_descfull">
+                                    <div role="alert" class="alert alert-info mb-0">
+                                        <h4 class="alert-heading d-flex align-items-center">
+                                            <span class="alert-icon rounded"><i class="icon-base ri ri-file-text-line icon-md"></i></span>Descrição Completa
+                                        </h4>
+                                        <hr>
+                                        <p id="div_DescFull" class="mb-0" style="text-align: center; font-weight: 500; font-size: 0.9375rem;"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     </div>
 
                     <!-- Adicional Info -->
@@ -318,28 +335,59 @@
                         <hr class="mt-0" />
                     </div>
 
+                    @{ var classImagem = User.IsInRole("Administracao") ? "col-md-4" : "col-md-6"; }
                     <div class="row mt-4 text-center div_imagem">
                         <!-- 01 -->
-                        <div class="col-md-6 div_imagem_principal">
+                        <div class="@classImagem div_imagem_principal">
                             <div class="mb-4">
                                 <label for="txt_ImgPrincipal" class="form-label">Imagem Principal</label>
-                                <input id="txt_ImgPrincipal" type="file" class="form-control" onchange="fn_PreviewImage(this)">
+                                <input id="txt_ImgPrincipal" type="file" class="form-control" accept="image/png, image/jpeg" onchange="fn_PreviewImage(this)">
                             </div>
                             <div class="mb-4 div_img_principal">
-                                <img id="img_ImgPrincipal" style="width: 200px; margin: 0 auto;" alt="ACECA" />
+                                <label class="form-label d-block">Original (sem marca)</label>
+                                <img id="img_ImgPrincipal" class="img-thumbnail" style="width: 160px; cursor: pointer; margin: 0 auto;" alt="ACECA" onclick="fn_ZoomImg(this)" onerror="this.onerror=null;this.src='https://www.aceca.com.br/assets/img/img_inexistente.jpg';">
                             </div>
                         </div>
 
+                        @if (User.IsInRole("Administracao"))
+                        {
+                            <div class="col-md-2 div_percentual_imagem_principal">
+                                <div class="mb-4">
+                                    <label for="txt_PercentPrincipal" class="form-label">Opacidade da Marca D'água - Principal (%)</label>
+                                    <input class="form-control" type="number" id="txt_PercentPrincipal" name="txt_PercentPrincipal" min="0" max="100" step="1" value="@ViewBag.PercentualMarcaDaguaPadrao" oninput="fn_ExecutarTesteMarcaDagua('principal')" />
+                                </div>
+                                <div class="mb-4 div_img_principal_marca">
+                                    <label class="form-label d-block">Com marca d'água</label>
+                                    <img id="img_ImgPrincipalComMarca" class="img-thumbnail" style="width: 160px; cursor: pointer; margin: 0 auto;" alt="ACECA" onclick="fn_ZoomImg(this)" onerror="this.onerror=null;this.src='https://www.aceca.com.br/assets/img/img_inexistente.jpg';">
+                                </div>
+                            </div>
+                        }
+
                         <!-- 02 -->
-                        <div class="col-md-6 div_imagem_detalhe">
+                        <div class="@classImagem div_imagem_detalhe">
                             <div class="mb-4">
                                 <label for="txt_ImgDetalhe" class="form-label">Imagem Detalhe</label>
-                                <input class="form-control" type="file" id="txt_ImgDetalhe" onchange="fn_PreviewImage(this)">
+                                <input class="form-control" type="file" id="txt_ImgDetalhe" accept="image/png, image/jpeg" onchange="fn_PreviewImage(this)">
                             </div>
                             <div class="mb-4 div_img_detalhe">
-                                <img id="img_ImgDetalhe" style="width: 200px; margin: 0 auto;" alt="ACECA" />
+                                <label class="form-label d-block">Original (sem marca)</label>
+                                <img id="img_ImgDetalhe" class="img-thumbnail" style="width: 160px; cursor: pointer; margin: 0 auto;" alt="ACECA" onclick="fn_ZoomImg(this)" onerror="this.onerror=null;this.src='https://www.aceca.com.br/assets/img/img_inexistente.jpg';">
                             </div>
                         </div>
+
+                        @if (User.IsInRole("Administracao"))
+                        {
+                            <div class="col-md-2 div_percentual_imagem_detalhe">
+                                <div class="mb-4">
+                                    <label for="txt_PercentDetalhe" class="form-label">Opacidade da Marca D'água - Detalhe (%)</label>
+                                    <input class="form-control" type="number" id="txt_PercentDetalhe" name="txt_PercentDetalhe" min="0" max="100" step="1" value="@ViewBag.PercentualMarcaDaguaPadrao" oninput="fn_ExecutarTesteMarcaDagua('detalhe')" />
+                                </div>
+                                <div class="mb-4 div_img_detalhe_marca">
+                                    <label class="form-label d-block">Com marca d'água</label>
+                                    <img id="img_ImgDetalheComMarca" class="img-thumbnail" style="width: 160px; cursor: pointer; margin: 0 auto;" alt="ACECA" onclick="fn_ZoomImg(this)" onerror="this.onerror=null;this.src='https://www.aceca.com.br/assets/img/img_inexistente.jpg';">
+                                </div>
+                            </div>
+                        }
                     </div>
 
                     <!-- Botoes -->

@@ -17,18 +17,11 @@
 }
 
 @section VendorScripts {
-    <!-- Form Validation -->
-    
-    <!-- DatePicker
-    <script src="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js" defer></script> -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js" defer></script>
-
-    <!-- DatePicker Range
-    <script src="~/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js" defer></script>
-     -->
+    <!-- bootstrap-datepicker já vem globalmente via _Scripts.cshtml (~/vendor/libs/bootstrap-datepicker) -
+         reafirmar aqui via CDN duplicava o carregamento. bootstrap-daterangepicker é outra lib
+         (não tem versão global), por isso continua declarada aqui. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.0.5/daterangepicker.min.js" defer></script>
-
-} 
+}
 
 @section PageScripts {
     <!-- Select Dropdownlist -->

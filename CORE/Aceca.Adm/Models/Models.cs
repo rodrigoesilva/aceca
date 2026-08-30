@@ -355,6 +355,8 @@ namespace Aceca.Adm.Models
         public int? AprovadoPorSocioId { get; set; } = null;
         public int? StatusCadastro { get; set; }
         public string? Observacao { get; set; } = null;
+        public double? PercentualMarcaDaguaPrincipal { get; set; }
+        public double? PercentualMarcaDaguaDetalhe { get; set; }
         public MarcaAcervo? MarcaAcervo { get; set; }
         public MarcaDimensao? MarcaDimensao { get; set; }
         public MarcaFabrica? MarcaFabrica { get; set; }

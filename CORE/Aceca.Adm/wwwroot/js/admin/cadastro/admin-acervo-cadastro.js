@@ -15,6 +15,10 @@ let var_ImgAlt = "ACECA",
     urlImgModalIcon = "../img/logo/logo01.png",
     urlImgModaltext = "../img/logo/logo02.png";
 
+// Mesmo placeholder usado em todo o resto do projeto (admin-acervo-listagem.js,
+// negociacao-acervo.js, etc.) pra quando não há imagem disponível.
+let strUrlImgInexistente = "https://www.aceca.com.br/assets/img/img_inexistente.jpg";
+
 var msg = 'O preenchimento &eacute; obrigat&oacute;rio';
 
 let objVariante, strMarcaAcervo;
@@ -47,10 +51,16 @@ document.addEventListener('DOMContentLoaded', function () {
         sessionStorage.removeItem('cadastroDadosEdicao');
 
         fn_Limpar();
+        fn_InitZoom();
 
         //// Combos
         fn_PopLoadCombos();
         fn_ChangeCombos();
+        fn_WireDescFull();
+        // Concatena já na abertura da tela (cadastro novo ou edição) - em edição isso é
+        // refeito de novo em fn_CarregarModoEdicao, depois que os dados existentes forem
+        // preenchidos nos campos, pra já mostrar o valor concatenado do item.
+        fn_AtualizarDescFull();
 
         //// Modo edição (chegou via "Editar" na fila de Aprovação)
         if (dadosEdicaoJson) {
@@ -149,8 +159,17 @@ function fn_Limpar() {
 
     $('#txt_ImgPrincipal').val('');
     $('#txt_ImgDetalhe').val('');
-    $('#img_ImgPrincipal').attr('src', '');
-    $('#img_ImgDetalhe').attr('src', '');
+    // Sem imagem escolhida/carregada ainda - mostra o placeholder padrão do projeto em vez
+    // de deixar o <img> sem src (ícone de imagem quebrada do navegador).
+    $('#img_ImgPrincipal').attr('src', strUrlImgInexistente);
+    $('#img_ImgDetalhe').attr('src', strUrlImgInexistente);
+    $('#img_ImgPrincipalComMarca').attr('src', strUrlImgInexistente);
+    $('#img_ImgDetalheComMarca').attr('src', strUrlImgInexistente);
+    $('#txt_PercentPrincipal').val(percentualMarcaDaguaPadrao);
+    $('#txt_PercentDetalhe').val(percentualMarcaDaguaPadrao);
+    arquivoImgPrincipal = null;
+    arquivoImgDetalhe = null;
+    idCadastroEdicaoAtual = null;
 
     $('.div_tem_pais_destino').hide();
 
@@ -264,6 +283,9 @@ function fn_ModalGetObj() {
 
         ImgPrincipal: $('#txt_ImgPrincipal').val().length > 0 ? $('#txt_ImgPrincipal').val() : null,
         ImgDetalhe: $('#txt_ImgDetalhe').val().length > 0 ? $('#txt_ImgDetalhe').val() : null,
+
+        PercentualMarcaDaguaPrincipal: parseFloat($('#txt_PercentPrincipal').val()),
+        PercentualMarcaDaguaDetalhe: parseFloat($('#txt_PercentDetalhe').val()),
     };
 
     //console.log("fn_ModalGetObj !", objFormData);
@@ -444,10 +466,19 @@ function fn_ChangeCombos() {
             $('#txt_IncluidoPor').hide();
             $('#txt_IncluidoPor').val('');
         }
-        else {
+        else if (idIncluidoPor == 0) {
             $('.div_IncluidoSocio').hide();
             $('.div_IncluidoNaoSocio').show();
             $('#txt_IncluidoPor').show();
+            $('#txt_IncluidoPor').val('');
+        }
+        else {
+            // Ainda não escolheu Sim/Não (-1, placeholder "-- Selecionar --") - nenhum dos
+            // dois deve aparecer ainda (Select2 pode disparar "change" sozinho na
+            // inicialização, mesmo sem o usuário ter mexido em nada).
+            $('.div_IncluidoSocio').hide();
+            $('.div_IncluidoNaoSocio').hide();
+            $('#txt_IncluidoPor').hide();
             $('#txt_IncluidoPor').val('');
         }
     });
@@ -1022,13 +1053,65 @@ function fn_CamposShow(result) {
     // reexibia depois - o toggle #cmbPop_IncluidoPor ficava com o valor certo (ex.:
     // travado em "Sim" pra quem não é Administracao), mas o combo/texto correspondente
     // por baixo nunca aparecia. Reaplica a visibilidade com base no valor atual do toggle.
-    if ($('#cmbPop_IncluidoPor').val() > 0) {
+    const valorIncluidoPor = $('#cmbPop_IncluidoPor').val();
+
+    if (valorIncluidoPor > 0) {
         $('.div_IncluidoSocio').show();
         $('.div_IncluidoNaoSocio').hide();
-    } else {
+    } else if (valorIncluidoPor == 0) {
         $('.div_IncluidoSocio').hide();
         $('.div_IncluidoNaoSocio').show();
+    } else {
+        // Ainda não escolheu Sim/Não (-1, placeholder) - nenhum dos dois deve aparecer.
+        $('.div_IncluidoSocio').hide();
+        $('.div_IncluidoNaoSocio').hide();
     }
+}
+
+// Campos descritivos/classificatórios do item - concatenados em #div_DescFull (só
+// exibição/apoio visual, não é enviado pro backend). Combos entram pelo texto selecionado
+// (não pelo id); "-- Selecionar --"/vazio são descartados.
+function fn_AtualizarDescFull() {
+    const partes = [
+        $('#txt_Nome').val(),
+        $('#cmbPop_MarcaAcervo').find('option:selected').text(),
+        $('#cmbPop_MarcaFase').find('option:selected').text(),
+        $('#cmbPop_MarcaVariante').find('option:selected').text(),
+        $('#txt_CodigoVariante').val(),
+        $('#cmbPop_MarcaFinalidade').find('option:selected').text(),
+        $('#cmbPop_MarcaFabrica').find('option:selected').text(),
+        $('#txt_CodFabrica').val(),
+        $('#cmbPop_MarcaDimensao').find('option:selected').text(),
+        $('#cmbPop_MarcaTipo').find('option:selected').text(),
+        $('#cmbPop_MarcaSubTipo').find('option:selected').text(),
+        $('#cmbPop_MarcaImpressora').find('option:selected').text(),
+        $('#cmbPop_MarcaQualidadeImagem').find('option:selected').text(),
+        $('#cmbPop_MarcaRaridade').find('option:selected').text(),
+        $('#txt_Descricao').val(),
+        $('#txt_Valor').val(),
+        $('#txt_Valor1PI').val(),
+        $('#txt_Valor2PI').val(),
+    ];
+
+    const textoFinal = partes
+        .map(valor => (valor || '').toString().trim())
+        .filter(valor => valor.length > 0 && valor !== '-- Selecionar --')
+        .join(' - ');
+
+    $('#div_DescFull').text(textoFinal);
+}
+
+// Liga fn_AtualizarDescFull em todo campo/combo que compõe o texto - chamado uma vez no
+// carregamento da página (ver DOMContentLoaded) e reaplicado manualmente em
+// fn_CarregarModoEdicao, já que os valores lá são preenchidos via .val()/.trigger('change'),
+// que passam por aqui normalmente.
+function fn_WireDescFull() {
+    $('#txt_Nome, #txt_CodigoVariante, #txt_CodFabrica, #txt_Descricao, #txt_Valor, #txt_Valor1PI, #txt_Valor2PI').on('input blur', fn_AtualizarDescFull);
+
+    $('#cmbPop_MarcaAcervo, #cmbPop_MarcaFase, #cmbPop_MarcaVariante, #cmbPop_MarcaFinalidade, ' +
+      '#cmbPop_MarcaFabrica, #cmbPop_MarcaDimensao, #cmbPop_MarcaTipo, #cmbPop_MarcaSubTipo, ' +
+      '#cmbPop_MarcaImpressora, #cmbPop_MarcaQualidadeImagem, #cmbPop_MarcaRaridade')
+        .on('change', fn_AtualizarDescFull);
 }
 
 function fn_ChecaInicioNumero(strNovoNomeParaCadastro) {
@@ -1255,6 +1338,7 @@ function fn_CarregarModoEdicao(dados) {
     }
 
     isModoEdicao = true;
+    idCadastroEdicaoAtual = dados.Id;
 
     fn_AguardarCombosCarregados([
         '#cmbPop_MarcaAcervo', '#cmbPop_MarcaFinalidade', '#cmbPop_MarcaFabrica',
@@ -1297,6 +1381,9 @@ function fn_CarregarModoEdicao(dados) {
 
             $('#txt_Descricao').val(dados.Descricao || '');
             $('#txt_Observacao').val(dados.Observacao || '');
+
+            $('#txt_PercentPrincipal').val(dados.PercentualMarcaDaguaPrincipal ?? percentualMarcaDaguaPadrao);
+            $('#txt_PercentDetalhe').val(dados.PercentualMarcaDaguaDetalhe ?? percentualMarcaDaguaPadrao);
 
             const temValoresAdicionais = dados.Valor || dados.Valor1PI || dados.Valor2PI;
             temValoresAdicionais ? $('.div_adicional').show() : $('.div_adicional').hide();
@@ -1346,6 +1433,16 @@ function fn_CarregarModoEdicao(dados) {
                 $('.div_img_detalhe').show();
             }
 
+            // Preview "com marca" também já carregado na edição (Administracao) - reaplica a
+            // marca em cima da imagem já enviada (staging), com a opacidade atual do item
+            // (dados.PercentualMarcaDagua* já preenchida acima em #txt_PercentPrincipal/
+            // Detalhe). Perfis não-Administracao nem têm esses campos/preview na tela (ver
+            // CadastroAcervo.cshtml).
+            if (isAdministracao) {
+                if (dados.ImgPrincipalFull) fn_ExecutarTesteMarcaDagua('principal');
+                if (dados.ImgDetalheFull) fn_ExecutarTesteMarcaDagua('detalhe');
+            }
+
             $('.div_dados').show();
             $('.div_imagem').show();
             $('.div_botoes').show();
@@ -1353,6 +1450,7 @@ function fn_CarregarModoEdicao(dados) {
             $('.card-header').first().text('Editar Item de Acervo');
 
             fn_AtualizarTextoBotaoCadastrar();
+            fn_AtualizarDescFull();
 
             $.busyLoadFull("hide");
 
@@ -1630,21 +1728,129 @@ function fn_ModalSalvar(e) {
 function fn_PreviewImage(input) {
     // console.log("fn_PreviewImage input ::: ", input);
     if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const tiposValidos = ['image/png', 'image/jpeg'];
+        const tamanhoMaximoBytes = 2 * 1024 * 1024; // 2MB
+
+        if (!tiposValidos.includes(file.type)) {
+            Swal.fire({
+                title: 'Formato inválido',
+                icon: 'warning',
+                html: 'Só são aceitas imagens nos formatos <b>PNG</b> ou <b>JPG/JPEG</b>.',
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: { confirmButton: 'btn btn-label-warning waves-effect' }
+            });
+            input.value = '';
+            return;
+        }
+
+        if (file.size > tamanhoMaximoBytes) {
+            Swal.fire({
+                title: 'Arquivo muito grande',
+                icon: 'warning',
+                html: 'O tamanho máximo permitido para a imagem é de <b>2MB</b>.',
+                confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                customClass: { confirmButton: 'btn btn-label-warning waves-effect' }
+            });
+            input.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = function (e) {
 
             //console.log("fn_PreviewImage e ::: ", e);
             //console.log("fn_PreviewImage input id ::: ", input.id);
             if (input.id === 'txt_ImgPrincipal') {
-                //document.getElementById('img_ImgPrincipal').src = e.target.result;
                 document.getElementById('img_ImgPrincipal').src = e.target.result;
                 $('.div_img_principal').show();
+                arquivoImgPrincipal = file;
+                // Preview "com marca" só existe pra Administracao (div_percentual_imagem_principal
+                // nem é renderizada pra outros perfis - ver CadastroAcervo.cshtml).
+                if (isAdministracao) fn_ExecutarTesteMarcaDagua('principal');
             } else {
                 document.getElementById('img_ImgDetalhe').src = e.target.result;
                 $('.div_img_detalhe').show();
+                arquivoImgDetalhe = file;
+                if (isAdministracao) fn_ExecutarTesteMarcaDagua('detalhe');
             }
         };
         reader.readAsDataURL(input.files[0]); // Converts to Base64 string
+    }
+}
+
+// Guarda o último arquivo escolhido em cada input (Principal/Detalhe) pra poder reexecutar
+// o preview com marca d'água quando só a opacidade (#txt_PercentPrincipal/Detalhe) muda,
+// sem precisar reescolher o arquivo.
+let arquivoImgPrincipal = null;
+let arquivoImgDetalhe = null;
+
+// Id do cadastro em edição (marcas_cadastro) - usado só quando NENHUM arquivo novo foi
+// escolhido pra aquela imagem, pra reaplicar a marca em cima do que já está no servidor
+// (ver fn_ExecutarTesteMarcaDagua/PreviewMarcaDaguaExistente). Setado em
+// fn_CarregarModoEdicao, limpo em fn_Limpar.
+let idCadastroEdicaoAtual = null;
+
+// Preview real (mesma função de marca d'água usada na publicação) de uma das duas imagens
+// (Principal/Detalhe) - chamado ao trocar o arquivo (fn_PreviewImage), ao mexer na opacidade
+// correspondente (oninput em CadastroAcervo.cshtml) e ao entrar em modo edição. Não grava
+// nada no servidor. Dois caminhos possíveis:
+// 1. Arquivo novo escolhido agora (Create, ou reenvio na Edição) - manda o arquivo pro
+//    TestarMarcaDagua via upload (POST).
+// 2. Edição de item existente sem arquivo novo pra essa imagem - a imagem só existe no
+//    servidor (staging), então usa PreviewMarcaDaguaExistente (GET, direto como src do
+//    <img> - lê os bytes no servidor mesmo, sem precisar buscar a mídia no client, que
+//    daria CORS por estar em outro domínio - www.aceca.com.br).
+function fn_ExecutarTesteMarcaDagua(imagem) {
+    const idPercent = imagem === 'principal' ? '#txt_PercentPrincipal' : '#txt_PercentDetalhe';
+    const idImgDestino = imagem === 'principal' ? 'img_ImgPrincipalComMarca' : 'img_ImgDetalheComMarca';
+    const percentual = parseFloat($(idPercent).val());
+    const percentualFinal = isNaN(percentual) ? percentualMarcaDaguaPadrao : percentual;
+
+    const arquivo = imagem === 'principal' ? arquivoImgPrincipal : arquivoImgDetalhe;
+
+    if (arquivo) {
+        const formData = new FormData();
+        formData.append('iFileImg', arquivo);
+        formData.append('percentualOpacidade', percentualFinal);
+
+        $.ajax({
+            url: `${var_Controller}/TestarMarcaDagua`,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhrFields: { responseType: 'blob' },
+            success: function (blob) {
+                const url = URL.createObjectURL(blob);
+                document.getElementById(idImgDestino).src = url;
+            },
+            error: function (xhr) {
+                // xhrFields.responseType = 'blob' também vale pra resposta de erro - precisa
+                // ler o blob como texto pra conseguir extrair a mensagem JSON do BadRequest.
+                const reader = new FileReader();
+                reader.onload = function () {
+                    let mensagem = 'Erro desconhecido ao gerar o preview da marca d\'água';
+                    try { mensagem = JSON.parse(reader.result)?.message || mensagem; } catch (e) { }
+
+                    Swal.fire({
+                        title: 'Erro ao gerar preview da marca d\'água',
+                        icon: 'error',
+                        html: mensagem,
+                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                        customClass: { confirmButton: 'btn btn-label-danger waves-effect' }
+                    });
+                };
+                reader.readAsText(xhr.response);
+            }
+        });
+        return;
+    }
+
+    if (idCadastroEdicaoAtual) {
+        const ehPrincipal = imagem === 'principal';
+        document.getElementById(idImgDestino).src =
+            `${var_Controller}/PreviewMarcaDaguaExistente?id=${idCadastroEdicaoAtual}&principal=${ehPrincipal}&percentualOpacidade=${percentualFinal}`;
     }
 }
 
@@ -1715,6 +1921,44 @@ function fnItem_PopImgDetalhe(obj) {
             fileInput.dataset.file = `${dataTransfer.files[0].name}`;
         }
     }
+}
+
+//#endregion
+
+//#region ZOOM
+
+// Mesmo modal auto-contido (sem CSS externo) usado em admin-acervo-listagem.js -
+// duplicado aqui porque os dois JS não compartilham módulo.
+function fn_InitZoom() {
+    if (document.getElementById('imgZoomModal')) return;
+
+    $('body').append(`
+        <div id="imgZoomModal" style="
+            display:none;position:fixed;inset:0;
+            background:rgba(0,0,0,0.85);
+            z-index:99999;
+            align-items:center;
+            justify-content:center;">
+            <img id="imgZoomTarget" style="
+                max-width:95vw;
+                max-height:95vh;">
+        </div>
+    `);
+
+    $('#imgZoomModal').click(function () {
+        $(this).hide();
+    });
+}
+
+// Recebe o elemento <img> (não o .src resolvido) - um <img> sem atributo src ainda
+// preenchido (preview vazio) resolveria .src pra URL da própria página, abrindo o zoom
+// com a página em vez de "nada acontecer".
+function fn_ZoomImg(imgEl) {
+    const src = imgEl && imgEl.getAttribute ? imgEl.getAttribute('src') : imgEl;
+    if (!src) return;
+
+    $('#imgZoomTarget').attr('src', src);
+    $('#imgZoomModal').css('display', 'flex');
 }
 
 //#endregion

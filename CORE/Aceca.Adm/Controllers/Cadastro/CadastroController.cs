@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SkiaSharp;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.Intrinsics.X86;
@@ -46,6 +47,8 @@ namespace Aceca.Adm.Controllers.Cadastro
 
         // Usado para montar nome/caminho de arquivo — bloqueia separadores de path e "..".
         private static readonly Regex RegexCodigoArquivoValido = new(@"^[A-Za-z0-9_-]+$", RegexOptions.Compiled);
+
+        private const long TamanhoMaximoImagemBytes = 2 * 1024 * 1024; // 2MB
 
         #endregion
 
@@ -88,8 +91,10 @@ namespace Aceca.Adm.Controllers.Cadastro
         }
         // Qualquer role da classe (Administracao, Fundador, MembroHonra, Socio) pode
         // enviar cadastro pra aprovação - antes era Administracao-only.
-        public ActionResult CadastroAcervo()
+        public async Task<ActionResult> CadastroAcervo()
         {
+            ViewBag.PercentualMarcaDaguaPadrao = await GetPercentualMarcaDaguaPadraoAsync();
+
             return View("~/Views/Admin/Cadastro/CadastroAcervo.cshtml");
         }
 
@@ -239,6 +244,8 @@ namespace Aceca.Adm.Controllers.Cadastro
                         m.Valor2PI,
                         m.IncluidoPor,
                         m.incluidoPorSocioId AS IncluidoPorSocioId,
+                        m.percentualMarcaDaguaPrincipal AS PercentualMarcaDaguaPrincipal,
+                        m.percentualMarcaDaguaDetalhe AS PercentualMarcaDaguaDetalhe,
 
                         m.ImgPrincipal,
                         IF(m.ImgPrincipal IS NOT NULL,
@@ -382,7 +389,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                     // A imagem só é publicada na pasta real do Acervo na aprovação - até
                     // aqui ela ficava numa pasta "_pendente" separada (ver UploadImg/Create),
                     // então ninguém via a imagem de um item ainda não aprovado.
-                    MoverImagensPendenteParaAcervo(model.MarcaFaseId, model.ImgPrincipal, model.ImgDetalhe);
+                    MoverImagensPendenteParaAcervo(model.MarcaFaseId, model.ImgPrincipal, model.ImgDetalhe, model.PercentualMarcaDaguaPrincipal, model.PercentualMarcaDaguaDetalhe);
 
                     _db.Marca.Add(marca);
                     _db.MarcaCadastro.Remove(model);
@@ -409,13 +416,18 @@ namespace Aceca.Adm.Controllers.Cadastro
         }
 
         // Move a imagem principal/detalhe da pasta de staging ("_pendente/{fase}") pra pasta
-        // real do Acervo ("{fase}") - chamado só na aprovação (ver SetStatus). Lança exceção
-        // se a movimentação falhar, pra SetStatus não seguir pra SaveChangesAsync e aprovar
-        // um item cuja imagem não foi de fato publicada.
-        private void MoverImagensPendenteParaAcervo(int? marcaFaseId, string imgPrincipal, string imgDetalhe)
+        // real do Acervo ("{fase}") - chamado só na aprovação (ver SetStatus). Aproveita a
+        // movimentação pra já gravar a versão com marca d'água (a de staging fica limpa,
+        // pois pode ser negada/reeditada). Lança exceção se a movimentação falhar, pra
+        // SetStatus não seguir pra SaveChangesAsync e aprovar um item cuja imagem não foi
+        // de fato publicada.
+        private void MoverImagensPendenteParaAcervo(int? marcaFaseId, string imgPrincipal, string imgDetalhe, double? percentualPrincipal = null, double? percentualDetalhe = null)
         {
             if (string.IsNullOrEmpty(imgPrincipal) && string.IsNullOrEmpty(imgDetalhe))
                 return;
+
+            var opacidadePrincipal = (float)(Math.Clamp(percentualPrincipal ?? OpacidadeMarcaDaguaPadrao * 100, 0, 100) / 100.0);
+            var opacidadeDetalhe = (float)(Math.Clamp(percentualDetalhe ?? OpacidadeMarcaDaguaPadrao * 100, 0, 100) / 100.0);
 
             if (_bIsLocalHost)
             {
@@ -427,7 +439,11 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                     var destino = Path.Combine(destinoPasta, imgPrincipal);
                     if (System.IO.File.Exists(origem))
-                        System.IO.File.Move(origem, destino, true);
+                    {
+                        var bytesComMarca = AplicarMarcaDagua(System.IO.File.ReadAllBytes(origem), Path.GetExtension(imgPrincipal), opacidadePrincipal);
+                        System.IO.File.WriteAllBytes(destino, bytesComMarca);
+                        System.IO.File.Delete(origem);
+                    }
                 }
 
                 if (!string.IsNullOrEmpty(imgDetalhe))
@@ -438,7 +454,11 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                     var destino = Path.Combine(destinoPasta, imgDetalhe);
                     if (System.IO.File.Exists(origem))
-                        System.IO.File.Move(origem, destino, true);
+                    {
+                        var bytesComMarca = AplicarMarcaDagua(System.IO.File.ReadAllBytes(origem), Path.GetExtension(imgDetalhe), opacidadeDetalhe);
+                        System.IO.File.WriteAllBytes(destino, bytesComMarca);
+                        System.IO.File.Delete(origem);
+                    }
                 }
 
                 return;
@@ -460,7 +480,16 @@ namespace Aceca.Adm.Controllers.Cadastro
                         if (!ftpConn.DirectoryExists(destinoPasta))
                             ftpConn.CreateDirectory(destinoPasta, true);
 
-                        ftpConn.MoveFile(origem, destino, FtpRemoteExists.Overwrite);
+                        using (var msDownload = new MemoryStream())
+                        {
+                            ftpConn.DownloadStream(msDownload, origem);
+                            var bytesComMarca = AplicarMarcaDagua(msDownload.ToArray(), Path.GetExtension(imgPrincipal), opacidadePrincipal);
+
+                            using var msUpload = new MemoryStream(bytesComMarca);
+                            ftpConn.UploadStream(msUpload, destino, FtpRemoteExists.Overwrite);
+                        }
+
+                        ftpConn.DeleteFile(origem);
                     }
                 }
 
@@ -475,7 +504,16 @@ namespace Aceca.Adm.Controllers.Cadastro
                         if (!ftpConn.DirectoryExists(destinoPasta))
                             ftpConn.CreateDirectory(destinoPasta, true);
 
-                        ftpConn.MoveFile(origem, destino, FtpRemoteExists.Overwrite);
+                        using (var msDownload = new MemoryStream())
+                        {
+                            ftpConn.DownloadStream(msDownload, origem);
+                            var bytesComMarca = AplicarMarcaDagua(msDownload.ToArray(), Path.GetExtension(imgDetalhe), opacidadeDetalhe);
+
+                            using var msUpload = new MemoryStream(bytesComMarca);
+                            ftpConn.UploadStream(msUpload, destino, FtpRemoteExists.Overwrite);
+                        }
+
+                        ftpConn.DeleteFile(origem);
                     }
                 }
             }
@@ -578,6 +616,16 @@ namespace Aceca.Adm.Controllers.Cadastro
                         message = "Código Aceca já está em uso por outro cadastro (aprovado ou aguardando aprovação) - gere o código novamente"
                     });
 
+                // Opacidade da marca d'água escolhida na tela pra cada imagem (Principal/
+                // Detalhe) - se não vier preenchida, usa o padrão configurado em adm_config
+                // (ver GetPercentualMarcaDaguaPadraoAsync). Resolvido aqui (nunca null daqui
+                // pra frente) pra: (a) Administracao já aplicar com o valor certo no upload
+                // direto pro Acervo; (b) ficar gravado em MarcaCadastro pra reaplicar na
+                // aprovação com o mesmo valor escolhido no cadastro/edição.
+                var percentualPadrao = await GetPercentualMarcaDaguaPadraoAsync();
+                var percentualPrincipal = vmModel?.PercentualMarcaDaguaPrincipal ?? percentualPadrao;
+                var percentualDetalhe = vmModel?.PercentualMarcaDaguaDetalhe ?? percentualPadrao;
+
                 #region Upload Imagem
 
                 #region Upload Imagem ImgPrincipal
@@ -588,7 +636,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                 {
                     if (!vmModel.ImgPrincipal.Equals("C:\\fakepath\\."))
                     {
-                        var result = await UploadImg(vmModel, iFileImgPrincipal, true, bStaging: !ehAdministracao);
+                        var result = await UploadImg(vmModel, iFileImgPrincipal, true, bStaging: !ehAdministracao, percentual: percentualPrincipal);
 
                         var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
 
@@ -617,7 +665,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                 if (iFileImgDetalhe != null)
                 {
                     if(!vmModel.ImgDetalhe.Equals("C:\\fakepath\\.")){
-                        var result = await UploadImg(vmModel, iFileImgDetalhe, false, bStaging: !ehAdministracao);
+                        var result = await UploadImg(vmModel, iFileImgDetalhe, false, bStaging: !ehAdministracao, percentual: percentualDetalhe);
 
                         var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
 
@@ -737,6 +785,8 @@ namespace Aceca.Adm.Controllers.Cadastro
                         // item, escolhido livremente no combo do formulário).
                         CriadoPorSocioId = GetSocioIdAutenticado(),
                         StatusCadastro = (int)EStatusCadastro.Pendente,
+                        PercentualMarcaDaguaPrincipal = percentualPrincipal,
+                        PercentualMarcaDaguaDetalhe = percentualDetalhe,
 
                         //
                         TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome?.Trim() : null,
@@ -909,6 +959,13 @@ namespace Aceca.Adm.Controllers.Cadastro
                 model.IncluidoPor = textInfo.ToTitleCase(vmModel?.IncluidoPor?.Trim()?.ToLower());
                 model.IncluidoPorSocioId = !string.IsNullOrEmpty(vmModel?.IncluidoPorSocioId) ? string.Concat(vmModel?.IncluidoPorSocioId?.Trim(), ",") : null;
                 model.Observacao = !string.IsNullOrWhiteSpace(vmModel?.Observacao) ? vmModel.Observacao.Trim() : null;
+
+                // Reaplicado com este valor só na aprovação (ver SetStatus/MoverImagensPendenteParaAcervo) -
+                // a imagem em staging continua sem marca até lá.
+                var percentualPadrao = await GetPercentualMarcaDaguaPadraoAsync();
+                model.PercentualMarcaDaguaPrincipal = vmModel?.PercentualMarcaDaguaPrincipal ?? percentualPadrao;
+                model.PercentualMarcaDaguaDetalhe = vmModel?.PercentualMarcaDaguaDetalhe ?? percentualPadrao;
+
                 model.TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome?.Trim() : null;
                 model.TxtImpressora = !string.IsNullOrEmpty(vmModel?.MarcaImpressora?.Descricao) ? vmModel?.MarcaImpressora?.Descricao?.Trim() : null;
 
@@ -1514,16 +1571,237 @@ namespace Aceca.Adm.Controllers.Cadastro
             {
                 ".jpg" or ".jpeg" => header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
                 ".png" => header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
-                ".gif" => header[0] == (byte)'G' && header[1] == (byte)'I' && header[2] == (byte)'F' && header[3] == (byte)'8',
-                ".webp" => read >= 12
-                    && header[0] == (byte)'R' && header[1] == (byte)'I' && header[2] == (byte)'F' && header[3] == (byte)'F'
-                    && header[8] == (byte)'W' && header[9] == (byte)'E' && header[10] == (byte)'B' && header[11] == (byte)'P',
                 _ => false
             };
         }
 
+        // Marca d'água aplicada só na imagem que efetivamente entra pública no Acervo
+        // (ver chamadas em UploadImg e MoverImagensPendenteParaAcervo) - fica em cache
+        // em memória pra não decodificar o PNG a cada upload/aprovação.
+        private static SKBitmap? _marcaDaguaBitmap;
+        private static readonly object _marcaDaguaLock = new();
+
+        private SKBitmap? ObterMarcaDaguaBitmap()
+        {
+            if (_marcaDaguaBitmap != null)
+                return _marcaDaguaBitmap;
+
+            lock (_marcaDaguaLock)
+            {
+                if (_marcaDaguaBitmap == null)
+                {
+                    var caminhoMarca = Path.Combine(_appEnvironment.WebRootPath, "img", "marca-dagua", "imagemMarcaPadrao.png");
+
+                    if (System.IO.File.Exists(caminhoMarca))
+                        _marcaDaguaBitmap = SKBitmap.Decode(caminhoMarca);
+                }
+            }
+
+            return _marcaDaguaBitmap;
+        }
+
+        // Opacidade padrão (10%) usada como último recurso se o parâmetro em adm_config
+        // (ver GetPercentualMarcaDaguaPadraoAsync) não existir/estiver inválido.
+        private const float OpacidadeMarcaDaguaPadrao = 0.10f;
+
+        // Valor padrão (%) sugerido nos campos de opacidade em CadastroAcervo.cshtml
+        // (#txt_PercentPrincipal/#txt_PercentDetalhe) - configurável em Configurações
+        // (adm_config, parâmetro "PercentualMarcaDAgua"), editável pontualmente por item
+        // antes da aprovação. Cai pro padrão em código se o parâmetro não existir.
+        private async Task<double> GetPercentualMarcaDaguaPadraoAsync()
+        {
+            var parametro = await _db.AdmConfig.AsNoTracking().FirstOrDefaultAsync(x => x.Parametro == "PercentualMarcaDAgua");
+
+            if (parametro != null && double.TryParse(parametro.Valor, NumberStyles.Any, CultureInfo.InvariantCulture, out var valor))
+                return Math.Clamp(valor, 0, 100);
+
+            return OpacidadeMarcaDaguaPadrao * 100;
+        }
+
+        // Aplica a marca d'água padrão da ACECA centralizada (horizontal e vertical) na
+        // imagem, em tom de cinza (dessaturada) e com opacidade baixa - suave o suficiente
+        // pra só identificar a origem, sem atrapalhar a visualização da peça.
+        private byte[] AplicarMarcaDagua(byte[] imagemOriginal, string extensao, float opacidade = OpacidadeMarcaDaguaPadrao)
+        {
+            var marca = ObterMarcaDaguaBitmap();
+            if (marca == null)
+                return imagemOriginal;
+
+            using var bitmapOriginal = SKBitmap.Decode(imagemOriginal);
+            if (bitmapOriginal == null)
+                return imagemOriginal;
+
+            var samplingSuave = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
+
+            using var surface = SKSurface.Create(new SKImageInfo(bitmapOriginal.Width, bitmapOriginal.Height));
+            var canvas = surface.Canvas;
+            canvas.Clear(SKColors.Transparent);
+            canvas.DrawBitmap(bitmapOriginal, 0, 0, samplingSuave, null);
+
+            // marca ocupa ~45% da largura da imagem base, mantendo a proporção original
+            float escala = (bitmapOriginal.Width * 0.45f) / marca.Width;
+            float larguraMarca = marca.Width * escala;
+            float alturaMarca = marca.Height * escala;
+
+            float x = (bitmapOriginal.Width - larguraMarca) / 2f;
+            float y = (bitmapOriginal.Height - alturaMarca) / 2f;
+
+            // matriz de cinza (luminosidade) preservando o canal alfa original do PNG
+            float[] matrizCinza =
+            {
+                0.299f, 0.587f, 0.114f, 0, 0,
+                0.299f, 0.587f, 0.114f, 0, 0,
+                0.299f, 0.587f, 0.114f, 0, 0,
+                0,      0,      0,      1, 0
+            };
+
+            using var paint = new SKPaint
+            {
+                IsAntialias = true,
+                Color = SKColors.White.WithAlpha((byte)Math.Round(255 * Math.Clamp(opacidade, 0f, 1f))),
+                ColorFilter = SKColorFilter.CreateColorMatrix(matrizCinza)
+            };
+
+            canvas.DrawBitmap(marca, SKRect.Create(x, y, larguraMarca, alturaMarca), samplingSuave, paint);
+
+            using var imagemFinal = surface.Snapshot();
+            var formato = extensao.Equals(".png", StringComparison.OrdinalIgnoreCase)
+                ? SKEncodedImageFormat.Png
+                : SKEncodedImageFormat.Jpeg;
+
+            using var dados = imagemFinal.Encode(formato, 90);
+            return dados.ToArray();
+        }
+
+        // Aplica a marca d'água na imagem enviada e devolve o resultado pra preview em
+        // CadastroAcervo.cshtml (img_ImgPrincipalComMarca/img_ImgDetalheComMarca), sem
+        // gravar nada em disco/FTP nem tocar no banco - deixa o usuário calibrar a
+        // opacidade (%) por imagem antes de cadastrar/aprovar. Sem [Authorize] próprio -
+        // herda o da classe (qualquer role que pode enviar cadastro pode usar o preview).
+        [HttpPost]
+        public async Task<IActionResult> TestarMarcaDagua(IFormFile iFileImg, double percentualOpacidade = 10)
+        {
+            if (iFileImg == null || iFileImg.Length == 0)
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Arquivo de Imagem Nulo ou Invalido" });
+
+            if (iFileImg.Length > TamanhoMaximoImagemBytes)
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Arquivo de Imagem excede o tamanho máximo permitido (2MB)" });
+
+            string fileExtension = Path.GetExtension(iFileImg.FileName)?.ToLowerInvariant() ?? string.Empty;
+
+            if (fileExtension != ".png" && fileExtension != ".jpg" && fileExtension != ".jpeg")
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Arquivo de Imagem com Extensão Inválida" });
+
+            // Diagnóstico explícito só nesse endpoint de teste - em produção (UploadImg/
+            // MoverImagensPendenteParaAcervo) o comportamento é "falhar aberto" (devolve a
+            // imagem original se a marca não for encontrada), mas aqui isso mascarava o
+            // problema (preview aparecia igual, sem avisar que a marca não foi aplicada).
+            if (ObterMarcaDaguaBitmap() == null)
+            {
+                var caminhoEsperado = Path.Combine(_appEnvironment.WebRootPath, "img", "marca-dagua", "imagemMarcaPadrao.png");
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = $"Marca d'água padrão não encontrada em: {caminhoEsperado}"
+                });
+            }
+
+            byte[] fileBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                await iFileImg.CopyToAsync(memoryStream);
+                fileBytes = memoryStream.ToArray();
+            }
+
+            var opacidade = (float)Math.Clamp(percentualOpacidade, 0, 100) / 100f;
+            var bytesComMarca = AplicarMarcaDagua(fileBytes, fileExtension, opacidade);
+
+            if (bytesComMarca.Length == fileBytes.Length && bytesComMarca.SequenceEqual(fileBytes))
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Não foi possível decodificar a imagem enviada para aplicar a marca d'água"
+                });
+
+            var contentType = fileExtension == ".png" ? "image/png" : "image/jpeg";
+
+            return File(bytesComMarca, contentType);
+        }
+
+        // Preview "com marca" de uma imagem que já está no servidor (edição de um item ainda
+        // pendente em marcas_cadastro) - diferente de TestarMarcaDagua (que recebe o arquivo
+        // direto do <input type=file>), aqui a imagem só existe em disco/FTP na pasta de
+        // staging. Buscar via fetch() no client não funciona (a mídia fica em outro domínio -
+        // www.aceca.com.br - sem cabeçalho CORS), então lê os bytes no servidor mesmo,
+        // reaproveitando a mesma lógica de caminho de UploadImg/MoverImagensPendenteParaAcervo.
+        [HttpGet]
+        public async Task<IActionResult> PreviewMarcaDaguaExistente(int id, bool principal, double percentualOpacidade = 10)
+        {
+            var model = await _db.MarcaCadastro.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+
+            if (model == null)
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Cadastro não encontrado" });
+
+            if (!User.IsInRole("Administracao") && model.CriadoPorSocioId != GetSocioIdAutenticado())
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Você só pode ver cadastros enviados por você" });
+
+            var nomeArquivo = principal ? model.ImgPrincipal : model.ImgDetalhe;
+
+            if (string.IsNullOrEmpty(nomeArquivo))
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Imagem não encontrada" });
+
+            var fileExtension = Path.GetExtension(nomeArquivo).ToLowerInvariant();
+            byte[] fileBytes = LerBytesImagemStaging(model.MarcaFaseId, nomeArquivo, principal);
+
+            if (fileBytes == null)
+                return BadRequest(new { bResult = false, type = "ERRO", message = "Arquivo de imagem não encontrado no servidor" });
+
+            var opacidade = (float)(Math.Clamp(percentualOpacidade, 0, 100) / 100.0);
+            var bytesComMarca = AplicarMarcaDagua(fileBytes, fileExtension, opacidade);
+            var contentType = fileExtension == ".png" ? "image/png" : "image/jpeg";
+
+            return File(bytesComMarca, contentType);
+        }
+
+        // Lê os bytes de uma imagem ainda em staging ("_pendente/{fase}[/detalhes]") - mesma
+        // construção de caminho usada em UploadImg (bStaging=true) e MoverImagensPendenteParaAcervo.
+        private byte[] LerBytesImagemStaging(int? marcaFaseId, string nomeArquivo, bool principal)
+        {
+            if (_bIsLocalHost)
+            {
+                var caminho = principal
+                    ? Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", "_pendente", marcaFaseId?.ToString(), nomeArquivo)
+                    : Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", "_pendente", marcaFaseId?.ToString(), "detalhes", nomeArquivo);
+
+                return System.IO.File.Exists(caminho) ? System.IO.File.ReadAllBytes(caminho) : null;
+            }
+
+            using var ftpConn = new FtpClient(_ftpHost, _ftpUser, _ftpPass);
+            ftpConn.Connect();
+
+            try
+            {
+                var caminho = principal
+                    ? $"{_ftpBaseUrl}/midia/geral/_pendente/{marcaFaseId}/{nomeArquivo}"
+                    : $"{_ftpBaseUrl}/midia/geral/_pendente/{marcaFaseId}/detalhes/{nomeArquivo}";
+
+                if (!ftpConn.FileExists(caminho))
+                    return null;
+
+                using var ms = new MemoryStream();
+                ftpConn.DownloadStream(ms, caminho);
+                return ms.ToArray();
+            }
+            finally
+            {
+                ftpConn.Disconnect();
+            }
+        }
+
         [Authorize(Roles = "Administracao")]
-        public async Task<IActionResult> UploadImg(VMMarca vmModel, IFormFile iFileImg, bool bIsImgPrincipal, bool bStaging = false)
+        public async Task<IActionResult> UploadImg(VMMarca vmModel, IFormFile iFileImg, bool bIsImgPrincipal, bool bStaging = false, double percentual = OpacidadeMarcaDaguaPadrao * 100)
         {
             if (string.IsNullOrEmpty(iFileImg.FileName) || iFileImg?.FileName == null || iFileImg?.FileName.Length == 0)
                 return BadRequest(new
@@ -1534,9 +1812,18 @@ namespace Aceca.Adm.Controllers.Cadastro
                     data = iFileImg?.FileName
                 });
 
+            if (iFileImg!.Length > TamanhoMaximoImagemBytes)
+                return BadRequest(new
+                {
+                    bResult = false,
+                    type = "ERRO",
+                    message = "Arquivo de Imagem excede o tamanho máximo permitido (2MB)",
+                    data = iFileImg?.FileName
+                });
+
             string fileExtension = Path.GetExtension(iFileImg?.FileName?.ToString())?.ToLowerInvariant();
 
-            var fileExtensionValid = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            var fileExtensionValid = new[] { ".jpg", ".jpeg", ".png" };
 
             if (string.IsNullOrEmpty(fileExtension) || !fileExtensionValid.Contains(fileExtension))
                 return BadRequest(new
@@ -1625,6 +1912,19 @@ namespace Aceca.Adm.Controllers.Cadastro
                 FileType = iFileImg?.ContentType,
             };
 
+            // Só marca d'água na imagem que já vai direto pro Acervo público (Administracao,
+            // sem passar pela fila de aprovação) - em staging a imagem fica limpa, pra não
+            // marcar de novo quando for movida em MoverImagensPendenteParaAcervo.
+            byte[] fileBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                await iFileImg!.CopyToAsync(memoryStream);
+                fileBytes = memoryStream.ToArray();
+            }
+
+            if (!bStaging)
+                fileBytes = AplicarMarcaDagua(fileBytes, fileExtension, (float)(Math.Clamp(percentual, 0, 100) / 100.0));
+
             //local destino
             if (_bIsLocalHost)
             {
@@ -1643,7 +1943,7 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                 using (var stream = new FileStream(fileDetails.FilePath, FileMode.Create))
                 {
-                    await iFileImg.CopyToAsync(stream);
+                    await stream.WriteAsync(fileBytes);
 
                     stream.Flush();
                     stream.Close();
@@ -1680,7 +1980,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                         data = strSaveFileName,
                     });
 
-                using (var imgStream = iFileImg?.OpenReadStream())
+                using (var imgStream = new MemoryStream(fileBytes))
                 {
                     var uploadStatus = ftpConn.UploadStream(imgStream, fileDetails.FilePath, FtpRemoteExists.Overwrite);
 

@@ -136,6 +136,8 @@ namespace Aceca.Adm.VMModels
         public string? IncluidoPorSocioId { get; set; }
         public string? Observacao { get; set; }
         public int? EmQuarentena { get; set; }
+        public double? PercentualMarcaDaguaPrincipal { get; set; }
+        public double? PercentualMarcaDaguaDetalhe { get; set; }
 
         public VMMarcaDimensao? MarcaDimensao { get; set; }
         public VMMarcaFabrica? MarcaFabrica { get; set; }

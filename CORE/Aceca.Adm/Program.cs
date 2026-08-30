@@ -748,6 +748,8 @@ using (var scopeMarcaCadastro = app.Services.CreateScope())
                 aprovadoPorSocioId INT NULL,
                 statusCadastro INT NULL,
                 observacao VARCHAR(500) NULL,
+                percentualMarcaDaguaPrincipal DECIMAL(5,2) NULL,
+                percentualMarcaDaguaDetalhe DECIMAL(5,2) NULL,
                 ativo TINYINT NULL DEFAULT 1,
                 dataCriacao DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
                 dataAtualizacao DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -794,6 +796,47 @@ using (var scopeMarcaCadastro = app.Services.CreateScope())
     catch (Exception ex)
     {
         marcaCadastroLogger.LogWarning(ex, "Não foi possível corrigir o tipo da coluna aprovadoPorSocioId em marcas_cadastro");
+        await errorLogMarcaCadastro.RegistrarExcecaoAsync(null, ex);
+    }
+
+    // Opacidade da marca d'água escolhida por imagem (Principal/Detalhe) no momento do
+    // cadastro/edição - grava aqui pra poder ser reaplicada com o mesmo valor quando a
+    // imagem for efetivamente publicada na Aprovação (ver SetStatus/MoverImagensPendenteParaAcervo).
+    foreach (var coluna in new[] { "percentualMarcaDaguaPrincipal", "percentualMarcaDaguaDetalhe" })
+    {
+        try
+        {
+            if (!await Aceca.Adm.Helper.DbSchemaHelper.ColunaExisteAsync(dbMarcaCadastro.Database, "marcas_cadastro", coluna))
+                await dbMarcaCadastro.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE marcas_cadastro ADD COLUMN " + coluna + " DECIMAL(5,2) NULL");
+        }
+        catch (Exception ex)
+        {
+            marcaCadastroLogger.LogWarning(ex, "Não foi possível garantir a coluna {Coluna} em marcas_cadastro", coluna);
+            await errorLogMarcaCadastro.RegistrarExcecaoAsync(null, ex);
+        }
+    }
+
+    // Valor padrão (%) sugerido nos campos de opacidade da marca d'água em Cadastro/Edição
+    // (ver CadastroController.GetPercentualMarcaDaguaPadraoAsync) - editável em Configurações.
+    try
+    {
+        var existeParametroMarcaDagua = await dbMarcaCadastro.AdmConfig.AnyAsync(c => c.Parametro == "PercentualMarcaDAgua");
+
+        if (!existeParametroMarcaDagua)
+        {
+            dbMarcaCadastro.AdmConfig.Add(new Aceca.Adm.Models.AdmConfig
+            {
+                Parametro = "PercentualMarcaDAgua",
+                Descricao = "Opacidade padrão (%) da marca d'água aplicada nas imagens do Acervo ao serem publicadas (0 a 100).",
+                Valor = "10"
+            });
+            await dbMarcaCadastro.SaveChangesAsync();
+        }
+    }
+    catch (Exception ex)
+    {
+        marcaCadastroLogger.LogWarning(ex, "Não foi possível garantir o parâmetro PercentualMarcaDAgua em adm_config");
         await errorLogMarcaCadastro.RegistrarExcecaoAsync(null, ex);
     }
 }
