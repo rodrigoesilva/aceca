@@ -134,6 +134,7 @@ namespace Aceca.Adm.VMModels
         public string? Valor { get; set; }
         public string? IncluidoPor { get; set; }
         public string? IncluidoPorSocioId { get; set; }
+        public string? Observacao { get; set; }
         public int? EmQuarentena { get; set; }
 
         public VMMarcaDimensao? MarcaDimensao { get; set; }

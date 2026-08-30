@@ -16,6 +16,33 @@
             @* ! Adm version menu-items *@
             <ul class="menu-inner" style="margin-left: 25%;">
 
+                <!-- Cadastro -->
+                <li class='menu-item@(currentPage.StartsWith("/Cadastro") ? " active" : "")'>
+                    <a href="javascript:void(0)" class="menu-link menu-toggle">
+                        <i class="menu-icon icon-base ri ri-checkbox-multiple-blank-line"></i>
+                        <div data-i18n="Cadastro">Cadastro</div>
+                    </a>
+                    <ul class="menu-sub">
+                        <!-- Marcas/Aprovação - abertos a qualquer role da classe (Administracao,
+                                     Fundador, MembroHonra, Socio); a Aprovação já filtra server-side
+                                     (Administracao vê tudo, os demais só o que eles mesmos enviaram). -->
+                        <li class='menu-item@(currentPage == "/Cadastro/Acervo" ? " active" : "")'>
+                            <a asp-controller="Cadastro" asp-action="CadastroAcervo" class="menu-link">
+                                <i class="menu-icon tf-icons ri-archive-line"></i>
+                                <div data-i18n="Marcas">Marcas</div>
+                            </a>
+                        </li>
+
+                        <li class='menu-item@(currentPage == "/Cadastro/Aprovacao" ? " active" : "")'>
+                            <a asp-controller="Cadastro" asp-action="Index" class="menu-link">
+                                <i class="menu-icon tf-icons ri-checkbox-multiple-line"></i>
+                                <div data-i18n="Lista de Aprovação">Lista de Aprovação</div>
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+
                  <!-- Colecao -->
                 <li class='menu-item@(currentPage.StartsWith("/Colecao") ? " active" : "")'>
                     <a asp-controller="SocioColecao" asp-action="Index" class="menu-link">
@@ -114,7 +141,7 @@
                 </li>
 
                 <!-- Acervo -->
-                <li class='menu-item@((currentPage.StartsWith("/Acervo") || currentPage.StartsWith("/Cadastro")) ? " active" : "")'>
+                <li class='menu-item@((currentPage.StartsWith("/Acervo")) ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">
                         <i class="menu-icon tf-icons ri-drag-drop-line"></i>
                         <div data-i18n="Acervo">Acervo</div>
@@ -171,98 +198,6 @@
                                     <a asp-controller="Acervo" asp-action="Index" asp-route-id="7" class="menu-link">
                                         <i class='menu-icon tf-icons ri-circle-line px-1_5'></i>
                                         <div data-i18n="Afins">Afins</div>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <!-- Cadastro -->
-                        <li class='menu-item@(currentPage.StartsWith("/Cadastro") ? " active" : "")'>
-                            <a href="javascript:void(0)" class="menu-link menu-toggle">
-                                <i class="menu-icon icon-base ri ri-checkbox-multiple-blank-line"></i>
-                                <div data-i18n="Cadastro">Cadastro</div>
-                            </a>
-                            <ul class="menu-sub">
-                                <!-- Marcas/Aprovação - abertos a qualquer role da classe (Administracao,
-                                     Fundador, MembroHonra, Socio); a Aprovação já filtra server-side
-                                     (Administracao vê tudo, os demais só o que eles mesmos enviaram). -->
-                                <li class='menu-item@(currentPage == "/Cadastro/Acervo" ? " active" : "")'>
-                                    <a asp-controller="Cadastro" asp-action="CadastroAcervo" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-archive-line"></i>
-                                        <div data-i18n="Marcas">Marcas</div>
-                                    </a>
-                                </li>
-
-                                <li class='menu-item@(currentPage == "/Cadastro/Aprovacao" ? " active" : "")'>
-                                    <a asp-controller="Cadastro" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-checkbox-multiple-line"></i>
-                                        <div data-i18n="Lista de Aprovação">Lista de Aprovação</div>
-                                    </a>
-                                </li>
-                                <li>
-                                    <div class="dropdown-divider"></div>
-                                </li>
-
-                                <!-- ///// -->
-                                <li class='menu-item@(currentPage == "/Cadastro/Dimensao" ? " active" : "")'>
-                                    <a asp-controller="MarcaDimensao" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-box-3-line"></i>
-                                        <div data-i18n="Dimensao">Dimensao</div>
-                                    </a>
-                                </li>
-                                <li class='menu-item@(currentPage == "/Cadastro/Fabrica" ? " active" : "")'>
-                                    <a asp-controller="MarcaFabrica" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-bar-chart-2-line"></i>
-                                        <div data-i18n="Fabrica">Fabrica</div>
-                                    </a>
-                                </li>
-                                <li class='menu-item@(currentPage == "/Cadastro/Fase" ? " active" : "")'>
-                                    <a asp-controller="MarcaFase" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-map-2-line"></i>
-                                        <div data-i18n="Fase">Fase</div>
-                                    </a>
-                                </li>
-                                <li class='menu-item@(currentPage == "/Cadastro/Finalidade" ? " active" : "")'>
-                                    <a asp-controller="MarcaFinalidade" asp-action="Index" class="menu-link">
-                                        <i class='menu-icon tf-icons ri-drag-drop-line'></i>
-                                        <div data-i18n="Finalidade">Finalidade</div>
-                                    </a>
-                                </li>
-
-                                <li class='menu-item@(currentPage == "/Cadastro/Impressora" ? " active" : "")'>
-                                    <a asp-controller="MarcaImpressora" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-printer-line"></i>
-                                        <div data-i18n="Impressora">Impressora</div>
-                                    </a>
-                                </li>
-                                <li class='menu-item@(currentPage == "/Cadastro/Qualidade" ? " active" : "")'>
-                                    <a asp-controller="MarcaQualidadeImagem" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-remixicon-line"></i>
-                                        <div data-i18n="Qualidade de Imagem">Qualidade de Imagem</div>
-                                    </a>
-                                </li>
-                                <li class='menu-item@(currentPage == "/Cadastro/Raridade" ? " active" : "")'>
-                                    <a asp-controller="MarcaRaridade" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-checkbox-circle-line"></i>
-                                        <div data-i18n="Raridade">Raridade</div>
-                                    </a>
-                                </li>
-                                <li class='menu-item@(currentPage == "/Cadastro/Tipo" ? " active" : "")'>
-                                    <a asp-controller="MarcaTipo" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-table-line"></i>
-                                        <div data-i18n="Tipo">Tipo</div>
-                                    </a>
-                                </li>
-                                <li class='menu-item@(currentPage == "/Cadastro/SubTipo" ? " active" : "")'>
-                                    <a asp-controller="MarcaSubTipo" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-grid-line"></i>
-                                        <div data-i18n="Sub-Tipo">Sub-Tipo</div>
-                                    </a>
-                                </li>
-                                <li class='menu-item@(currentPage == "/Cadastro/TipoAcervo" ? " active" : "")'>
-                                    <a asp-controller="MarcaAcervo" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-table-line"></i>
-                                        <div data-i18n="Tipo Acervo">Tipo Acervo</div>
                                     </a>
                                 </li>
                             </ul>
@@ -420,16 +355,35 @@
             @* ! Adm version menu-items *@
             <ul class="menu-inner" style="margin-left: 25%;">
 
-                <!-- Download -->
-                <li class='menu-item@(currentPage.StartsWith("/Download") ? " active" : "")'>
-                    <a asp-controller="Download" asp-action="Index" class="menu-link">
-                        <i class='menu-icon icon-base ri ri-drag-drop-line'></i>
-                        <div data-i18n="Downloads">Downloads</div>
+                <!-- Cadastro -->
+                <li class='menu-item@(currentPage.StartsWith("/Cadastro") ? " active" : "")'>
+                    <a href="javascript:void(0)" class="menu-link menu-toggle">
+                        <i class="menu-icon icon-base ri ri-checkbox-multiple-blank-line"></i>
+                        <div data-i18n="Cadastro">Cadastro</div>
                     </a>
+                    <ul class="menu-sub">
+                        <!-- Marcas/Aprovação - abertos a qualquer role da classe (Administracao,
+                                     Fundador, MembroHonra, Socio); a Aprovação já filtra server-side
+                                     (Administracao vê tudo, os demais só o que eles mesmos enviaram). -->
+                        <li class='menu-item@(currentPage == "/Cadastro/Acervo" ? " active" : "")'>
+                            <a asp-controller="Cadastro" asp-action="CadastroAcervo" class="menu-link">
+                                <i class="menu-icon tf-icons ri-archive-line"></i>
+                                <div data-i18n="Marcas">Marcas</div>
+                            </a>
+                        </li>
+
+                        <li class='menu-item@(currentPage == "/Cadastro/Aprovacao" ? " active" : "")'>
+                            <a asp-controller="Cadastro" asp-action="Index" class="menu-link">
+                                <i class="menu-icon tf-icons ri-checkbox-multiple-line"></i>
+                                <div data-i18n="Lista de Aprovação">Lista de Aprovação</div>
+                            </a>
+                        </li>
+
+                    </ul>
                 </li>
                 
                 <!-- Acervo -->
-                <li class='menu-item@((currentPage.StartsWith("/Acervo") || currentPage.StartsWith("/Cadastro")) ? " active" : "")'>
+                <li class='menu-item@((currentPage.StartsWith("/Acervo")) ? " active" : "")'>
                     <a href="javascript:void(0)" class="menu-link menu-toggle">
                         <i class="menu-icon tf-icons ri-archive-line"></i>
                         <div data-i18n="Acervo">Acervo</div>
@@ -490,34 +444,6 @@
                                 </li>
                             </ul>
                         </li>
-
-                        <!-- Cadastro -->
-                        <li class='menu-item@(currentPage.StartsWith("/Cadastro") ? " active" : "")'>
-                            <a href="javascript:void(0)" class="menu-link menu-toggle">
-                                <i class="menu-icon icon-base ri ri-checkbox-multiple-blank-line"></i>
-                                <div data-i18n="Cadastro">Cadastro</div>
-                            </a>
-                            <ul class="menu-sub">
-                                <!-- Marcas/Aprovação - abertos a qualquer role da classe (Administracao,
-                                     Fundador, MembroHonra, Socio); a Aprovação já filtra server-side
-                                     (Administracao vê tudo, os demais só o que eles mesmos enviaram). -->
-                                <li class='menu-item@(currentPage == "/Cadastro/Acervo" ? " active" : "")'>
-                                    <a asp-controller="Cadastro" asp-action="CadastroAcervo" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-archive-line"></i>
-                                        <div data-i18n="Marcas">Marcas</div>
-                                    </a>
-                                </li>
-
-                                <li class='menu-item@(currentPage == "/Cadastro/Aprovacao" ? " active" : "")'>
-                                    <a asp-controller="Cadastro" asp-action="Index" class="menu-link">
-                                        <i class="menu-icon tf-icons ri-checkbox-multiple-line"></i>
-                                        <div data-i18n="Lista de Aprovação">Lista de Aprovação</div>
-                                    </a>
-                                </li>
-                                
-                            </ul>
-                        </li>
-
                     </ul>
                 </li>
 
@@ -526,6 +452,14 @@
                     <a asp-controller="Novidade" asp-action="Index" class="menu-link">
                         <i class='menu-icon icon-base ri ri-map-2-line'></i>
                         <div data-i18n="Novidades">Novidades</div>
+                    </a>
+                </li>
+
+                <!-- Download -->
+                <li class='menu-item@(currentPage.StartsWith("/Download") ? " active" : "")'>
+                    <a asp-controller="Download" asp-action="Index" class="menu-link">
+                        <i class='menu-icon icon-base ri ri-drag-drop-line'></i>
+                        <div data-i18n="Downloads">Downloads</div>
                     </a>
                 </li>
 

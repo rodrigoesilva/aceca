@@ -93,10 +93,11 @@ function fn_FiltrosChange() {
 //#region GRID
 
 function fn_MontarGrid() {
-    $.busyLoadFull("show");
-
     $('.datatables-basic').DataTable({
-        processing: true,
+        // processing:false (default) - o "Processando..." padrão do DataTables fica
+        // desligado de propósito; o loading da tela toda é o $.busyLoadFull, disparado
+        // em beforeSend/dataSrc/error abaixo (cobre carga inicial e todo reload/filtro).
+        processing: false,
         serverSide: true,
         autoWidth: false,
         order: [],
@@ -106,6 +107,9 @@ function fn_MontarGrid() {
             url: `${var_Controller}/FiltrarDadosAprovacao`,
             type: 'POST',
             contentType: 'application/json',
+            beforeSend: function () {
+                $.busyLoadFull("show");
+            },
             data: function (d) {
                 return JSON.stringify({
                     draw: d.draw,
@@ -120,6 +124,9 @@ function fn_MontarGrid() {
                     }
                 });
             },
+            error: function () {
+                $.busyLoadFull("hide");
+            },
             dataSrc: function (json) {
                 $.busyLoadFull("hide");
                 return json.data;
@@ -133,16 +140,21 @@ function fn_MontarGrid() {
             { data: 'NomeFase', className: 'text-center', responsivePriority: 10003 },
             {
                 data: 'ImgPrincipalFull', className: 'text-center', orderable: false, responsivePriority: 10004,
-                render: function (data, type) {
+                render: function (data, type, full) {
                     if (type !== 'display') return data || '';
-                    return `<img alt="Imagem" onerror="this.onerror=null;this.src='${strUrlImgInexistente}';" src="${data}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">`;
+                    // Registros enviados antes de existir a pasta de staging ("_pendente")
+                    // têm a imagem direto na pasta ao vivo do Acervo - se a URL de staging
+                    // der 404, tenta a URL ao vivo (ImgPrincipalFullLive) antes de desistir.
+                    const urlLive = full?.ImgPrincipalFullLive || strUrlImgInexistente;
+                    return `<img alt="Imagem" data-fallback="${urlLive}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}else{this.onerror=null;this.src='${strUrlImgInexistente}';}" src="${data}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">`;
                 }
             },
             {
                 data: 'ImgDetalheFull', className: 'text-center', orderable: false, responsivePriority: 10005,
-                render: function (data, type) {
+                render: function (data, type, full) {
                     if (type !== 'display') return data || '';
-                    return `<img alt="Detalhe" onerror="this.onerror=null;this.src='${strUrlImgInexistente}';" src="${data}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">`;
+                    const urlLive = full?.ImgDetalheFullLive || strUrlImgInexistente;
+                    return `<img alt="Detalhe" data-fallback="${urlLive}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}else{this.onerror=null;this.src='${strUrlImgInexistente}';}" src="${data}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">`;
                 }
             },
             { data: 'CodigoAceca', className: 'text-center', responsivePriority: 2, orderable: true },
@@ -176,25 +188,37 @@ function fn_MontarGrid() {
                 render: function (data, type, full) {
                     if (type !== 'display') return '';
 
-                    if (!isAdministracao) return '';
-
                     const statusAtual = full.StatusCadastro;
+                    const itemObjJson = encodeURIComponent(JSON.stringify(full));
 
-                    let btns = '<div class="d-flex gap-2 justify-content-center flex-wrap">';
+                    // Editar sempre disponível (dono ou Administracao - o servidor confere).
+                    let itens = `<li><a href="javascript:void(0);" class="dropdown-item btn-editar" data-obj="${itemObjJson}"><i class="icon-base ri ri-edit-box-line icon-md me-2"></i>Editar</a></li>`;
 
-                    if (statusAtual !== E_STATUS_APROVADO) {
-                        btns += `<button type="button" class="btn btn-sm btn-label-success btn-aprovar" data-id="${data}"><i class="ri-check-line"></i> Aprovar</button>`;
+                    if (isAdministracao) {
+                        itens += `<li><div class="dropdown-divider"></div></li>`;
+
+                        if (statusAtual !== E_STATUS_APROVADO) {
+                            itens += `<li><a href="javascript:void(0);" class="dropdown-item btn-aprovar" data-id="${data}"><i class="icon-base ri ri-check-line text-success icon-md me-2"></i>Aprovar</a></li>`;
+                        }
+                        if (statusAtual !== E_STATUS_NEGADO) {
+                            itens += `<li><a href="javascript:void(0);" class="dropdown-item text-danger btn-negar" data-id="${data}"><i class="icon-base ri ri-close-circle-line icon-md me-2"></i>Negar</a></li>`;
+                        }
+                        if (statusAtual !== E_STATUS_PENDENTE) {
+                            itens += `<li><a href="javascript:void(0);" class="dropdown-item btn-pendente" data-id="${data}"><i class="icon-base ri ri-time-line icon-md me-2"></i>Voltar p/ Pendente</a></li>`;
+                        }
+                    } else {
+                        // Dono só pode cancelar (remover) o próprio envio ainda pendente.
+                        itens += `<li><a href="javascript:void(0);" class="dropdown-item text-danger btn-remover" data-id="${data}"><i class="icon-base ri ri-delete-bin-7-line icon-md me-2"></i>Remover</a></li>`;
                     }
-                    if (statusAtual !== E_STATUS_NEGADO) {
-                        btns += `<button type="button" class="btn btn-sm btn-label-danger btn-negar" data-id="${data}"><i class="ri-close-line"></i> Negar</button>`;
-                    }
-                    if (statusAtual !== E_STATUS_PENDENTE) {
-                        btns += `<button type="button" class="btn btn-sm btn-label-secondary btn-pendente" data-id="${data}"><i class="ri-time-line"></i> Voltar p/ Pendente</button>`;
-                    }
 
-                    btns += '</div>';
-
-                    return btns;
+                    return `<div class="d-inline-block">
+                                <a href="javascript:;" class="btn btn-sm btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                    <i class="ri-more-2-line ri-22px"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end m-0">
+                                    ${itens}
+                                </ul>
+                            </div>`;
                 }
             },
         ],
@@ -204,6 +228,72 @@ function fn_MontarGrid() {
 //#endregion
 
 //#region AÇÕES
+
+$(document).on('click', '.btn-editar', function () {
+    const obj = JSON.parse(decodeURIComponent($(this).data('obj')));
+
+    // Sem endpoint novo: os dados já carregados na grid (mesma query que a alimenta) vão
+    // via sessionStorage - CadastroAcervo.cshtml lê e pré-preenche o formulário a partir
+    // disso (ver fn_CarregarModoEdicao em admin-acervo-cadastro.js). Não vai na URL: um
+    // registro com descrição/imagens longas passa fácil de 2000 caracteres, o que em
+    // produção (IIS) pode estourar o limite padrão de query string antes de chegar na tela.
+    sessionStorage.setItem('cadastroDadosEdicao', JSON.stringify(obj));
+    window.location.href = `/Cadastro/CadastroAcervo?modoEdicao=1`;
+});
+
+$(document).on('click', '.btn-remover', function () {
+    const id = $(this).data('id');
+
+    Swal.fire({
+        title: 'Cancelar este envio?',
+        icon: 'warning',
+        html: 'O cadastro pendente será removido e não poderá ser recuperado.',
+        showCancelButton: true,
+        confirmButtonText: `<i class="ri-delete-bin-7-line"></i>&nbsp;Remover`,
+        cancelButtonText: 'Voltar',
+        customClass: {
+            confirmButton: 'btn btn-danger waves-effect waves-light me-3',
+            cancelButton: 'btn btn-label-secondary waves-effect'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        $.busyLoadFull("show");
+
+        $.ajax({
+            url: `${var_Controller}/Delete?id=${id}`,
+            type: 'DELETE',
+            success: function (response) {
+                $.busyLoadFull("hide");
+
+                if (!response?.bResult) {
+                    Swal.fire({
+                        title: 'OPS!!',
+                        icon: 'error',
+                        html: response?.message || 'Não foi possível remover.',
+                        confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                        customClass: { confirmButton: 'btn btn-label-danger waves-effect' }
+                    });
+                    return;
+                }
+
+                $('.datatables-basic').DataTable().ajax.reload(null, false);
+            },
+            error: function (xhr) {
+                $.busyLoadFull("hide");
+
+                Swal.fire({
+                    title: 'OPS!!',
+                    icon: 'error',
+                    html: xhr?.responseJSON?.message || 'Não foi possível remover.',
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: { confirmButton: 'btn btn-label-danger waves-effect' }
+                });
+            }
+        });
+    });
+});
 
 $(document).on('click', '.btn-aprovar', function () {
     const id = $(this).data('id');

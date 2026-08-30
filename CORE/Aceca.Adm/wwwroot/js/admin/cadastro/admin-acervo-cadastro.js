@@ -23,6 +23,10 @@ const combosLoaded = {};
 let fasesCache = null;
 let xhrMarcaFase = null;
 
+// true quando a tela abriu via "Editar" na fila de Aprovação (ver fn_CarregarModoEdicao) -
+// muda o texto do botão de salvar e a action de destino (Create vs Edit).
+let isModoEdicao = false;
+
 //#endregion
 
 //#region CARREGAMENTO INICIAL
@@ -30,12 +34,39 @@ let xhrMarcaFase = null;
 document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`LIST ${var_Controller} - Todos os recursos terminaram o carregamento!`);
-        
+
+        // Lida ANTES de fn_Limpar() - fn_Limpar() já limpa "modoEdicao" da URL
+        // (history.replaceState), então lendo depois nunca acharia o parâmetro.
+        const emModoEdicao = new URLSearchParams(window.location.search).get('modoEdicao') === '1';
+
+        // Os dados em si vêm do sessionStorage (não da URL - ver admin-cadastro-aprovacao.js
+        // :: btn-editar - registro com descrição/imagens longas passa de 2000 caracteres,
+        // arriscando estourar o limite de query string do IIS em produção). Lido e removido
+        // aqui, antes de fn_Limpar(), pra não sobreviver a um F5/nova visita.
+        const dadosEdicaoJson = emModoEdicao ? sessionStorage.getItem('cadastroDadosEdicao') : null;
+        sessionStorage.removeItem('cadastroDadosEdicao');
+
         fn_Limpar();
 
         //// Combos
         fn_PopLoadCombos();
         fn_ChangeCombos();
+
+        //// Modo edição (chegou via "Editar" na fila de Aprovação)
+        if (dadosEdicaoJson) {
+            // fn_Limpar() acima já fez o próprio show/hide (síncrono, rápido demais) - o
+            // carregamento de verdade aqui é assíncrono (espera os combos ficarem prontos),
+            // então mantém o loading visível até fn_CarregarModoEdicao terminar de vez
+            // (ele mesmo dá o hide lá no fim, depois do último campo preenchido).
+            $.busyLoadFull("show");
+
+            try {
+                fn_CarregarModoEdicao(JSON.parse(dadosEdicaoJson));
+            } catch (erro) {
+                console.error('Falha ao ler dados de edição do sessionStorage', erro);
+                $.busyLoadFull("hide");
+            }
+        }
 
         //// TEXT INPUTS
         $('#txt_Nome').blur(function () {
@@ -79,7 +110,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         document.getElementById('btCancelar').addEventListener('click', function (e) {
-            window.location.reload();
+            // Mesmo motivo do sucesso do Create - reload completo arrisca derrubar o menu
+            // pro sócio (ver TempData["isPerfil"]/Layout). fn_Limpar() já reseta o form.
+            fn_Limpar();
         });
     })();
 });
@@ -92,12 +125,13 @@ function fn_Limpar() {
 
     $.busyLoadFull("show");
 
+    $('#hdId').val('0');
     $('#txt_Nome').val('');
-    
+
     $('#cmbPop_MarcaFase').prop('selectedIndex', 0).change();
     $('#txt_Codigo').val('');
     $('#txt_CodigoVariante').val('');
-    
+
     $('#cmbPop_MarcaFinalidade').prop('selectedIndex', 0).change();
     $('#cmbPop_MarcaFabrica').prop('selectedIndex', 0).change();
     $('#txt_CodFabrica').val('');
@@ -106,29 +140,41 @@ function fn_Limpar() {
     $('#cmbPop_MarcaSubTipo').prop('selectedIndex', 0).change();
     $('#cmbPop_MarcaImpressora').prop('selectedIndex', 0).change();
     $('#cmbPop_MarcaQualidadeImagem').prop('selectedIndex', 0).change();
-    $('#cmbPop_Raridade').prop('selectedIndex', 0).change();
+    $('#cmbPop_MarcaRaridade').prop('selectedIndex', 0).change();
     $('#txt_Descricao').val('');
+    $('#txt_Observacao').val('');
     $('#txt_Valor').val('');
     $('#txt_Valor1PI').val('');
     $('#txt_Valor2PI').val('');
 
     $('#txt_ImgPrincipal').val('');
     $('#txt_ImgDetalhe').val('');
+    $('#img_ImgPrincipal').attr('src', '');
+    $('#img_ImgDetalhe').attr('src', '');
 
     $('.div_tem_pais_destino').hide();
 
     $('.div_acervo').hide();
     $('.div_fase').hide();
-    $('.div_variante').hide();   
+    $('.div_variante').hide();
     $('.div_variante_codigo').hide();
     $('.div_original_variante').hide();
 
     $('.div_codigo').hide();
-    
+
     $('.div_dados').hide();
     $('.div_adicional').hide();
     $('.div_imagem').hide();
-    $('.div_botoes').hide();    
+    $('.div_botoes').hide();
+
+    // Sai do modo edição (se estava) e limpa a URL, senão um F5 reabriria a edição sozinho.
+    isModoEdicao = false;
+    fn_AtualizarTextoBotaoCadastrar();
+    $('.card-header').first().text('Novo Item de Acervo');
+
+    if (window.location.search.includes('modoEdicao')) {
+        history.replaceState(null, '', window.location.pathname);
+    }
 
     $.busyLoadFull("hide");
 }
@@ -208,8 +254,9 @@ function fn_ModalGetObj() {
         MarcaSubTipoId: $('#cmbPop_MarcaSubTipo').find('option:selected').val(),
         MarcaImpressoraId: $('#cmbPop_MarcaImpressora').find('option:selected').val(),
         MarcaQualidadeImagemId: $('#cmbPop_MarcaQualidadeImagem').find('option:selected').val(),
-        MarcaRaridadeId: $('#cmbPop_Raridade').find('option:selected').val(),
+        MarcaRaridadeId: $('#cmbPop_MarcaRaridade').find('option:selected').val(),
         Descricao: $('#txt_Descricao').val().length > 0 ? $('#txt_Descricao').val() : null,
+        Observacao: $('#txt_Observacao').val().length > 0 ? $('#txt_Observacao').val() : null,
 
         Valor: $('#txt_Valor').val().length > 0 ? $('#txt_Valor').val() : null,
         Valor1PI: $('#txt_Valor1PI').val().length > 0 ? $('#txt_Valor1PI').val() : null,
@@ -969,6 +1016,19 @@ function fn_CamposShow(result) {
     $('.div_dados').show();
     $('.div_imagem').show();
     $('.div_botoes').show();
+
+    // fn_CamposHide (disparado pelas trocas de Acervo/Fase/Variante até chegar aqui)
+    // esconde .div_IncluidoSocio/.div_IncluidoNaoSocio incondicionalmente, e nada os
+    // reexibia depois - o toggle #cmbPop_IncluidoPor ficava com o valor certo (ex.:
+    // travado em "Sim" pra quem não é Administracao), mas o combo/texto correspondente
+    // por baixo nunca aparecia. Reaplica a visibilidade com base no valor atual do toggle.
+    if ($('#cmbPop_IncluidoPor').val() > 0) {
+        $('.div_IncluidoSocio').show();
+        $('.div_IncluidoNaoSocio').hide();
+    } else {
+        $('.div_IncluidoSocio').hide();
+        $('.div_IncluidoNaoSocio').show();
+    }
 }
 
 function fn_ChecaInicioNumero(strNovoNomeParaCadastro) {
@@ -1158,6 +1218,164 @@ function fn_PreencheDadosExistentes(obj) {
         //(obj === null || obj?.imgDetalhe === null) ? (document.querySelector('#txt_ImgDetalhe').value = '') : fnItem_PopImgDetalhe(obj);
 }
 
+//#region Modo Edição (chegou via "Editar" na fila de Aprovação)
+
+// Os combos são carregados via ajax de forma assíncrona (fn_PopLoadCombos) - só dá pra
+// selecionar um valor depois que as <option> existirem de verdade no DOM. Espera cada
+// seletor ter mais de 1 opção antes de rodar o callback (com um teto de ~4s de segurança).
+function fn_AguardarCombosCarregados(seletores, callback, tentativas) {
+    tentativas = tentativas || 0;
+
+    const prontos = seletores.every(function (sel) { return $(sel).find('option').length > 1; });
+
+    if (prontos || tentativas > 40) {
+        callback();
+        return;
+    }
+
+    setTimeout(function () { fn_AguardarCombosCarregados(seletores, callback, tentativas + 1); }, 100);
+}
+
+function fn_AtualizarTextoBotaoCadastrar() {
+    let texto = 'Cadastrar';
+
+    if (isModoEdicao) {
+        texto = isAdministracao ? 'Salvar' : 'Enviar para Aprovação';
+    }
+
+    document.getElementById('btCadastrar').textContent = texto;
+}
+
+// dados vem da própria grid de Aprovação (FiltrarDadosAprovacao) - mesmas colunas
+// PascalCase usadas lá (ver admin-cadastro-aprovacao.js :: btn-editar).
+function fn_CarregarModoEdicao(dados) {
+    if (!dados || !dados.Id) {
+        $.busyLoadFull("hide");
+        return;
+    }
+
+    isModoEdicao = true;
+
+    fn_AguardarCombosCarregados([
+        '#cmbPop_MarcaAcervo', '#cmbPop_MarcaFinalidade', '#cmbPop_MarcaFabrica',
+        '#cmbPop_MarcaDimensao', '#cmbPop_MarcaTipo', '#cmbPop_MarcaSubTipo',
+        '#cmbPop_MarcaImpressora', '#cmbPop_MarcaQualidadeImagem', '#cmbPop_MarcaRaridade'
+    ], function () {
+        $('#hdId').val(dados.Id);
+        $('#hdMarcaFinalidadeId').val(dados.MarcaFinalidadeId || 0);
+        $('#hdMarcaFabricaId').val(dados.MarcaFabricaId || 0);
+        $('#hdMarcaDimensaoId').val(dados.MarcaDimensaoId || 0);
+        $('#hdMarcaTipoId').val(dados.MarcaTipoId || 0);
+        $('#hdMarcaSubTipoId').val(dados.MarcaSubTipoId || 0);
+        $('#hdMarcaImpressoraId').val(dados.MarcaImpressoraId || 0);
+        $('#hdMarcaQualidadeImagemId').val(dados.MarcaQualidadeImagemId || 0);
+
+        $('#txt_Nome').val(dados.NomeMarca || '');
+
+        $('#cmbPop_MarcaAcervo').val(dados.MarcaAcervoId > 0 ? dados.MarcaAcervoId : '-1').trigger('change');
+        fn_MenuAcervo();
+
+        // Fase só é populado como reação à troca de Acervo acima (fn_LoadCmb_MarcaFase) -
+        // espera ficar pronto antes de selecionar o valor certo.
+        fn_AguardarCombosCarregados(['#cmbPop_MarcaFase'], function () {
+            $('#hdMarcaFaseId').val(dados.MarcaFaseId || 0);
+            $('#cmbPop_MarcaFase').val(dados.MarcaFaseId > 0 ? dados.MarcaFaseId : '-1').trigger('change');
+
+            document.getElementById('div_Codigo').textContent = dados.CodigoAceca || '';
+            document.getElementById('div_NovoCodigo').textContent = dados.CodigoAcecaNew || '';
+            $('.div_codigo').show();
+
+            $('#cmbPop_MarcaFinalidade').val(dados.MarcaFinalidadeId > 0 ? dados.MarcaFinalidadeId : '-1').trigger('change');
+            $('#cmbPop_MarcaFabrica').val(dados.MarcaFabricaId > 0 ? dados.MarcaFabricaId : '-1').trigger('change');
+            $('#txt_CodFabrica').val(dados.CodigoFabrica || '');
+            $('#cmbPop_MarcaDimensao').val(dados.MarcaDimensaoId > 0 ? dados.MarcaDimensaoId : '-1').trigger('change');
+            $('#cmbPop_MarcaTipo').val(dados.MarcaTipoId > 0 ? dados.MarcaTipoId : '-1').trigger('change');
+            $('#cmbPop_MarcaSubTipo').val(dados.MarcaSubTipoId > 0 ? dados.MarcaSubTipoId : '-1').trigger('change');
+            $('#cmbPop_MarcaImpressora').val(dados.MarcaImpressoraId > 0 ? dados.MarcaImpressoraId : '-1').trigger('change');
+            $('#cmbPop_MarcaQualidadeImagem').val(dados.MarcaQualidadeImagemId > 0 ? dados.MarcaQualidadeImagemId : '-1').trigger('change');
+            $('#cmbPop_MarcaRaridade').val(dados.MarcaRaridadeId > 0 ? dados.MarcaRaridadeId : '-1').trigger('change');
+
+            $('#txt_Descricao').val(dados.Descricao || '');
+            $('#txt_Observacao').val(dados.Observacao || '');
+
+            const temValoresAdicionais = dados.Valor || dados.Valor1PI || dados.Valor2PI;
+            temValoresAdicionais ? $('.div_adicional').show() : $('.div_adicional').hide();
+            $('#txt_Valor').val(dados.Valor || '');
+            $('#txt_Valor1PI').val(dados.Valor1PI || '');
+            $('#txt_Valor2PI').val(dados.Valor2PI || '');
+
+            // Incluído por - mesma regra do combo Sim/Não usada no cadastro normal.
+            const incluidoPorSocioIdLimpo = (dados.IncluidoPorSocioId || '').toString().replace(/,$/, '');
+
+            if (incluidoPorSocioIdLimpo && parseInt(incluidoPorSocioIdLimpo) > 0) {
+                $('#cmbPop_IncluidoPor').val('1').trigger('change');
+                $('#cmbPop_IncluidoSocio').val(incluidoPorSocioIdLimpo).trigger('change');
+            } else {
+                $('#cmbPop_IncluidoPor').val('0').trigger('change');
+                $('#txt_IncluidoPor').val(dados.IncluidoPor || '');
+            }
+
+            // Preview das imagens já enviadas - reenviar um arquivo novo é opcional na edição
+            // (ver CadastroController.Edit, que mantém o arquivo atual se nada for anexado).
+            // fn_PreviewImage (disparado ao escolher um arquivo novo) sempre dá .show() nos
+            // divs - fn_Limpar() os deixa hidden por padrão, então precisa fazer o mesmo aqui.
+            if (dados.ImgPrincipalFull) {
+                const imgPrincipalEl = document.getElementById('img_ImgPrincipal');
+                imgPrincipalEl.dataset.fallback = dados.ImgPrincipalFullLive || '';
+                imgPrincipalEl.onerror = function () {
+                    if (this.src !== this.dataset.fallback && this.dataset.fallback) {
+                        this.src = this.dataset.fallback;
+                    } else {
+                        this.onerror = null;
+                    }
+                };
+                imgPrincipalEl.src = dados.ImgPrincipalFull;
+                $('.div_img_principal').show();
+            }
+            if (dados.ImgDetalheFull) {
+                const imgDetalheEl = document.getElementById('img_ImgDetalhe');
+                imgDetalheEl.dataset.fallback = dados.ImgDetalheFullLive || '';
+                imgDetalheEl.onerror = function () {
+                    if (this.src !== this.dataset.fallback && this.dataset.fallback) {
+                        this.src = this.dataset.fallback;
+                    } else {
+                        this.onerror = null;
+                    }
+                };
+                imgDetalheEl.src = dados.ImgDetalheFull;
+                $('.div_img_detalhe').show();
+            }
+
+            $('.div_dados').show();
+            $('.div_imagem').show();
+            $('.div_botoes').show();
+
+            $('.card-header').first().text('Editar Item de Acervo');
+
+            fn_AtualizarTextoBotaoCadastrar();
+
+            $.busyLoadFull("hide");
+
+            // EStatusCadastro.Negado = 3 (Helper/HelperExtensionsController.cs) - avisa
+            // pra conferir o motivo da recusa (Observação, já preenchida acima) antes de
+            // corrigir e reenviar.
+            if (parseInt(dados.StatusCadastro) === 3) {
+                Swal.fire({
+                    title: 'Cadastro negado',
+                    icon: 'warning',
+                    html: 'Este item foi negado. N&atilde;o se esque&ccedil;a de conferir o motivo no campo <b>Observa&ccedil;&atilde;o</b> antes de corrigir e reenviar.',
+                    confirmButtonText: `<i class="ri-check-double-line"></i>&nbsp;Ok!`,
+                    customClass: {
+                        confirmButton: 'btn btn-label-warning waves-effect'
+                    }
+                });
+            }
+        });
+    });
+}
+
+//#endregion
+
 function fn_MenuAcervo() {
 
     let idMarcaAcervo = $('#cmbPop_MarcaAcervo').find('option:selected').val();
@@ -1339,8 +1557,12 @@ function fn_ModalSalvar(e) {
         formData.append('iFileImgPrincipal', fileImgPrincipal);
         formData.append('iFileImgDetalhe', fileImgDetalhe);
 
+        // Modo edição (hdId > 0, veio de "Editar" na fila de Aprovação) grava em cima do
+        // cadastro existente; senão é um cadastro novo de verdade.
+        const acaoSalvar = (parseInt($('#hdId').val()) || 0) > 0 ? 'Edit' : 'Create';
+
         $.ajax({
-            url: `${var_Controller}/Create`,
+            url: `${var_Controller}/${acaoSalvar}`,
             type: 'POST',
             data: formData,
             cache: false,
@@ -1358,12 +1580,19 @@ function fn_ModalSalvar(e) {
                     Swal.fire({
                         title: 'Dados Salvos!',
                         icon: 'success',
-                        text: 'Marca cadastrada com sucesso.',
+                        text: acaoSalvar === 'Edit' ? 'Cadastro atualizado com sucesso.' : 'Marca cadastrada com sucesso.',
                         customClass: {
                             confirmButton: 'btn btn-success waves-effect waves-light'
                         }
                     }).then((resultSucesso) => {
-                        window.location.reload();
+                        // Era window.location.reload() - um reload completo aqui reexecuta a
+                        // escolha de Layout (_HorizontalLayout/_WithoutMenuLayout) baseada em
+                        // TempData["isPerfil"], que só sobrevive request a request enquanto o
+                        // menu (_HorizontalMenu.cshtml) é renderizado pra chamar TempData.Keep()
+                        // - pra um sócio, isso podia fazer o menu sumir depois de cadastrar.
+                        // fn_Limpar() já reseta o formulário pra um novo cadastro sem
+                        // depender de outro request ao servidor.
+                        fn_Limpar();
                         //console.log("resultSucesso  :: ", resultSucesso);
                     });
 

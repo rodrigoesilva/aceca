@@ -205,6 +205,8 @@ namespace Aceca.Adm.Controllers.Cadastro
                     SELECT
                         m.id AS Id,
                         m.CodigoAceca,
+                        m.CodigoAcecaNew,
+                        m.codigoSC AS CodigoFabrica,
                         m.Nome AS NomeMarca,
                         ma.Descricao AS NomeAcervo,
                         mf.Descricao AS NomeFase,
@@ -214,18 +216,48 @@ namespace Aceca.Adm.Controllers.Cadastro
                         m.StatusCadastro,
                         m.Observacao,
                         sCriou.Nome AS CriadoPorNome,
+                        m.criadoPorSocioId AS CriadoPorSocioId,
                         sAprovou.Nome AS AprovadoPorNome,
                         m.dataCriacao AS DataCriacao,
 
+                        -- Ids/valores crus, usados só pra pré-preencher o formulário de edição
+                        -- (ver CadastroAcervo.cshtml / admin-acervo-cadastro.js).
+                        m.marcaAcervoId AS MarcaAcervoId,
+                        m.marcaFaseId AS MarcaFaseId,
+                        m.marcaFinalidadeId AS MarcaFinalidadeId,
+                        m.marcaFabricaId AS MarcaFabricaId,
+                        m.fabrica_txt AS TxtFabrica,
+                        m.marcaDimensaoId AS MarcaDimensaoId,
+                        mst.marcaTipoId AS MarcaTipoId,
+                        m.marcaSubTipoId AS MarcaSubTipoId,
+                        m.marcaImpressoraId AS MarcaImpressoraId,
+                        m.impressora AS TxtImpressora,
+                        m.marcaQualidadeImagemId AS MarcaQualidadeImagemId,
+                        m.marcaRaridadeId AS MarcaRaridadeId,
+                        m.Valor,
+                        m.Valor1PI,
+                        m.Valor2PI,
+                        m.IncluidoPor,
+                        m.incluidoPorSocioId AS IncluidoPorSocioId,
+
                         m.ImgPrincipal,
                         IF(m.ImgPrincipal IS NOT NULL,
-                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
+                            CONCAT(@ImgBase,'/_pendente/',m.MarcaFaseId,'/',m.ImgPrincipal),
                             @ImgDefault) AS ImgPrincipalFull,
+                        -- Fallback pra registros enviados antes da pasta de staging existir
+                        -- (imagem foi parar direto na pasta ao vivo do Acervo) - o client
+                        -- tenta ImgPrincipalFull primeiro e só usa esta se aquela der 404.
+                        IF(m.ImgPrincipal IS NOT NULL,
+                            CONCAT(@ImgBase,'/',m.MarcaFaseId,'/',m.ImgPrincipal),
+                            @ImgDefault) AS ImgPrincipalFullLive,
 
                         m.ImgDetalhe,
                         IF(m.ImgDetalhe IS NOT NULL,
+                            CONCAT(@ImgBase,'/_pendente/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),
+                            @ImgDefault) AS ImgDetalheFull,
+                        IF(m.ImgDetalhe IS NOT NULL,
                             CONCAT(@ImgBase,'/',m.MarcaFaseId,'/detalhes/',m.ImgDetalhe),
-                            @ImgDefault) AS ImgDetalheFull
+                            @ImgDefault) AS ImgDetalheFullLive
 
                     {sqlFrom}
 
@@ -347,6 +379,11 @@ namespace Aceca.Adm.Controllers.Cadastro
                         TxtImpressora = model.TxtImpressora,
                     };
 
+                    // A imagem só é publicada na pasta real do Acervo na aprovação - até
+                    // aqui ela ficava numa pasta "_pendente" separada (ver UploadImg/Create),
+                    // então ninguém via a imagem de um item ainda não aprovado.
+                    MoverImagensPendenteParaAcervo(model.MarcaFaseId, model.ImgPrincipal, model.ImgDetalhe);
+
                     _db.Marca.Add(marca);
                     _db.MarcaCadastro.Remove(model);
                 }
@@ -368,6 +405,83 @@ namespace Aceca.Adm.Controllers.Cadastro
                 _logger.LogError(mensagemErro);
 
                 return BadRequest(new { bResult = false, type = "ERRO", message = mensagemErro });
+            }
+        }
+
+        // Move a imagem principal/detalhe da pasta de staging ("_pendente/{fase}") pra pasta
+        // real do Acervo ("{fase}") - chamado só na aprovação (ver SetStatus). Lança exceção
+        // se a movimentação falhar, pra SetStatus não seguir pra SaveChangesAsync e aprovar
+        // um item cuja imagem não foi de fato publicada.
+        private void MoverImagensPendenteParaAcervo(int? marcaFaseId, string imgPrincipal, string imgDetalhe)
+        {
+            if (string.IsNullOrEmpty(imgPrincipal) && string.IsNullOrEmpty(imgDetalhe))
+                return;
+
+            if (_bIsLocalHost)
+            {
+                if (!string.IsNullOrEmpty(imgPrincipal))
+                {
+                    var origem = Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", "_pendente", marcaFaseId?.ToString(), imgPrincipal);
+                    var destinoPasta = Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", marcaFaseId?.ToString());
+                    Directory.CreateDirectory(destinoPasta);
+
+                    var destino = Path.Combine(destinoPasta, imgPrincipal);
+                    if (System.IO.File.Exists(origem))
+                        System.IO.File.Move(origem, destino, true);
+                }
+
+                if (!string.IsNullOrEmpty(imgDetalhe))
+                {
+                    var origem = Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", "_pendente", marcaFaseId?.ToString(), "detalhes", imgDetalhe);
+                    var destinoPasta = Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", marcaFaseId?.ToString(), "detalhes");
+                    Directory.CreateDirectory(destinoPasta);
+
+                    var destino = Path.Combine(destinoPasta, imgDetalhe);
+                    if (System.IO.File.Exists(origem))
+                        System.IO.File.Move(origem, destino, true);
+                }
+
+                return;
+            }
+
+            using var ftpConn = new FtpClient(_ftpHost, _ftpUser, _ftpPass);
+            ftpConn.Connect();
+
+            try
+            {
+                if (!string.IsNullOrEmpty(imgPrincipal))
+                {
+                    var origem = $"{_ftpBaseUrl}/midia/geral/_pendente/{marcaFaseId}/{imgPrincipal}";
+                    var destinoPasta = $"{_ftpBaseUrl}/midia/geral/{marcaFaseId}";
+                    var destino = $"{destinoPasta}/{imgPrincipal}";
+
+                    if (ftpConn.FileExists(origem))
+                    {
+                        if (!ftpConn.DirectoryExists(destinoPasta))
+                            ftpConn.CreateDirectory(destinoPasta, true);
+
+                        ftpConn.MoveFile(origem, destino, FtpRemoteExists.Overwrite);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(imgDetalhe))
+                {
+                    var origem = $"{_ftpBaseUrl}/midia/geral/_pendente/{marcaFaseId}/detalhes/{imgDetalhe}";
+                    var destinoPasta = $"{_ftpBaseUrl}/midia/geral/{marcaFaseId}/detalhes";
+                    var destino = $"{destinoPasta}/{imgDetalhe}";
+
+                    if (ftpConn.FileExists(origem))
+                    {
+                        if (!ftpConn.DirectoryExists(destinoPasta))
+                            ftpConn.CreateDirectory(destinoPasta, true);
+
+                        ftpConn.MoveFile(origem, destino, FtpRemoteExists.Overwrite);
+                    }
+                }
+            }
+            finally
+            {
+                ftpConn.Disconnect();
             }
         }
 
@@ -397,6 +511,11 @@ namespace Aceca.Adm.Controllers.Cadastro
                 #region Marca
 
                 var vmModel = JsonConvert.DeserializeObject<VMMarca>(strObjModel);
+
+                // Administracao não passa pela fila de aprovação - vai direto pro Acervo
+                // (marcas), igual ao comportamento antigo. Só quem não é Administracao
+                // entra em marcas_cadastro aguardando aprovação.
+                bool ehAdministracao = User.IsInRole("Administracao");
 
                 if (string.IsNullOrEmpty(vmModel?.Nome))
                     return BadRequest(new
@@ -438,6 +557,27 @@ namespace Aceca.Adm.Controllers.Cadastro
                         message = "IncluidoPor deve ser preenchido"
                     });
 
+                // Defesa em profundidade contra duplicidade de CodigoAceca: GetNovoCodigoAceca
+                // já evita gerar um código já reservado por outro cadastro pendente, mas dois
+                // cadastros concorrentes podem ter pego o mesmo código antes de qualquer um
+                // salvar - aqui é a última checagem antes de persistir de verdade.
+                var codigoAcecaTrim = vmModel.CodigoAceca.Trim();
+                var codigoAcecaNewTrim = vmModel.CodigoAcecaNew?.Trim();
+
+                var codigoJaUsado = await _db.Marca.AsNoTracking()
+                        .AnyAsync(x => x.CodigoAceca == codigoAcecaTrim || (codigoAcecaNewTrim != null && x.CodigoAcecaNew == codigoAcecaNewTrim))
+                    || await _db.MarcaCadastro.AsNoTracking()
+                        .AnyAsync(x => x.StatusCadastro == (int)EStatusCadastro.Pendente
+                                     && (x.CodigoAceca == codigoAcecaTrim || (codigoAcecaNewTrim != null && x.CodigoAcecaNew == codigoAcecaNewTrim)));
+
+                if (codigoJaUsado)
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Código Aceca já está em uso por outro cadastro (aprovado ou aguardando aprovação) - gere o código novamente"
+                    });
+
                 #region Upload Imagem
 
                 #region Upload Imagem ImgPrincipal
@@ -448,7 +588,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                 {
                     if (!vmModel.ImgPrincipal.Equals("C:\\fakepath\\."))
                     {
-                        var result = await UploadImg(vmModel, iFileImgPrincipal, true);
+                        var result = await UploadImg(vmModel, iFileImgPrincipal, true, bStaging: !ehAdministracao);
 
                         var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
 
@@ -477,7 +617,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                 if (iFileImgDetalhe != null)
                 {
                     if(!vmModel.ImgDetalhe.Equals("C:\\fakepath\\.")){
-                        var result = await UploadImg(vmModel, iFileImgDetalhe, false);
+                        var result = await UploadImg(vmModel, iFileImgDetalhe, false, bStaging: !ehAdministracao);
 
                         var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
 
@@ -501,67 +641,125 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                 #endregion
 
-                #region obj MarcaCadastro
+                #region obj Marca / MarcaCadastro
 
                 // 1. Convert to Title Case
                 TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
 
-                // Etapa intermediária de aprovação: o cadastro não entra mais direto em
-                // `marcas` - fica em `marcas_cadastro` com StatusCadastro=Pendente até um
-                // Administracao Aprovar (ver SetStatus, que promove pra `marcas`) ou Negar.
-                var model = new MarcaCadastro
+                int? novoId;
+
+                if (ehAdministracao)
                 {
-                    Ativo = true,
+                    // Administracao não passa por aprovação - vai direto pro Acervo (marcas),
+                    // igual ao comportamento anterior à etapa de aprovação.
+                    var marca = new Marcas
+                    {
+                        Ativo = true,
 
-                    MarcaAcervoId = (vmModel?.MarcaAcervoId < 0 || vmModel?.MarcaAcervoId == null) ? null : vmModel?.MarcaAcervoId,
-                    MarcaDimensaoId = (vmModel?.MarcaDimensaoId < 0 || vmModel?.MarcaDimensaoId == null) ? null : vmModel?.MarcaDimensaoId,
-                    MarcaFabricaId = (vmModel?.MarcaFabricaId < 0 || vmModel?.MarcaFabricaId == null) ? null : vmModel?.MarcaFabricaId,
-                    MarcaFaseId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId,
-                    MarcaFaseAcervoId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId,
-                    MarcaFinalidadeId = (vmModel?.MarcaFinalidadeId < 0 || vmModel?.MarcaFinalidadeId == null) ? null : vmModel?.MarcaFinalidadeId,
-                    MarcaImpressoraId = (vmModel?.MarcaImpressoraId < 0 || vmModel?.MarcaImpressoraId == null) ? null : vmModel?.MarcaImpressoraId,
-                    MarcaQualidadeImagemId = (vmModel?.MarcaQualidadeImagemId < 0 || vmModel?.MarcaQualidadeImagemId == null) ? null : vmModel?.MarcaQualidadeImagemId,
-                    MarcaRaridadeId = (vmModel?.MarcaRaridadeId < 0 || vmModel?.MarcaRaridadeId == null) ? null : vmModel?.MarcaRaridadeId,
-                    MarcaSubTipoId = (vmModel?.MarcaSubTipoId < 0 || vmModel?.MarcaSubTipoId == null) ? 5 : vmModel?.MarcaSubTipoId,
+                        MarcaAcervoId = (vmModel?.MarcaAcervoId < 0 || vmModel?.MarcaAcervoId == null) ? null : vmModel?.MarcaAcervoId,
+                        MarcaDimensaoId = (vmModel?.MarcaDimensaoId < 0 || vmModel?.MarcaDimensaoId == null) ? null : vmModel?.MarcaDimensaoId,
+                        MarcaFabricaId = (vmModel?.MarcaFabricaId < 0 || vmModel?.MarcaFabricaId == null) ? null : vmModel?.MarcaFabricaId,
+                        MarcaFaseId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId,
+                        MarcaFaseAcervoId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId,
+                        MarcaFinalidadeId = (vmModel?.MarcaFinalidadeId < 0 || vmModel?.MarcaFinalidadeId == null) ? null : vmModel?.MarcaFinalidadeId,
+                        MarcaImpressoraId = (vmModel?.MarcaImpressoraId < 0 || vmModel?.MarcaImpressoraId == null) ? null : vmModel?.MarcaImpressoraId,
+                        MarcaQualidadeImagemId = (vmModel?.MarcaQualidadeImagemId < 0 || vmModel?.MarcaQualidadeImagemId == null) ? null : vmModel?.MarcaQualidadeImagemId,
+                        MarcaRaridadeId = (vmModel?.MarcaRaridadeId < 0 || vmModel?.MarcaRaridadeId == null) ? null : vmModel?.MarcaRaridadeId,
+                        MarcaSubTipoId = (vmModel?.MarcaSubTipoId < 0 || vmModel?.MarcaSubTipoId == null) ? 5 : vmModel?.MarcaSubTipoId,
 
-                    CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca?.Trim() : null,
-                    CodigoAcecaNew = !string.IsNullOrEmpty(vmModel?.CodigoAcecaNew) ? vmModel?.CodigoAcecaNew?.Trim() : null,
-                    CodigoFabrica = !string.IsNullOrEmpty(vmModel?.CodigoFabrica) ? vmModel?.CodigoFabrica?.Trim() : null,
-                    ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? vmModel?.ImgPrincipal : null,
-                    ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? vmModel?.ImgDetalhe : null,
-                    Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome?.Trim() : null,
-                    Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao?.Trim() : null,
-                    Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI?.Trim() : null,
-                    Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI?.Trim() : null,
-                    Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor?.Trim() : null,
-                    IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? textInfo.ToTitleCase(vmModel?.IncluidoPor?.Trim()?.ToLower()) : null,
-                    IncluidoPorSocioId = !string.IsNullOrEmpty(vmModel?.IncluidoPorSocioId) ? string.Concat(vmModel?.IncluidoPorSocioId?.Trim(), ",") : null,
+                        CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca?.Trim() : null,
+                        CodigoAcecaNew = !string.IsNullOrEmpty(vmModel?.CodigoAcecaNew) ? vmModel?.CodigoAcecaNew?.Trim() : null,
+                        CodigoFabrica = !string.IsNullOrEmpty(vmModel?.CodigoFabrica) ? vmModel?.CodigoFabrica?.Trim() : null,
+                        ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? vmModel?.ImgPrincipal : null,
+                        ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? vmModel?.ImgDetalhe : null,
+                        Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome?.Trim() : null,
+                        Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao?.Trim() : null,
+                        Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI?.Trim() : null,
+                        Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI?.Trim() : null,
+                        Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor?.Trim() : null,
+                        IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? textInfo.ToTitleCase(vmModel?.IncluidoPor?.Trim()?.ToLower()) : null,
+                        IncluidoPorSocioId = !string.IsNullOrEmpty(vmModel?.IncluidoPorSocioId) ? string.Concat(vmModel?.IncluidoPorSocioId?.Trim(), ",") : null,
+                        EmQuarentena = 0,
+                        ExibirGeral = true,
 
-                    // Quem enviou de fato (autenticado no servidor - nunca vem do cliente),
-                    // diferente de IncluidoPorSocioId (crédito histórico de quem achou o
-                    // item, escolhido livremente no combo do formulário).
-                    CriadoPorSocioId = GetSocioIdAutenticado(),
-                    StatusCadastro = (int)EStatusCadastro.Pendente,
+                        TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome?.Trim() : null,
+                        TxtImpressora = !string.IsNullOrEmpty(vmModel?.MarcaImpressora?.Descricao) ? vmModel?.MarcaImpressora?.Descricao?.Trim() : null,
+                    };
 
-                    //
-                    TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome?.Trim() : null,
-                    TxtImpressora = !string.IsNullOrEmpty(vmModel?.MarcaImpressora?.Descricao) ? vmModel?.MarcaImpressora?.Descricao?.Trim() : null,
-                };
+                    _db.Marca.Add(marca);
+                    await _db.SaveChangesAsync();
+
+                    if (marca?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Cadastrar Marca"
+                        });
+
+                    novoId = marca.Id;
+                }
+                else
+                {
+                    // Etapa intermediária de aprovação: o cadastro não entra em `marcas` -
+                    // fica em `marcas_cadastro` com StatusCadastro=Pendente até um
+                    // Administracao Aprovar (ver SetStatus, que promove pra `marcas`) ou Negar.
+                    var model = new MarcaCadastro
+                    {
+                        Ativo = true,
+
+                        MarcaAcervoId = (vmModel?.MarcaAcervoId < 0 || vmModel?.MarcaAcervoId == null) ? null : vmModel?.MarcaAcervoId,
+                        MarcaDimensaoId = (vmModel?.MarcaDimensaoId < 0 || vmModel?.MarcaDimensaoId == null) ? null : vmModel?.MarcaDimensaoId,
+                        MarcaFabricaId = (vmModel?.MarcaFabricaId < 0 || vmModel?.MarcaFabricaId == null) ? null : vmModel?.MarcaFabricaId,
+                        MarcaFaseId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId,
+                        MarcaFaseAcervoId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId,
+                        MarcaFinalidadeId = (vmModel?.MarcaFinalidadeId < 0 || vmModel?.MarcaFinalidadeId == null) ? null : vmModel?.MarcaFinalidadeId,
+                        MarcaImpressoraId = (vmModel?.MarcaImpressoraId < 0 || vmModel?.MarcaImpressoraId == null) ? null : vmModel?.MarcaImpressoraId,
+                        MarcaQualidadeImagemId = (vmModel?.MarcaQualidadeImagemId < 0 || vmModel?.MarcaQualidadeImagemId == null) ? null : vmModel?.MarcaQualidadeImagemId,
+                        MarcaRaridadeId = (vmModel?.MarcaRaridadeId < 0 || vmModel?.MarcaRaridadeId == null) ? null : vmModel?.MarcaRaridadeId,
+                        MarcaSubTipoId = (vmModel?.MarcaSubTipoId < 0 || vmModel?.MarcaSubTipoId == null) ? 5 : vmModel?.MarcaSubTipoId,
+
+                        CodigoAceca = !string.IsNullOrEmpty(vmModel?.CodigoAceca) ? vmModel?.CodigoAceca?.Trim() : null,
+                        CodigoAcecaNew = !string.IsNullOrEmpty(vmModel?.CodigoAcecaNew) ? vmModel?.CodigoAcecaNew?.Trim() : null,
+                        CodigoFabrica = !string.IsNullOrEmpty(vmModel?.CodigoFabrica) ? vmModel?.CodigoFabrica?.Trim() : null,
+                        ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? vmModel?.ImgPrincipal : null,
+                        ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? vmModel?.ImgDetalhe : null,
+                        Nome = !string.IsNullOrEmpty(vmModel?.Nome) ? vmModel?.Nome?.Trim() : null,
+                        Descricao = !string.IsNullOrEmpty(vmModel?.Descricao) ? vmModel?.Descricao?.Trim() : null,
+                        Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI?.Trim() : null,
+                        Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI?.Trim() : null,
+                        Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor?.Trim() : null,
+                        IncluidoPor = !string.IsNullOrEmpty(vmModel?.IncluidoPor) ? textInfo.ToTitleCase(vmModel?.IncluidoPor?.Trim()?.ToLower()) : null,
+                        IncluidoPorSocioId = !string.IsNullOrEmpty(vmModel?.IncluidoPorSocioId) ? string.Concat(vmModel?.IncluidoPorSocioId?.Trim(), ",") : null,
+
+                        // Quem enviou de fato (autenticado no servidor - nunca vem do cliente),
+                        // diferente de IncluidoPorSocioId (crédito histórico de quem achou o
+                        // item, escolhido livremente no combo do formulário).
+                        CriadoPorSocioId = GetSocioIdAutenticado(),
+                        StatusCadastro = (int)EStatusCadastro.Pendente,
+
+                        //
+                        TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome?.Trim() : null,
+                        TxtImpressora = !string.IsNullOrEmpty(vmModel?.MarcaImpressora?.Descricao) ? vmModel?.MarcaImpressora?.Descricao?.Trim() : null,
+                    };
+
+                    _db.MarcaCadastro.Add(model);
+                    await _db.SaveChangesAsync();
+
+                    if (model?.Id <= 0)
+                        return BadRequest(new
+                        {
+                            bResult = false,
+                            type = "ERRO",
+                            message = "Falha ao Cadastrar Marca"
+                        });
+
+                    novoId = model.Id;
+                }
+
+                vmModel.Id = novoId;
 
                 #endregion
-
-                _db.MarcaCadastro.Add(model);
-                await _db.SaveChangesAsync();
-
-                if (model?.Id <= 0)
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Falha ao Cadastrar Marca"
-                    });
-
-                vmModel?.Id = model?.Id;
 
                 #endregion
 
@@ -588,117 +786,144 @@ namespace Aceca.Adm.Controllers.Cadastro
             }
         }
 
+        // Igual à Create, mas atualiza um cadastro já existente em marcas_cadastro (ainda não
+        // aprovado). Aberto pra qualquer role da classe: o dono da submissão pode corrigir o
+        // que enviou, e Administracao pode corrigir a de qualquer um (checagem de dono logo
+        // abaixo, não [Authorize]). Reenvio por quem não é Administracao volta o status pra
+        // Pendente - é o "Enviar para Aprovação" da tela.
         [HttpPost]
-        [Authorize(Roles = "Administracao")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Models.MarcaCadastro model)
+        public async Task<IActionResult> Edit(string strObjModel, IFormFile iFileImgPrincipal, IFormFile iFileImgDetalhe)
         {
             try
             {
-                if (ModelState.IsValid)
-                {
-                    #region MarcaCadastro
+                if (string.IsNullOrEmpty(strObjModel))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Model Inválida", data = strObjModel });
 
-                    if (model.Id < 1)
+                var vmModel = JsonConvert.DeserializeObject<VMMarca>(strObjModel);
+
+                if (vmModel?.Id == null || vmModel.Id < 1)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Id deve ser maior que 0" });
+
+                var model = await _db.MarcaCadastro.FirstOrDefaultAsync(x => x.Id == vmModel.Id);
+
+                if (model == null)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Cadastro não encontrado" });
+
+                bool ehAdministracao = User.IsInRole("Administracao");
+
+                if (!ehAdministracao && model.CriadoPorSocioId != GetSocioIdAutenticado())
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Você só pode editar cadastros enviados por você" });
+
+                if (string.IsNullOrEmpty(vmModel?.Nome))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nome deve ser preenchido" });
+
+                if (!RegexNomeCodigoValido.IsMatch(vmModel.Nome.Trim()))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Caracter inválido no nome preenchido" });
+
+                if (string.IsNullOrWhiteSpace(vmModel?.CodigoAceca))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Código Aceca deve ser gerado antes de salvar" });
+
+                if (string.IsNullOrEmpty(vmModel?.Descricao))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Descricao deve ser preenchido" });
+
+                if (string.IsNullOrEmpty(vmModel?.IncluidoPor))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "IncluidoPor deve ser preenchido" });
+
+                // Mesma defesa contra duplicidade da Create, excluindo a própria linha (o
+                // código atual dela já era reservado por ela mesma, não é uma colisão real).
+                var codigoAcecaTrim = vmModel.CodigoAceca.Trim();
+                var codigoAcecaNewTrim = vmModel.CodigoAcecaNew?.Trim();
+
+                var codigoJaUsado = await _db.Marca.AsNoTracking()
+                        .AnyAsync(x => x.CodigoAceca == codigoAcecaTrim || (codigoAcecaNewTrim != null && x.CodigoAcecaNew == codigoAcecaNewTrim))
+                    || await _db.MarcaCadastro.AsNoTracking()
+                        .AnyAsync(x => x.Id != model.Id
+                                     && x.StatusCadastro == (int)EStatusCadastro.Pendente
+                                     && (x.CodigoAceca == codigoAcecaTrim || (codigoAcecaNewTrim != null && x.CodigoAcecaNew == codigoAcecaNewTrim)));
+
+                if (codigoJaUsado)
+                    return BadRequest(new
                     {
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Id deve ser maior que 0"
-                        });
-                    }
-
-                    if (string.IsNullOrEmpty(model.Nome))
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Nome deve ser preenchido"
-                        });
-
-                    #region IDS
-
-                    model?.MarcaAcervoId = (model?.MarcaAcervoId < 0 || model?.MarcaAcervoId == null) ? 0 : model?.MarcaAcervoId;
-                    model?.MarcaDimensaoId = (model?.MarcaDimensaoId < 0 || model?.MarcaDimensaoId == null) ? 0 : model?.MarcaDimensaoId;
-                    model?.MarcaFabricaId = (model?.MarcaFabricaId < 0 || model?.MarcaFabricaId == null) ? 0 : model?.MarcaFabricaId;
-                    model?.MarcaFaseId = (model?.MarcaFaseId < 0 || model?.MarcaFaseId == null) ? 0 : model?.MarcaFaseId;
-                    model?.MarcaFinalidadeId = (model?.MarcaFinalidadeId < 0 || model?.MarcaFinalidadeId == null) ? 0 : model?.MarcaFinalidadeId;
-                    model?.MarcaImpressoraId = (model?.MarcaImpressoraId < 0 || model?.MarcaImpressoraId == null) ? 0 : model?.MarcaImpressoraId;
-                    model?.MarcaQualidadeImagemId = (model?.MarcaQualidadeImagemId < 0 || model?.MarcaQualidadeImagemId == null) ? 0 : model?.MarcaQualidadeImagemId;
-                    model?.MarcaRaridadeId = (model?.MarcaRaridadeId < 0 || model?.MarcaRaridadeId == null) ? 0 : model?.MarcaRaridadeId;
-                    model?.MarcaSubTipoId = (model?.MarcaSubTipoId < 0 || model?.MarcaSubTipoId == null) ? 5 : model?.MarcaSubTipoId;
-
-                    #endregion
-
-                    #region Upload Imagem
-
-                    model?.ImgPrincipal = Path.GetFileName(model?.ImgPrincipal);
-                    model?.ImgDetalhe = Path.GetFileName(model?.ImgDetalhe);
-                    /*
-                    //Verifica se existe ImgPrincipal para upload
-                    if (iFileImgPrincipal == null)
-                        vmModel.ImgPrincipal = null;
-                    else
-                    {
-                        var result = await UploadImg(vmModel, iFileImgPrincipal, true);
-
-                        if (result.GetType() == typeof(NotFoundObjectResult) ||
-                             result.GetType() == typeof(BadRequestObjectResult))
-                            return BadRequest(new
-                            {
-                                bResult = false,
-                                type = "ERRO",
-                                message = result?.ToString()
-                            });
-                    }
-
-                    //Verifica se existe ImgDetalhe para upload
-                    if (iFileImgDetalhe == null)
-                        vmModel.ImgDetalhe = null;
-                    else
-                    {
-                        var result = await UploadImg(vmModel, iFileImgDetalhe, false);
-
-                        if (result.GetType() == typeof(NotFoundObjectResult) ||
-                             result.GetType() == typeof(BadRequestObjectResult))
-                            return BadRequest(new
-                            {
-                                bResult = false,
-                                type = "ERRO",
-                                message = result?.ToString()
-                            });
-                    }
-                    */
-                    #endregion
-
-                    _db.Entry(model).State = EntityState.Modified;
-                    await _db.SaveChangesAsync();
-
-                    if (model?.Id <= 0)
-                        return BadRequest(new
-                        {
-                            bResult = false,
-                            type = "ERRO",
-                            message = "Falha ao Atualizar"
-                        });
-
-                    #endregion
-
-                    return Ok(new
-                    {
-                        bResult = true,
-                        type = "OK",
-                        message = "SUCESSO ::: ",
-                        data = model,
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Código Aceca já está em uso por outro cadastro (aprovado ou aguardando aprovação) - gere o código novamente"
                     });
+
+                // Upload de imagem - sempre em staging (o item continua em marcas_cadastro até
+                // ser aprovado, então uma imagem nova aqui não pode ir pra pasta ao vivo ainda).
+                // Se nenhum arquivo novo for enviado, mantém o nome de arquivo já salvo.
+                if (iFileImgPrincipal != null && !vmModel.ImgPrincipal.Equals("C:\\fakepath\\."))
+                {
+                    var result = await UploadImg(vmModel, iFileImgPrincipal, true, bStaging: true);
+                    var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
+
+                    if (result.GetType() == typeof(NotFoundObjectResult) || result.GetType() == typeof(BadRequestObjectResult))
+                        return BadRequest(new { bResult = false, type = "ERRO", message = (string)jObjResult?["message"] });
+
+                    vmModel.ImgPrincipal = (string)jObjResult?["data"];
+                }
+                else
+                {
+                    vmModel.ImgPrincipal = model.ImgPrincipal;
                 }
 
-                return BadRequest(new
+                if (iFileImgDetalhe != null && !vmModel.ImgDetalhe.Equals("C:\\fakepath\\."))
                 {
-                    bResult = false,
-                    type = "ERRO",
-                    message = "Model Inválida",
+                    var result = await UploadImg(vmModel, iFileImgDetalhe, false, bStaging: true);
+                    var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
+
+                    if (result.GetType() == typeof(NotFoundObjectResult) || result.GetType() == typeof(BadRequestObjectResult))
+                        return BadRequest(new { bResult = false, type = "ERRO", message = (string)jObjResult?["message"] });
+
+                    vmModel.ImgDetalhe = (string)jObjResult?["data"];
+                }
+                else
+                {
+                    vmModel.ImgDetalhe = model.ImgDetalhe;
+                }
+
+                TextInfo textInfo = CultureInfo.InvariantCulture.TextInfo;
+
+                model.MarcaAcervoId = (vmModel?.MarcaAcervoId < 0 || vmModel?.MarcaAcervoId == null) ? null : vmModel?.MarcaAcervoId;
+                model.MarcaDimensaoId = (vmModel?.MarcaDimensaoId < 0 || vmModel?.MarcaDimensaoId == null) ? null : vmModel?.MarcaDimensaoId;
+                model.MarcaFabricaId = (vmModel?.MarcaFabricaId < 0 || vmModel?.MarcaFabricaId == null) ? null : vmModel?.MarcaFabricaId;
+                model.MarcaFaseId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId;
+                model.MarcaFaseAcervoId = (vmModel?.MarcaFaseId < 0 || vmModel?.MarcaFaseId == null) ? null : vmModel?.MarcaFaseId;
+                model.MarcaFinalidadeId = (vmModel?.MarcaFinalidadeId < 0 || vmModel?.MarcaFinalidadeId == null) ? null : vmModel?.MarcaFinalidadeId;
+                model.MarcaImpressoraId = (vmModel?.MarcaImpressoraId < 0 || vmModel?.MarcaImpressoraId == null) ? null : vmModel?.MarcaImpressoraId;
+                model.MarcaQualidadeImagemId = (vmModel?.MarcaQualidadeImagemId < 0 || vmModel?.MarcaQualidadeImagemId == null) ? null : vmModel?.MarcaQualidadeImagemId;
+                model.MarcaRaridadeId = (vmModel?.MarcaRaridadeId < 0 || vmModel?.MarcaRaridadeId == null) ? null : vmModel?.MarcaRaridadeId;
+                model.MarcaSubTipoId = (vmModel?.MarcaSubTipoId < 0 || vmModel?.MarcaSubTipoId == null) ? 5 : vmModel?.MarcaSubTipoId;
+
+                model.CodigoAceca = codigoAcecaTrim;
+                model.CodigoAcecaNew = codigoAcecaNewTrim;
+                model.CodigoFabrica = !string.IsNullOrEmpty(vmModel?.CodigoFabrica) ? vmModel?.CodigoFabrica?.Trim() : null;
+                model.ImgPrincipal = !string.IsNullOrEmpty(vmModel?.ImgPrincipal) ? vmModel?.ImgPrincipal : null;
+                model.ImgDetalhe = !string.IsNullOrEmpty(vmModel?.ImgDetalhe) ? vmModel?.ImgDetalhe : null;
+                model.Nome = vmModel?.Nome?.Trim();
+                model.Descricao = vmModel?.Descricao?.Trim();
+                model.Valor1PI = !string.IsNullOrEmpty(vmModel?.Valor1PI) ? vmModel?.Valor1PI?.Trim() : null;
+                model.Valor2PI = !string.IsNullOrEmpty(vmModel?.Valor2PI) ? vmModel?.Valor2PI?.Trim() : null;
+                model.Valor = !string.IsNullOrEmpty(vmModel?.Valor) ? vmModel?.Valor?.Trim() : null;
+                model.IncluidoPor = textInfo.ToTitleCase(vmModel?.IncluidoPor?.Trim()?.ToLower());
+                model.IncluidoPorSocioId = !string.IsNullOrEmpty(vmModel?.IncluidoPorSocioId) ? string.Concat(vmModel?.IncluidoPorSocioId?.Trim(), ",") : null;
+                model.Observacao = !string.IsNullOrWhiteSpace(vmModel?.Observacao) ? vmModel.Observacao.Trim() : null;
+                model.TxtFabrica = !string.IsNullOrEmpty(vmModel?.MarcaFabrica?.Nome) ? vmModel?.MarcaFabrica?.Nome?.Trim() : null;
+                model.TxtImpressora = !string.IsNullOrEmpty(vmModel?.MarcaImpressora?.Descricao) ? vmModel?.MarcaImpressora?.Descricao?.Trim() : null;
+
+                // Qualquer edição (Administracao ou dono) volta o status pra Pendente - todo
+                // clique em "Salvar"/"Enviar para Aprovação" é tratado como um novo ciclo de
+                // aprovação, mesmo quando quem edita é quem vai aprovar depois.
+                model.StatusCadastro = (int)EStatusCadastro.Pendente;
+
+                await _db.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    bResult = true,
+                    type = "OK",
+                    message = "SUCESSO ::: ",
                     data = model,
                 });
             }
@@ -717,8 +942,10 @@ namespace Aceca.Adm.Controllers.Cadastro
             }
         }
 
+        // Aberto pra qualquer role da classe: o dono da submissão pode cancelar o próprio
+        // envio ainda pendente ("Remover" na fila de Aprovação); Administracao pode remover
+        // qualquer um. Checagem de dono abaixo, não [Authorize].
         [HttpDelete]
-        [Authorize(Roles = "Administracao")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
@@ -743,6 +970,14 @@ namespace Aceca.Adm.Controllers.Cadastro
                         type = "ERRO - ID nao localizado",
                         message = "ID nao localizado",
                         data = id
+                    });
+
+                if (!User.IsInRole("Administracao") && model.CriadoPorSocioId != GetSocioIdAutenticado())
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Você só pode remover cadastros enviados por você"
                     });
 
                 _db.MarcaCadastro.Remove(model);
@@ -1113,6 +1348,72 @@ namespace Aceca.Adm.Controllers.Cadastro
                         });
                     }
 
+                    #region Evita colisão com código já reservado (aprovado ou pendente)
+
+                    // Achado real em produção: o cálculo acima só olha `marcas` (catálogo já
+                    // aprovado) - se outro cadastro para a mesma fase ainda está em
+                    // marcas_cadastro aguardando aprovação, o código dele não aparecia aqui,
+                    // e dois usuários diferentes podiam receber o mesmo próximo CodigoAceca.
+                    // Bumpa o código (mesma lógica de incremento já usada acima) até achar um
+                    // que não esteja em uso nem por uma Marca já aprovada nem por outra
+                    // submissão ainda pendente.
+                    async Task<bool> CodigoReservadoAsync(string codigo)
+                    {
+                        if (string.IsNullOrEmpty(codigo))
+                            return false;
+
+                        if (await _db.Marca.AsNoTracking().AnyAsync(x => x.CodigoAceca == codigo || x.CodigoAcecaNew == codigo))
+                            return true;
+
+                        return await _db.MarcaCadastro.AsNoTracking().AnyAsync(x =>
+                            x.StatusCadastro == (int)EStatusCadastro.Pendente
+                            && (x.CodigoAceca == codigo || x.CodigoAcecaNew == codigo));
+                    }
+
+                    string BumpCodigo(string codigo)
+                    {
+                        var numStrBump = new string(codigo?.Where(char.IsDigit).ToArray());
+
+                        if (!bvariante)
+                        {
+                            if (int.TryParse(numStrBump, out int numBump))
+                            {
+                                var novoBump = codigo.Replace(numBump.ToString(), (numBump + 1).ToString());
+
+                                if (Char.IsLetter(novoBump[^1]))
+                                    novoBump = novoBump.Remove(novoBump.Length - 1);
+
+                                return novoBump;
+                            }
+
+                            return codigo;
+                        }
+
+                        if (Char.IsLetter(codigo[^1]))
+                        {
+                            char proximaLetraBump = (char)(codigo[^1] + 1);
+                            return ReplaceInPosition(codigo, codigo.Length - 1, proximaLetraBump);
+                        }
+
+                        return string.Concat(codigo, strUltimaLetraCodigoAceca);
+                    }
+
+                    var tentativasColisao = 0;
+
+                    while ((await CodigoReservadoAsync(strNovoCodigoAceca))
+                           || (!string.IsNullOrEmpty(strVelhoCodigoAceca) && await CodigoReservadoAsync(strVelhoCodigoAceca)))
+                    {
+                        if (++tentativasColisao > 100)
+                            break; // segurança - não deve acontecer na prática
+
+                        strNovoCodigoAceca = BumpCodigo(strNovoCodigoAceca);
+
+                        if (!string.IsNullOrEmpty(strVelhoCodigoAceca))
+                            strVelhoCodigoAceca = BumpCodigo(strVelhoCodigoAceca);
+                    }
+
+                    #endregion
+
                     if (model?.MarcaImpressoraId == null || model?.MarcaImpressoraId <= 0)
                         if (!string.IsNullOrEmpty(model?.TxtImpressora))
                         {
@@ -1222,7 +1523,7 @@ namespace Aceca.Adm.Controllers.Cadastro
         }
 
         [Authorize(Roles = "Administracao")]
-        public async Task<IActionResult> UploadImg(VMMarca vmModel, IFormFile iFileImg, bool bIsImgPrincipal)
+        public async Task<IActionResult> UploadImg(VMMarca vmModel, IFormFile iFileImg, bool bIsImgPrincipal, bool bStaging = false)
         {
             if (string.IsNullOrEmpty(iFileImg.FileName) || iFileImg?.FileName == null || iFileImg?.FileName.Length == 0)
                 return BadRequest(new
@@ -1282,11 +1583,19 @@ namespace Aceca.Adm.Controllers.Cadastro
             var strPathSaveFolder = string.Empty;
             var strPathSaveFile = string.Empty;
 
+            // Enquanto aguarda aprovação (cadastro de não-Administracao), a imagem fica numa
+            // pasta "_pendente" separada - só é movida pra pasta real do Acervo quando o
+            // cadastro é Aprovado (ver SetStatus). Sem isso, a imagem ficava pública no
+            // Acervo antes mesmo do item ser aprovado.
+            var strPastaFase = bStaging
+                ? $"_pendente/{vmModel?.MarcaFaseId?.ToString()}"
+                : vmModel?.MarcaFaseId?.ToString();
+
             if (_bIsLocalHost)
             {
                 strPathSaveFolder = bIsImgPrincipal
-                ? Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", vmModel?.MarcaFaseId?.ToString())
-                : Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", vmModel?.MarcaFaseId?.ToString(),"detalhes");
+                ? Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", strPastaFase)
+                : Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", strPastaFase,"detalhes");
 
                 strSaveFileName = bIsImgPrincipal
                 ? $"{strSaveFileName}{fileExtension}"
@@ -1297,8 +1606,8 @@ namespace Aceca.Adm.Controllers.Cadastro
             else
             {
                 strPathSaveFolder = bIsImgPrincipal
-                ? $"{_ftpBaseUrl}/midia/geral/{vmModel?.MarcaFaseId?.ToString()}"
-                : $"{_ftpBaseUrl}/midia/geral/{vmModel?.MarcaFaseId?.ToString()}/detalhes";
+                ? $"{_ftpBaseUrl}/midia/geral/{strPastaFase}"
+                : $"{_ftpBaseUrl}/midia/geral/{strPastaFase}/detalhes";
 
 
                 strSaveFileName = bIsImgPrincipal
