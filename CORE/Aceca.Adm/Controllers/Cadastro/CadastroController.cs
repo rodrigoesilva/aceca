@@ -1836,7 +1836,12 @@ namespace Aceca.Adm.Controllers.Cadastro
 
             // CodigoAceca é usado para montar nome/caminho do arquivo em disco/FTP — precisa ser
             // restrito a caracteres seguros para não permitir path traversal (ex.: "../../").
-            if (string.IsNullOrWhiteSpace(vmModel?.CodigoAceca) || !RegexCodigoArquivoValido.IsMatch(vmModel.CodigoAceca.Trim()))
+            // Fase "$R" (11) gera código com "$" (ex. "$R0006") - removido antes de montar o
+            // nome de arquivo (vira "aceca_r0006.jpg"/"aceca_detalhe_r0006.jpg", código
+            // gravado em Marcas/MarcaCadastro continua com o "$" normalmente).
+            var codigoParaArquivo = Regex.Replace(vmModel?.CodigoAceca?.Trim() ?? string.Empty, "[^A-Za-z0-9_-]", "");
+
+            if (string.IsNullOrWhiteSpace(codigoParaArquivo) || !RegexCodigoArquivoValido.IsMatch(codigoParaArquivo))
                 return BadRequest(new
                 {
                     bResult = false,
@@ -1861,10 +1866,11 @@ namespace Aceca.Adm.Controllers.Cadastro
             var fileImgOriginalName = string.Concat(iFileImg?.FileName?.Trim()?.ToLower(), (!(bool)iFileImg?.FileName.Contains(fileExtension) ? fileExtension : String.Empty));
 
             //Gera novo nome
-            string strImgNomeBase ="aceca_"; //string.Empty; //
+            string strImgNomeBase = "aceca_";
             string strImgDetalheNomeBase = "detalhe_";
 
-            string strSaveFileName = $"{strImgNomeBase}{vmModel?.CodigoAceca?.Trim()?.ToLower()}";
+            string codigoParaArquivoLower = codigoParaArquivo.ToLowerInvariant();
+            string strSaveFileName = $"{strImgNomeBase}{codigoParaArquivoLower}";
 
             // monta o caminho onde vamos salvar o arquivo:
             var strPathSaveFolder = string.Empty;
@@ -1878,15 +1884,17 @@ namespace Aceca.Adm.Controllers.Cadastro
                 ? $"_pendente/{vmModel?.MarcaFaseId?.ToString()}"
                 : vmModel?.MarcaFaseId?.ToString();
 
+            string strSaveFileNameSemExtensao = bIsImgPrincipal
+                ? strSaveFileName
+                : strSaveFileName.Replace(strImgNomeBase, string.Concat(strImgNomeBase, strImgDetalheNomeBase));
+
+            strSaveFileName = $"{strSaveFileNameSemExtensao}{fileExtension}";
+
             if (_bIsLocalHost)
             {
                 strPathSaveFolder = bIsImgPrincipal
                 ? Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", strPastaFase)
                 : Path.Combine(_appEnvironment.WebRootPath, "midia", "geral", strPastaFase,"detalhes");
-
-                strSaveFileName = bIsImgPrincipal
-                ? $"{strSaveFileName}{fileExtension}"
-                : $"{strSaveFileName.Replace(strImgNomeBase, string.Concat(strImgNomeBase, strImgDetalheNomeBase))}{fileExtension}";
 
                 strPathSaveFile = Path.Combine(strPathSaveFolder, strSaveFileName);
             }
@@ -1895,11 +1903,6 @@ namespace Aceca.Adm.Controllers.Cadastro
                 strPathSaveFolder = bIsImgPrincipal
                 ? $"{_ftpBaseUrl}/midia/geral/{strPastaFase}"
                 : $"{_ftpBaseUrl}/midia/geral/{strPastaFase}/detalhes";
-
-
-                strSaveFileName = bIsImgPrincipal
-                ? $"{strSaveFileName}{fileExtension}"
-                : $"{strSaveFileName.Replace(strImgNomeBase, string.Concat(strImgNomeBase, strImgDetalheNomeBase))}{fileExtension}";
 
                 strPathSaveFile = $"{strPathSaveFolder}/{strSaveFileName}";
             }

@@ -980,6 +980,8 @@ function fn_CamposHide(origem) {
     $('.div_imagem').hide();
     $('.div_img_principal').hide();
     $('.div_img_detalhe').hide();
+    $('.div_img_principal_marca').hide();
+    $('.div_img_detalhe_marca').hide();
 
     $('#txt_ImgPrincipal').val('');
     $('#txt_ImgDetalhe').val('');
@@ -1439,8 +1441,8 @@ function fn_CarregarModoEdicao(dados) {
             // Detalhe). Perfis não-Administracao nem têm esses campos/preview na tela (ver
             // CadastroAcervo.cshtml).
             if (isAdministracao) {
-                if (dados.ImgPrincipalFull) fn_ExecutarTesteMarcaDagua('principal');
-                if (dados.ImgDetalheFull) fn_ExecutarTesteMarcaDagua('detalhe');
+                if (dados.ImgPrincipalFull) { $('.div_img_principal_marca').show(); fn_ExecutarTesteMarcaDagua('principal'); }
+                if (dados.ImgDetalheFull) { $('.div_img_detalhe_marca').show(); fn_ExecutarTesteMarcaDagua('detalhe'); }
             }
 
             $('.div_dados').show();
@@ -1767,12 +1769,12 @@ function fn_PreviewImage(input) {
                 arquivoImgPrincipal = file;
                 // Preview "com marca" só existe pra Administracao (div_percentual_imagem_principal
                 // nem é renderizada pra outros perfis - ver CadastroAcervo.cshtml).
-                if (isAdministracao) fn_ExecutarTesteMarcaDagua('principal');
+                if (isAdministracao) { $('.div_img_principal_marca').show(); fn_ExecutarTesteMarcaDagua('principal'); }
             } else {
                 document.getElementById('img_ImgDetalhe').src = e.target.result;
                 $('.div_img_detalhe').show();
                 arquivoImgDetalhe = file;
-                if (isAdministracao) fn_ExecutarTesteMarcaDagua('detalhe');
+                if (isAdministracao) { $('.div_img_detalhe_marca').show(); fn_ExecutarTesteMarcaDagua('detalhe'); }
             }
         };
         reader.readAsDataURL(input.files[0]); // Converts to Base64 string
