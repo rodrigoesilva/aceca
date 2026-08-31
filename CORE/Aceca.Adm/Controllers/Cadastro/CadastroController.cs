@@ -1160,7 +1160,14 @@ namespace Aceca.Adm.Controllers.Cadastro
                                    .Include(x => x.MarcaFabrica)
                                    .Include(x => x.MarcaImpressora)
                                    .AsNoTracking()
-                                   .Where(x => x.CodigoAceca != null 
+                                   // AsSplitQuery: com múltiplos Include + OrderBy + Take numa tabela
+                                   // grande (marcas, ~65 mil linhas), a query única (1 JOIN gigante)
+                                   // obriga o banco a ordenar o resultado combinado antes do Take -
+                                   // dividir em várias queries menores (1 por Include) é bem mais
+                                   // rápido aqui (medido: até 29s numa única query, poucos segundos
+                                   // dividida).
+                                   .AsSplitQuery()
+                                   .Where(x => x.CodigoAceca != null
                                                 && (!bvariante ? x.MarcaAcervoId.Equals(idMarcaAcervo) : x.CodigoAceca.Equals(strCodigoPaiVariante))
                                           )
                                    .OrderByDescending(x => x.MarcaFaseAcervoId > 1 ? x.CodigoAcecaNew : x.CodigoAceca)
@@ -1182,6 +1189,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                                     .Include(x => x.MarcaFabrica)
                                     .Include(x => x.MarcaImpressora)
                                     .AsNoTracking()
+                                    .AsSplitQuery()
                                     .Where(x => x.CodigoAceca != null && x.CodigoAceca.StartsWith(strLetraInicialBusca.ToLower()) && x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
                                     .OrderByDescending(x => x.CodigoAceca)
                                     .Take(2);
@@ -1194,6 +1202,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                                     .Include(x => x.MarcaFabrica)
                                     .Include(x => x.MarcaImpressora)
                                     .AsNoTracking()
+                                    .AsSplitQuery()
                                     .Where(x => x.CodigoAceca != null && x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase))
                                     .OrderByDescending(x => x.CodigoAceca)
                                     .Take(2);
@@ -1207,12 +1216,13 @@ namespace Aceca.Adm.Controllers.Cadastro
                                    .Include(x => x.MarcaFabrica)
                                    .Include(x => x.MarcaImpressora)
                                    .AsNoTracking()
+                                   .AsSplitQuery()
                                    .Where(x => x.CodigoAceca != null
-                                                && (!bvariante 
+                                                && (!bvariante
                                                         ? x.MarcaAcervoId.Equals(idMarcaAcervo)
-                                                            && x.MarcaFaseId.Equals(idFase) 
-                                                            && (strLetraInicial.ToUpper().Equals("N") 
-                                                                    ? x.CodigoAceca.StartsWith(strLetraInicial) && !x.CodigoAceca.ToUpper().StartsWith("NO") 
+                                                            && x.MarcaFaseId.Equals(idFase)
+                                                            && (strLetraInicial.ToUpper().Equals("N")
+                                                                    ? x.CodigoAceca.StartsWith(strLetraInicial) && !x.CodigoAceca.ToUpper().StartsWith("NO")
                                                                     : x.CodigoAceca.StartsWith(strLetraInicial)
                                                                )
                                                         : x.CodigoAceca.Equals(strCodigoPaiVariante)
@@ -1230,9 +1240,10 @@ namespace Aceca.Adm.Controllers.Cadastro
                                    .Include(x => x.MarcaFabrica)
                                    .Include(x => x.MarcaImpressora)
                                    .AsNoTracking()
+                                   .AsSplitQuery()
                                    .Where(x => x.CodigoAceca != null
-                                                && (!bvariante 
-                                                        ? x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase) 
+                                                && (!bvariante
+                                                        ? x.MarcaAcervoId.Equals(idMarcaAcervo) && x.MarcaFaseId.Equals(idFase)
                                                         : x.CodigoAceca.Equals(strCodigoPaiVariante)
                                                    )
                                           )
@@ -1247,18 +1258,65 @@ namespace Aceca.Adm.Controllers.Cadastro
 
                 if (model == null || model?.Id == null)
                 {
+                    // Sem nenhuma Marca pra essa combinação Acervo+Fase - pode ser (a) a Fase
+                    // nunca foi usada com ESSE Acervo específico (a maioria das Fases só faz
+                    // sentido com um Acervo em particular, mas o combo de Fase na tela não
+                    // filtra por Acervo), ou (b) a Fase é realmente nova/nunca usada em Acervo
+                    // nenhum (ex. "Sem Fase Definida", criada mas nunca cadastrada) - só nesse
+                    // 2º caso faz sentido gerar um código inicial; no 1º, seria só confusão
+                    // (código pra uma combinação que nunca existiu de verdade).
+                    var existeEmOutroAcervo = await _db.Marca.AsNoTracking()
+                        .AnyAsync(x => x.MarcaFaseId == idFase && x.CodigoAceca != null);
+
+                    if (existeEmOutroAcervo)
+                        return Ok(new
+                        {
+                            bResult = false,
+                            type = "ERRO - listagem Nula",
+                            message = "Não existe nenhuma marca cadastrada para esta combinação de Acervo e Fase - confira se o Acervo selecionado é o correto pra esta Fase",
+                            data = strNovoNomeParaCadastro
+                        });
+
+                    var faseInfo = await _db.MarcaFase.AsNoTracking().FirstOrDefaultAsync(f => f.Id == idFase);
+                    var prefixoBootstrap = MontarPrefixoBootstrap(faseInfo?.Descricao ?? $"Fase{idFase}");
+                    var codigoBootstrap = $"{prefixoBootstrap}0001";
+                    var tentativaBootstrap = 1;
+
+                    // Defesa contra colisão (improvável aqui - é literalmente o 1º código dessa
+                    // Fase -, mas protege se dois usuários gerarem o "primeiro código" ao mesmo
+                    // tempo). Checagem própria, mais simples que o carregamento em lote usado no
+                    // loop principal (declarado só no escopo do "else" mais abaixo, fora de
+                    // alcance aqui) - não vale a pena pra um caso de no máximo poucas tentativas.
+                    while (tentativaBootstrap <= 100
+                           && (await _db.Marca.AsNoTracking().AnyAsync(x => x.CodigoAceca == codigoBootstrap || x.CodigoAcecaNew == codigoBootstrap)
+                               || await _db.MarcaCadastro.AsNoTracking().AnyAsync(x => x.StatusCadastro == (int)EStatusCadastro.Pendente
+                                    && (x.CodigoAceca == codigoBootstrap || x.CodigoAcecaNew == codigoBootstrap))))
+                    {
+                        codigoBootstrap = $"{prefixoBootstrap}{++tentativaBootstrap:D4}";
+                    }
+
                     return Ok(new
                     {
-                        bResult = false,
-                        type = "ERRO - listagem Nula",
-                        message = "Erro ao recuperar novo codigo",
-                        data = strNovoNomeParaCadastro
+                        bResult = true,
+                        bSemCadastro = true,
+                        type = "OK",
+                        message = "SUCESSO ::: ",
+                        data = (object)null,
+                        dataVelhoCodigo = codigoBootstrap,
+                        dataNovoCodigo = codigoBootstrap,
                     });
                 }
                 else
                 {
+                    // Fases administrativas/especiais (Exportação, Clandestinas, Comemorativas
+                    // Aceca, Cortadas, Quarentena, Vitrine - todas com id > 14) nunca migraram
+                    // pro "esquema novo" de numeração e têm CodigoAcecaNew sempre nulo - sem
+                    // esse fallback, GetNovoCodigoAceca falhava sempre pra elas ("strNumCodigoAceca
+                    // Nula" mais abaixo), bloqueando qualquer cadastro novo nessas fases.
+                    var codigoAcecaNewTrim = model?.CodigoAcecaNew?.ToString()?.Trim();
+
                     strCodigoAceca = idMarcaAcervo > 1 || (idMarcaAcervo.Equals((int)EAcervo.Geral) && idFase > 14)
-                        ? model?.CodigoAcecaNew?.ToString()?.Trim() 
+                        ? (!string.IsNullOrWhiteSpace(codigoAcecaNewTrim) ? codigoAcecaNewTrim : model?.CodigoAceca?.ToString()?.Trim())
                         : model?.CodigoAceca?.ToString()?.Trim();
 
                     strOldCodigoAceca = model?.CodigoAceca?.ToString()?.Trim();
@@ -1414,36 +1472,104 @@ namespace Aceca.Adm.Controllers.Cadastro
                     // Bumpa o código (mesma lógica de incremento já usada acima) até achar um
                     // que não esteja em uso nem por uma Marca já aprovada nem por outra
                     // submissão ainda pendente.
-                    async Task<bool> CodigoReservadoAsync(string codigo)
+                    //
+                    // Performance: antes cada tentativa fazia 2 round-trips ao banco (~130ms
+                    // cada, servidor remoto). Fases com um bloco grande de códigos consecutivos
+                    // já usados (ex. "9av-00973" em diante) exigiam dezenas de tentativas reais
+                    // pra achar um código livre, custando 20-29s por requisição. Agora carrega
+                    // de uma vez só (2 queries) todos os códigos já usados com o mesmo prefixo
+                    // (a parte antes da sequência numérica) num HashSet e faz o loop inteiramente
+                    // em memória - o tempo de resposta deixa de depender de quantos códigos
+                    // consecutivos já existem.
+                    string PrefixoNumerico(string codigo)
                     {
                         if (string.IsNullOrEmpty(codigo))
-                            return false;
+                            return codigo;
 
-                        if (await _db.Marca.AsNoTracking().AnyAsync(x => x.CodigoAceca == codigo || x.CodigoAcecaNew == codigo))
-                            return true;
+                        var m = System.Text.RegularExpressions.Regex.Match(codigo, @"(\d+)(\D*)$");
+                        return m.Success ? codigo.Substring(0, m.Index) : codigo;
+                    }
 
-                        return await _db.MarcaCadastro.AsNoTracking().AnyAsync(x =>
-                            x.StatusCadastro == (int)EStatusCadastro.Pendente
-                            && (x.CodigoAceca == codigo || x.CodigoAcecaNew == codigo));
+                    async Task<HashSet<string>> CarregarCodigosUsadosAsync(string prefixo)
+                    {
+                        var usados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                        // Prefixo vazio = código 100% numérico, sem letra fixa antes da sequência
+                        // (ex. Vitrine "87629" - fases "administrativas" que caem no fallback de
+                        // CodigoAceca cru). Esse formato não é exclusivo da Fase - é o mesmo
+                        // espaço numérico usado como fallback em boa parte do catálogo `marcas` -
+                        // então StartsWith(prefixo vazio) precisa trazer TODOS os códigos não
+                        // nulos (sem filtro), não só os que "começam com" nada. Só assim o loop em
+                        // memória consegue pular de fato o range inteiro já ocupado (testado: sem
+                        // isso, a checagem 1-a-1 precisava de milhares de tentativas e voltava a
+                        // travar, ~timeout).
+                        var doMarca = string.IsNullOrEmpty(prefixo)
+                            ? await _db.Marca.AsNoTracking()
+                                .Where(x => x.CodigoAceca != null || x.CodigoAcecaNew != null)
+                                .Select(x => new { x.CodigoAceca, x.CodigoAcecaNew })
+                                .ToListAsync()
+                            : await _db.Marca.AsNoTracking()
+                                .Where(x => (x.CodigoAceca != null && x.CodigoAceca.StartsWith(prefixo))
+                                         || (x.CodigoAcecaNew != null && x.CodigoAcecaNew.StartsWith(prefixo)))
+                                .Select(x => new { x.CodigoAceca, x.CodigoAcecaNew })
+                                .ToListAsync();
+
+                        foreach (var m in doMarca)
+                        {
+                            if (!string.IsNullOrEmpty(m.CodigoAceca)) usados.Add(m.CodigoAceca);
+                            if (!string.IsNullOrEmpty(m.CodigoAcecaNew)) usados.Add(m.CodigoAcecaNew);
+                        }
+
+                        var doPendente = string.IsNullOrEmpty(prefixo)
+                            ? await _db.MarcaCadastro.AsNoTracking()
+                                .Where(x => x.StatusCadastro == (int)EStatusCadastro.Pendente
+                                         && (x.CodigoAceca != null || x.CodigoAcecaNew != null))
+                                .Select(x => new { x.CodigoAceca, x.CodigoAcecaNew })
+                                .ToListAsync()
+                            : await _db.MarcaCadastro.AsNoTracking()
+                                .Where(x => x.StatusCadastro == (int)EStatusCadastro.Pendente
+                                         && ((x.CodigoAceca != null && x.CodigoAceca.StartsWith(prefixo))
+                                          || (x.CodigoAcecaNew != null && x.CodigoAcecaNew.StartsWith(prefixo))))
+                                .Select(x => new { x.CodigoAceca, x.CodigoAcecaNew })
+                                .ToListAsync();
+
+                        foreach (var m in doPendente)
+                        {
+                            if (!string.IsNullOrEmpty(m.CodigoAceca)) usados.Add(m.CodigoAceca);
+                            if (!string.IsNullOrEmpty(m.CodigoAcecaNew)) usados.Add(m.CodigoAcecaNew);
+                        }
+
+                        return usados;
                     }
 
                     string BumpCodigo(string codigo)
                     {
-                        var numStrBump = new string(codigo?.Where(char.IsDigit).ToArray());
+                        if (string.IsNullOrEmpty(codigo))
+                            return codigo;
 
                         if (!bvariante)
                         {
-                            if (int.TryParse(numStrBump, out int numBump))
-                            {
-                                var novoBump = codigo.Replace(numBump.ToString(), (numBump + 1).ToString());
+                            // Incrementa só a última sequência de dígitos do código (a que fica
+                            // colada no final, opcionalmente seguida de letra de variante).
+                            // Antes usava Where(IsDigit) na string inteira + Replace por substring,
+                            // o que quebrava pra códigos cujo PREFIXO da fase também tem dígito
+                            // (ex. "9av-00973", "10avDPF-01234", "amc20-00592"): os dígitos do
+                            // prefixo entravam na extração, a string combinada não existia dentro
+                            // do código original, o Replace virava no-op e o código nunca avançava
+                            // - travando o loop de colisão nas 100 tentativas e ainda retornando um
+                            // código já em uso.
+                            var matchBump = System.Text.RegularExpressions.Regex.Match(codigo, @"(\d+)(\D*)$");
 
-                                if (Char.IsLetter(novoBump[^1]))
-                                    novoBump = novoBump.Remove(novoBump.Length - 1);
+                            if (!matchBump.Success || !int.TryParse(matchBump.Groups[1].Value, out int numBump))
+                                return codigo;
 
-                                return novoBump;
-                            }
+                            var novoNumBump = (numBump + 1).ToString().PadLeft(matchBump.Groups[1].Value.Length, '0');
+                            var novoBump = codigo.Substring(0, matchBump.Index) + novoNumBump + matchBump.Groups[2].Value;
 
-                            return codigo;
+                            if (novoBump.Length > 0 && Char.IsLetter(novoBump[^1]))
+                                novoBump = novoBump.Remove(novoBump.Length - 1);
+
+                            return novoBump;
                         }
 
                         if (Char.IsLetter(codigo[^1]))
@@ -1455,12 +1581,14 @@ namespace Aceca.Adm.Controllers.Cadastro
                         return string.Concat(codigo, strUltimaLetraCodigoAceca);
                     }
 
+                    var codigosUsados = await CarregarCodigosUsadosAsync(PrefixoNumerico(strNovoCodigoAceca));
+
                     var tentativasColisao = 0;
 
-                    while ((await CodigoReservadoAsync(strNovoCodigoAceca))
-                           || (!string.IsNullOrEmpty(strVelhoCodigoAceca) && await CodigoReservadoAsync(strVelhoCodigoAceca)))
+                    while (codigosUsados.Contains(strNovoCodigoAceca)
+                           || (!string.IsNullOrEmpty(strVelhoCodigoAceca) && codigosUsados.Contains(strVelhoCodigoAceca)))
                     {
-                        if (++tentativasColisao > 100)
+                        if (++tentativasColisao > 5000)
                             break; // segurança - não deve acontecer na prática
 
                         strNovoCodigoAceca = BumpCodigo(strNovoCodigoAceca);
@@ -1549,6 +1677,20 @@ namespace Aceca.Adm.Controllers.Cadastro
             char[] chars = input.ToCharArray();
             chars[index] = newChar;
             return new string(chars);
+        }
+
+        // Prefixo pra código inicial de uma Fase sem nenhum cadastro ainda (ver
+        // GetNovoCodigoAceca) - iniciais de cada palavra da descrição da Fase, maiúsculas
+        // (ex. "Sem Fase Definida" -> "SFD"). Sem acento/separador -> cai no fallback "NOVA".
+        private static string MontarPrefixoBootstrap(string descricao)
+        {
+            var letras = (descricao ?? string.Empty)
+                .Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
+                .Where(palavra => palavra.Length > 0 && char.IsLetter(palavra[0]))
+                .Select(palavra => char.ToUpperInvariant(palavra[0]))
+                .ToArray();
+
+            return letras.Length > 0 ? new string(letras) : "NOVA";
         }
         #endregion
 
