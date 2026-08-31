@@ -1152,6 +1152,10 @@ namespace Aceca.Adm.Helper
                         <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.Latitude}, {ultimoAcesso.Longitude}</td>
                       </tr>
                       <tr style=""background:#f9f0ff;"">
+                        <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Localização Compartilhada pelo Usuário</td>
+                        <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{(ultimoAcesso.LocalizacaoCompartilhada == true ? "Sim (GPS/Wi-Fi, precisa)" : "Não (só por IP, aproximada)")}</td>
+                      </tr>
+                      <tr>
                         <td style=""padding:10px 14px;font-weight:bold;border:1px solid #e0d0f0;"">Último Login Registrado</td>
                         <td style=""padding:10px 14px;border:1px solid #e0d0f0;"">{ultimoAcesso.UltimoLogin?.ToString("dd/MM/yyyy HH:mm:ss")}</td>
                       </tr>";

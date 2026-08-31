@@ -1686,6 +1686,7 @@ namespace Aceca.Adm.Controllers
                                 : nodeGeo["location"]?["city"]?.GetValue<string>(),
                             Latitude   = latPrecisa ?? nodeGeo["location"]?["latitude"]?.ToString()?.Trim('"'),
                             Longitude  = lngPrecisa ?? nodeGeo["location"]?["longitude"]?.ToString()?.Trim('"'),
+                            LocalizacaoCompartilhada = !string.IsNullOrWhiteSpace(latitude) && !string.IsNullOrWhiteSpace(longitude),
                             UltimoLogin = loginTime != default ? loginTime.DateTime : DateTime.UtcNow.AddHours(-3),
                         };
 

@@ -507,6 +507,13 @@ namespace Aceca.Adm.Models
         public string? Cidade { get; set; }
         public string? Latitude { get; set; }
         public string? Longitude { get; set; }
+
+        // true = coordenadas vieram da Geolocation API do navegador (usuário concedeu a
+        // permissão - GPS/Wi-Fi, precisa); false = usuário negou/não respondeu a tempo e
+        // Latitude/Longitude acima vieram só da geolocalização por IP (bem menos precisa,
+        // principalmente em rede móvel/CGNAT). Ver AuthController.LoginLog.
+        public bool? LocalizacaoCompartilhada { get; set; }
+
         [Column("last_login")] public DateTime? UltimoLogin { get; set; }
 
         public Socio? Socio { get; set; }

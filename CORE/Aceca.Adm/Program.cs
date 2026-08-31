@@ -472,6 +472,30 @@ using (var scopeSeguranca = app.Services.CreateScope())
     }
 }
 
+// Distingue, no log de acesso, se Latitude/Longitude vieram da Geolocation API do
+// navegador (usuário concedeu a permissão - GPS/Wi-Fi, precisa) ou só da geolocalização
+// por IP (fallback, bem menos precisa em rede móvel/CGNAT) - ver AuthController.LoginLog.
+using (var scopeLogAcesso = app.Services.CreateScope())
+{
+    var dbLogAcesso = scopeLogAcesso.ServiceProvider.GetRequiredService<Aceca.Adm.Data.AppDbContext>();
+    var logAcessoLogger = scopeLogAcesso.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var errorLogLogAcesso = scopeLogAcesso.ServiceProvider.GetRequiredService<Aceca.Adm.Services.ErrorLogService>();
+
+    try
+    {
+        if (!await Aceca.Adm.Helper.DbSchemaHelper.ColunaExisteAsync(dbLogAcesso.Database, "socio_log_acesso", "localizacaoCompartilhada"))
+        {
+            await dbLogAcesso.Database.ExecuteSqlRawAsync(
+                "ALTER TABLE socio_log_acesso ADD COLUMN localizacaoCompartilhada TINYINT(1) NULL");
+        }
+    }
+    catch (Exception ex)
+    {
+        logAcessoLogger.LogWarning(ex, "Não foi possível garantir a coluna localizacaoCompartilhada em socio_log_acesso");
+        await errorLogLogAcesso.RegistrarExcecaoAsync(null, ex);
+    }
+}
+
 // Parâmetro configurável (adm_config) para os minutos de bloqueio de login na 1ª tentativa
 // de captura de tela - dobra a cada reincidência (ver AuthController.ReportImageAccess).
 // Só cria o registro se ainda não existir; não sobrescreve um valor que a administração já
