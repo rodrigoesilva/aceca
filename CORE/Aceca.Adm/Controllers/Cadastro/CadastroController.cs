@@ -1752,7 +1752,7 @@ namespace Aceca.Adm.Controllers.Cadastro
         // antes da aprovação. Cai pro padrão em código se o parâmetro não existir.
         private async Task<double> GetPercentualMarcaDaguaPadraoAsync()
         {
-            var parametro = await _db.AdmConfig.AsNoTracking().FirstOrDefaultAsync(x => x.Parametro == "PercentualMarcaDAgua");
+            var parametro = await _db.AdmConfig.AsNoTracking().FirstOrDefaultAsync(x => x.Parametro == "Param_PercentualMarcaDAgua");
 
             if (parametro != null && double.TryParse(parametro.Valor, NumberStyles.Any, CultureInfo.InvariantCulture, out var valor))
                 return Math.Clamp(valor, 0, 100);

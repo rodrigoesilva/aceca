@@ -284,6 +284,19 @@ function fn_ImageProtect() {
         fd.append('timestamp',   ts);
         return fetch('/Auth/ReportImageAccess', { method: 'POST', body: fd })
             .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (resp) {
+                // Centralizado aqui (não em cada chamador) porque ReportImageAccess só é
+                // chamado por este arquivo - qualquer ação reportada já é, por definição,
+                // uma tentativa detectada de acesso indevido, e o servidor agora conta
+                // TODAS elas pro mesmo bloqueio (antes só o fluxo de PrintScreen conferia
+                // essa resposta; DevTools/clique direito/arraste/copiar/atalhos de teclado
+                // eram reportados mas o front nunca reagia ao bloqueio, mesmo quando o
+                // servidor já tinha bloqueado o sócio).
+                if (resp && resp.bloqueado) {
+                    _forcarLogoutPorSeguranca();
+                }
+                return resp;
+            })
             .catch(function () { return null; });
     }
 
@@ -604,14 +617,10 @@ function fn_ImageProtect() {
             _swapAllToPlagio();
             setTimeout(_restoreAllFromPlagio, 4000);
 
-            // PrintScreen é o único gatilho que desloga e bloqueia o login por 5 minutos
-            // (AuthController.ReportImageAccess) - espera a confirmação do servidor antes
-            // de decidir qual aviso mostrar; se por algum motivo o servidor não confirmar o
-            // bloqueio (offline, erro etc.), cai no aviso genérico como rede de segurança.
+            // _reportar já dispara o logout forçado sozinha quando resp.bloqueado - aqui só
+            // decide o aviso pro caso de NÃO ter bloqueado ainda (infração abaixo do limite).
             reportarPromise.then(function (resp) {
-                if (resp && resp.bloqueado) {
-                    _forcarLogoutPorSeguranca();
-                } else {
+                if (!(resp && resp.bloqueado)) {
                     _swalAviso();
                 }
             });
@@ -646,10 +655,10 @@ function fn_ImageProtect() {
         _swapAllToPlagio();
         setTimeout(_restoreAllFromPlagio, 4000);
 
+        // _reportar já dispara o logout forçado sozinha quando resp.bloqueado - aqui só
+        // decide o aviso pro caso de NÃO ter bloqueado ainda (infração abaixo do limite).
         _reportar(_lastImg, 'printscreen').then(function (resp) {
-            if (resp && resp.bloqueado) {
-                _forcarLogoutPorSeguranca();
-            } else {
+            if (!(resp && resp.bloqueado)) {
                 _swalAviso();
             }
         });

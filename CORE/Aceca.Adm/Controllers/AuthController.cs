@@ -212,7 +212,7 @@ namespace Aceca.Adm.Controllers
             try
             {
                 var chavePix = await _db.AdmConfig
-                    .Where(c => c.Parametro == "ChavePix")
+                    .Where(c => c.Parametro == "Param_ChavePix")
                     .Select(c => c.Valor)
                     .FirstOrDefaultAsync();
 
@@ -926,7 +926,7 @@ namespace Aceca.Adm.Controllers
                 return RedirectToAction("Inicio", "Home");
 
             var duracaoStr = await _db.AdmConfig
-                .Where(c => c.Parametro == "TesteGratisDuracaoHoras")
+                .Where(c => c.Parametro == "Param_TesteGratisDuracaoHoras")
                 .Select(c => c.Valor)
                 .FirstOrDefaultAsync();
             ViewBag.DuracaoTesteHoras = int.TryParse(duracaoStr, out var h) && h > 0 ? h : 24;
@@ -1544,7 +1544,7 @@ namespace Aceca.Adm.Controllers
                         }
 
                         var duracaoStr = await _db.AdmConfig
-                            .Where(c => c.Parametro == "TesteGratisDuracaoHoras")
+                            .Where(c => c.Parametro == "Param_TesteGratisDuracaoHoras")
                             .Select(c => c.Valor)
                             .FirstOrDefaultAsync();
                         var duracaoHoras = int.TryParse(duracaoStr, out var h) && h > 0 ? h : 24;
@@ -2402,24 +2402,34 @@ namespace Aceca.Adm.Controllers
 
             var bloqueado = false;
 
-            // Tentativa de captura de tela de verdade (PrintScreen) é o único gatilho que
-            // desloga e bloqueia o login - as demais ações detectadas (clique direito,
-            // Ctrl+S/U/P, DevTools) já recebem aviso + marca d'água, sem essa severidade
-            // extra, pra não punir uma ação acidental como se fosse intencional.
+            // Antes só PrintScreen (comparação exata com "printscreen") deslogava e contava
+            // pro bloqueio - as demais ações detectadas (DevTools aberto, clique direito,
+            // dragstart, copy, F12, Ctrl+Shift+I/J/C/K, Ctrl+S/U/P) só geravam aviso + e-mail,
+            // sem nenhuma consequência de bloqueio por mais vezes que se repetissem. Esse
+            // endpoint só é chamado pelo próprio detector de acesso indevido (fn_ImageProtect
+            // em site.js) - nunca por um fluxo normal do sócio - então qualquer chamada aqui
+            // já é, por definição, uma tentativa detectada de acesso indevido às imagens, e
+            // todas passam a contar igual pro mesmo contador (o nome da coluna,
+            // qtd_infracoes_print, ficou legado - hoje cobre qualquer tipo de infração).
             //
             // A duração do bloqueio dobra a cada reincidência (1ª = N minutos, configurável
-            // em adm_config "PrintScreenBloqueioMinutos"; 2ª = N×2; 3ª = N×4...); na 5ª
-            // tentativa o sócio é bloqueado permanentemente e só a administração consegue
-            // liberar (Sócio > Segurança), avisada por e-mail nesse momento.
-            const int qtdInfracoesParaBloqueioPermanente = 5;
-
-            if (string.Equals(acao, "printscreen", StringComparison.OrdinalIgnoreCase)
-                && int.TryParse(socioId, out var socioIdInt) && socioIdInt != 39)
+            // em adm_config "Param_PrintScreenBloqueioMinutos"; 2ª = N×2; 3ª = N×4...); na
+            // Nª tentativa (configurável em "Param_QtdInfracoesParaBloqueio", antes fixo em
+            // 5 no código) o sócio é bloqueado permanentemente e só a administração
+            // consegue liberar (Sócio > Segurança), avisada por e-mail nesse momento.
+            if (int.TryParse(socioId, out var socioIdInt) && socioIdInt != 39)
             {
                 var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(s => s.SocioId == socioIdInt);
 
                 if (seguranca != null && !seguranca.Bloqueado)
                 {
+                    var qtdInfracoesStr = await _db.AdmConfig
+                        .Where(c => c.Parametro == "Param_QtdInfracoesParaBloqueio")
+                        .Select(c => c.Valor)
+                        .FirstOrDefaultAsync();
+
+                    var qtdInfracoesParaBloqueioPermanente = int.TryParse(qtdInfracoesStr, out var qi) && qi > 0 ? qi : 5;
+
                     seguranca.QtdInfracoesPrint++;
 
                     if (seguranca.QtdInfracoesPrint >= qtdInfracoesParaBloqueioPermanente)
@@ -2433,7 +2443,7 @@ namespace Aceca.Adm.Controllers
                     else
                     {
                         var baseMinutosStr = await _db.AdmConfig
-                            .Where(c => c.Parametro == "PrintScreenBloqueioMinutos")
+                            .Where(c => c.Parametro == "Param_PrintScreenBloqueioMinutos")
                             .Select(c => c.Valor)
                             .FirstOrDefaultAsync();
 

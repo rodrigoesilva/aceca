@@ -535,14 +535,29 @@ using (var scopeConfigPrint = app.Services.CreateScope())
                 "ALTER TABLE adm_config MODIFY id INT UNSIGNED NOT NULL AUTO_INCREMENT");
         }
 
-        var existeParametro = await dbConfigPrint.AdmConfig.AnyAsync(c => c.Parametro == "PrintScreenBloqueioMinutos");
+        var existeParametro = await dbConfigPrint.AdmConfig.AnyAsync(c => c.Parametro == "Param_PrintScreenBloqueioMinutos");
 
         if (!existeParametro)
         {
             dbConfigPrint.AdmConfig.Add(new Aceca.Adm.Models.AdmConfig
             {
-                Parametro = "PrintScreenBloqueioMinutos",
+                Parametro = "Param_PrintScreenBloqueioMinutos",
                 Descricao = "Minutos de bloqueio de login na 1ª tentativa de captura de tela detectada. Dobra a cada reincidência; a 5ª tentativa bloqueia o sócio permanentemente (exige liberação manual em Sócio > Segurança).",
+                Valor = "5"
+            });
+            await dbConfigPrint.SaveChangesAsync();
+        }
+
+        // Antes fixo em 5 no código (AuthController.ReportImageAccess) - configurável aqui
+        // pra ajustar sem precisar de deploy.
+        var existeParametroQtdInfracoes = await dbConfigPrint.AdmConfig.AnyAsync(c => c.Parametro == "Param_QtdInfracoesParaBloqueio");
+
+        if (!existeParametroQtdInfracoes)
+        {
+            dbConfigPrint.AdmConfig.Add(new Aceca.Adm.Models.AdmConfig
+            {
+                Parametro = "Param_QtdInfracoesParaBloqueio",
+                Descricao = "Quantidade de infrações de acesso indevido às imagens (PrintScreen, DevTools, clique direito, etc.) até o sócio ser bloqueado permanentemente (exige liberação manual em Sócio > Segurança).",
                 Valor = "5"
             });
             await dbConfigPrint.SaveChangesAsync();
@@ -550,7 +565,7 @@ using (var scopeConfigPrint = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        configPrintLogger.LogWarning(ex, "Não foi possível garantir o parâmetro PrintScreenBloqueioMinutos em adm_config");
+        configPrintLogger.LogWarning(ex, "Não foi possível garantir os parâmetros de bloqueio de segurança em adm_config");
     }
 }
 
@@ -724,7 +739,7 @@ using (var scopeTeste = app.Services.CreateScope())
 
     try
     {
-        var existeParametroTeste = await dbTeste.AdmConfig.AnyAsync(c => c.Parametro == "TesteGratisDuracaoHoras");
+        var existeParametroTeste = await dbTeste.AdmConfig.AnyAsync(c => c.Parametro == "Param_TesteGratisDuracaoHoras");
 
         if (!existeParametroTeste)
         {
@@ -862,7 +877,7 @@ using (var scopeMarcaCadastro = app.Services.CreateScope())
     // (ver CadastroController.GetPercentualMarcaDaguaPadraoAsync) - editável em Configurações.
     try
     {
-        var existeParametroMarcaDagua = await dbMarcaCadastro.AdmConfig.AnyAsync(c => c.Parametro == "PercentualMarcaDAgua");
+        var existeParametroMarcaDagua = await dbMarcaCadastro.AdmConfig.AnyAsync(c => c.Parametro == "Param_PercentualMarcaDAgua");
 
         if (!existeParametroMarcaDagua)
         {
@@ -944,9 +959,9 @@ using (var scope = app.Services.CreateScope())
 
 app.MapControllerRoute(
     name: "default",
-    //pattern: "{controller=Auth}/{action=Index}/{Id?}")
-    pattern: "{controller=Home}/{action=Web}/{Id?}")
-    
+    pattern: "{controller=Auth}/{action=Index}/{Id?}")
+    //pattern: "{controller=Home}/{action=Web}/{Id?}")
+
     .WithStaticAssets();
 
 app.Run();
