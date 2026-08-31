@@ -1,0 +1,56 @@
+# ══ Compressão (gzip/deflate) ══
+# Reduz o tamanho de HTML/CSS/JS/fontes transferido - texto comprime bem (60-80%
+# menor), imagens já vêm comprimidas (JPEG/PNG/WebP/ICO) e não se beneficiam.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript
+  AddOutputFilterByType DEFLATE application/json application/xml
+  AddOutputFilterByType DEFLATE font/ttf font/otf application/font-woff
+</IfModule>
+
+# ══ Cache no navegador ══
+# Imagens/fontes/CSS/JS versionados por query string (?v=1.4) podem cachear por muito
+# tempo - uma alteração já força um novo download por causa do "?v=". HTML sempre
+# revalida (pode mudar a qualquer deploy).
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType font/ttf "access plus 1 year"
+</IfModule>
+
+# ══ Headers de segurança básicos ══
+<IfModule mod_headers.c>
+  # Evita que o navegador "adivinhe" o tipo de um arquivo diferente do Content-Type
+  # declarado (mitiga alguns ataques de upload/MIME-sniffing).
+  Header set X-Content-Type-Options "nosniff"
+
+  # Bloqueia essa página de ser carregada dentro de um <iframe> em outro site
+  # (clickjacking) - o site não usa iframes de terceiros embutindo ele mesmo.
+  Header set X-Frame-Options "SAMEORIGIN"
+
+  # Não vaza a URL completa (com querystring) como referrer ao clicar em links
+  # externos (WhatsApp, Instagram, PDFs) - só a origem.
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ══ Bloqueia acesso direto a arquivos de log/backup que porventura apareçam ══
+<FilesMatch "\.(log|bak|sql)$">
+  Require all denied
+</FilesMatch>
+
+# ══ Bloqueia acesso HTTP direto ao arquivo de credencial SMTP ══
+# Fica na mesma pasta do contact-form.php (a Hostinger não permite subir arquivos
+# soltos um nível acima de public_html), mas ninguém consegue baixar ele digitando a
+# URL - só o PHP local (contact-form.php via require) consegue ler o conteúdo,
+# porque isso é leitura de disco do processo, não passa pelo Apache/HTTP.
+<Files "aceca-smtp-config.php">
+  Require all denied
+</Files>

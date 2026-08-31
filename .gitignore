@@ -451,9 +451,9 @@ FodyWeavers.xsd
 /CORE/Aceca.Site/bin/Release/net10.0/Aceca.Site.staticwebassets.runtime.json
 /CORE/Aceca.Site/bin/Release/net10.0/appsettings.json
 
-# Site estatico (www.aceca.com.br) - copiado inteiro via FTP direto pra hospedagem,
-# ainda nao faz parte do controle de versao deste projeto. Ignorado por completo
-# (inclusive um eventual arquivo de credencial SMTP que só existe localmente/no
-# servidor, nunca deve ir pro git).
-/CORE/Aceca.Adm/Web/
+# Site estatico (www.aceca.com.br, pasta CORE/Aceca.Adm/Web) - agora faz parte do
+# controle de versao, exceto a credencial SMTP do formulario de contato, que NUNCA
+# fica dentro dessa pasta (vive num arquivo a parte, so no servidor, fora do fluxo
+# de deploy - ver contact-form.php). Regra mantida caso esse arquivo apareca
+# localmente algum dia (ex. teste local do PHP).
 aceca-smtp-config.php

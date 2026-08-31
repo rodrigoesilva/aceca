@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -362,6 +363,22 @@ app.UseStaticFiles(new StaticFileOptions
         ctx.Context.Response.Headers.Append("Cache-Control", cacheControl);
     }
 });
+
+// Site institucional (pasta Web/, fora do wwwroot) servido como arquivo estático em
+// /Web - os caminhos relativos internos do site (css/main.css, js/main.js, img/...)
+// resolvem certo porque o navegador acessa exatamente /Web/index.html, então
+// "css/main.css" resolve pra /Web/css/main.css automaticamente, sem precisar mudar
+// nada dentro do HTML. Ver HomeController.Web(), que só redireciona pra cá.
+var webFolderPath = Path.Combine(builder.Environment.ContentRootPath, "Web");
+
+if (Directory.Exists(webFolderPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(webFolderPath),
+        RequestPath = "/Web"
+    });
+}
 
 app.UseRouting();
 
@@ -927,7 +944,9 @@ using (var scope = app.Services.CreateScope())
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Auth}/{action=Index}/{Id?}")
+    //pattern: "{controller=Auth}/{action=Index}/{Id?}")
+    pattern: "{controller=Home}/{action=Web}/{Id?}")
+    
     .WithStaticAssets();
 
 app.Run();
