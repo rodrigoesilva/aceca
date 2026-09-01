@@ -15,6 +15,16 @@ document.addEventListener('DOMContentLoaded', function () {
 			);
 		});
 
+		// Fecha o menu mobile clicando em qualquer lugar da tela (fora do hambúrguer,
+		// que já tem seu próprio toggle e re-abriria o menu no mesmo clique).
+		document.addEventListener('click', function (e) {
+			var navLinks = document.getElementById('navLinks');
+			var hamburger = document.getElementById('hamburger');
+			if (!navLinks.classList.contains('open')) return;
+			if (hamburger.contains(e.target)) return;
+			navLinks.classList.remove('open');
+		});
+
 		ajustarLinksLoginParaDominioLocal();
 
 		const statsBar = document.querySelector('.stats-bar');

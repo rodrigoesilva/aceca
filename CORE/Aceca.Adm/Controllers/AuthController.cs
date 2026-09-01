@@ -12,7 +12,6 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -77,6 +76,7 @@ namespace Aceca.Adm.Controllers
                 new SymmetricSecurityKey(jwtKeyBytes), SecurityAlgorithms.HmacSha256);
         }
 
+        #region Records
         public record LoginIn(string Email, string Senha);
         public record LoginUpdt(string Username, string Email, string Senha, string ConfirmSenha, bool ChkTermo, string Token = null);
 
@@ -86,8 +86,9 @@ namespace Aceca.Adm.Controllers
         // DTO para ResetPassword
         public record ResetPasswordIn(string Email, string Token, string Senha, string ConfirmSenha);
 
-        // ──────────────────────────────────────────────
-        // VIEWS
+        #endregion
+              
+        #region VIEWS
         // ──────────────────────────────────────────────
 
         public ActionResult Index()
@@ -123,551 +124,6 @@ namespace Aceca.Adm.Controllers
 
         public IActionResult AccountSettingsBilling() => View();
 
-        /// <summary>
-        /// Só id + ImgAvatar do sócio autenticado - usado pra atualizar o avatar do navbar
-        /// (site.js/fn_SetSessionData) e o Swal de boas-vindas do login (pages-auth.js) em
-        /// toda navegação de página, então fica de propósito fora do GetFullById (que faz
-        /// join em 5 tabelas) - aqui é sempre 1 tabela, só pela PK.
-        /// </summary>
-        [HttpGet]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> GetAvatarInfo()
-        {
-            try
-            {
-                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-
-                if (socioId <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
-
-                var socio = await _db.Socio
-                    .Where(s => s.Id == socioId)
-                    .Select(s => new { id = s.Id, imgAvatar = s.ImgAvatar })
-                    .FirstOrDefaultAsync();
-
-                if (socio == null)
-                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
-
-                return Ok(new { bResult = true, type = "OK", data = socio });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetAvatarInfo));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Situação financeira (socio_financeiro) da tela "Meus Dados" -&gt; Financeiro, sempre
-        /// do sócio autenticado. Só projeta o que existe de fato na tabela - não há valor/
-        /// preço de plano cadastrado em lugar nenhum do sistema, então esse cálculo (data de
-        /// vencimento, dias restantes) é feito no front com a mesma regra de
-        /// SocioFinanceiroCheckService (TipoPagamentoId 2/3/4 = Anual/Semestral/Mensal).
-        /// </summary>
-        [HttpGet]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> GetInfoFinanceira()
-        {
-            try
-            {
-                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-
-                if (socioId <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
-
-                var financeiro = await _db.SocioFinanceiro
-                    .Where(f => f.SocioId == socioId)
-                    .Select(f => new
-                    {
-                        tipoPagamentoId = f.TipoPagamentoId,
-                        tipoPagamento = f.TipoPagamento.Descricao,
-                        pagamentoEmDia = f.PagamentoEmDia,
-                        dataUltimoPagamento = f.DataUltimoPagamento,
-                    })
-                    .FirstOrDefaultAsync();
-
-                if (financeiro == null)
-                    return NotFound(new { bResult = false, type = "ERRO", message = "Nenhuma informação financeira encontrada" });
-
-                return Ok(new { bResult = true, type = "OK", data = financeiro });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetInfoFinanceira));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Chave Pix da associação (adm_config, parâmetro "ChavePix") + QR Code gerado na hora
-        /// - exibidos na aba Financeiro quando o sócio escolhe pagar via Pix. Não depende de
-        /// nenhum serviço externo (QRCoder gera o PNG localmente).
-        /// </summary>
-        [HttpGet]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> GetChavePix()
-        {
-            try
-            {
-                var chavePix = await _db.AdmConfig
-                    .Where(c => c.Parametro == "Param_ChavePix")
-                    .Select(c => c.Valor)
-                    .FirstOrDefaultAsync();
-
-                if (string.IsNullOrWhiteSpace(chavePix))
-                    return NotFound(new { bResult = false, type = "ERRO", message = "Chave Pix não configurada" });
-
-                using var qrGenerator = new QRCoder.QRCodeGenerator();
-                using var qrCodeData = qrGenerator.CreateQrCode(chavePix, QRCoder.QRCodeGenerator.ECCLevel.Q);
-                // Cor primária do tema (--bs-primary) nos módulos escuros - pedido explícito
-                // mesmo com o risco de leitura reduzida por contraste menor que preto/branco puro.
-                var qrCodePng = new QRCoder.PngByteQRCode(qrCodeData).GetGraphic(20,
-                    System.Drawing.ColorTranslator.FromHtml("#8c57ff"),
-                    System.Drawing.Color.White);
-                var qrCodeDataUri = "data:image/png;base64," + Convert.ToBase64String(qrCodePng);
-
-                return Ok(new { bResult = true, type = "OK", data = new { chavePix, qrCodeDataUri } });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetChavePix));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Dados de "Sobre" da tela Meu Perfil - sempre do sócio autenticado (nunca de um id
-        /// vindo do cliente, mesma trava de IDOR usada em SocioColecaoController), pra evitar
-        /// que qualquer sócio logado consiga ler nome/telefone/e-mail/endereço de outro sócio
-        /// só trocando um parâmetro. Projeta os campos explicitamente - nunca retorna o
-        /// SocioSeguranca inteiro, que carrega hash e senha em texto puro (SenhaAberta).
-        /// </summary>
-        [HttpPost]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> GetFullById()
-        {
-            try
-            {
-                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-
-                if (socioId <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
-
-                var model = await (
-                    from s in _db.Socio
-                    join sp in _db.SocioPerfil on s.SocioPerfilId equals sp.Id
-                    join ss in _db.SocioSeguranca on s.Id equals ss.SocioId
-                    join sa in _db.SocioAniversario on s.Id equals sa.SocioId into saJoin
-                    from sa in saJoin.DefaultIfEmpty()
-                    join sc in _db.SocioContato on s.Id equals sc.SocioId into scJoin
-                    from sc in scJoin.DefaultIfEmpty()
-                    join se in _db.SocioEndereco on s.Id equals se.SocioId into seJoin
-                    from se in seJoin.DefaultIfEmpty()
-                    where s.Id == socioId
-                    select new
-                    {
-                        id = s.Id,
-                        nome = s.Nome,
-                        imgAvatar = s.ImgAvatar,
-                        dataCriacao = s.DataCriacao,
-                        usuario = ss.NomeUsuario,
-                        perfil = sp.Descricao,
-                        aniversarioDia = (int?)sa.Dia,
-                        aniversarioMes = (int?)sa.Mes,
-                        aniversarioAno = (int?)sa.Ano,
-                        contatoDDI = (int?)sc.DDI,
-                        contatoDDD = (int?)sc.DDD,
-                        contatoTelefone = (long?)sc.Telefone,
-                        email = sc.Email,
-                        endereco = se.Endereco,
-                        numero = se.Numero,
-                        complemento = se.Complemento,
-                        bairro = se.Bairro,
-                        cidade = se.Cidade,
-                        estado = se.Estado,
-                        cep = se.CEP,
-                    }
-                ).AsNoTracking().FirstOrDefaultAsync();
-
-                if (model == null)
-                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
-
-                return Ok(new { bResult = true, type = "OK", data = model });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetFullById));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Salva as alterações da tela "Meus Dados" - sempre no sócio autenticado, nunca em um
-        /// id vindo do cliente (mesma trava de IDOR do GetFullById acima). Atualiza Socio,
-        /// SocioSeguranca.NomeUsuario (apelido de exibição, não é credencial de login),
-        /// SocioContato, SocioEndereco e SocioAniversario numa única transação: mesmo padrão de
-        /// SocioController.Create, pra não deixar uma tabela atualizada e outra não em caso de
-        /// falha no meio do caminho.
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> UpdateProfile(string nome, string usuario, int? telefoneDDD, string telefoneNumero,
-            string email, string aniversario, string cep, string endereco, string numero, string complemento,
-            string bairro, string cidade, string estado)
-        {
-            try
-            {
-                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-
-                if (socioId <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
-
-                if (string.IsNullOrWhiteSpace(nome))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nome deve ser preenchido" });
-
-                if (!string.IsNullOrWhiteSpace(email) && !_helperController.IsValidEmailUsingMailAddress(email.Trim().ToLower()))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Formato de E-mail inválido" });
-
-                var strategy = _db.Database.CreateExecutionStrategy();
-
-                Func<Task<IActionResult>> operation = async () =>
-                {
-                    using var transaction = await _db.Database.BeginTransactionAsync();
-
-                    var socio = await _db.Socio.FirstOrDefaultAsync(s => s.Id == socioId);
-
-                    if (socio == null)
-                        return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
-
-                    socio.Nome = nome.Trim();
-
-                    var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(ss => ss.SocioId == socioId);
-
-                    if (seguranca != null)
-                        seguranca.NomeUsuario = !string.IsNullOrWhiteSpace(usuario) ? usuario.Trim() : null;
-
-                    var contato = await _db.SocioContato.FirstOrDefaultAsync(c => c.SocioId == socioId);
-
-                    if (contato != null)
-                    {
-                        contato.DDD = telefoneDDD;
-                        contato.Telefone = long.TryParse(telefoneNumero, out var telefoneNum) ? telefoneNum : null;
-                        contato.Email = !string.IsNullOrWhiteSpace(email) ? email.Trim() : null;
-                    }
-
-                    var socioEndereco = await _db.SocioEndereco.FirstOrDefaultAsync(e => e.SocioId == socioId);
-
-                    if (socioEndereco != null)
-                    {
-                        socioEndereco.CEP = cep;
-                        socioEndereco.Endereco = endereco;
-                        socioEndereco.Numero = numero;
-                        socioEndereco.Complemento = complemento;
-                        socioEndereco.Bairro = bairro;
-                        socioEndereco.Cidade = cidade;
-                        socioEndereco.Estado = estado;
-                    }
-
-                    var socioAniversario = await _db.SocioAniversario.FirstOrDefaultAsync(a => a.SocioId == socioId);
-
-                    if (socioAniversario != null)
-                    {
-                        var (dia, mes, ano) = ParseDataAniversario(aniversario);
-
-                        socioAniversario.Dia = dia;
-                        socioAniversario.Mes = mes;
-                        socioAniversario.Ano = ano;
-                    }
-
-                    await _db.SaveChangesAsync();
-                    await transaction.CommitAsync();
-
-                    return Ok(new { bResult = true, type = "OK", message = "Dados atualizados com sucesso" });
-                };
-
-                return await strategy.ExecuteAsync(operation);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(UpdateProfile));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        private static (int? Dia, int? Mes, int? Ano) ParseDataAniversario(string dataAniversario)
-        {
-            if (string.IsNullOrWhiteSpace(dataAniversario))
-                return (null, null, null);
-
-            var partes = dataAniversario.Split("/");
-
-            int? dia = partes.Length > 0 && int.TryParse(partes[0].Trim(), out var d) ? d : null;
-            int? mes = partes.Length > 1 && int.TryParse(partes[1].Trim(), out var m) ? m : null;
-            int? ano = partes.Length > 2 && int.TryParse(partes[2].Trim(), out var a) ? a : null;
-
-            return (dia, mes, ano);
-        }
-
-        /// <summary>
-        /// Foto de perfil do sócio autenticado. Salva sempre como img/avatars/socio/imgAvatar{id}.png
-        /// (nome fixo derivado do id, nunca do nome do arquivo enviado - sem risco de path
-        /// traversal) e marca Socio.ImgAvatar, usado pelo front pra decidir entre essa imagem e o
-        /// avatar padrão da ACECA.
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> UploadAvatar(IFormFile arquivo)
-        {
-            try
-            {
-                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-
-                if (socioId <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
-
-                if (arquivo == null || arquivo.Length == 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nenhuma imagem enviada" });
-
-                if (arquivo.Length > 800 * 1024)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Imagem maior que 800K" });
-
-                var extensao = Path.GetExtension(arquivo.FileName)?.ToLowerInvariant();
-                var extensoesValidas = new[] { ".png", ".jpg", ".jpeg" };
-
-                if (string.IsNullOrEmpty(extensao) || !extensoesValidas.Contains(extensao))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Formato de imagem inválido - use PNG ou JPG" });
-
-                using (var checkStream = arquivo.OpenReadStream())
-                {
-                    if (!IsValidImageContent(checkStream, extensao))
-                        return BadRequest(new { bResult = false, type = "ERRO", message = "Conteúdo do arquivo não corresponde à extensão informada" });
-                }
-
-                var pastaAvatares = Path.Combine(_appEnvironment.WebRootPath, "img", "avatars", "socio");
-
-                Directory.CreateDirectory(pastaAvatares);
-
-                var nomeArquivo = $"imgAvatar{socioId}.png";
-                var caminhoCompleto = Path.Combine(pastaAvatares, nomeArquivo);
-
-                using (var stream = new FileStream(caminhoCompleto, FileMode.Create))
-                {
-                    await arquivo.CopyToAsync(stream);
-                }
-
-                var socio = await _db.Socio.FirstOrDefaultAsync(s => s.Id == socioId);
-
-                if (socio != null)
-                {
-                    socio.ImgAvatar = nomeArquivo;
-                    await _db.SaveChangesAsync();
-                }
-
-                return Ok(new { bResult = true, type = "OK", message = "Foto atualizada com sucesso", data = new { imgAvatar = nomeArquivo } });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(UploadAvatar));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        private static bool IsValidImageContent(Stream stream, string extension)
-        {
-            Span<byte> header = stackalloc byte[12];
-
-            stream.Position = 0;
-            int read = stream.Read(header);
-            stream.Position = 0;
-
-            if (read < 4)
-                return false;
-
-            return extension switch
-            {
-                ".jpg" or ".jpeg" => header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
-                ".png" => header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
-                _ => false
-            };
-        }
-
-        /// <summary>
-        /// Troca a senha do sócio autenticado (tela "Meus Dados" -&gt; Segurança). Sempre no
-        /// sócio da claim, nunca de um id vindo do cliente. Confere a senha atual com o mesmo
-        /// verificador usado no login (MD5 legado ou BCrypt, dependendo do que já está salvo) -
-        /// sem o bypass de "Id == 39" que existe em LoginValidacao, que nunca deve ser copiado
-        /// pra código novo. Só grava o hash (Senha); não grava SenhaAberta em texto puro.
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> UpdatePassword(string currentPassword, string newPassword, string confirmPassword)
-        {
-            try
-            {
-                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-
-                if (socioId <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
-
-                if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Preencha a senha atual e a nova senha" });
-
-                // Mesmas 3 regras exibidas em tempo real na tela (fn_ValidarRequisitosSenha em
-                // pages-auth-account-settings-seguranca.js) - reforçadas aqui pois validação de
-                // front-end nunca é garantia.
-                if (newPassword.Length < 8
-                    || !Regex.IsMatch(newPassword, "[A-Z]")
-                    || !Regex.IsMatch(newPassword, @"[0-9\W]"))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "A nova senha não atende aos requisitos mínimos (8 caracteres, 1 maiúscula, 1 número/símbolo)" });
-
-                if (newPassword != confirmPassword)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "A nova senha e a confirmação não coincidem" });
-
-                var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(s => s.SocioId == socioId);
-
-                if (seguranca == null)
-                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
-
-                using var md5Hash = MD5.Create();
-
-                if (!_helperController.VerifyMd5HashWithMySecurity(md5Hash, currentPassword, seguranca.Senha))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Senha atual incorreta" });
-
-                seguranca.Senha = _helperController.GenerateHashPassword(newPassword);
-                seguranca.SenhaAtualizada = true;
-
-                await _db.SaveChangesAsync();
-
-                return Ok(new { bResult = true, type = "OK", message = "Senha atualizada com sucesso" });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(UpdatePassword));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Últimos 5 acessos do sócio autenticado (tela "Meus Dados" -&gt; Segurança), sempre
-        /// escopado pela claim - nunca por um socioId vindo do cliente.
-        /// </summary>
-        [HttpPost]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> GetUltimosAcessos()
-        {
-            try
-            {
-                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-
-                if (socioId <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
-
-                var acessos = await _db.SocioLogAcesso
-                    .Where(a => a.SocioId == socioId)
-                    .OrderByDescending(a => a.UltimoLogin)
-                    .Take(5)
-                    .Select(a => new
-                    {
-                        browser = a.Browser,
-                        os = a.OS,
-                        device = a.Device,
-                        cidade = a.Cidade,
-                        estado = a.Estado,
-                        ultimoLogin = a.UltimoLogin,
-                    })
-                    .ToListAsync();
-
-                return Ok(new { bResult = true, type = "OK", data = acessos });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetUltimosAcessos));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Combinações Fase/Tipo com mais quantidade na coleção do sócio autenticado
-        /// (tela "Meu Perfil" -&gt; card Coleção), sempre escopado pela claim - nunca por um
-        /// socioId vindo do cliente. O percentual da barra de progresso é a completude do
-        /// catálogo: quantos itens dessa Fase+Tipo o sócio possui em relação ao total de
-        /// marcas existentes para essa mesma combinação (não ao total da coleção do sócio).
-        /// </summary>
-        [HttpPost]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> GetTopFasesColecao()
-        {
-            try
-            {
-                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-
-                if (socioId <= 0)
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
-
-                var itensColecao = await _db.SocioColecao
-                    .Where(c => c.SocioId == socioId && (c.Possui || c.Interesse))
-                    .Join(_db.Marca, c => c.MarcaId, m => m.Id, (c, m) => new { c.Possui, c.Interesse, m.MarcaFaseId, m.MarcaSubTipoId })
-                    .Join(_db.MarcaSubTipo, x => x.MarcaSubTipoId, st => st.Id, (x, st) => new { x.Possui, x.Interesse, x.MarcaFaseId, st.MarcaTipoId })
-                    .ToListAsync();
-
-                var catalogoPorGrupo = (await _db.Marca
-                        .Where(m => m.MarcaFaseId != null && m.MarcaSubTipoId != null)
-                        .Join(_db.MarcaSubTipo, m => m.MarcaSubTipoId, st => st.Id, (m, st) => new { m.MarcaFaseId, st.MarcaTipoId })
-                        .ToListAsync())
-                    .GroupBy(x => (x.MarcaFaseId, x.MarcaTipoId))
-                    .ToDictionary(g => g.Key, g => g.Count());
-
-                var fases = await _db.MarcaFase.AsNoTracking().ToDictionaryAsync(f => f.Id!.Value, f => f.Descricao);
-                var tipos = await _db.MarcaTipo.AsNoTracking().ToDictionaryAsync(t => t.Id!.Value, t => t.Descricao);
-
-                var topFases = itensColecao
-                    .GroupBy(x => (x.MarcaFaseId, x.MarcaTipoId))
-                    .Select(g => new
-                    {
-                        grupo = g.Key,
-                        nomeFase = g.Key.MarcaFaseId.HasValue && fases.TryGetValue(g.Key.MarcaFaseId.Value, out var nf) ? nf : "-",
-                        tipo = tipos.TryGetValue(g.Key.MarcaTipoId, out var nt) ? nt : "-",
-                        qtdPossui = g.Count(x => x.Possui),
-                        qtdInteresse = g.Count(x => x.Interesse),
-                    })
-                    .OrderByDescending(x => x.qtdPossui)
-                    .Take(10)
-                    .Select(x =>
-                    {
-                        var totalCatalogo = catalogoPorGrupo.TryGetValue(x.grupo, out var tot) ? tot : 0;
-
-                        return new
-                        {
-                            x.nomeFase,
-                            x.tipo,
-                            x.qtdPossui,
-                            x.qtdInteresse,
-                            totalCatalogo,
-                            percentPossui = totalCatalogo > 0 ? (int)Math.Round(100.0 * x.qtdPossui / totalCatalogo) : 0,
-                        };
-                    })
-                    .ToList();
-
-                return Ok(new { bResult = true, type = "OK", data = topFases });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetTopFasesColecao));
-
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
 
         /// <summary>
         /// Exibe a página de "Esqueci minha senha".
@@ -709,195 +165,7 @@ namespace Aceca.Adm.Controllers
 
             return View("~/Views/Auth/RegisterUpdate.cshtml");
         }
-
-        // ──────────────────────────────────────────────
-        // ACCESS / LOGOUT
-        // ──────────────────────────────────────────────
-
-        public async Task<IActionResult> Access()
-        {
-            try
-            {
-                if (!User.Identity.IsAuthenticated)
-                    return AccessDenied();
-
-                var result = await LoginPerfilAdm();
-
-                if (result.GetType() == typeof(ForbidResult))
-                    return AccessDenied();
-
-                if (result.GetType() == typeof(BadRequestObjectResult))
-                    return BadRequest(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = result?.ToString()
-                    });
-
-                var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
-
-
-                ViewBag.PerfilAdm = (bool)jObjResult?["isPerfilAdm"];
-
-                var userId = (int)jObjResult?["userId"];
-
-                if (!await LoginSetCookieAsync(jObjResult?["userEmail"]?.ToString()))
-                    return BadRequest(new { msg = "SetCookie inválido." });
-
-                TempData["isPerfil"] = ViewBag.PerfilAdm;
-
-                /*
-                TempData["Layout"] = ViewBag.PerfilAdm ? "_HorizontalLayout" : "_WithoutMenuLayout";
-
-                return ViewBag.PerfilAdm
-                    ? RedirectToAction("Inicio", "Home")
-                    : RedirectToAction("Index", "Marca");
-                */
-
-                TempData["Layout"] = "_HorizontalLayout";
-
-                return RedirectToAction("Inicio", "Home");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(Access), ex.Message);
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        public async Task<IActionResult> Logout()
-        {
-            if (HttpContext?.Request?.Cookies?.Count > 0)
-            {
-                var siteCookies = HttpContext.Request.Cookies
-                    .Where(c => c.Key.Contains(_appConfiguration["Cookie:Key"]?.ToString())
-                        || c.Key.Contains($"{_appConfiguration["Cookie:Key"]?.ToString()}.ExpireDateTime")
-                        || c.Key.Contains(".AspNetCore.")
-                        || c.Key.Contains("Microsoft.Authentication"));
-
-                foreach (var cookie in siteCookies)
-                    Response?.Cookies.Delete(cookie.Key);
-            }
-
-            await HttpContext?.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            return Ok(new { bResult = true, type = "OK", message = "SUCESSO" });
-        }
-
-        // ──────────────────────────────────────────────
-        // LOGIN
-        // ──────────────────────────────────────────────
-
-        #region Login
-
-        [HttpPost]
-        public async Task<IActionResult> Login([FromBody] LoginIn dto)
-        {
-            try
-            {
-                var email = dto.Email.Trim().ToLowerInvariant();
-
-                var user = await _db.SocioSeguranca
-                    .Include(x => x.Socio)
-                    .ThenInclude(s => s.SocioPerfil)
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Email == email);
-
-                if (user is null)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
-
-                if (user.Socio.SocioPerfilId.Equals((int)EPerfil.Banido))
-                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
-
-                if (!user.Socio.Ativo)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
-
-                // Bloqueio permanente (5ª tentativa de captura de tela) - só a administração
-                // consegue liberar, desmarcando "Bloqueado" em Sócio > Segurança.
-                if (user.Bloqueado)
-                    return Ok(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Login bloqueado por tentativas repetidas de ação indevida. Aguarde contato da administração para liberação."
-                    });
-
-                if (user.BloqueadoAte.HasValue && user.BloqueadoAte.Value > DateTime.UtcNow)
-                {
-                    var minutosRestantes = (int)Math.Ceiling((user.BloqueadoAte.Value - DateTime.UtcNow).TotalMinutes);
-                    return Ok(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = $"Login bloqueado temporariamente por tentativa de ação indevida. Tente novamente mais tarde."
-                    });
-                }
-
-                // Conta de auto-cadastro (teste grátis) vencida: bloqueia o login diretamente
-                // aqui também (o mesmo prazo já é fiscalizado a cada request por
-                // OnValidatePrincipal em Program.cs, mas essa checagem cobre quem nunca chegou
-                // a ficar logado depois do vencimento e tenta logar de novo com a senha antiga).
-                if (user.Socio.EhContaTeste && user.Socio.TesteExpiraEm.HasValue
-                    && DateTime.UtcNow >= user.Socio.TesteExpiraEm.Value)
-                    return Ok(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Seu período de teste grátis expirou. Solicite sua associação em https://www.aceca.com.br/#contato para continuar."
-                    });
-
-                // Auto-cadastro que nunca terminou a etapa de dados pessoais (RegisterMultiSteps)
-                // - login normal com e-mail/senha não é o caminho pra continuar de onde parou
-                // (o token de continuidade, se ainda válido, só chega pelo e-mail de verificação).
-                if (user.Socio.EhContaTeste && user.Socio.PendenteCadastro)
-                    return Ok(new
-                    {
-                        bResult = false,
-                        type = "ERRO",
-                        message = "Seu cadastro ainda não foi concluído. Verifique o e-mail de confirmação para continuar de onde parou."
-                    });
-
-                var financeiroPendente = await _db.SocioFinanceiro
-                    .AsNoTracking()
-                    .AnyAsync(f => f.SocioId == user.SocioId && f.PagamentoEmDia == 0);
-
-                if (financeiroPendente)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Situação Financeira Pendente" });
-
-                if (!LoginValidacao(dto.Senha, user))
-                    return Ok(new { bResult = false, type = "ERRO", message = "Credenciais Inválidas" });
-
-                var strToken = LoginTokenJwt(user, user.Socio);
-
-                if (string.IsNullOrEmpty(strToken))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "Token Inválido" });
-
-                if (!await LoginSetClaimsAsync(user, user.Socio))
-                    return BadRequest(new { bResult = false, type = "ERRO", message = "SetClaims Inválido" });
-
-                return Ok(new
-                {
-                    bResult = true,
-                    token = strToken,
-                    nameIdentifier = user.SocioId.ToString(),
-                    nome = user.Socio.Nome,
-                    cargo = user.Socio?.SocioPerfil?.Descricao,
-                    isPerfil = string.Equals(user.Socio?.SocioPerfil?.Descricao, "Administracao", StringComparison.Ordinal),
-                    pswuptd = user.SenhaAtualizada
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(Login), ex.Message);
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
         #endregion
-
-        // ──────────────────────────────────────────────
-        // AUTO-CADASTRO (TESTE GRÁTIS)
-        // ──────────────────────────────────────────────
 
         #region Auto-Cadastro (Teste Grátis)
 
@@ -917,6 +185,13 @@ namespace Aceca.Adm.Controllers
         public IActionResult PoliticaPrivacidade()
         {
             return View("~/Views/Auth/PoliticaPrivacidade.cshtml");
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Register()
+        {
+            return View("~/Views/Auth/Register.cshtml");
         }
 
         [HttpGet]
@@ -1617,166 +892,7 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
-        // ──────────────────────────────────────────────
-        // LOGIN-LOG
-        // ──────────────────────────────────────────────
-
-        #region LoginLog
-
-        [HttpPost]
-        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
-        public async Task<IActionResult> LoginLog(
-            [FromForm] string strIp, [FromForm] string srtId,
-            [FromForm] string? latitude = null, [FromForm] string? longitude = null,
-            [FromForm] string? winPlatformVersion = null)
-        {
-            try
-            {
-                if (!int.TryParse(srtId, out var userId) || userId <= 0)
-                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
-
-                if (userId != 39 && !string.IsNullOrEmpty(strIp))
-                {
-                    var responseGeo = await GetGeoInfoAsync(strIp);
-                    var jObjResult  = ((ObjectResult)responseGeo).Value;
-
-                    var jsonGeo   = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
-                    var jsonAgent = jObjResult?.GetType()?.GetProperty("jsonAgent")?.GetValue(jObjResult, null)?.ToString();
-
-                    if (!string.IsNullOrEmpty(jsonGeo))
-                    {
-                        JsonNode nodeGeo   = JsonNode.Parse(jsonGeo)!;
-                        JsonNode nodeAgent = !string.IsNullOrEmpty(jsonAgent) ? JsonNode.Parse(jsonAgent)! : null;
-
-                        DateTimeOffset.TryParse(
-                            nodeGeo["time_zone"]?["current_time"]?.GetValue<string>(),
-                            out var loginTime);
-
-                        // Geolocation API do navegador (GPS/Wi-Fi, enviada pelo client quando o
-                        // usuário concede a permissão) é bem mais precisa que geolocalização por
-                        // IP - em rede móvel (CGNAT), o IP é geolocalizado no ponto de saída da
-                        // operadora, que pode ficar a dezenas de km do usuário real. Quando
-                        // disponível, usa reverse geocoding (Nominatim/OSM, gratuito) para achar
-                        // bairro/cidade; senão mantém o valor vindo do IP (fallback original).
-                        string? bairroPreciso = null;
-                        string? cidadePrecisa = null;
-                        string? latPrecisa = null;
-                        string? lngPrecisa = null;
-
-                        if (!string.IsNullOrWhiteSpace(latitude) && !string.IsNullOrWhiteSpace(longitude))
-                        {
-                            (bairroPreciso, cidadePrecisa) = await ReverseGeocodeAsync(latitude, longitude);
-                            latPrecisa = latitude;
-                            lngPrecisa = longitude;
-                        }
-
-                        var osBruto = nodeAgent?["operating_system"]?["name"]?.GetValue<string>();
-
-                        var newModel = new Models.SocioLogAcesso
-                        {
-                            SocioId = userId,
-                            IP         = nodeGeo["ip"]?.GetValue<string>(),
-                            OS         = CorrigirNomeSistemaOperacional(osBruto, winPlatformVersion),
-                            Browser    = nodeAgent?["name"]?.GetValue<string>(),
-                            Device     = nodeAgent?["device"]?["type"]?.GetValue<string>(),
-                            Operadora  = nodeGeo["asn"]?["organization"]?.GetValue<string>(),
-                            Estado     = nodeGeo["location"]?["state_code"]?.GetValue<string>(),
-                            Cidade     = !string.IsNullOrWhiteSpace(cidadePrecisa)
-                                ? (!string.IsNullOrWhiteSpace(bairroPreciso) ? $"{bairroPreciso}, {cidadePrecisa}" : cidadePrecisa)
-                                : nodeGeo["location"]?["city"]?.GetValue<string>(),
-                            Latitude   = latPrecisa ?? nodeGeo["location"]?["latitude"]?.ToString()?.Trim('"'),
-                            Longitude  = lngPrecisa ?? nodeGeo["location"]?["longitude"]?.ToString()?.Trim('"'),
-                            LocalizacaoCompartilhada = !string.IsNullOrWhiteSpace(latitude) && !string.IsNullOrWhiteSpace(longitude),
-                            UltimoLogin = loginTime != default ? loginTime.DateTime : DateTime.UtcNow.AddHours(-3),
-                        };
-
-                        _db.SocioLogAcesso.Add(newModel);
-                        await _db.SaveChangesAsync();
-                    }
-                }
-
-                return Ok(new { bResult = true });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(LoginLog), ex.Message);
-                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
-            }
-        }
-
-        // Reverse geocoding gratuito (OpenStreetMap Nominatim, sem chave de API) - converte
-        // lat/long (vindos da Geolocation API do navegador) em bairro/cidade. Política de uso
-        // do Nominatim exige um User-Agent identificando a aplicação; falha aqui não deve
-        // derrubar o login, por isso sempre retorna (null, null) em vez de lançar.
-        private async Task<(string? bairro, string? cidade)> ReverseGeocodeAsync(string lat, string lng)
-        {
-            try
-            {
-                var client = _httpClientFactory.CreateClient();
-                var url = $"https://nominatim.openstreetmap.org/reverse?lat={Uri.EscapeDataString(lat)}&lon={Uri.EscapeDataString(lng)}&format=json&zoom=16&addressdetails=1";
-
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.UserAgent.ParseAdd("ACECA-App/1.0 (contato: ti@aceca.com.br)");
-
-                var response = await client.SendAsync(request);
-                if (!response.IsSuccessStatusCode)
-                    return (null, null);
-
-                var json = await response.Content.ReadAsStringAsync();
-                var address = JsonNode.Parse(json)?["address"];
-
-                var bairro = address?["suburb"]?.GetValue<string>()
-                    ?? address?["neighbourhood"]?.GetValue<string>()
-                    ?? address?["city_district"]?.GetValue<string>();
-
-                var cidade = address?["city"]?.GetValue<string>()
-                    ?? address?["town"]?.GetValue<string>()
-                    ?? address?["village"]?.GetValue<string>()
-                    ?? address?["municipality"]?.GetValue<string>();
-
-                return (bairro, cidade);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Falha ao fazer reverse geocoding via Nominatim (lat={Lat}, lng={Lng})", lat, lng);
-                return (null, null);
-            }
-        }
-
-        // O User-Agent clássico não distingue Windows 10 de Windows 11 - a Microsoft manteve
-        // o mesmo token "Windows NT 10.0" nos dois por compatibilidade com sites que fazem
-        // sniffing de OS. A única forma de diferenciar é via User-Agent Client Hints
-        // (Sec-CH-UA-Platform-Version), suportado só por navegadores Chromium (Chrome/Edge) -
-        // o client envia esse valor via navigator.userAgentData quando disponível.
-        // Referência do esquema de versionamento: https://learn.microsoft.com/microsoft-edge/web-platform/how-to-detect-win11
-        private static string CorrigirNomeSistemaOperacional(string? osNomeBruto, string? winPlatformVersion)
-        {
-            if (string.IsNullOrWhiteSpace(osNomeBruto))
-                return osNomeBruto ?? "Desconhecido";
-
-            if (!osNomeBruto.Contains("Windows", StringComparison.OrdinalIgnoreCase))
-                return osNomeBruto;
-
-            if (!string.IsNullOrWhiteSpace(winPlatformVersion))
-            {
-                var primeiroSegmento = winPlatformVersion.Split('.')[0];
-                if (int.TryParse(primeiroSegmento, out var versaoMajor))
-                    return versaoMajor >= 13 ? "Windows 11" : "Windows 10";
-            }
-
-            // Navegador não-Chromium (Firefox/Safari) ou Client Hint indisponível - não dá
-            // pra saber qual dos dois, mas pelo menos não mostra mais o rótulo cru "Windows NT".
-            return "Windows 10/11 (versão exata não detectável neste navegador)";
-        }
-
-        #endregion
-
-
-        // ──────────────────────────────────────────────
-        // ESQUECI A SENHA  (envia e-mail com link)
-        // ──────────────────────────────────────────────
-
-        #region ForgotPassword
+        #region ESQUECI A SENHA  (envia e-mail com link)
 
         /// <summary>
         /// Recebe o e-mail, gera token temporário (24h), salva no banco e envia e-mail com link.
@@ -1839,11 +955,7 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
-        // ──────────────────────────────────────────────
-        // REENVIO DO E-MAIL DE CADASTRO (link de boas-vindas expirado)
-        // ──────────────────────────────────────────────
-
-        #region ResendCadastroEmail
+        #region REENVIO DO E-MAIL DE CADASTRO (link de boas-vindas expirado)
 
         /// <summary>
         /// Gera um novo token (24h) e reenvia o e-mail de boas-vindas/cadastro, para o caso
@@ -1909,11 +1021,7 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
-        // ──────────────────────────────────────────────
-        // RESET DE SENHA  (página com e-mail + senha + confirmação)
-        // ──────────────────────────────────────────────
-
-        #region ResetPassword
+        #region RESET DE SENHA  (página com e-mail + senha + confirmação)
 
         /// <summary>
         /// Valida token, valida regras de senha e atualiza no banco.
@@ -1984,11 +1092,170 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
-        // ──────────────────────────────────────────────
-        // LOGIN PERFIL
-        // ──────────────────────────────────────────────
+        #region LOGIN
 
-        #region Login Perfil
+        [HttpPost]
+        public async Task<IActionResult> Login([FromBody] LoginIn dto)
+        {
+            try
+            {
+                var email = dto.Email.Trim().ToLowerInvariant();
+
+                var user = await _db.SocioSeguranca
+                    .Include(x => x.Socio)
+                    .ThenInclude(s => s.SocioPerfil)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Email == email);
+
+                if (user is null)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Inválido" });
+
+                if (user.Socio.SocioPerfilId.Equals((int)EPerfil.Banido))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Usuário Banido" });
+
+                if (!user.Socio.Ativo)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Acesso inválido. Entre em contato conosco." });
+
+                // Bloqueio permanente (5ª tentativa de captura de tela) - só a administração
+                // consegue liberar, desmarcando "Bloqueado" em Sócio > Segurança.
+                if (user.Bloqueado)
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Login bloqueado por tentativas repetidas de ação indevida. Aguarde contato da administração para liberação."
+                    });
+
+                if (user.BloqueadoAte.HasValue && user.BloqueadoAte.Value > DateTime.UtcNow)
+                {
+                    var minutosRestantes = (int)Math.Ceiling((user.BloqueadoAte.Value - DateTime.UtcNow).TotalMinutes);
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = $"Login bloqueado temporariamente por tentativa de ação indevida. Tente novamente mais tarde."
+                    });
+                }
+
+                // Conta de auto-cadastro (teste grátis) vencida: bloqueia o login diretamente
+                // aqui também (o mesmo prazo já é fiscalizado a cada request por
+                // OnValidatePrincipal em Program.cs, mas essa checagem cobre quem nunca chegou
+                // a ficar logado depois do vencimento e tenta logar de novo com a senha antiga).
+                if (user.Socio.EhContaTeste && user.Socio.TesteExpiraEm.HasValue
+                    && DateTime.UtcNow >= user.Socio.TesteExpiraEm.Value)
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Seu período de teste grátis expirou. Solicite sua associação em https://www.aceca.com.br/#contato para continuar."
+                    });
+
+                // Auto-cadastro que nunca terminou a etapa de dados pessoais (RegisterMultiSteps)
+                // - login normal com e-mail/senha não é o caminho pra continuar de onde parou
+                // (o token de continuidade, se ainda válido, só chega pelo e-mail de verificação).
+                if (user.Socio.EhContaTeste && user.Socio.PendenteCadastro)
+                    return Ok(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = "Seu cadastro ainda não foi concluído. Verifique o e-mail de confirmação para continuar de onde parou."
+                    });
+
+                var financeiroPendente = await _db.SocioFinanceiro
+                    .AsNoTracking()
+                    .AnyAsync(f => f.SocioId == user.SocioId && f.PagamentoEmDia == 0);
+
+                if (financeiroPendente)
+                    return Ok(new { bResult = false, type = "ERRO", message = "Situação Financeira Pendente" });
+
+                if (!LoginValidacao(dto.Senha, user))
+                    return Ok(new { bResult = false, type = "ERRO", message = "Credenciais Inválidas" });
+
+                var strToken = LoginTokenJwt(user, user.Socio);
+
+                if (string.IsNullOrEmpty(strToken))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Token Inválido" });
+
+                if (!await LoginSetClaimsAsync(user, user.Socio))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "SetClaims Inválido" });
+
+                return Ok(new
+                {
+                    bResult = true,
+                    token = strToken,
+                    nameIdentifier = user.SocioId.ToString(),
+                    nome = user.Socio.Nome,
+                    cargo = user.Socio?.SocioPerfil?.Descricao,
+                    isPerfil = string.Equals(user.Socio?.SocioPerfil?.Descricao, "Administracao", StringComparison.Ordinal),
+                    pswuptd = user.SenhaAtualizada
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(Login), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region LOGIN - ACCESS
+
+        public async Task<IActionResult> Access()
+        {
+            try
+            {
+                if (!User.Identity.IsAuthenticated)
+                    return AccessDenied();
+
+                var result = await LoginPerfilAdm();
+
+                if (result.GetType() == typeof(ForbidResult))
+                    return AccessDenied();
+
+                if (result.GetType() == typeof(BadRequestObjectResult))
+                    return BadRequest(new
+                    {
+                        bResult = false,
+                        type = "ERRO",
+                        message = result?.ToString()
+                    });
+
+                var jObjResult = JObject.FromObject(((ObjectResult)result).Value);
+
+
+                ViewBag.PerfilAdm = (bool)jObjResult?["isPerfilAdm"];
+
+                var userId = (int)jObjResult?["userId"];
+
+                if (!await LoginSetCookieAsync(jObjResult?["userEmail"]?.ToString()))
+                    return BadRequest(new { msg = "SetCookie inválido." });
+
+                TempData["isPerfil"] = ViewBag.PerfilAdm;
+
+                /*
+                TempData["Layout"] = ViewBag.PerfilAdm ? "_HorizontalLayout" : "_WithoutMenuLayout";
+
+                return ViewBag.PerfilAdm
+                    ? RedirectToAction("Inicio", "Home")
+                    : RedirectToAction("Index", "Marca");
+                */
+
+                TempData["Layout"] = "_HorizontalLayout";
+
+                return RedirectToAction("Inicio", "Home");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(Access), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+
+        #endregion
+
+        #region LOGIN - Controle Perfil
 
         public async Task<IActionResult> LoginPerfilAdm()
         {
@@ -2024,11 +1291,7 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
-        // ──────────────────────────────────────────────
-        // LOGIN UPDATE DATA
-        // ──────────────────────────────────────────────
-
-        #region LOGIN Update Data
+        #region LOGIN - Atualizacao de Dados ( Update Data)
 
         [HttpPost]
         public async Task<IActionResult> LoginUpdate([FromBody] LoginUpdt dto)
@@ -2156,8 +1419,7 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
-        
-        #region Funções - Login
+        #region LOGIN - Funções Cookie Token Session
 
         private bool LoginValidacao(string openPassword, Models.SocioSeguranca user)
         {
@@ -2293,9 +1555,735 @@ namespace Aceca.Adm.Controllers
 
         #endregion
 
-        // ──────────────────────────────────────────────
-        // GEO
-        // ──────────────────────────────────────────────
+        #region LOGIN - LoginLog
+
+        [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> LoginLog(
+            [FromForm] string strIp, [FromForm] string srtId,
+            [FromForm] string? latitude = null, [FromForm] string? longitude = null,
+            [FromForm] string? winPlatformVersion = null)
+        {
+            try
+            {
+                if (!int.TryParse(srtId, out var userId) || userId <= 0)
+                    return Ok(new { bResult = false, type = "ERRO", message = "User Inválido" });
+
+                if (userId != 39 && !string.IsNullOrEmpty(strIp))
+                {
+                    var responseGeo = await GetGeoInfoAsync(strIp);
+                    var jObjResult = ((ObjectResult)responseGeo).Value;
+
+                    var jsonGeo = jObjResult?.GetType()?.GetProperty("data")?.GetValue(jObjResult, null)?.ToString();
+                    var jsonAgent = jObjResult?.GetType()?.GetProperty("jsonAgent")?.GetValue(jObjResult, null)?.ToString();
+
+                    if (!string.IsNullOrEmpty(jsonGeo))
+                    {
+                        JsonNode nodeGeo = JsonNode.Parse(jsonGeo)!;
+                        JsonNode nodeAgent = !string.IsNullOrEmpty(jsonAgent) ? JsonNode.Parse(jsonAgent)! : null;
+
+                        DateTimeOffset.TryParse(
+                            nodeGeo["time_zone"]?["current_time"]?.GetValue<string>(),
+                            out var loginTime);
+
+                        // Geolocation API do navegador (GPS/Wi-Fi, enviada pelo client quando o
+                        // usuário concede a permissão) é bem mais precisa que geolocalização por
+                        // IP - em rede móvel (CGNAT), o IP é geolocalizado no ponto de saída da
+                        // operadora, que pode ficar a dezenas de km do usuário real. Quando
+                        // disponível, usa reverse geocoding (Nominatim/OSM, gratuito) para achar
+                        // bairro/cidade; senão mantém o valor vindo do IP (fallback original).
+                        string? bairroPreciso = null;
+                        string? cidadePrecisa = null;
+                        string? latPrecisa = null;
+                        string? lngPrecisa = null;
+
+                        if (!string.IsNullOrWhiteSpace(latitude) && !string.IsNullOrWhiteSpace(longitude))
+                        {
+                            (bairroPreciso, cidadePrecisa) = await ReverseGeocodeAsync(latitude, longitude);
+                            latPrecisa = latitude;
+                            lngPrecisa = longitude;
+                        }
+
+                        var osBruto = nodeAgent?["operating_system"]?["name"]?.GetValue<string>();
+
+                        var newModel = new Models.SocioLogAcesso
+                        {
+                            SocioId = userId,
+                            IP = nodeGeo["ip"]?.GetValue<string>(),
+                            OS = CorrigirNomeSistemaOperacional(osBruto, winPlatformVersion),
+                            Browser = nodeAgent?["name"]?.GetValue<string>(),
+                            Device = nodeAgent?["device"]?["type"]?.GetValue<string>(),
+                            Operadora = nodeGeo["asn"]?["organization"]?.GetValue<string>(),
+                            Estado = nodeGeo["location"]?["state_code"]?.GetValue<string>(),
+                            Cidade = !string.IsNullOrWhiteSpace(cidadePrecisa)
+                                ? (!string.IsNullOrWhiteSpace(bairroPreciso) ? $"{bairroPreciso}, {cidadePrecisa}" : cidadePrecisa)
+                                : nodeGeo["location"]?["city"]?.GetValue<string>(),
+                            Latitude = latPrecisa ?? nodeGeo["location"]?["latitude"]?.ToString()?.Trim('"'),
+                            Longitude = lngPrecisa ?? nodeGeo["location"]?["longitude"]?.ToString()?.Trim('"'),
+                            LocalizacaoCompartilhada = !string.IsNullOrWhiteSpace(latitude) && !string.IsNullOrWhiteSpace(longitude),
+                            UltimoLogin = loginTime != default ? loginTime.DateTime : DateTime.UtcNow.AddHours(-3),
+                        };
+
+                        _db.SocioLogAcesso.Add(newModel);
+                        await _db.SaveChangesAsync();
+                    }
+                }
+
+                return Ok(new { bResult = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ERRO :: {Method} :: {Message}", nameof(LoginLog), ex.Message);
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        // Reverse geocoding gratuito (OpenStreetMap Nominatim, sem chave de API) - converte
+        // lat/long (vindos da Geolocation API do navegador) em bairro/cidade. Política de uso
+        // do Nominatim exige um User-Agent identificando a aplicação; falha aqui não deve
+        // derrubar o login, por isso sempre retorna (null, null) em vez de lançar.
+        private async Task<(string? bairro, string? cidade)> ReverseGeocodeAsync(string lat, string lng)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var url = $"https://nominatim.openstreetmap.org/reverse?lat={Uri.EscapeDataString(lat)}&lon={Uri.EscapeDataString(lng)}&format=json&zoom=16&addressdetails=1";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.UserAgent.ParseAdd("ACECA-App/1.0 (contato: ti@aceca.com.br)");
+
+                var response = await client.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                    return (null, null);
+
+                var json = await response.Content.ReadAsStringAsync();
+                var address = JsonNode.Parse(json)?["address"];
+
+                var bairro = address?["suburb"]?.GetValue<string>()
+                    ?? address?["neighbourhood"]?.GetValue<string>()
+                    ?? address?["city_district"]?.GetValue<string>();
+
+                var cidade = address?["city"]?.GetValue<string>()
+                    ?? address?["town"]?.GetValue<string>()
+                    ?? address?["village"]?.GetValue<string>()
+                    ?? address?["municipality"]?.GetValue<string>();
+
+                return (bairro, cidade);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Falha ao fazer reverse geocoding via Nominatim (lat={Lat}, lng={Lng})", lat, lng);
+                return (null, null);
+            }
+        }
+
+        // O User-Agent clássico não distingue Windows 10 de Windows 11 - a Microsoft manteve
+        // o mesmo token "Windows NT 10.0" nos dois por compatibilidade com sites que fazem
+        // sniffing de OS. A única forma de diferenciar é via User-Agent Client Hints
+        // (Sec-CH-UA-Platform-Version), suportado só por navegadores Chromium (Chrome/Edge) -
+        // o client envia esse valor via navigator.userAgentData quando disponível.
+        // Referência do esquema de versionamento: https://learn.microsoft.com/microsoft-edge/web-platform/how-to-detect-win11
+        private static string CorrigirNomeSistemaOperacional(string? osNomeBruto, string? winPlatformVersion)
+        {
+            if (string.IsNullOrWhiteSpace(osNomeBruto))
+                return osNomeBruto ?? "Desconhecido";
+
+            if (!osNomeBruto.Contains("Windows", StringComparison.OrdinalIgnoreCase))
+                return osNomeBruto;
+
+            if (!string.IsNullOrWhiteSpace(winPlatformVersion))
+            {
+                var primeiroSegmento = winPlatformVersion.Split('.')[0];
+                if (int.TryParse(primeiroSegmento, out var versaoMajor))
+                    return versaoMajor >= 13 ? "Windows 11" : "Windows 10";
+            }
+
+            // Navegador não-Chromium (Firefox/Safari) ou Client Hint indisponível - não dá
+            // pra saber qual dos dois, mas pelo menos não mostra mais o rótulo cru "Windows NT".
+            return "Windows 10/11 (versão exata não detectável neste navegador)";
+        }
+
+        #endregion
+
+        #region LOGOUT
+        public async Task<IActionResult> Logout()
+        {
+            if (HttpContext?.Request?.Cookies?.Count > 0)
+            {
+                var siteCookies = HttpContext.Request.Cookies
+                    .Where(c => c.Key.Contains(_appConfiguration["Cookie:Key"]?.ToString())
+                        || c.Key.Contains($"{_appConfiguration["Cookie:Key"]?.ToString()}.ExpireDateTime")
+                        || c.Key.Contains(".AspNetCore.")
+                        || c.Key.Contains("Microsoft.Authentication"));
+
+                foreach (var cookie in siteCookies)
+                    Response?.Cookies.Delete(cookie.Key);
+            }
+
+            await HttpContext?.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return Ok(new { bResult = true, type = "OK", message = "SUCESSO" });
+        }
+
+        #endregion
+
+        #region PROFILE - Meu Perfil Socio Info
+
+
+        /// <summary>
+        /// Dados de "Sobre" da tela Meu Perfil - sempre do sócio autenticado (nunca de um id
+        /// vindo do cliente, mesma trava de IDOR usada em SocioColecaoController), pra evitar
+        /// que qualquer sócio logado consiga ler nome/telefone/e-mail/endereço de outro sócio
+        /// só trocando um parâmetro. Projeta os campos explicitamente - nunca retorna o
+        /// SocioSeguranca inteiro, que carrega hash e senha em texto puro (SenhaAberta).
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetFullById()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var model = await (
+                    from s in _db.Socio
+                    join sp in _db.SocioPerfil on s.SocioPerfilId equals sp.Id
+                    join ss in _db.SocioSeguranca on s.Id equals ss.SocioId
+                    join sa in _db.SocioAniversario on s.Id equals sa.SocioId into saJoin
+                    from sa in saJoin.DefaultIfEmpty()
+                    join sc in _db.SocioContato on s.Id equals sc.SocioId into scJoin
+                    from sc in scJoin.DefaultIfEmpty()
+                    join se in _db.SocioEndereco on s.Id equals se.SocioId into seJoin
+                    from se in seJoin.DefaultIfEmpty()
+                    where s.Id == socioId
+                    select new
+                    {
+                        id = s.Id,
+                        nome = s.Nome,
+                        imgAvatar = s.ImgAvatar,
+                        dataCriacao = s.DataCriacao,
+                        usuario = ss.NomeUsuario,
+                        perfil = sp.Descricao,
+                        aniversarioDia = (int?)sa.Dia,
+                        aniversarioMes = (int?)sa.Mes,
+                        aniversarioAno = (int?)sa.Ano,
+                        contatoDDI = (int?)sc.DDI,
+                        contatoDDD = (int?)sc.DDD,
+                        contatoTelefone = (long?)sc.Telefone,
+                        email = sc.Email,
+                        endereco = se.Endereco,
+                        numero = se.Numero,
+                        complemento = se.Complemento,
+                        bairro = se.Bairro,
+                        cidade = se.Cidade,
+                        estado = se.Estado,
+                        cep = se.CEP,
+                    }
+                ).AsNoTracking().FirstOrDefaultAsync();
+
+                if (model == null)
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
+
+                return Ok(new { bResult = true, type = "OK", data = model });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetFullById));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+
+        /// <summary>
+        /// Só id + ImgAvatar do sócio autenticado - usado pra atualizar o avatar do navbar
+        /// (site.js/fn_SetSessionData) e o Swal de boas-vindas do login (pages-auth.js) em
+        /// toda navegação de página, então fica de propósito fora do GetFullById (que faz
+        /// join em 5 tabelas) - aqui é sempre 1 tabela, só pela PK.
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetAvatarInfo()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var socio = await _db.Socio
+                    .Where(s => s.Id == socioId)
+                    .Select(s => new { id = s.Id, imgAvatar = s.ImgAvatar })
+                    .FirstOrDefaultAsync();
+
+                if (socio == null)
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
+
+                return Ok(new { bResult = true, type = "OK", data = socio });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetAvatarInfo));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Situação financeira (socio_financeiro) da tela "Meus Dados" -&gt; Financeiro, sempre
+        /// do sócio autenticado. Só projeta o que existe de fato na tabela - não há valor/
+        /// preço de plano cadastrado em lugar nenhum do sistema, então esse cálculo (data de
+        /// vencimento, dias restantes) é feito no front com a mesma regra de
+        /// SocioFinanceiroCheckService (TipoPagamentoId 2/3/4 = Anual/Semestral/Mensal).
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetInfoFinanceira()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var financeiro = await _db.SocioFinanceiro
+                    .Where(f => f.SocioId == socioId)
+                    .Select(f => new
+                    {
+                        tipoPagamentoId = f.TipoPagamentoId,
+                        tipoPagamento = f.TipoPagamento.Descricao,
+                        pagamentoEmDia = f.PagamentoEmDia,
+                        dataUltimoPagamento = f.DataUltimoPagamento,
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (financeiro == null)
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Nenhuma informação financeira encontrada" });
+
+                return Ok(new { bResult = true, type = "OK", data = financeiro });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetInfoFinanceira));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+
+        /// <summary>
+        /// Salva as alterações da tela "Meus Dados" - sempre no sócio autenticado, nunca em um
+        /// id vindo do cliente (mesma trava de IDOR do GetFullById acima). Atualiza Socio,
+        /// SocioSeguranca.NomeUsuario (apelido de exibição, não é credencial de login),
+        /// SocioContato, SocioEndereco e SocioAniversario numa única transação: mesmo padrão de
+        /// SocioController.Create, pra não deixar uma tabela atualizada e outra não em caso de
+        /// falha no meio do caminho.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> UpdateProfile(string nome, string usuario, int? telefoneDDD, string telefoneNumero,
+            string email, string aniversario, string cep, string endereco, string numero, string complemento,
+            string bairro, string cidade, string estado)
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                if (string.IsNullOrWhiteSpace(nome))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nome deve ser preenchido" });
+
+                if (!string.IsNullOrWhiteSpace(email) && !_helperController.IsValidEmailUsingMailAddress(email.Trim().ToLower()))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Formato de E-mail inválido" });
+
+                var strategy = _db.Database.CreateExecutionStrategy();
+
+                Func<Task<IActionResult>> operation = async () =>
+                {
+                    using var transaction = await _db.Database.BeginTransactionAsync();
+
+                    var socio = await _db.Socio.FirstOrDefaultAsync(s => s.Id == socioId);
+
+                    if (socio == null)
+                        return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
+
+                    socio.Nome = nome.Trim();
+
+                    var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(ss => ss.SocioId == socioId);
+
+                    if (seguranca != null)
+                        seguranca.NomeUsuario = !string.IsNullOrWhiteSpace(usuario) ? usuario.Trim() : null;
+
+                    var contato = await _db.SocioContato.FirstOrDefaultAsync(c => c.SocioId == socioId);
+
+                    if (contato != null)
+                    {
+                        contato.DDD = telefoneDDD;
+                        contato.Telefone = long.TryParse(telefoneNumero, out var telefoneNum) ? telefoneNum : null;
+                        contato.Email = !string.IsNullOrWhiteSpace(email) ? email.Trim() : null;
+                    }
+
+                    var socioEndereco = await _db.SocioEndereco.FirstOrDefaultAsync(e => e.SocioId == socioId);
+
+                    if (socioEndereco != null)
+                    {
+                        socioEndereco.CEP = cep;
+                        socioEndereco.Endereco = endereco;
+                        socioEndereco.Numero = numero;
+                        socioEndereco.Complemento = complemento;
+                        socioEndereco.Bairro = bairro;
+                        socioEndereco.Cidade = cidade;
+                        socioEndereco.Estado = estado;
+                    }
+
+                    var socioAniversario = await _db.SocioAniversario.FirstOrDefaultAsync(a => a.SocioId == socioId);
+
+                    if (socioAniversario != null)
+                    {
+                        var (dia, mes, ano) = ParseDataAniversario(aniversario);
+
+                        socioAniversario.Dia = dia;
+                        socioAniversario.Mes = mes;
+                        socioAniversario.Ano = ano;
+                    }
+
+                    await _db.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Ok(new { bResult = true, type = "OK", message = "Dados atualizados com sucesso" });
+                };
+
+                return await strategy.ExecuteAsync(operation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(UpdateProfile));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        private static (int? Dia, int? Mes, int? Ano) ParseDataAniversario(string dataAniversario)
+        {
+            if (string.IsNullOrWhiteSpace(dataAniversario))
+                return (null, null, null);
+
+            var partes = dataAniversario.Split("/");
+
+            int? dia = partes.Length > 0 && int.TryParse(partes[0].Trim(), out var d) ? d : null;
+            int? mes = partes.Length > 1 && int.TryParse(partes[1].Trim(), out var m) ? m : null;
+            int? ano = partes.Length > 2 && int.TryParse(partes[2].Trim(), out var a) ? a : null;
+
+            return (dia, mes, ano);
+        }
+
+        /// <summary>
+        /// Foto de perfil do sócio autenticado. Salva sempre como img/avatars/socio/imgAvatar{id}.png
+        /// (nome fixo derivado do id, nunca do nome do arquivo enviado - sem risco de path
+        /// traversal) e marca Socio.ImgAvatar, usado pelo front pra decidir entre essa imagem e o
+        /// avatar padrão da ACECA.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> UploadAvatar(IFormFile arquivo)
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                if (arquivo == null || arquivo.Length == 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Nenhuma imagem enviada" });
+
+                if (arquivo.Length > 800 * 1024)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Imagem maior que 800K" });
+
+                var extensao = Path.GetExtension(arquivo.FileName)?.ToLowerInvariant();
+                var extensoesValidas = new[] { ".png", ".jpg", ".jpeg" };
+
+                if (string.IsNullOrEmpty(extensao) || !extensoesValidas.Contains(extensao))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Formato de imagem inválido - use PNG ou JPG" });
+
+                using (var checkStream = arquivo.OpenReadStream())
+                {
+                    if (!IsValidImageContent(checkStream, extensao))
+                        return BadRequest(new { bResult = false, type = "ERRO", message = "Conteúdo do arquivo não corresponde à extensão informada" });
+                }
+
+                var pastaAvatares = Path.Combine(_appEnvironment.WebRootPath, "img", "avatars", "socio");
+
+                Directory.CreateDirectory(pastaAvatares);
+
+                var nomeArquivo = $"imgAvatar{socioId}.png";
+                var caminhoCompleto = Path.Combine(pastaAvatares, nomeArquivo);
+
+                using (var stream = new FileStream(caminhoCompleto, FileMode.Create))
+                {
+                    await arquivo.CopyToAsync(stream);
+                }
+
+                var socio = await _db.Socio.FirstOrDefaultAsync(s => s.Id == socioId);
+
+                if (socio != null)
+                {
+                    socio.ImgAvatar = nomeArquivo;
+                    await _db.SaveChangesAsync();
+                }
+
+                return Ok(new { bResult = true, type = "OK", message = "Foto atualizada com sucesso", data = new { imgAvatar = nomeArquivo } });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(UploadAvatar));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        private static bool IsValidImageContent(Stream stream, string extension)
+        {
+            Span<byte> header = stackalloc byte[12];
+
+            stream.Position = 0;
+            int read = stream.Read(header);
+            stream.Position = 0;
+
+            if (read < 4)
+                return false;
+
+            return extension switch
+            {
+                ".jpg" or ".jpeg" => header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+                ".png" => header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Troca a senha do sócio autenticado (tela "Meus Dados" -&gt; Segurança). Sempre no
+        /// sócio da claim, nunca de um id vindo do cliente. Confere a senha atual com o mesmo
+        /// verificador usado no login (MD5 legado ou BCrypt, dependendo do que já está salvo) -
+        /// sem o bypass de "Id == 39" que existe em LoginValidacao, que nunca deve ser copiado
+        /// pra código novo. Só grava o hash (Senha); não grava SenhaAberta em texto puro.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> UpdatePassword(string currentPassword, string newPassword, string confirmPassword)
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Preencha a senha atual e a nova senha" });
+
+                // Mesmas 3 regras exibidas em tempo real na tela (fn_ValidarRequisitosSenha em
+                // pages-auth-account-settings-seguranca.js) - reforçadas aqui pois validação de
+                // front-end nunca é garantia.
+                if (newPassword.Length < 8
+                    || !Regex.IsMatch(newPassword, "[A-Z]")
+                    || !Regex.IsMatch(newPassword, @"[0-9\W]"))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "A nova senha não atende aos requisitos mínimos (8 caracteres, 1 maiúscula, 1 número/símbolo)" });
+
+                if (newPassword != confirmPassword)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "A nova senha e a confirmação não coincidem" });
+
+                var seguranca = await _db.SocioSeguranca.FirstOrDefaultAsync(s => s.SocioId == socioId);
+
+                if (seguranca == null)
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Sócio não encontrado" });
+
+                using var md5Hash = MD5.Create();
+
+                if (!_helperController.VerifyMd5HashWithMySecurity(md5Hash, currentPassword, seguranca.Senha))
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Senha atual incorreta" });
+
+                seguranca.Senha = _helperController.GenerateHashPassword(newPassword);
+                seguranca.SenhaAtualizada = true;
+
+                await _db.SaveChangesAsync();
+
+                return Ok(new { bResult = true, type = "OK", message = "Senha atualizada com sucesso" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(UpdatePassword));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Últimos 5 acessos do sócio autenticado (tela "Meus Dados" -&gt; Segurança), sempre
+        /// escopado pela claim - nunca por um socioId vindo do cliente.
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetUltimosAcessos()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var acessos = await _db.SocioLogAcesso
+                    .Where(a => a.SocioId == socioId)
+                    .OrderByDescending(a => a.UltimoLogin)
+                    .Take(5)
+                    .Select(a => new
+                    {
+                        browser = a.Browser,
+                        os = a.OS,
+                        device = a.Device,
+                        cidade = a.Cidade,
+                        estado = a.Estado,
+                        ultimoLogin = a.UltimoLogin,
+                    })
+                    .ToListAsync();
+
+                return Ok(new { bResult = true, type = "OK", data = acessos });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetUltimosAcessos));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Combinações Fase/Tipo com mais quantidade na coleção do sócio autenticado
+        /// (tela "Meu Perfil" -&gt; card Coleção), sempre escopado pela claim - nunca por um
+        /// socioId vindo do cliente. O percentual da barra de progresso é a completude do
+        /// catálogo: quantos itens dessa Fase+Tipo o sócio possui em relação ao total de
+        /// marcas existentes para essa mesma combinação (não ao total da coleção do sócio).
+        /// </summary>
+        [HttpPost]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetTopFasesColecao()
+        {
+            try
+            {
+                var socioId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+
+                if (socioId <= 0)
+                    return BadRequest(new { bResult = false, type = "ERRO", message = "Sessão inválida" });
+
+                var itensColecao = await _db.SocioColecao
+                    .Where(c => c.SocioId == socioId && (c.Possui || c.Interesse))
+                    .Join(_db.Marca, c => c.MarcaId, m => m.Id, (c, m) => new { c.Possui, c.Interesse, m.MarcaFaseId, m.MarcaSubTipoId })
+                    .Join(_db.MarcaSubTipo, x => x.MarcaSubTipoId, st => st.Id, (x, st) => new { x.Possui, x.Interesse, x.MarcaFaseId, st.MarcaTipoId })
+                    .ToListAsync();
+
+                var catalogoPorGrupo = (await _db.Marca
+                        .Where(m => m.MarcaFaseId != null && m.MarcaSubTipoId != null)
+                        .Join(_db.MarcaSubTipo, m => m.MarcaSubTipoId, st => st.Id, (m, st) => new { m.MarcaFaseId, st.MarcaTipoId })
+                        .ToListAsync())
+                    .GroupBy(x => (x.MarcaFaseId, x.MarcaTipoId))
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                var fases = await _db.MarcaFase.AsNoTracking().ToDictionaryAsync(f => f.Id!.Value, f => f.Descricao);
+                var tipos = await _db.MarcaTipo.AsNoTracking().ToDictionaryAsync(t => t.Id!.Value, t => t.Descricao);
+
+                var topFases = itensColecao
+                    .GroupBy(x => (x.MarcaFaseId, x.MarcaTipoId))
+                    .Select(g => new
+                    {
+                        grupo = g.Key,
+                        nomeFase = g.Key.MarcaFaseId.HasValue && fases.TryGetValue(g.Key.MarcaFaseId.Value, out var nf) ? nf : "-",
+                        tipo = tipos.TryGetValue(g.Key.MarcaTipoId, out var nt) ? nt : "-",
+                        qtdPossui = g.Count(x => x.Possui),
+                        qtdInteresse = g.Count(x => x.Interesse),
+                    })
+                    .OrderByDescending(x => x.qtdPossui)
+                    .Take(10)
+                    .Select(x =>
+                    {
+                        var totalCatalogo = catalogoPorGrupo.TryGetValue(x.grupo, out var tot) ? tot : 0;
+
+                        return new
+                        {
+                            x.nomeFase,
+                            x.tipo,
+                            x.qtdPossui,
+                            x.qtdInteresse,
+                            totalCatalogo,
+                            percentPossui = totalCatalogo > 0 ? (int)Math.Round(100.0 * x.qtdPossui / totalCatalogo) : 0,
+                        };
+                    })
+                    .ToList();
+
+                return Ok(new { bResult = true, type = "OK", data = topFases });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetTopFasesColecao));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region Financeiro
+
+        /// <summary>
+        /// Chave Pix da associação (adm_config, parâmetro "ChavePix") + QR Code gerado na hora
+        /// - exibidos na aba Financeiro quando o sócio escolhe pagar via Pix. Não depende de
+        /// nenhum serviço externo (QRCoder gera o PNG localmente).
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "Administracao, Fundador, MembroHonra, Socio")]
+        public async Task<IActionResult> GetChavePix()
+        {
+            try
+            {
+                var chavePix = await _db.AdmConfig
+                    .Where(c => c.Parametro == "Param_ChavePix")
+                    .Select(c => c.Valor)
+                    .FirstOrDefaultAsync();
+
+                if (string.IsNullOrWhiteSpace(chavePix))
+                    return NotFound(new { bResult = false, type = "ERRO", message = "Chave Pix não configurada" });
+
+                using var qrGenerator = new QRCoder.QRCodeGenerator();
+                using var qrCodeData = qrGenerator.CreateQrCode(chavePix, QRCoder.QRCodeGenerator.ECCLevel.Q);
+                // Cor primária do tema (--bs-primary) nos módulos escuros - pedido explícito
+                // mesmo com o risco de leitura reduzida por contraste menor que preto/branco puro.
+                var qrCodePng = new QRCoder.PngByteQRCode(qrCodeData).GetGraphic(20,
+                    System.Drawing.ColorTranslator.FromHtml("#8c57ff"),
+                    System.Drawing.Color.White);
+                var qrCodeDataUri = "data:image/png;base64," + Convert.ToBase64String(qrCodePng);
+
+                return Ok(new { bResult = true, type = "OK", data = new { chavePix, qrCodeDataUri } });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ERRO :: {Method}", nameof(GetChavePix));
+
+                return BadRequest(new { bResult = false, type = "ERRO", message = ex.Message });
+            }
+        }
+
+
+        #endregion
 
         #region Geo
         public async Task<IActionResult> GetGeoInfoAsync(string varIp)

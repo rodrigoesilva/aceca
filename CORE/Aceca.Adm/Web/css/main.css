@@ -116,6 +116,11 @@ nav.scrolled{box-shadow:0 6px 44px rgba(71,0,123,0.55)}
 .nav-links a:hover{color:#fff}
 .nav-links a:hover::after{width:100%}
 .btn-login{
+  /* inline-block (em vez do inline padrão de <a>) faz o padding vertical contar de
+     verdade no layout - senão o fundo/pílula só é PINTADO além da linha de texto, sem
+     empurrar a altura do <li> no menu mobile, e a pílula acaba encavalando no botão
+     vizinho. */
+  display:inline-block;
   padding:9px 22px;border-radius:50px;
   margin-left:14px;
   background:#fff !important;
@@ -135,14 +140,14 @@ nav.scrolled{box-shadow:0 6px 44px rgba(71,0,123,0.55)}
 		color: #fff !important
 	}
 .btn-teste {
+	/* mesmo motivo do .btn-login acima - display:inline-block faz o padding vertical
+	   contar na altura real do <li>, evitando a pílula encavalar no botão vizinho. */
+	display: inline-block;
 	padding: 9px 22px;
 	border-radius: 50px;
 	margin-left: 16px;
-	/* Mesma cor do .hero-eyebrow (rgba(163,43,255,0.1) sobre fundo claro). Sozinha essa
-	   tinta quase não aparece sobre o roxo escuro da navbar, então a cor translúcida vai
-	   por cima de uma base sólida clara (2ª camada do background) - o resultado pintado
-	   é idêntico ao do hero-eyebrow, não importa o que tem atrás. */
-	background: linear-gradient(rgba(163,43,255,0.1),rgba(163,43,255,0.1)), var(--surface) !important;
+	/* background: linear-gradient(rgba(163,43,255,0.1),rgba(163,43,255,0.1)), var(--surface) !important;*/
+	background: #FFCC24;
 	border: 1px solid rgba(163,43,255,0.3) !important;
 	color: var(--dark) !important;
 	font-weight: 700 !important;
@@ -1133,6 +1138,13 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 		}
 
 		.nav-brand-text + .nav-brand-text {
+			margin-left: 0
+		}
+
+		/* No menu mobile (coluna vertical centralizada) o margin-left criado pra
+		   espaçar os botões no navbar horizontal (desktop) só empurra o botão pro
+		   lado, tirando-o do centro em relação aos demais itens do menu. */
+		.btn-teste, .btn-login {
 			margin-left: 0
 		}
 	}
