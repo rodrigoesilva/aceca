@@ -88,6 +88,7 @@ nav.scrolled{box-shadow:0 6px 44px rgba(71,0,123,0.55)}
 }
 
 .nav-brand-text{display:flex;flex-direction:column;line-height:1.1}
+.nav-brand-text + .nav-brand-text{margin-left:30px}
 .nav-brand-name{
   font-family:'Cormorant Garamond',serif;
   font-size:1.9rem;font-weight:700;color:#fff;
@@ -116,16 +117,50 @@ nav.scrolled{box-shadow:0 6px 44px rgba(71,0,123,0.55)}
 .nav-links a:hover::after{width:100%}
 .btn-login{
   padding:9px 22px;border-radius:50px;
+  margin-left:14px;
   background:#fff !important;
   color:var(--mid) !important;
   font-weight:700 !important;font-size:0.79rem !important;
   border:none;cursor:pointer;text-decoration:none;
   box-shadow:0 4px 18px rgba(0,0,0,0.2);
-  transition:transform 0.2s,box-shadow 0.2s !important;
+  transition:all 0.25s !important;
   text-transform:uppercase !important;letter-spacing:0.05em !important;
 }
 .btn-login::after{display:none !important}
-.btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.28) !important;color:var(--dark) !important}
+/* Mesmo efeito do .btn-outline (preenche com cor sólida + texto claro no hover), mas com
+   var(--p) em vez de var(--dark): esse botão já vive sobre a navbar, que É var(--dark) -
+   usar a mesma cor faria o botão desaparecer no hover (fundir com a navbar). */
+	.btn-login:hover {
+		background: var(--mid) !important;
+		color: #fff !important
+	}
+.btn-teste {
+	padding: 9px 22px;
+	border-radius: 50px;
+	margin-left: 16px;
+	/* Mesma cor do .hero-eyebrow (rgba(163,43,255,0.1) sobre fundo claro). Sozinha essa
+	   tinta quase não aparece sobre o roxo escuro da navbar, então a cor translúcida vai
+	   por cima de uma base sólida clara (2ª camada do background) - o resultado pintado
+	   é idêntico ao do hero-eyebrow, não importa o que tem atrás. */
+	background: linear-gradient(rgba(163,43,255,0.1),rgba(163,43,255,0.1)), var(--surface) !important;
+	border: 1px solid rgba(163,43,255,0.3) !important;
+	color: var(--dark) !important;
+	font-weight: 700 !important;
+	font-size: 0.79rem !important;
+	cursor: pointer;
+	text-decoration: none;
+	box-shadow: none !important;
+	transition: all 0.25s !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.05em !important;
+}
+.btn-teste::after{display:none !important}
+/* Mesmo motivo do .btn-login:hover acima - var(--p) em vez de var(--dark) pra não sumir
+   contra o fundo da navbar. */
+	.btn-teste:hover {
+		background: var(--mid) !important;
+		color: #fff !important
+	}
 .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer}
 .hamburger span{width:24px;height:2px;background:rgba(255,255,255,0.9);border-radius:2px;transition:all 0.3s}
 
@@ -469,6 +504,103 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 }
 .author-name{font-weight:600;font-size:0.84rem;color:var(--text)}
 .author-role{font-size:0.7rem;color:var(--dimmed);font-weight:300}
+
+/* ══ PLANOS ══ */
+.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:40px;align-items:stretch}
+.plan-card{
+  position:relative;background:var(--surface);border-radius:16px;
+  padding:28px 24px;border:1px solid var(--border);
+  box-shadow:var(--shadow);transition:box-shadow 0.3s,transform 0.3s;
+  display:flex;flex-direction:column;text-align:left;
+}
+.plan-card:hover{box-shadow:var(--shadow2);transform:translateY(-4px)}
+.plan-badge{
+  position:absolute;top:20px;right:24px;
+  background:rgba(163,43,255,0.09);border:1px solid rgba(163,43,255,0.22);
+  color:var(--dark);font-size:0.66rem;font-weight:700;letter-spacing:0.02em;
+  padding:4px 10px;border-radius:50px;white-space:nowrap;
+}
+.plan-name{font-family:'Outfit',sans-serif;font-size:1.15rem;font-weight:700;color:var(--text);margin-bottom:10px;padding-right:90px}
+.plan-name-ico{font-style:normal;margin-right:6px;color:var(--p)}
+.plan-desc{font-size:0.8rem;color:var(--muted);line-height:1.6;font-weight:300;min-height:58px}
+.plan-price-old{font-size:0.82rem;color:var(--dimmed);text-decoration:line-through;margin-top:14px}
+.plan-price{
+  font-family:'Cormorant Garamond',serif;font-weight:700;color:var(--text);
+  font-size:2.2rem;line-height:1.1;margin-top:2px;margin-bottom:18px;
+}
+.plan-price-currency{font-size:1.1rem;font-weight:600;margin-right:3px;vertical-align:2px}
+.plan-price-period{font-size:0.85rem;font-weight:400;color:var(--muted);margin-left:3px}
+.plan-cta{
+  display:block;text-align:center;padding:12px 20px;border-radius:50px;
+  border:2px solid var(--dark);color:var(--dark);background:transparent;
+  font-weight:600;font-size:0.85rem;text-decoration:none;
+  transition:all 0.25s;letter-spacing:0.02em;
+}
+.plan-cta:hover{background:var(--dark);color:#fff}
+.plan-fineprint{font-size:0.68rem;color:var(--dimmed);line-height:1.5;margin-top:14px;font-weight:300}
+.plan-divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:6px}
+.plan-features li{font-size:0.78rem;color:var(--muted);font-weight:300;padding-left:24px;position:relative;line-height:1.5}
+.plan-features li.yes::before{
+  content:'✓';position:absolute;left:0;top:0;color:#1fa855;font-weight:700;
+}
+.plan-features li.no{color:var(--dimmed)}
+.plan-features li.no::before{
+  content:'–';position:absolute;left:2px;top:0;color:var(--dimmed);font-weight:700;
+}
+.plan-subgroup{margin-top:18px}
+.plan-subgroup-title{font-size:0.76rem;font-weight:700;color:var(--text);margin-bottom:10px}
+.plan-techlist{display:flex;flex-direction:column;gap:9px}
+.plan-tech{display:flex;align-items:center;gap:9px;font-size:0.78rem;color:var(--muted);font-weight:300}
+.plan-tech-ico{
+  font-style:normal;width:20px;height:20px;min-width:20px;border-radius:6px;
+  background:rgba(163,43,255,0.09);border:1px solid rgba(163,43,255,0.22);
+  color:var(--dark);font-size:0.66rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.plan-slider{position:relative;height:18px;display:flex;align-items:center;margin:6px 0 16px}
+.plan-slider-track{position:absolute;left:0;right:0;height:4px;border-radius:4px;background:var(--border)}
+.plan-slider-dot{
+  position:relative;width:14px;height:14px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--border2);z-index:1;
+}
+.plan-slider-dot + .plan-slider-dot{margin-left:auto}
+.plan-slider-dot.active{width:18px;height:18px;background:var(--p);border-color:var(--p)}
+
+/* ── Cartão em destaque (Unlimited) ── */
+.plan-card.featured{
+  background:var(--grad);border:none;color:#fff;padding-top:52px;
+  box-shadow:0 10px 42px rgba(71,0,123,0.4);
+}
+.plan-card.featured:hover{box-shadow:0 16px 52px rgba(71,0,123,0.5)}
+.plan-ribbon{
+  position:absolute;top:0;left:0;right:0;
+  background:rgba(255,255,255,0.14);color:#e6d4ff;
+  font-size:0.68rem;font-weight:700;letter-spacing:0.03em;
+  text-align:center;padding:9px 10px;border-radius:16px 16px 0 0;
+}
+.plan-card.featured .plan-name{color:#fff;padding-right:0}
+.plan-card.featured .plan-name-ico{color:#e6d4ff}
+.plan-card.featured .plan-desc{color:rgba(255,255,255,0.78)}
+.plan-card.featured .plan-desc u{text-decoration-color:rgba(255,255,255,0.5)}
+.plan-card.featured .plan-price-old{color:rgba(255,255,255,0.55)}
+.plan-card.featured .plan-price{color:#fff}
+.plan-card.featured .plan-price-period{color:rgba(255,255,255,0.7)}
+.plan-card.featured .plan-cta{border-color:#fff;background:var(--p);border-color:var(--p);color:#fff;box-shadow:0 6px 24px rgba(0,0,0,0.25)}
+.plan-card.featured .plan-cta:hover{background:#fff;color:var(--dark);border-color:#fff}
+.plan-card.featured .plan-fineprint{color:rgba(255,255,255,0.6)}
+.plan-card.featured .plan-divider{border-top-color:rgba(255,255,255,0.18)}
+.plan-card.featured .plan-features li{color:rgba(255,255,255,0.85)}
+.plan-card.featured .plan-features li.yes::before{color:#5fe3a0}
+.plan-card.featured .plan-subgroup-title{color:#fff}
+.plan-card.featured .plan-tech{color:rgba(255,255,255,0.85)}
+.plan-card.featured .plan-tech-ico{background:rgba(255,255,255,0.14);border-color:rgba(255,255,255,0.25);color:#fff}
+.plan-highlight-box{
+  margin-top:20px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);
+  border-radius:12px;padding:16px;
+}
+.plan-highlight-title{font-size:0.78rem;font-weight:700;color:#e6d4ff;margin-bottom:6px}
+.plan-highlight-text{font-size:0.74rem;color:rgba(255,255,255,0.75);line-height:1.55;font-weight:300}
 
 /* ══ CONTACT ══ */
 .contact-wrap{max-width:980px;margin:0 auto}
@@ -951,6 +1083,10 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 			grid-template-columns: 1fr
 		}
 
+		.plans-grid {
+			grid-template-columns: repeat(2,1fr)
+		}
+
 		.footer-inner {
 			grid-template-columns: 1fr 1fr
 		}
@@ -995,6 +1131,10 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 		.nav-brand-sub {
 			display: none
 		}
+
+		.nav-brand-text + .nav-brand-text {
+			margin-left: 0
+		}
 	}
 
 	@media(max-width:768px) {
@@ -1005,6 +1145,10 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 		.board-grid, .board-grid-bottom {
 			grid-template-columns: repeat(2,1fr);
 			gap: 18px
+		}
+
+		.plans-grid {
+			grid-template-columns: 1fr
 		}
 
 		section {

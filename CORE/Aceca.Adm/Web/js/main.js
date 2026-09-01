@@ -17,6 +17,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		ajustarLinksLoginParaDominioLocal();
 
+		const statsBar = document.querySelector('.stats-bar');
+		if (statsBar) {
+			const obsContadores = new IntersectionObserver(entries => {
+				entries.forEach(e => { if (e.isIntersecting) { animateCounters(); obsContadores.disconnect(); } });
+			}, { threshold: 0.3 });
+			obsContadores.observe(statsBar);
+		}
+
     })();
 });
 

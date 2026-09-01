@@ -37,14 +37,14 @@ namespace Aceca.Adm.Controllers
                 new() {
                     Tipo = "past", CorGradienteInicio = "#7040a0", CorGradienteFim = "#a890c8", GrayscaleFundo = true,
                     ImagemUrl = "/Web/img/encontro/2025_sbc.jpg", ImagemLargura = 900, ImagemAltura = 423,
-                    BadgeClasse = "badge-upcoming", BadgeTexto = "Próximo",
+                    BadgeClasse = "badge-past", BadgeTexto = "Realizado",
                     Data = "22 AGO 2026", Titulo = "Encontro de São Bernardo do Campo/SP 2026",
                     Descricao = "Prestigiado encontro conduzido pelo grupo de colecionadores e amigos na região metropolitana de São Paulo, e apoiado pela ACECA"
                 },
                 new() {
                     Tipo = "past", CorGradienteInicio = "#d8c5ff", CorGradienteFim = "#a870ee",
                     ImagemUrl = "/Web/img/encontro/encontro_padrao.png", ImagemLargura = 500, ImagemAltura = 500,
-                    BadgeClasse = "badge-upcoming", BadgeTexto = "Realizado",
+                    BadgeClasse = "badge-past", BadgeTexto = "Realizado",
                     Data = "25 ABR 2026", Titulo = "Encontro de Tietê/SP 2026",
                     Descricao = "Tradicional Encontro ACECA no interior de SP, com atualizaçoes por vir"
                 },
