@@ -187,19 +187,12 @@ namespace Aceca.Adm.Controllers
             return View("~/Views/Auth/PoliticaPrivacidade.cshtml");
         }
 
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Register()
+        // Popula os mesmos ViewBag usados pelo login-card de cadastro (RegisterCover e a
+        // página de testes Register) - mantém as duas com funcionalidade idêntica (duração
+        // do teste grátis, fluxo de e-mail já cadastrado, retomada via Google) sem duplicar
+        // a lógica em cada action.
+        private async Task PreencherViewBagCadastroTesteAsync(string? googleToken, string? emailJaCadastrado)
         {
-            return View("~/Views/Auth/Register.cshtml");
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> RegisterCover(string? googleToken, string? emailJaCadastrado)
-        {
-            if (User.Identity?.IsAuthenticated == true)
-                return RedirectToAction("Inicio", "Home");
-
             var duracaoStr = await _db.AdmConfig
                 .Where(c => c.Parametro == "Param_TesteGratisDuracaoHoras")
                 .Select(c => c.Valor)
@@ -227,6 +220,29 @@ namespace Aceca.Adm.Controllers
                     ViewBag.GoogleTokenExpirado = true;
                 }
             }
+        }
+
+        // Página de testes - mesmo conjunto login-wrap/login-card e mesma funcionalidade
+        // de RegisterCover, só que embutida no layout de 2 colunas com imagem lateral.
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> Register(string? googleToken, string? emailJaCadastrado)
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Inicio", "Home");
+
+            await PreencherViewBagCadastroTesteAsync(googleToken, emailJaCadastrado);
+
+            return View("~/Views/Auth/Register.cshtml");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> RegisterCover(string? googleToken, string? emailJaCadastrado)
+        {
+            if (User.Identity?.IsAuthenticated == true)
+                return RedirectToAction("Inicio", "Home");
+
+            await PreencherViewBagCadastroTesteAsync(googleToken, emailJaCadastrado);
 
             return View("~/Views/Auth/RegisterCover.cshtml");
         }

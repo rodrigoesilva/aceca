@@ -3,22 +3,23 @@
     ViewData["Title"] = "Register Cover - Pages";
 }
 
-@section VendorStyles {
-    <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/form-validation.css" />
-}
-
-@section VendorScripts {
-    <script src="~/vendor/libs/&#64;form-validation/popular.js"></script>
-    <script src="~/vendor/libs/&#64;form-validation/bootstrap5.js"></script>
-    <script src="~/vendor/libs/&#64;form-validation/auto-focus.js"></script>
+@{
+    // Mesmo login-wrap/login-card de RegisterCover.cshtml - precisa dos mesmos 2
+    // stylesheets (style.css tem .login-wrap/.login-card/.lc-*; auth-login.css tem
+    // .btn-entrar/.fg-erro-campo/.btn-google-fake/etc.), além do page-auth.css que
+    // estiliza a casca de 2 colunas (div_left + coluna do formulário) desta página.
+    var urlStyleCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/style.css");
+    var urlAuthLoginCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/pages/auth-login.css");
 }
 
 @section PageStyles {
     <link rel="stylesheet" href="~/vendor/css/pages/page-auth.css">
+    <link rel="stylesheet" href="@urlAuthLoginCss">
+    <link rel="stylesheet" href="@urlStyleCss">
 }
 
 @section PageScripts {
-    <script src="~/js/auth/pages-auth.js"></script>
+    <script src="~/js/auth/pages-auth-register.js" asp-append-version="true" defer></script>
 }
 @* ************** Content ************** *@
 
@@ -54,73 +55,113 @@
     <!-- Register -->
     <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-5 px-12 py-4">
       <div class="w-px-400 mx-auto pt-5 pt-lg-0">
-        <h4 class="mb-1">Comece seu teste grátis 🚀</h4>
-                <p class="mb-5">
-                    7 dias grátis.
-                </p>
-                <p class="mb-5">
-                    Cancele a qualquer momento.
-                </p>
+        @* Mesmo conjunto login-wrap/login-card de RegisterCover.cshtml, com a mesma
+           funcionalidade (passo Google/e-mail, validação de CPF, ViewBag preenchido
+           pela mesma lógica em AuthController.PreencherViewBagCadastroTesteAsync). *@
+        <div class="login-wrap">
+            <div class="login-card mt-1">
+                <div class="lc-logo">
+                    <div class="lc-circle">
+                        <img src="~/img/logo/logo.webp" loading="lazy" decoding="async" title="ACECA" alt="ACECA">
+                    </div>
+                    <div>
+                        <span class="lc-aceca custom_text">ACECA</span>
+                        <span class="lc-area">&Aacute;rea do S&oacute;cio</span>
+                    </div>
+                </div>
+                <h2>Criar conta</h2>
+                <p class="lc-sub">Experimente ser S&oacute;cio ACECA gratuitamente por <strong>@ViewBag.DuracaoTesteHoras horas</strong>, sem compromisso.</p>
+                <div id="registerErr" class="login-err" style="display:none"></div>
 
-        <form id="formAuthentication" class="mb-5" action="~/" method="GET">
-          <div class="form-floating form-floating-outline mb-5">
-            <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" autofocus>
-            <label for="username">Username</label>
-          </div>
-          <div class="form-floating form-floating-outline mb-5">
-            <input type="text" class="form-control" id="email" name="email" placeholder="Enter your email">
-            <label for="email">Email</label>
-          </div>
-          <div class="mb-5 form-password-toggle">
-            <div class="input-group input-group-merge">
-              <div class="form-floating form-floating-outline">
-                <input type="password" id="password" class="form-control" name="password" placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;" aria-describedby="password" />
-                <label for="password">Password</label>
-              </div>
-              <span class="input-group-text cursor-pointer"><i class="ri-eye-off-line ri-20px"></i></span>
+                @* Flags vindas do servidor (GoogleCallback/Register) - nunca do cliente,
+                   pra JS decidir qual passo mostrar sem confiar em nada editável. *@
+                <div id="registerServerFlags" style="display:none"
+                     data-email-ja-cadastrado="@(ViewBag.EmailJaCadastrado == true ? "1" : "0")"
+                     data-google-token-expirado="@(ViewBag.GoogleTokenExpirado == true ? "1" : "0")"></div>
+
+                <!-- Passo 1: escolha do método -->
+                <div id="passoEscolha" style="@(ViewBag.GoogleToken != null ? "display:none" : "")">
+                    <a href="/Auth/GoogleLogin" class="btn-google-fake" id="btnGoogleLogin">
+                        <i class="ri-google-fill ri-20px"></i> Continuar com o Google
+                    </a>
+
+                    <div class="divisor-ou"><span>ou</span></div>
+
+                    <button type="button" class="btn-entrar" id="btnContinuarEmail">
+                        Continuar com um e-mail
+                    </button>
+                </div>
+
+                <!-- Passo 2: dados + e-mail (escondido até clicar em "Continuar com um e-mail") -->
+                <form id="frmCadastroTeste" class="form" style="display:none" autocomplete="off" novalidate>
+
+                    <div class="fg">
+                        <label for="rCpf">CPF</label>
+                        <input class="form-control" type="text" id="rCpf" name="rCpf" placeholder="000.000.000-00" required inputmode="numeric" maxlength="14">
+                        <span class="fg-erro-campo" id="rCpfErro"></span>
+                    </div>
+
+                    <div class="fg">
+                        <label for="rEmail">E-mail pessoal</label>
+                        <input class="form-control" type="email" id="rEmail" name="rEmail" placeholder="seu@email.com.br" required autocomplete="email" inputmode="email">
+                        <span class="fg-erro-campo" id="rEmailErro"></span>
+                    </div>
+
+                    <div class="mb-3 py-1">
+                        <div class="form-check-teste">
+                            <input type="checkbox" id="rTermos" name="rTermos" required>
+                            <label for="rTermos">Concordo com os Termos de Uso e a Pol&iacute;tica de Privacidade da ACECA.</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-entrar" id="btnContinuarCadastro">
+                        <span class="btn-text">Continuar</span>
+                        <span class="btn-spinner" style="display:none;" aria-hidden="true">
+                            <i class="ri-loader-4-line ri-spin"></i> Enviando…
+                        </span>
+                    </button>
+
+                    <button type="button" class="btn-voltar-escolha" id="btnVoltarEscolha">&larr; Voltar</button>
+                </form>
+
+                @* Passo 2b: só o CPF - usado quando o e-mail já veio verificado pelo Google
+                   (GoogleCallback). Nome/e-mail não são campos editáveis aqui de propósito -
+                   quem garante que baterem com o que o Google confirmou é o ggToken, guardado
+                   em cache no servidor (ver AuthController.CadastroTesteGoogleFinalizar). *@
+                <form id="frmCadastroGoogle" class="form" style="@(ViewBag.GoogleToken != null ? "" : "display:none")" autocomplete="off" novalidate>
+                    <p class="lc-google-continuando">
+                        Continuando como <strong>@ViewBag.GoogleNome</strong><br>
+                        <span class="text-muted">@ViewBag.GoogleEmail</span>
+                    </p>
+
+                    <input type="hidden" id="ggToken" value="@ViewBag.GoogleToken">
+
+                    <div class="fg">
+                        <label for="ggCpf">CPF</label>
+                        <input class="form-control" type="text" id="ggCpf" name="ggCpf" placeholder="000.000.000-00" required inputmode="numeric" maxlength="14">
+                        <span class="fg-erro-campo" id="ggCpfErro"></span>
+                    </div>
+
+                    <div class="mb-3 py-1">
+                        <div class="form-check-teste">
+                            <input type="checkbox" id="ggTermos" name="ggTermos" required>
+                            <label for="ggTermos">Concordo com os Termos de Uso e a Pol&iacute;tica de Privacidade da ACECA.</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-entrar" id="btnContinuarCadastroGoogle">
+                        <span class="btn-text">Continuar</span>
+                        <span class="btn-spinner" style="display:none;" aria-hidden="true">
+                            <i class="ri-loader-4-line ri-spin"></i> Enviando…
+                        </span>
+                    </button>
+
+                    <a href="/Auth/Register" class="btn-voltar-escolha">&larr; Voltar</a>
+                </form>
+
+                <p class="lc-cadastro">J&aacute; &eacute; S&oacute;cio? <a href="/Auth/Index">Fazer login</a></p>
+                <a href="https://www.aceca.com.br/" class="back-site">&larr; Voltar ao Site</a>
             </div>
-          </div>
-          <div class="mb-5 py-2">
-            <div class="form-check mb-0">
-              <input class="form-check-input" type="checkbox" id="terms-conditions" name="terms">
-              <label class="form-check-label" for="terms-conditions">
-                I agree to
-                <a href="javascript:void(0);">privacy policy & terms</a>
-              </label>
-            </div>
-          </div>
-          <button class="btn btn-primary d-grid w-100">
-            Sign up
-          </button>
-        </form>
-
-        <p class="text-center mb-5">
-          <span>Already have an account?</span>
-          <a href="/Auth/LoginCover">
-            <span>Sign in instead</span>
-          </a>
-        </p>
-
-        <div class="divider my-5">
-          <div class="divider-text">or</div>
-        </div>
-
-        <div class="d-flex justify-content-center gap-2">
-          <a href="javascript:;" class="btn btn-icon btn-lg rounded-pill btn-text-facebook">
-            <i class="tf-icons ri-facebook-fill ri-24px"></i>
-          </a>
-
-          <a href="javascript:;" class="btn btn-icon btn-lg rounded-pill btn-text-twitter">
-            <i class="tf-icons ri-twitter-fill ri-24px"></i>
-          </a>
-
-          <a href="javascript:;" class="btn btn-icon btn-lg rounded-pill btn-text-github">
-            <i class="tf-icons ri-github-fill ri-24px"></i>
-          </a>
-
-          <a href="javascript:;" class="btn btn-icon btn-lg rounded-pill btn-text-google-plus">
-            <i class="tf-icons ri-google-fill ri-24px"></i>
-          </a>
         </div>
       </div>
     </div>

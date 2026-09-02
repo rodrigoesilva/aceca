@@ -252,6 +252,25 @@ html:not([dir=rtl]) .authentication-wrapper.authentication-cover .authentication
         border-radius: 12px;
     }
 
+    /* Register.cshtml (layout de 2 colunas "authentication-cover", usado só nessa
+       página de testes) tem 2 camadas extras que .login-wrap/.login-card acima não
+       cobrem: .w-px-400 é 400px fixo (mais largo que a tela) e .authentication-bg tem
+       px-12 (96px de padding) - herdados do template pra caber ao lado da imagem no
+       desktop, mas em telas pequenas encolhiam o login-card pra bem menos que os 90%
+       pretendidos (chegava a ~66% da tela) e deixavam o card flutuando num vão vazio
+       enorme (align-items:center numa coluna de 100vh). Sem isso, "Continuar com um
+       e-mail" quebrava em 2 linhas por falta de espaço. */
+    .authentication-wrapper.authentication-cover .w-px-400 {
+        width: 100% !important;
+    }
+
+    .authentication-wrapper.authentication-cover .authentication-bg {
+        padding-left: 1.25rem !important;
+        padding-right: 1.25rem !important;
+        align-items: flex-start !important;
+        padding-top: 2.5rem !important;
+    }
+
     /* Logo menor */
     .login-logo-img img {
         max-width: 36px;
