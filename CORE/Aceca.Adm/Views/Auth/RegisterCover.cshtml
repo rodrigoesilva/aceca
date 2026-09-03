@@ -78,7 +78,7 @@
                                     <div class="mb-3 py-1">
                                         <div class="form-check-teste">
                                             <input type="checkbox" id="rTermos" name="rTermos" required>
-                                            <label for="rTermos">Concordo com os Termos de Uso e a Pol&iacute;tica de Privacidade da ACECA.</label>
+                                            <label for="rTermos">Concordo com os <a href="#policyModal" data-bs-toggle="modal">Termos de Uso e a Pol&iacute;tica de Privacidade</a> da ACECA.</label>
                                         </div>
                                     </div>
 
@@ -113,7 +113,7 @@
                                     <div class="mb-3 py-1">
                                         <div class="form-check-teste">
                                             <input type="checkbox" id="ggTermos" name="ggTermos" required>
-                                            <label for="ggTermos">Concordo com os Termos de Uso e a Pol&iacute;tica de Privacidade da ACECA.</label>
+                                            <label for="ggTermos">Concordo com os <a href="#policyModal" data-bs-toggle="modal">Termos de Uso e a Pol&iacute;tica de Privacidade</a> da ACECA.</label>
                                         </div>
                                     </div>
 
@@ -135,3 +135,5 @@
                 </div>
             </div>
         </div>
+
+@await Html.PartialAsync("../_Partials/_Modals/ModalPolicyTerms")

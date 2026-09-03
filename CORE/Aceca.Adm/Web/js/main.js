@@ -35,6 +35,14 @@ document.addEventListener('DOMContentLoaded', function () {
 			obsContadores.observe(statsBar);
 		}
 
+		// Política/Termos viraram modal (não mais seção fixa na página) - o Google exige,
+		// na tela de consentimento OAuth, um link de política num domínio autorizado
+		// (aceca.tryasp.net não é aceito), então quem visita direto
+		// aceca.com.br/#politica-privacidade (sem clicar em nada) precisa ver o conteúdo
+		// mesmo assim - abre a modal já na carga da página nesse caso.
+		if (window.location.hash === '#politica-privacidade') openLegalModal(null, 'politica');
+		else if (window.location.hash === '#termos-de-uso') openLegalModal(null, 'termos');
+
     })();
 });
 
@@ -315,6 +323,38 @@ function closeModal(){
 function closeModalOutside(e){
   if (e.target === document.getElementById('loginModal')) closeModal();
 }
+
+//#region MODAL POLÍTICA / TERMOS
+
+function openLegalModal(e, tab){
+  if (e) e.preventDefault();
+  showLegalTab(tab || 'politica');
+  document.getElementById('legalModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLegalModal(){
+  document.getElementById('legalModal').classList.remove('open');
+  document.body.style.overflow = '';
+  // Limpa o hash (#politica-privacidade/#termos-de-uso) pra fechar não deixar a modal
+  // reabrindo sozinha numa atualização de página futura.
+  history.replaceState(null, '', window.location.pathname + window.location.search);
+}
+
+function closeLegalModalOutside(e){
+  if (e.target === document.getElementById('legalModal')) closeLegalModal();
+}
+
+function showLegalTab(tab){
+  var ehPolitica = tab !== 'termos';
+  document.getElementById('painelPolitica').style.display = ehPolitica ? '' : 'none';
+  document.getElementById('painelTermos').style.display = ehPolitica ? 'none' : '';
+  document.getElementById('tabPolitica').classList.toggle('active', ehPolitica);
+  document.getElementById('tabTermos').classList.toggle('active', !ehPolitica);
+  document.querySelector('.legal-modal-body').scrollTop = 0;
+}
+
+//#endregion
 
 function verSenhaModal(){
   const i = document.getElementById('loginPass');

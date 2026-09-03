@@ -244,7 +244,8 @@ namespace Aceca.Adm.Controllers
 
             await PreencherViewBagCadastroTesteAsync(googleToken, emailJaCadastrado);
 
-            return View("~/Views/Auth/RegisterCover.cshtml");
+            //return View("~/Views/Auth/RegisterCover.cshtml");
+            return View("~/Views/Auth/Register.cshtml");
         }
 
         [HttpGet]
@@ -355,7 +356,10 @@ namespace Aceca.Adm.Controllers
                 // consulta só existe pra devolver uma mensagem amigável em vez de erro de SQL.
                 var jaTentouTeste = await _db.CadastroTeste.AsNoTracking().AnyAsync(c => c.Cpf == cpfDigitos);
                 if (jaTentouTeste)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Este CPF já utilizou o período de teste grátis. Solicite sua associação em https://www.aceca.com.br/#contato para continuar." });
+                    // type diferenciado (igual ao EMAIL_JA_CADASTRADO) - o front mostra um
+                    // SweetAlert com link clicável pra Solicitar Associação em vez do banner
+                    // de erro comum (onde a URL aparecia como texto puro, não clicável).
+                    return Ok(new { bResult = false, type = "CPF_JA_UTILIZOU_TESTE", message = "Este CPF já utilizou o período de teste grátis." });
 
                 var token = _helperController.GenerateSecuretToken();
                 var codigo = _helperController.GenerateStringPassword(6).ToUpperInvariant();
@@ -449,7 +453,10 @@ namespace Aceca.Adm.Controllers
 
                 var jaTentouTeste = await _db.CadastroTeste.AsNoTracking().AnyAsync(c => c.Cpf == cpfDigitos);
                 if (jaTentouTeste)
-                    return Ok(new { bResult = false, type = "ERRO", message = "Este CPF já utilizou o período de teste grátis. Solicite sua associação em https://www.aceca.com.br/#contato para continuar." });
+                    // type diferenciado (igual ao EMAIL_JA_CADASTRADO) - o front mostra um
+                    // SweetAlert com link clicável pra Solicitar Associação em vez do banner
+                    // de erro comum (onde a URL aparecia como texto puro, não clicável).
+                    return Ok(new { bResult = false, type = "CPF_JA_UTILIZOU_TESTE", message = "Este CPF já utilizou o período de teste grátis." });
 
                 var contexto = await MontarContextoCadastroTesteAsync(ip, dto.Latitude, dto.Longitude);
 

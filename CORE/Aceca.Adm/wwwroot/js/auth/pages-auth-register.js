@@ -24,10 +24,10 @@ document.addEventListener('DOMContentLoaded', function () {
         Swal.fire({
             title: 'E-mail já cadastrado',
             icon: 'info',
-            html: 'Este e-mail já pertence a um sócio. Deseja ir para a tela de login?',
+            html: `Este e-mail já pertence a um sócio. <br/> Deseja realizar o login?`,
             showCancelButton: true,
             confirmButtonText: '<i class="ri-login-box-line"></i> &nbsp;Sim, fazer login',
-            cancelButtonText: 'Não',
+            cancelButtonText: `<i class="ri-check-double-line"></i> &nbsp; N&atilde;o, cancelar!`,
             buttonsStyling: false,
             customClass: { confirmButton: 'swal-btn-confirmar', cancelButton: 'swal-btn-cancelar' }
         }).then((swalResult) => {
@@ -36,6 +36,20 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (aoRecusar) {
                 aoRecusar();
             }
+        });
+    }
+
+    // CPF já usado no teste grátis (trava antifraude - ver AuthController.CadastroTesteIniciar/
+    // CadastroTesteGoogleFinalizar) - Swal com link clicável pra Solicitar Associação, em vez
+    // do banner de erro comum (onde a URL aparecia como texto puro, sem poder ser clicada).
+    function mostrarSwalCpfJaUtilizouTeste() {
+        Swal.fire({
+            title: 'Teste grátis já utilizado',
+            icon: 'info',
+            html: 'Este CPF já utilizou o período de teste grátis.<br/>Solicite sua associação na <a href="https://www.aceca.com.br/#contato" target="_blank" rel="noopener">ACECA</a>.',
+            confirmButtonText: 'Entendi',
+            buttonsStyling: false,
+            customClass: { confirmButton: 'swal-btn-confirmar' }
         });
     }
 
@@ -209,6 +223,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            if (result?.type === 'CPF_JA_UTILIZOU_TESTE') {
+                mostrarSwalCpfJaUtilizouTeste();
+                return;
+            }
+
             err.textContent = `❌ ${result?.message ?? 'Não foi possível concluir o cadastro.'}`;
             err.style.display = 'block';
         } catch (ex) {
@@ -293,6 +312,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (result?.type === 'EMAIL_JA_CADASTRADO') {
                     mostrarSwalEmailJaCadastrado();
+                    return;
+                }
+
+                if (result?.type === 'CPF_JA_UTILIZOU_TESTE') {
+                    mostrarSwalCpfJaUtilizouTeste();
                     return;
                 }
 

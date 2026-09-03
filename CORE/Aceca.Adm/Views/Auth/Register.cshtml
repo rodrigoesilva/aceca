@@ -110,7 +110,7 @@
                     <div class="mb-3 py-1">
                         <div class="form-check-teste">
                             <input type="checkbox" id="rTermos" name="rTermos" required>
-                            <label for="rTermos">Concordo com os Termos de Uso e a Pol&iacute;tica de Privacidade da ACECA.</label>
+                            <label for="rTermos">Concordo com os <a href="#policyModal" data-bs-toggle="modal">Termos de Uso e a Pol&iacute;tica de Privacidade</a> da ACECA.</label>
                         </div>
                     </div>
 
@@ -121,7 +121,7 @@
                         </span>
                     </button>
 
-                    <button type="button" class="btn-voltar-escolha" id="btnVoltarEscolha">&larr; Voltar</button>
+                    @* <button type="button" class="btn-voltar-escolha" id="btnVoltarEscolha">&larr; Voltar</button> *@
                 </form>
 
                 @* Passo 2b: só o CPF - usado quando o e-mail já veio verificado pelo Google
@@ -145,7 +145,7 @@
                     <div class="mb-3 py-1">
                         <div class="form-check-teste">
                             <input type="checkbox" id="ggTermos" name="ggTermos" required>
-                            <label for="ggTermos">Concordo com os Termos de Uso e a Pol&iacute;tica de Privacidade da ACECA.</label>
+                            <label for="ggTermos">Concordo com os <a href="#policyModal" data-bs-toggle="modal">Termos de Uso e a Pol&iacute;tica de Privacidade</a> da ACECA.</label>
                         </div>
                     </div>
 
@@ -156,15 +156,17 @@
                         </span>
                     </button>
 
-                    <a href="/Auth/Register" class="btn-voltar-escolha">&larr; Voltar</a>
+                    @* <a href="/Auth/Register" class="btn-voltar-escolha">&larr; Voltar</a> *@
                 </form>
 
-                <p class="lc-cadastro">J&aacute; &eacute; S&oacute;cio? <a href="/Auth/Index">Fazer login</a></p>
+                        <p class="lc-cadastro">J&aacute; &eacute; S&oacute;cio? <a href="/Auth/Index">Faça o login</a></p>
                 <a href="https://www.aceca.com.br/" class="back-site">&larr; Voltar ao Site</a>
             </div>
         </div>
       </div>
     </div>
+
+@await Html.PartialAsync("../_Partials/_Modals/ModalPolicyTerms")
     <!-- /Register -->
   </div>
 </div>

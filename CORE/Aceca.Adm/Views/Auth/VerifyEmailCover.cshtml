@@ -1,6 +1,10 @@
 @{
-    Layout = $"~/Views/Shared/_BlankLayout.cshtml";
+    Layout = "_BlankLayout";
 
+    // Mesmo layout de 2 colunas de Register.cshtml (div_left com imagem de fundo +
+    // login-wrap/login-card na coluna direita) - precisa do page-auth.css (casca de 2
+    // colunas) além dos 2 de sempre (style.css tem .login-wrap/.login-card/.lc-*;
+    // auth-login.css tem .btn-entrar/.fg-erro-campo/etc.).
     var urlStyleCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/style.css");
     var urlAuthLoginCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/pages/auth-login.css");
 
@@ -9,6 +13,7 @@
 }
 
 @section PageStyles {
+    <link rel="stylesheet" href="~/vendor/css/pages/page-auth.css">
     <link rel="stylesheet" href="@urlAuthLoginCss">
     <link rel="stylesheet" href="@urlStyleCss">
 }
@@ -20,66 +25,83 @@
 
 @* ************** Content ************** *@
 
-        <div class="position-relative login-bg-img">
-            <div class="authentication-wrapper authentication-basic container-p-y">
-                <div class="authentication-inner py-6 mx-4">
-                    <div class="pg-login">
-                        <div class="login-bg">
-                            <div class="" style="position: absolute;inset: 0;"></div>
-                        </div>
+@* pg-login: marcador que site.js usa pra pular a checagem de sessão autenticada
+   (GetSessionData) em páginas públicas - sem isso, qualquer visitante anônimo
+   era forçado de volta pro /Auth/Index (ver fn_CleanUser em wwwroot/js/site.js). *@
+<div class="authentication-wrapper authentication-cover pg-login">
+  <div class="authentication-inner row m-0">
 
-                        <div class="login-wrap">
-                            <div class="login-card mt-1">
-                                <div class="lc-logo">
-                                    <div class="lc-circle">
-                                        <img src="~/img/logo/logo.webp" loading="lazy" decoding="async" title="ACECA" alt="ACECA">
-                                    </div>
-                                    <div>
-                                        <span class="lc-aceca custom_text">ACECA</span>
-                                        <span class="lc-area">&Aacute;rea do S&oacute;cio</span>
-                                    </div>
-                                </div>
-
-                                @if (linkInvalido)
-                                {
-                                    <h2>Link expirado</h2>
-                                    <p class="lc-sub">Esse link (ou código) já foi usado ou passou de <strong>5 minutos</strong>. Peça um novo abaixo.</p>
-                                }
-                                else
-                                {
-                                    <h2>Confirme seu e-mail</h2>
-                                    <p class="lc-sub">Enviamos um link para <strong id="lcEmailDestino">@emailParcial</strong>. Clique nele ou digite o código de 6 caracteres abaixo.</p>
-                                }
-
-                                <div id="verifyErr" class="login-err" style="display:none"></div>
-                                <div id="verifyOk" class="login-ok" style="display:none"></div>
-
-                                <form id="frmVerificarCodigo" class="form" autocomplete="off" novalidate>
-                                    <div class="fg">
-                                        <label for="vEmail">E-mail</label>
-                                        <input class="form-control" type="email" id="vEmail" name="vEmail" value="@emailParcial" required autocomplete="email" inputmode="email">
-                                    </div>
-
-                                    <div class="fg">
-                                        <label for="vCodigo">C&oacute;digo de verifica&ccedil;&atilde;o</label>
-                                        <input class="form-control" type="text" id="vCodigo" name="vCodigo" placeholder="Ex: RRQSVG" required maxlength="8" style="text-transform:uppercase;letter-spacing:2px;">
-                                    </div>
-
-                                    <button type="submit" class="btn-entrar" id="btnConfirmarCodigo">
-                                        <span class="btn-text">Confirmar e-mail</span>
-                                        <span class="btn-spinner" style="display:none;" aria-hidden="true">
-                                            <i class="ri-loader-4-line ri-spin"></i> Verificando…
-                                        </span>
-                                    </button>
-                                </form>
-
-                                <p class="text-center-reenviar">N&atilde;o recebeu? <a href="javascript:void(0);" id="btnReenviarCodigo">Reenviar e-mail</a></p>
-
-                                <p class="lc-cadastro">J&aacute; &eacute; S&oacute;cio? <a href="/Auth/Index">Fazer login</a></p>
-                                <a href="https://www.aceca.com.br/" class="back-site">&larr; Voltar ao Site</a>
-                            </div>
-                        </div>
+    <div id="div_left" class="d-none d-lg-flex col-lg-7 col-xl-8 align-items-center justify-content-center p-12 pb-2"
+         style="background-image:url('/img/backgrounds/bg-login-pb.webp');background-size:cover;background-position:center;background-repeat:no-repeat;">
+            <div class="card-img-overlay border-0 text-white d-flex flex-column">
+                <div class="text-center mb-4 mt-auto ms-8">
+                    <div id="div_alerta" role="alert" class="alert alert-secondary alert-dismissible col-lg-4 col-xl-5">
+                        <h4 class="alert-heading d-flex align-items-center">
+                            <span class="alert-icon rounded"><i class="icon-base ri ri-star-line icon-md"></i></span>Faça o Teste Gratuitamente!!
+                        </h4>
+                        <p>Aww yeah, you successfully read this important alert message. Sweet muffin croissant oat cake marzipan powder jujubes.</p>
+                        <hr>
+                        <p class="mb-0">Whenever you need to, be sure to use margin utilities to keep things nice and tidy.Jujubes bonbon danish dragée oat cake cupcake macaroon. Sesame snaps pudding cotton candy.</p>
                     </div>
                 </div>
             </div>
+    </div>
+
+    <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg position-relative py-sm-5 px-12 py-4">
+      <div class="w-px-400 mx-auto pt-5 pt-lg-0">
+        <div class="login-wrap">
+            <div class="login-card mt-1">
+                <div class="lc-logo">
+                    <div class="lc-circle">
+                        <img src="~/img/logo/logo.webp" loading="lazy" decoding="async" title="ACECA" alt="ACECA">
+                    </div>
+                    <div>
+                        <span class="lc-aceca custom_text">ACECA</span>
+                        <span class="lc-area">&Aacute;rea do S&oacute;cio</span>
+                    </div>
+                </div>
+
+                @if (linkInvalido)
+                {
+                    <h2>Link expirado</h2>
+                    <p class="lc-sub">Esse link (ou código) já foi usado ou passou de <strong>5 minutos</strong>. Peça um novo abaixo.</p>
+                }
+                else
+                {
+                    <h2>Confirme seu e-mail</h2>
+                    <p class="lc-sub">Enviamos um link para <strong id="lcEmailDestino">@emailParcial</strong>. Clique nele ou digite o código de 6 caracteres abaixo.</p>
+                }
+
+                <div id="verifyErr" class="login-err" style="display:none"></div>
+                <div id="verifyOk" class="login-ok" style="display:none"></div>
+
+                <form id="frmVerificarCodigo" class="form" autocomplete="off" novalidate>
+                    <div class="fg">
+                        <label for="vEmail">E-mail</label>
+                        <input class="form-control" type="email" id="vEmail" name="vEmail" value="@emailParcial" required autocomplete="email" inputmode="email">
+                    </div>
+
+                    <div class="fg">
+                        <label for="vCodigo">C&oacute;digo de verifica&ccedil;&atilde;o</label>
+                        <input class="form-control" type="text" id="vCodigo" name="vCodigo" placeholder="Ex: RRQSVG" required maxlength="8" style="text-transform:uppercase;letter-spacing:2px;">
+                    </div>
+
+                    <button type="submit" class="btn-entrar" id="btnConfirmarCodigo">
+                        <span class="btn-text">Confirmar e-mail</span>
+                        <span class="btn-spinner" style="display:none;" aria-hidden="true">
+                            <i class="ri-loader-4-line ri-spin"></i> Verificando…
+                        </span>
+                    </button>
+                </form>
+
+                <p class="text-center-reenviar">N&atilde;o recebeu? <a href="javascript:void(0);" id="btnReenviarCodigo">Reenviar e-mail</a></p>
+
+                <p class="lc-cadastro">J&aacute; &eacute; S&oacute;cio? <a href="/Auth/Index">Fazer login</a></p>
+                <a href="https://www.aceca.com.br/" class="back-site">&larr; Voltar ao Site</a>
+            </div>
         </div>
+      </div>
+    </div>
+
+  </div>
+</div>

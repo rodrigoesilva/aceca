@@ -607,6 +607,35 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 .plan-highlight-title{font-size:0.78rem;font-weight:700;color:#e6d4ff;margin-bottom:6px}
 .plan-highlight-text{font-size:0.74rem;color:rgba(255,255,255,0.75);line-height:1.55;font-weight:300}
 
+/* ══ LEGAL (Política de Privacidade / Termos de Uso) ══
+   Exibido em modal (#legalModal, reaproveita .modal-overlay/.modal do login) em vez de
+   ocupar espaço fixo na página - texto vem pronto em HTML cru (mesma fonte usada no
+   app - ver Views/_Partials/_PolicyPrivacidadeTexto.cshtml/_TermosCondicoesTexto.cshtml),
+   sem classes próprias - estas regras só dão leitura confortável pros h2/h3/p/ul/ol/a
+   soltos dentro do bloco, sem precisar tocar no texto em si. */
+.modal-legal{max-width:720px;max-height:85vh;display:flex;flex-direction:column;padding:36px 36px 12px}
+.legal-tabs{display:flex;gap:22px;margin-bottom:18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.legal-tab{
+  background:none;border:none;padding:10px 2px 12px;font-size:0.85rem;font-weight:700;
+  color:var(--dimmed);cursor:pointer;border-bottom:2px solid transparent;
+  margin-bottom:-1px;text-transform:uppercase;letter-spacing:0.03em;
+}
+.legal-tab.active{color:var(--dark)}
+.legal-tab:not(.active):hover{color:var(--muted)}
+.legal-modal-body{overflow-y:auto;padding-right:10px;padding-bottom:26px}
+.legal-content{color:var(--muted);font-weight:300;line-height:1.75;font-size:0.9rem}
+.legal-content h2{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:var(--text);margin:24px 0 10px}
+.legal-content h2:first-child{margin-top:0}
+.legal-content h3{font-size:0.98rem;font-weight:700;color:var(--text);margin:20px 0 8px}
+.legal-content p{margin-bottom:12px}
+.legal-content ul,.legal-content ol{margin:0 0 12px 1.3em}
+.legal-content li{margin-bottom:6px}
+.legal-content a{color:var(--mid)}
+@media(max-width:600px){
+  .modal-legal{padding:26px 20px 8px;max-height:88vh}
+  .legal-tabs{gap:14px}
+}
+
 /* ══ CONTACT ══ */
 .contact-wrap{max-width:980px;margin:0 auto}
 .contact-grid{display:grid;grid-template-columns:1fr 1.45fr;gap:52px;margin-top:46px;align-items:start}
