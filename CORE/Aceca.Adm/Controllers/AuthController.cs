@@ -349,7 +349,7 @@ namespace Aceca.Adm.Controllers
                 if (jaEhSocio)
                     // type diferenciado (não "ERRO" genérico) - o front usa isso pra mostrar um
                     // SweetAlert com opção de ir direto pro login em vez do banner de erro comum.
-                    return Ok(new { bResult = false, type = "EMAIL_JA_CADASTRADO", message = "Este e-mail já pertence a um sócio." });
+                    return Ok(new { bResult = false, type = "EMAIL_JA_CADASTRADO", message = "Este e-mail já está sendo utilizado." });
 
                 // Chave antifraude: um CPF só passa por aqui uma vez, para sempre - vencido ou
                 // não, verificado ou não. O UNIQUE KEY no banco é a garantia real; esta
@@ -359,7 +359,7 @@ namespace Aceca.Adm.Controllers
                     // type diferenciado (igual ao EMAIL_JA_CADASTRADO) - o front mostra um
                     // SweetAlert com link clicável pra Solicitar Associação em vez do banner
                     // de erro comum (onde a URL aparecia como texto puro, não clicável).
-                    return Ok(new { bResult = false, type = "CPF_JA_UTILIZOU_TESTE", message = "Este CPF já utilizou o período de teste grátis." });
+                    return Ok(new { bResult = false, type = "CPF_JA_UTILIZOU_TESTE", message = "Período de teste grátis já em uso." });
 
                 var token = _helperController.GenerateSecuretToken();
                 var codigo = _helperController.GenerateStringPassword(6).ToUpperInvariant();

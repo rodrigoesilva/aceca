@@ -194,25 +194,31 @@ namespace Aceca.Adm.Controllers.Pages
                 if (!string.IsNullOrWhiteSpace(request.Search?.Value))
                 {
                     var rawSearch = request.Search.Value.Trim();
-                    var normalized = Regex.Replace(rawSearch, @"[^\w\s]", " ");
-
-                    var fullTextSearch = string.Join(" ",
-                        normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                                  .Select(s => $"+{s}*")
-                    );
-
                     bool incluirDescricao = filtro.PesquisarDescricao;
                     bool termoCurto = rawSearch.Length < 3; // ← detecta termos que o FULLTEXT ignora
 
                     sqlFrom.Append(" AND (");
 
-                    if (!termoCurto)
+                    // O único índice FULLTEXT da tabela (idx_fulltext_busca) cobre
+                    // nome+descricao+codigoAceca juntos - não existe (nem dá pra montar em
+                    // runtime) um MATCH() só com Nome/CodigoAceca, então com "Pesquisar na
+                    // Descrição" desligado o FULLTEXT fica de fora inteiro (senão qualquer
+                    // termo que só aparecesse na Descrição seguiria "vazando" pro resultado
+                    // por trás do MATCH(), mesmo com o checkbox desmarcado e o LIKE de
+                    // Descricao abaixo corretamente omitido).
+                    if (incluirDescricao && !termoCurto)
                     {
-                        // FULLTEXT só para termos com 3+ caracteres
+                        var normalized = Regex.Replace(rawSearch, @"[^\w\s]", " ");
+                        var fullTextSearch = string.Join(" ",
+                            normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                      .Select(s => $"+{s}*")
+                        );
+
                         sqlFrom.Append(@"
                             MATCH(m.Nome, m.Descricao, m.CodigoAceca)
                             AGAINST(@Search IN BOOLEAN MODE)
                             OR ");
+                        parameters.Add("@Search", fullTextSearch);
                     }
 
                     // LIKE sempre cobre CodigoAceca, codigoAcecaNew e Nome
@@ -230,7 +236,6 @@ namespace Aceca.Adm.Controllers.Pages
 
                     sqlFrom.Append(")");
 
-                    parameters.Add("@Search", fullTextSearch);
                     parameters.Add("@SearchLike", $"%{rawSearch}%");
                 }
 
