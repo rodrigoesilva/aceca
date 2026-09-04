@@ -305,7 +305,7 @@ function fn_RegUpdtFormValidator(regUpdtFormAuthentication) {
                 password: {
                     validators: {
                         notEmpty: {
-                            message: 'The password is required',
+                            message: 'A senha é obrigatória',
                         },
                     },
                 },
@@ -315,7 +315,7 @@ function fn_RegUpdtFormValidator(regUpdtFormAuthentication) {
                             compare: function () {
                                 return regUpdtFormAuthentication.querySelector('[name="password"]').value;
                             },
-                            message: 'The password and its confirm are not the same',
+                            message: 'A senha e a confirmação não são iguais',
                         },
                     },
                 },

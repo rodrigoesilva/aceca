@@ -1,5 +1,10 @@
 @{
     Layout = $"~/Views/Shared/_BlankLayout.cshtml";
+
+    // true: primeiro cadastro (link de verificação do teste grátis - NewRegistration).
+    // false (padrão): sócio já existente sendo forçado a trocar a senha após o login
+    // (UpdatePass) - ver comentário em AuthController.NewRegistration.
+    var primeiroAcesso = ViewBag.PrimeiroAcesso as bool? ?? false;
 }
 
 @section PageStyles {
@@ -40,8 +45,16 @@
         <!-- /Logo -->
 
         <div class="card-body mt-1">
-          <h4 class="mb-1">Atualizar Registro 🔒</h4>
-          <p class="mb-5">Sua nova senha deve ser diferente das senhas usadas anteriormente e conter 8 ou mais caracteres, incluindo pelo menos um número...</p>
+          @if (primeiroAcesso)
+          {
+              <h4 class="mb-1">Finalize seu Cadastro 🎉</h4>
+              <p class="mb-5">Defina sua senha para ativar sua conta ACECA. Use 8 ou mais caracteres, incluindo pelo menos um número.</p>
+          }
+          else
+          {
+              <h4 class="mb-1">Atualizar Registro 🔒</h4>
+              <p class="mb-5">Sua nova senha deve ser diferente das senhas usadas anteriormente e conter 8 ou mais caracteres, incluindo pelo menos um número...</p>
+          }
           
             <form id="frmRegisterUpdate" class="mb-5" action="#" autocomplete="off">
                 <input type="hidden" id="hdToken" name="hdToken" value="@ViewBag.Token" />
@@ -111,7 +124,7 @@
             <div id="regUpdtErr" class="regupd-err" style="display:none; background:#fff0f0;border:1px solid #f5aaaa;color:#b00;padding:10px 13px;border-radius:7px;font-size:.82rem;margin-bottom:14px"></div>
 
             <button type="submit" class="btn btn-primary d-grid w-100 mb-5 btn-register-update" id="btnRegisterUpdate">
-              Atualizar Dados
+              @(primeiroAcesso ? "Concluir Cadastro" : "Atualizar Dados")
             </button>
           </form>
 

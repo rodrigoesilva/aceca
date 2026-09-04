@@ -957,10 +957,16 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Em desenvolvimento (localhost, appsettings.Development.json) a home cai direto no
+// site institucional (Home/Web) - facilita testar essa página sem digitar a URL toda.
+// Em produção volta pro fluxo real: a raiz do site é a tela de login (Auth/Index).
+var defaultRoutePattern = app.Environment.IsDevelopment()
+    ? "{controller=Home}/{action=Web}/{Id?}"
+    : "{controller=Auth}/{action=Index}/{Id?}";
+
 app.MapControllerRoute(
     name: "default",
-   //pattern: "{controller=Auth}/{action=Index}/{Id?}")
-   pattern: "{controller=Home}/{action=Web}/{Id?}")
+    pattern: defaultRoutePattern)
 
     .WithStaticAssets();
 

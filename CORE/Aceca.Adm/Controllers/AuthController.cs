@@ -163,6 +163,14 @@ namespace Aceca.Adm.Controllers
             ViewBag.Token = token;
             ViewBag.Email = email;
 
+            // Mesma view (RegisterUpdate.cshtml) é usada tanto aqui - quem está definindo a
+            // senha pela PRIMEIRA vez (link de verificação do teste grátis, ou o reenvio em
+            // ResendCadastroEmail) - quanto em UpdatePass() (sócio já existente sendo forçado
+            // a trocar a senha após o login). Flag pra view ajustar o texto pra cada caso: um
+            // "atualize sua senha, diferente da anterior" não faz sentido pra quem nunca teve
+            // senha nenhuma antes.
+            ViewBag.PrimeiroAcesso = true;
+
             return View("~/Views/Auth/RegisterUpdate.cshtml");
         }
         #endregion
@@ -228,8 +236,11 @@ namespace Aceca.Adm.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Register(string? googleToken, string? emailJaCadastrado)
         {
-            if (User.Identity?.IsAuthenticated == true)
-                return RedirectToAction("Inicio", "Home");
+            // O processo de teste grátis precisa ser sempre seguido do zero, mesmo que quem
+            // clicou em "Teste Grátis" já esteja com uma sessão válida de outra conta (ex.:
+            // esqueceu de sair, ou é um computador compartilhado) - sem isso, a pessoa caía
+            // direto na área logada da conta antiga sem nenhuma nova verificação, o que não
+            // é o fluxo esperado por quem clicou explicitamente em "Teste Grátis".
 
             await PreencherViewBagCadastroTesteAsync(googleToken, emailJaCadastrado);
 
@@ -239,8 +250,8 @@ namespace Aceca.Adm.Controllers
         [HttpGet]
         public async Task<IActionResult> RegisterCover(string? googleToken, string? emailJaCadastrado)
         {
-            if (User.Identity?.IsAuthenticated == true)
-                return RedirectToAction("Inicio", "Home");
+            // Mesmo motivo do Register() acima - o teste grátis precisa ser sempre seguido do
+            // zero, independente de já existir uma sessão autenticada de outra conta.
 
             await PreencherViewBagCadastroTesteAsync(googleToken, emailJaCadastrado);
 
@@ -251,8 +262,7 @@ namespace Aceca.Adm.Controllers
         [HttpGet]
         public IActionResult GoogleLogin()
         {
-            if (User.Identity?.IsAuthenticated == true)
-                return RedirectToAction("Inicio", "Home");
+            // Mesmo motivo do Register()/RegisterCover() acima.
 
             var properties = new AuthenticationProperties
             {
