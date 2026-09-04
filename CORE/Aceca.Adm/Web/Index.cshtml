@@ -37,8 +37,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ACECA" />
 
-    <link rel="stylesheet" href="/Web/css/main.css?v=2.8" />
-    <script defer type="text/javascript" src="/Web/js/main.js?v=2.0"></script>
+    <link rel="stylesheet" href="/Web/css/main.css?v=3.0" />
+    <script defer type="text/javascript" src="/Web/js/main.js?v=2.1"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5" integrity="sha384-YB/DdIkloKoRpclWB8bNcYXWakt57USgtQPDzvnIDHYU0lasD5eWlXVo1S4ODukY" crossorigin="anonymous"></script>
 
 </head>
@@ -174,9 +174,9 @@
             </div>
             <div class="events-tabs">
 
-                <button id="btn-proximos" class="tab-btn active" onclick="filterEvents('upcoming',this)">Próximos</button>
+                <button id="btn-proximos" class="tab-btn" onclick="filterEvents('upcoming',this)">Próximos</button>
                 <button id="btn-passados" class="tab-btn" onclick="filterEvents('past',this)">Passados</button>
-                <button id="btn-todos" class="tab-btn" onclick="filterEvents('all',this)">Todos</button>
+                <button id="btn-todos" class="tab-btn active" onclick="filterEvents('all',this)">Todos</button>
             </div>
             <div class="events-grid" id="eventsGrid">
                 @foreach (var evento in Model)
@@ -254,7 +254,7 @@
     <section id="app" class="bg-tint">
         <div class="members-wrap">
             <div class="section-tag">APP ACECA</div>
-            <h2 class="section-title">Leve a <em class="custom_text">ACECA</em> com você</h2>
+            <h2 class="section-title">Leve a <em class="custom_text" style="font-size: clamp(2rem,3.5vw,2.50rem) !important;">ACECA</em> com você</h2>
             <p class="section-sub">
                 Todas as informações e conteúdos da ACECA a um clique de distância.<br /><br />
 
@@ -734,7 +734,12 @@
 
         </div>
         <div class="footer-bottom">
-            <p>© 2025 <span class="custom_text">ACECA</span> — Associação dos Colecionadores de Embalagens de Cigarros e Afins. Todos os direitos reservados. &nbsp;·&nbsp; <a href="#politica-privacidade" onclick="openLegalModal(event,'politica')">Política de Privacidade</a> &nbsp;·&nbsp; <a href="#termos-de-uso" onclick="openLegalModal(event,'termos')">Termos de Uso</a></p>
+            <p>
+                © 2025 <span class="custom_text">ACECA</span> — Associação dos Colecionadores de Embalagens de Cigarros e Afins.<br /> 
+                Todos os direitos reservados.<br />
+                <a href="#politica-privacidade" style="font-weight: 700 !important; color: #a32bff;" onclick="openLegalModal(event,'politica')">Política de Privacidade</a> &nbsp; - &nbsp; 
+                <a href="#termos-de-uso" style="font-weight: 700 !important; color: #a32bff;" onclick="openLegalModal(event,'termos')">Termos de Uso</a>
+            </p>
         </div>
     </footer>
 

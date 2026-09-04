@@ -442,7 +442,7 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 }
 
 /* ══ BOARD ══ */
-.board-wrap{max-width:1100px;margin:0 auto}
+.board-wrap{max-width:1200px;margin:0 auto}
 .board-grid,.board-grid-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
 .board-grid{margin-top:50px}
 .board-grid-bottom{margin-top:26px}
@@ -484,7 +484,7 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 }
 
 /* ══ TESTIMONIALS ══ */
-.testimonials-wrap{max-width:1100px;margin:0 auto}
+.testimonials-wrap{max-width:1200px;margin:0 auto}
 .testimonials-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
 .testimonial-card{
   background:var(--surface);border-radius:16px;
@@ -991,7 +991,6 @@ section:not(.bg-tint):not(#home){background:rgba(253,250,255,0.78)}
 		}
 
 	.footer-brand-logo span {
-		font-family: 'Cormorant Garamond',serif;
 		font-size: 1.5rem;
 		font-weight: 700;
 		color: #fff;

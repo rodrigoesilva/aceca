@@ -22,8 +22,8 @@
 		<link rel="preload" href="/css/fonts/acecafontfile.woff2" as="font" type="font/woff2" crossorigin="anonymous">
 		<link rel="shortcut icon" href="img/favicon/aceca.ico">
 		<link rel="canonical" href="https://www.aceca.com.br/">
-		<link rel="stylesheet" href="css/main.css?v=2.8" />
-		<script defer type="text/javascript" src="js/main.js?v=2.0"></script>
+		<link rel="stylesheet" href="css/main.css?v=3.0" />
+		<script defer type="text/javascript" src="js/main.js?v=2.1"></script>
 		<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5" integrity="sha384-YB/DdIkloKoRpclWB8bNcYXWakt57USgtQPDzvnIDHYU0lasD5eWlXVo1S4ODukY" crossorigin="anonymous"></script>
 	
 	</head>
@@ -48,14 +48,18 @@
 			  <span class="nav-brand-sub">de Embalagens de Cigarros e Afins</span>
 			</div>
 		  </a>
-		  <ul class="nav-links" id="navLinks" style="margin-right: 20%;">
+		  <ul class="nav-links" id="navLinks">
 			<li><a href="#story" class="remove-trigger">História</a></li>
 			<li><a href="#events" class="remove-trigger">Eventos</a></li>
-			<li><a href="#board" class="remove-trigger">Diretoria</a></li>
 			<li><a href="#testimonials" class="remove-trigger">Depoimentos</a></li>
+			<li><a href="#app" class="remove-trigger">Baixe nosso APP</a></li>
+			<li><a href="#plans" class="remove-trigger">Assinatura</a></li>
+			<li><a href="#board" class="remove-trigger">Diretoria</a></li>
 			<!--<li><a href="#downloads" class="remove-trigger">Download</a></li>-->
-			<li><a href="https://aceca.tryasp.net" class="remove-trigger">Downloads</a></li>
+			<!--<li><a href="https://aceca.tryasp.net" class="remove-trigger">Downloads</a></li>-->
 			<li><a href="#contact" class="remove-trigger">Contato</a></li>
+
+			<li><a href="https://aceca.tryasp.net/Auth/RegisterCover" class="btn-teste" style="padding-bottom: 9px !important;">Teste Grátis</a></li>
 			<li><a href="https://aceca.tryasp.net" class="btn-login remove-trigger" style="padding-bottom: 9px !important;">Login</a></li>
 			<!--<li><a href="#" class="btn-login" onclick="openModal(event)" style="padding-bottom: 9px !important;">Login</a></li>-->
 		  </ul>
@@ -154,9 +158,9 @@
 			</div>
 			<div class="events-tabs">
 			  
-			  <button id="btn-proximos" class="tab-btn active" onclick="filterEvents('upcoming',this)">Próximos</button>
+			  <button id="btn-proximos" class="tab-btn" onclick="filterEvents('upcoming',this)">Próximos</button>
 			  <button id="btn-passados" class="tab-btn" onclick="filterEvents('past',this)">Passados</button>
-			  <button id="btn-todos" class="tab-btn" onclick="filterEvents('all',this)">Todos</button>
+			  <button id="btn-todos" class="tab-btn active" onclick="filterEvents('all',this)">Todos</button>
 			</div>
 			<div class="events-grid" id="eventsGrid">
 			  <!-- EVENTOS PROXIMOS
@@ -340,7 +344,238 @@
 		  </div>
 		</section>
 
-		<!-- DOWNLOAD 
+		<!-- ══ APP ══ -->
+		<section id="app" class="bg-tint">
+			<div class="members-wrap">
+				<div class="section-tag">APP ACECA</div>
+				<h2 class="section-title">Leve a <em class="custom_text" style="font-size: clamp(2rem,3.5vw,2.50rem) !important;">ACECA</em> com você</h2>
+				<p class="section-sub">
+					Todas as informações e conteúdos da ACECA a um clique de distância.<br /><br />
+
+					O aplicativo ACECA reúne importantes funcionalidades, como cadastro de marcas, consulta ao acervo, dados da sua coleção e muito mais!<br /><br />
+				</p>
+
+				<div class="events-grid" id="eventsGrid">
+					<div class="event-card btn-app-install" data-type="upcoming">
+						<div class="event-img" style="background:linear-gradient(135deg,#a870ee,#d8c5ff)">
+							<span><img src="img/app/store-android.png" class="autoimage" title="Aplicativo ACECA Android" alt="Aplicativo ACECA Android"></span>
+						</div>
+						<div class="event-info">
+							<h3>Baixe nosso APP</h3>
+							<p>Disponível para celulares e tablets com sistema Android </p>
+						</div>
+					</div>
+
+					<div class="event-card btn-app-install" data-type="upcoming">
+						<div class="event-img" style="background:linear-gradient(135deg,#d8c5ff,#a870ee)">
+							<span><img src="img/app/store-apple.png" class="autoimage" title="Aplicativo ACECA iOS" alt="Aplicativo ACECA iOS"></span>
+						</div>
+						<div class="event-info">
+							<h3>Baixe nosso APP</h3>
+							<p>Disponível para celulares e tablets com sistema iOS </p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- ══ ASSINATURA ══ -->
+		<section id="plans" class="bg-tint">
+			<div class="members-wrap">
+				<div class="section-tag">Assinatura</div>
+				<h2 class="section-title">Nossos <em>Planos</em></h2>
+				<p class="section-sub">Conheça o que cada plano oferece para a sua coleção.</p>
+
+				<div class="plans-grid">
+
+					<!-- ── Bronze ── -->
+					<div class="plan-card">
+						<span class="plan-badge">30% de desconto</span>
+						<h3 class="plan-name">Bronze</h3>
+						<p class="plan-desc">Crie seu primeiro acesso. Ideal para quem está começando ou para coleções simples.</p>
+
+						<div class="plan-price-old">R$ 29,99</div>
+						<div class="plan-price"><span class="plan-price-currency">R$</span>5,99<span class="plan-price-period">/mês</span></div>
+
+						<a href="#contact" class="plan-cta">Escolher plano</a>
+
+						<p class="plan-fineprint">48 meses por apenas R$ 287,52 (preço normal R$ 1.439,52). Renovação por R$ 23,99/mês.</p>
+
+						<hr class="plan-divider">
+
+						<ul class="plan-features">
+							<li class="yes">Acesso completo à plataforma</li>
+							<li class="no">Agenda Online</li>
+							<li class="yes">10 GB de armazenamento SSD</li>
+							<li class="yes">Backups semanais grátis</li>
+							<li class="no">CDN</li>
+							<li class="no">Loja virtual integrada</li>
+							<li class="no">Ferramentas de IA</li>
+							<li class="no">Suporte prioritário 24h</li>
+						</ul>
+
+						<div class="plan-subgroup">
+							<div class="plan-subgroup-title">Crie com:</div>
+							<div class="plan-techlist">
+								<span class="plan-tech"><i class="plan-tech-ico">✦</i>AI Builder (5 créditos)</span>
+								<span class="plan-tech"><i class="plan-tech-ico">W</i>WordPress</span>
+								<span class="plan-tech"><i class="plan-tech-ico">N</i>Node.js</span>
+							</div>
+						</div>
+
+						<div class="plan-subgroup">
+							<div class="plan-subgroup-title">Comunique-se e cresça:</div>
+							<ul class="plan-features">
+								<li class="yes">Conta de e-mail grátis</li>
+								<li class="no">E-mail marketing com IA</li>
+							</ul>
+						</div>
+					</div>
+
+					<!-- ── Prata  ── -->
+					<div class="plan-card">
+						<span class="plan-badge">40% de desconto</span>
+						<h3 class="plan-name">Prata</h3>
+						<p class="plan-desc">Gerencie sites sem complicações. Ideal para quem cria conteúdo e para pequenas marcas.</p>
+
+						<div class="plan-price-old">R$ 45,99</div>
+						<div class="plan-price"><span class="plan-price-currency">R$</span>10,99<span class="plan-price-period">/mês</span></div>
+
+						<a href="#contact" class="plan-cta">Escolher plano</a>
+
+						<p class="plan-fineprint">48 meses por apenas R$ 527,52 (preço normal R$ 2.207,52). Renovação por R$ 38,99/mês.</p>
+
+						<hr class="plan-divider">
+
+						<ul class="plan-features">
+							<li class="yes">3 sites</li>
+							<li class="yes">Domínio - grátis por 1 ano</li>
+							<li class="yes">20 GB de armazenamento SSD</li>
+							<li class="yes">Backups semanais grátis</li>
+							<li class="no">CDN</li>
+							<li class="no">Loja virtual integrada</li>
+							<li class="no">Ferramentas de IA</li>
+							<li class="no">Suporte prioritário 24h</li>
+						</ul>
+
+						<div class="plan-subgroup">
+							<div class="plan-subgroup-title">Crie com:</div>
+							<div class="plan-techlist">
+								<span class="plan-tech"><i class="plan-tech-ico">✦</i>AI Builder (5 créditos)</span>
+								<span class="plan-tech"><i class="plan-tech-ico">W</i>WordPress</span>
+								<span class="plan-tech"><i class="plan-tech-ico">N</i>Node.js</span>
+							</div>
+						</div>
+
+						<div class="plan-subgroup">
+							<div class="plan-subgroup-title">Comunique-se e cresça:</div>
+							<ul class="plan-features">
+								<li class="yes">2 contas de e-mail por site - grátis por 1 ano</li>
+								<li class="no">E-mail marketing com IA</li>
+							</ul>
+						</div>
+					</div>
+
+					<!-- ── Ouro ── -->
+					<div class="plan-card">
+						<!--<span class="plan-badge">50% de desconto</span>-->
+						<div class="plan-ribbon">50% de desconto</div>
+						<h3 class="plan-name">Ouro</h3>
+						<p class="plan-desc">Desempenho dedicado para agências e projetos com tráfego alto.</p>
+
+						<div class="plan-price-old">R$ 139,99</div>
+						<div class="plan-price"><span class="plan-price-currency">R$</span>39,99<span class="plan-price-period">/mês</span></div>
+
+						<a href="#contact" class="plan-cta">Escolher plano</a>
+
+						<p class="plan-fineprint">48 meses por apenas R$ 1.919,52 (preço normal R$ 6.719,52). Renovação por R$ 129,99/mês.</p>
+
+						<hr class="plan-divider">
+
+						<ul class="plan-features">
+							<li class="yes">Ilimitado sites</li>
+							<li class="yes">Domínio - grátis por 1 ano</li>
+							<li class="yes">100 GB de armazenamento NVMe</li>
+							<li class="yes">Backups diários e sob demanda</li>
+							<li class="yes">CDN incluso</li>
+							<li class="yes">Loja virtual integrada</li>
+							<li class="yes">Ferramentas de IA</li>
+							<li class="yes">Suporte prioritário 24h</li>
+						</ul>
+
+						<div class="plan-subgroup">
+							<div class="plan-subgroup-title">Crie com:</div>
+							<div class="plan-techlist">
+								<span class="plan-tech"><i class="plan-tech-ico">✦</i>AI Builder (15 créditos)</span>
+								<span class="plan-tech"><i class="plan-tech-ico">W</i>WordPress</span>
+								<span class="plan-tech"><i class="plan-tech-ico">N</i>Node.js</span>
+							</div>
+						</div>
+
+						<div class="plan-subgroup">
+							<div class="plan-subgroup-title">Comunique-se e cresça:</div>
+							<ul class="plan-features">
+								<li class="yes">Ilimitado contas de e-mail por site - grátis por 1 ano</li>
+								<li class="yes">E-mail marketing com IA - grátis por 1 ano</li>
+							</ul>
+						</div>
+					</div>
+
+					<!-- ── Aceca (destaque) ── -->
+					<div class="plan-card featured">
+						<!--<span class="plan-badge">Oferta especial • 81% de desconto</span>-->
+						<div class="plan-ribbon">Oferta especial • 81% de desconto</div>
+						<h3 class="plan-name"><i class="plan-name-ico">✦</i>Aceca</h3>
+						<p class="plan-desc"><u>Ilimitado</u>: sites, e-mails, ferramentas de IA e suporte prioritário.</p>
+
+						<div class="plan-price-old">R$ 72,99</div>
+						<div class="plan-price"><span class="plan-price-currency">R$</span>13,99<span class="plan-price-period">/mês</span></div>
+
+						<a href="#contact" class="plan-cta">Escolher plano</a>
+
+						<p class="plan-fineprint">48 meses por apenas R$ 671,52 (preço normal R$ 3.503,52). Renovação por R$ 64,99/mês.</p>
+
+						<hr class="plan-divider">
+
+						<ul class="plan-features">
+							<li class="yes">Ilimitado sites</li>
+							<li class="yes">Domínio - grátis por 1 ano</li>
+							<li class="yes">50 GB de armazenamento NVMe</li>
+							<li class="yes">Backups diários + recuperação simples de dados</li>
+							<li class="yes">CDN incluso</li>
+							<li class="yes">Loja virtual integrada</li>
+							<li class="yes">Ferramentas de IA</li>
+							<li class="yes">Suporte prioritário 24h</li>
+						</ul>
+
+						<div class="plan-subgroup">
+							<div class="plan-subgroup-title">Crie com:</div>
+							<div class="plan-techlist">
+								<span class="plan-tech"><i class="plan-tech-ico">✦</i>AI Builder (15 créditos)</span>
+								<span class="plan-tech"><i class="plan-tech-ico">W</i>WordPress</span>
+								<span class="plan-tech"><i class="plan-tech-ico">N</i>Node.js</span>
+							</div>
+						</div>
+
+						<div class="plan-subgroup">
+							<div class="plan-subgroup-title">Comunique-se e cresça:</div>
+							<ul class="plan-features">
+								<li class="yes"><u>Contas de e-mail ilimitadas por site — grátis por 1 ano</u></li>
+								<li class="yes"><u>E-mail marketing com IA - grátis por 1 ano</u></li>
+							</ul>
+						</div>
+
+						<div class="plan-highlight-box">
+							<div class="plan-highlight-title">Por que este plano?</div>
+							<p class="plan-highlight-text">Solução completa para projetos de longo prazo. Com todos os recursos inclusos.</p>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</section>
+
+		<!-- DOWNLOAD
 		<section id="downloads" class="bg-tint">
 			<div class="members-wrap">
 				<div class="section-tag">Downloads</div>
@@ -651,7 +886,12 @@
 			
 		  </div>
 		  <div class="footer-bottom">
-			<p>© 2025 <span class="custom_text">ACECA</span> — Associação dos Colecionadores de Embalagens de Cigarros e Afins. Todos os direitos reservados. &nbsp;·&nbsp; <a href="#politica-privacidade" onclick="openLegalModal(event,'politica')">Política de Privacidade</a> &nbsp;·&nbsp; <a href="#termos-de-uso" onclick="openLegalModal(event,'termos')">Termos de Uso</a></p>
+			<p>
+				© 2025 <span class="custom_text">ACECA</span> — Associação dos Colecionadores de Embalagens de Cigarros e Afins.<br />
+				Todos os direitos reservados.<br />
+				<a href="#politica-privacidade" style="font-weight: 700 !important; color: #a32bff;" onclick="openLegalModal(event,'politica')">Política de Privacidade</a> &nbsp; - &nbsp;
+				<a href="#termos-de-uso" style="font-weight: 700 !important; color: #a32bff;" onclick="openLegalModal(event,'termos')">Termos de Uso</a>
+			</p>
 		  </div>
 		</footer>
 

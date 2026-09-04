@@ -4,10 +4,10 @@ document.addEventListener('DOMContentLoaded', function () {
     (function () {
         console.log(`Todos os recursos terminaram o carregamento!`);
 
-		const btn = document.getElementById('btn-proximos');
+		const btn = document.getElementById('btn-todos');
 		//console.log("addEventListener btn ::", btn);
 
-		filterEvents('upcoming',btn);
+		filterEvents('all',btn);
 
 		document.querySelectorAll('.nav-links a').forEach(a=>{
 			a.addEventListener('click',()=>
@@ -553,7 +553,7 @@ async function fn_ObterWinPlatformVersionModal(){
 
 // "Baixe nosso APP" instala o PWA que JÁ EXISTE no projeto (wwwroot/manifest.json +
 // wwwroot/sw.js, o mesmo app autenticado) - não é um PWA à parte pro site institucional.
-// Instalação de PWA nunca funciona entre origens diferentes, então isso só é possível
+// Instalação de PWA nunca funciona entre origens diferentes, então isso só é possível 
 // quando esta página está servida do MESMO domínio desse manifest (aceca.tryasp.net,
 // rota /Home/Web - ver <link rel="manifest"> no <head> de Web/Index.cshtml). Na versão
 // estática standalone (Web/index.html, publicada em www.aceca.com.br), clicar no card
