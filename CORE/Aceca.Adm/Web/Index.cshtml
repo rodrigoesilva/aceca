@@ -23,8 +23,22 @@
     <link rel="preload" href="/Web/css/fonts/acecafontfile.woff2" as="font" type="font/woff2" crossorigin="anonymous">
     <link rel="shortcut icon" href="/Web/img/favicon/aceca.ico">
     <link rel="canonical" href="https://www.aceca.com.br/">
+
+    @* "Baixe nosso APP" (fn_AppInstall em Web/js/main.js) instala o PWA que já existe no
+       projeto (wwwroot/manifest.json + wwwroot/sw.js, mesmo usado pelo app autenticado) -
+       só funciona aqui porque esta página, quando acessada via /Home/Web, está no MESMO
+       domínio/origem (aceca.tryasp.net) desse manifest - instalação de PWA nunca funciona
+       entre origens diferentes, então isso não tem efeito nenhum na versão estática
+       standalone (Web/index.html, publicada em www.aceca.com.br - domínio à parte). *@
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#3d0a66" />
+    <link rel="apple-touch-icon" href="/img/pwa/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ACECA" />
+
     <link rel="stylesheet" href="/Web/css/main.css?v=2.8" />
-    <script defer type="text/javascript" src="/Web/js/main.js?v=1.9"></script>
+    <script defer type="text/javascript" src="/Web/js/main.js?v=2.0"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5" integrity="sha384-YB/DdIkloKoRpclWB8bNcYXWakt57USgtQPDzvnIDHYU0lasD5eWlXVo1S4ODukY" crossorigin="anonymous"></script>
 
 </head>
@@ -240,7 +254,7 @@
     <section id="app" class="bg-tint">
         <div class="members-wrap">
             <div class="section-tag">APP ACECA</div>
-            <h2 class="section-title">Leve a <em>ACECA</em>com você</h2>
+            <h2 class="section-title">Leve a <em class="custom_text">ACECA</em> com você</h2>
             <p class="section-sub">
                 Todas as informações e conteúdos da ACECA a um clique de distância.<br /><br />
 
@@ -248,29 +262,25 @@
             </p>
 
             <div class="events-grid" id="eventsGrid">
-                <a href="arquivos/arquivo/aceca_estatuto_abr26.pdf" download class="link-wrapper">
-                    <div class="event-card" data-type="upcoming">
-                        <div class="event-img" style="background:linear-gradient(135deg,#a870ee,#d8c5ff)">
-                            <span><img src="/Web/img/app/store-android.png" class="autoimage" title="Aplicativo ACECA Android" alt="Aplicativo ACECA Android"></span>
-                        </div>
-                        <div class="event-info">
-                            <h3>Baixe nosso APP</h3>
-                            <p>Disponível para celulares e tablets com sistema Android </p>
-                        </div>
+                <div class="event-card btn-app-install" data-type="upcoming">
+                    <div class="event-img" style="background:linear-gradient(135deg,#a870ee,#d8c5ff)">
+                        <span><img src="/Web/img/app/store-android.png" class="autoimage" title="Aplicativo ACECA Android" alt="Aplicativo ACECA Android"></span>
                     </div>
-                </a>
+                    <div class="event-info">
+                        <h3>Baixe nosso APP</h3>
+                        <p>Disponível para celulares e tablets com sistema Android </p>
+                    </div>
+                </div>
 
-                <a href="arquivos/arquivo/aceca_estatuto_abr26.pdf" download class="link-wrapper">
-                    <div class="event-card" data-type="upcoming">
-                        <div class="event-img" style="background:linear-gradient(135deg,#d8c5ff,#a870ee)">
-                            <span><img src="/Web/img/app/store-apple.png" class="autoimage" title="Aplicativo ACECA iOS" alt="Aplicativo ACECA iOS"></span>
-                        </div>
-                        <div class="event-info">
-                            <h3>Baixe nosso APP</h3>
-                            <p>Disponível para celulares e tablets com sistema iOS </p>
-                        </div>
+                <div class="event-card btn-app-install" data-type="upcoming">
+                    <div class="event-img" style="background:linear-gradient(135deg,#d8c5ff,#a870ee)">
+                        <span><img src="/Web/img/app/store-apple.png" class="autoimage" title="Aplicativo ACECA iOS" alt="Aplicativo ACECA iOS"></span>
                     </div>
-                </a>
+                    <div class="event-info">
+                        <h3>Baixe nosso APP</h3>
+                        <p>Disponível para celulares e tablets com sistema iOS </p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -301,7 +311,7 @@
 
                     <ul class="plan-features">
                         <li class="yes">Acesso completo à plataforma</li>
-                        <li class="no">Domínio grátis</li>
+                        <li class="no">Agenda Online</li>
                         <li class="yes">10 GB de armazenamento SSD</li>
                         <li class="yes">Backups semanais grátis</li>
                         <li class="no">CDN</li>
@@ -587,6 +597,18 @@
                             <strong>Instagram</strong>
                             <p>
                                 <a href="https://www.instagram.com/acecaoficial" style="font-weight: 700 !important; color: #a32bff;">@@acecaoficial</a>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="contact-detail">
+                        <div class="contact-icon">
+                            <img src="/Web/img/icon/face.png" class="autoimage" title="ACECA" alt="ACECA">
+                        </div>
+                        <div class="contact-detail-text">
+                            <strong>Facebook</strong>
+                            <p>
+                                <a href="https://www.facebook.com/groups/aceca" style="font-weight: 700 !important; color: #a32bff;">@@aceca</a>
                             </p>
                         </div>
                     </div>

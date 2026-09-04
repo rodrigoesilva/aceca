@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (window.location.hash === '#politica-privacidade') openLegalModal(null, 'politica');
 		else if (window.location.hash === '#termos-de-uso') openLegalModal(null, 'termos');
 
+		fn_AppInstall();
+
     })();
 });
 
@@ -51,14 +53,16 @@ document.addEventListener('DOMContentLoaded', function () {
 // externo aceca.tryasp.net (é outro site de verdade); (2) servido de DENTRO do
 // próprio aceca.tryasp.net (rota /Web/index.html), onde esses mesmos links devem
 // apontar pra rota interna /Auth/Index - um href fixo não acerta os dois ao mesmo
-// tempo. Detecta em qual domínio a página está rodando e ajusta na hora, sem
-// precisar de 2 cópias do arquivo nem de lógica server-side (Razor) só pra isso.
-function ajustarLinksLoginParaDominioLocal(){
-	var rodandoDentroDoApp = /(^|\.)aceca\.tryasp\.net$/i.test(window.location.hostname)
+// tempo. Detecta em qual domínio a página está rodando, usado aqui e em
+// fn_AppInstall (instalação de PWA também só funciona na mesma origem do app).
+function fnEstaDentroDoApp(){
+	return /(^|\.)aceca\.tryasp\.net$/i.test(window.location.hostname)
 		|| window.location.hostname === 'localhost'
 		|| window.location.hostname === '127.0.0.1';
+}
 
-	if (!rodandoDentroDoApp) return;
+function ajustarLinksLoginParaDominioLocal(){
+	if (!fnEstaDentroDoApp()) return;
 
 	document.querySelectorAll('a[href="https://aceca.tryasp.net"]').forEach(function(a){
 		var texto = a.textContent.trim();
@@ -545,3 +549,83 @@ async function fn_ObterWinPlatformVersionModal(){
 
 //#endregion
 
+//#region app
+
+// "Baixe nosso APP" instala o PWA que JÁ EXISTE no projeto (wwwroot/manifest.json +
+// wwwroot/sw.js, o mesmo app autenticado) - não é um PWA à parte pro site institucional.
+// Instalação de PWA nunca funciona entre origens diferentes, então isso só é possível
+// quando esta página está servida do MESMO domínio desse manifest (aceca.tryasp.net,
+// rota /Home/Web - ver <link rel="manifest"> no <head> de Web/Index.cshtml). Na versão
+// estática standalone (Web/index.html, publicada em www.aceca.com.br), clicar no card
+// simplesmente leva pro app de verdade, onde o Chrome oferece a instalação por lá.
+function fn_AppInstall() {
+    var botoes = document.querySelectorAll('.btn-app-install');
+    if (!botoes.length) return;
+
+    var estaDentroDoApp = fnEstaDentroDoApp();
+    var eventoInstalacao = null;
+
+    // Só registra o sw.js aqui dentro do domínio do app - sem isso (mesmo com o
+    // <link rel="manifest">), o Chrome não considera a página instalável.
+    if (estaDentroDoApp && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(function (err) {
+            console.warn('Falha ao registrar Service Worker do app:', err);
+        });
+    }
+
+    // 1. Escuta o evento que o navegador dispara se o PWA for instalável (só existe no
+    // Chrome/Edge - Android ou desktop; Safari/iOS nunca dispara isso, ver item 2).
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        eventoInstalacao = e;
+    });
+
+    window.addEventListener('appinstalled', function () {
+        console.log('PWA ACECA instalado com sucesso!');
+        eventoInstalacao = null;
+    });
+
+    // 2. Um clique por cartão (Android/iOS) - antes só existia um único
+    // document.querySelector (singular), que pegava só o 1º cartão e deixava o 2º
+    // sem nenhum comportamento.
+    botoes.forEach(function (botao) {
+        botao.style.cursor = 'pointer';
+
+        botao.addEventListener('click', function () {
+            var ehCartaoIOS = (botao.querySelector('img')?.src || '').includes('store-apple');
+
+            if (ehCartaoIOS) {
+                Swal.fire({
+                    title: 'Instalar no iPhone/iPad',
+                    icon: 'info',
+                    html: 'O iOS n&atilde;o permite instalar o app automaticamente. No Safari, toque em <b>Compartilhar</b> e depois em <b>"Adicionar &agrave; Tela de In&iacute;cio"</b>.',
+                    confirmButtonText: 'Entendi'
+                });
+                return;
+            }
+
+            if (!estaDentroDoApp) {
+                window.location.href = 'https://aceca.tryasp.net';
+                return;
+            }
+
+            if (!eventoInstalacao) {
+                Swal.fire({
+                    title: 'Instalação indisponível',
+                    icon: 'info',
+                    html: 'Seu navegador já instalou o app ACECA, ou não oferece suporte à instalação neste momento.',
+                    confirmButtonText: 'Entendi'
+                });
+                return;
+            }
+
+            eventoInstalacao.prompt();
+            eventoInstalacao.userChoice.then(function (resultado) {
+                console.log('Usuário escolheu: ' + resultado.outcome);
+                eventoInstalacao = null;
+            });
+        });
+    });
+}
+
+//#endregion
