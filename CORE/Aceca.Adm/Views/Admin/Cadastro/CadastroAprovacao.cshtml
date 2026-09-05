@@ -4,10 +4,15 @@
 
     var urlResponsiveCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/responsive.dataTables.min.css");
     var urlResponsiveJs = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/vendor/libs/datatables-responsive-bs5/dataTables.responsive.js");
+
+    // Mesmo bug do Listagem.cshtml: só a 1ª tag "~/" de uma @section resolve
+    // corretamente - zoom.css precisa da sua própria variável.
+    var urlZoomCss = Aceca.Adm.Helper.AssetUrlHelper.ComVersao(Url, AppEnvironment, "~/css/zoom.css");
 }
 
 @section VendorStyles {
     <link rel="stylesheet" href="@urlResponsiveCss" />
+    <link rel="stylesheet" href="@urlZoomCss">
 }
 
 @section VendorScripts {
@@ -95,4 +100,10 @@
             </thead>
         </table>
     </div>
+</div>
+
+<!-- The Modal Zoom -->
+<div id="myModal" class="img-zoom-modal">
+    <span id="caption"></span>
+    <img class="img-zoom-content" id="img01">
 </div>

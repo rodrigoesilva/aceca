@@ -146,7 +146,7 @@ function fn_MontarGrid() {
                     // têm a imagem direto na pasta ao vivo do Acervo - se a URL de staging
                     // der 404, tenta a URL ao vivo (ImgPrincipalFullLive) antes de desistir.
                     const urlLive = full?.ImgPrincipalFullLive || strUrlImgInexistente;
-                    return `<img alt="Imagem" data-fallback="${urlLive}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}else{this.onerror=null;this.src='${strUrlImgInexistente}';}" src="${data}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">`;
+                    return `<img name="myImg" class="cmyImg" alt="${full?.CodigoAceca || 'Imagem'}" data-fallback="${urlLive}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}else{this.onerror=null;this.src='${strUrlImgInexistente}';}" src="${data}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;cursor:pointer;">`;
                 }
             },
             {
@@ -154,7 +154,7 @@ function fn_MontarGrid() {
                 render: function (data, type, full) {
                     if (type !== 'display') return data || '';
                     const urlLive = full?.ImgDetalheFullLive || strUrlImgInexistente;
-                    return `<img alt="Detalhe" data-fallback="${urlLive}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}else{this.onerror=null;this.src='${strUrlImgInexistente}';}" src="${data}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;">`;
+                    return `<img name="myImg" class="cmyImg" alt="${full?.CodigoAceca || 'Detalhe'}" data-fallback="${urlLive}" onerror="if(this.src!==this.dataset.fallback){this.src=this.dataset.fallback;}else{this.onerror=null;this.src='${strUrlImgInexistente}';}" src="${data}" style="width:48px;height:48px;object-fit:cover;border-radius:4px;cursor:pointer;">`;
                 }
             },
             { data: 'CodigoAceca', className: 'text-center', responsivePriority: 2, orderable: true },
@@ -222,8 +222,51 @@ function fn_MontarGrid() {
                 }
             },
         ],
+
+        drawCallback: function () {
+            fn_Zoom();
+        },
     });
 }
+
+//#endregion
+
+//#region ZOOM
+
+function fn_ZoomImgClose() {
+    const modal = document.getElementById('myModal');
+
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function fn_Zoom() {
+    var modal = document.getElementById('myModal');
+    var modalImg = document.getElementById('img01');
+    var captionText = document.getElementById('caption');
+
+    $('.cmyImg').off('click.zoom').on('click.zoom', function () {
+        modal.style.display = 'block';
+        modalImg.src = this.src;
+        modalImg.alt = this.alt;
+        captionText.innerHTML = this.alt;
+    });
+
+    $('#myModal').off('click.zoom').on('click.zoom', function () {
+        img01.className += ' out';
+        setTimeout(function () {
+            modal.style.display = 'none';
+            img01.className = 'img-zoom-content';
+        }, 400);
+    });
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' || event.key === 'Enter') {
+        fn_ZoomImgClose();
+    }
+});
 
 //#endregion
 
