@@ -8,7 +8,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SkiaSharp;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.Intrinsics.X86;
@@ -1720,10 +1724,10 @@ namespace Aceca.Adm.Controllers.Cadastro
         // Marca d'água aplicada só na imagem que efetivamente entra pública no Acervo
         // (ver chamadas em UploadImg e MoverImagensPendenteParaAcervo) - fica em cache
         // em memória pra não decodificar o PNG a cada upload/aprovação.
-        private static SKBitmap? _marcaDaguaBitmap;
+        private static Image<Rgba32>? _marcaDaguaBitmap;
         private static readonly object _marcaDaguaLock = new();
 
-        private SKBitmap? ObterMarcaDaguaBitmap()
+        private Image<Rgba32>? ObterMarcaDaguaBitmap()
         {
             if (_marcaDaguaBitmap != null)
                 return _marcaDaguaBitmap;
@@ -1735,7 +1739,7 @@ namespace Aceca.Adm.Controllers.Cadastro
                     var caminhoMarca = Path.Combine(_appEnvironment.WebRootPath, "img", "marca-dagua", "imagemMarcaPadrao.png");
 
                     if (System.IO.File.Exists(caminhoMarca))
-                        _marcaDaguaBitmap = SKBitmap.Decode(caminhoMarca);
+                        _marcaDaguaBitmap = Image.Load<Rgba32>(caminhoMarca);
                 }
             }
 
@@ -1769,50 +1773,44 @@ namespace Aceca.Adm.Controllers.Cadastro
             if (marca == null)
                 return imagemOriginal;
 
-            using var bitmapOriginal = SKBitmap.Decode(imagemOriginal);
-            if (bitmapOriginal == null)
+            try
+            {
+                using var bitmapOriginal = Image.Load<Rgba32>(imagemOriginal);
+
+                // marca ocupa ~45% da largura da imagem base, mantendo a proporção original
+                float escala = (bitmapOriginal.Width * 0.45f) / marca.Width;
+                int larguraMarca = Math.Max(1, (int)Math.Round(marca.Width * escala));
+                int alturaMarca = Math.Max(1, (int)Math.Round(marca.Height * escala));
+
+                int x = (bitmapOriginal.Width - larguraMarca) / 2;
+                int y = (bitmapOriginal.Height - alturaMarca) / 2;
+
+                // grayscale (luminosidade, mesmos coeficientes Bt601 da matriz usada antes
+                // com SkiaSharp) preservando o canal alfa original do PNG, com a opacidade
+                // aplicada por cima (multiplica o alfa já existente).
+                using var marcaAjustada = marca.Clone(ctx => ctx
+                    .Resize(larguraMarca, alturaMarca)
+                    .Grayscale(GrayscaleMode.Bt601)
+                    .Opacity(Math.Clamp(opacidade, 0f, 1f)));
+
+                bitmapOriginal.Mutate(ctx => ctx.DrawImage(marcaAjustada, new Point(x, y), 1f));
+
+                using var msSaida = new MemoryStream();
+
+                if (extensao.Equals(".png", StringComparison.OrdinalIgnoreCase))
+                    bitmapOriginal.Save(msSaida, new PngEncoder());
+                else
+                    bitmapOriginal.Save(msSaida, new JpegEncoder { Quality = 90 });
+
+                return msSaida.ToArray();
+            }
+            catch
+            {
+                // mesmo comportamento "falha aberta" de antes (SKBitmap.Decode retornava
+                // null pra imagem inválida) - devolve a original sem marca em vez de derrubar
+                // o upload/aprovação por uma imagem que não decodifica.
                 return imagemOriginal;
-
-            var samplingSuave = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
-
-            using var surface = SKSurface.Create(new SKImageInfo(bitmapOriginal.Width, bitmapOriginal.Height));
-            var canvas = surface.Canvas;
-            canvas.Clear(SKColors.Transparent);
-            canvas.DrawBitmap(bitmapOriginal, 0, 0, samplingSuave, null);
-
-            // marca ocupa ~45% da largura da imagem base, mantendo a proporção original
-            float escala = (bitmapOriginal.Width * 0.45f) / marca.Width;
-            float larguraMarca = marca.Width * escala;
-            float alturaMarca = marca.Height * escala;
-
-            float x = (bitmapOriginal.Width - larguraMarca) / 2f;
-            float y = (bitmapOriginal.Height - alturaMarca) / 2f;
-
-            // matriz de cinza (luminosidade) preservando o canal alfa original do PNG
-            float[] matrizCinza =
-            {
-                0.299f, 0.587f, 0.114f, 0, 0,
-                0.299f, 0.587f, 0.114f, 0, 0,
-                0.299f, 0.587f, 0.114f, 0, 0,
-                0,      0,      0,      1, 0
-            };
-
-            using var paint = new SKPaint
-            {
-                IsAntialias = true,
-                Color = SKColors.White.WithAlpha((byte)Math.Round(255 * Math.Clamp(opacidade, 0f, 1f))),
-                ColorFilter = SKColorFilter.CreateColorMatrix(matrizCinza)
-            };
-
-            canvas.DrawBitmap(marca, SKRect.Create(x, y, larguraMarca, alturaMarca), samplingSuave, paint);
-
-            using var imagemFinal = surface.Snapshot();
-            var formato = extensao.Equals(".png", StringComparison.OrdinalIgnoreCase)
-                ? SKEncodedImageFormat.Png
-                : SKEncodedImageFormat.Jpeg;
-
-            using var dados = imagemFinal.Encode(formato, 90);
-            return dados.ToArray();
+            }
         }
 
         // Aplica a marca d'água na imagem enviada e devolve o resultado pra preview em
