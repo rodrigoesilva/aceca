@@ -85,7 +85,7 @@ namespace Aceca.Adm.Controllers.Admin.Configuracao
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(AdmConfig model)
+        public async Task<IActionResult> Create([FromBody] AdmConfig model)
         {
             try
             {
@@ -138,7 +138,7 @@ namespace Aceca.Adm.Controllers.Admin.Configuracao
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(AdmConfig model)
+        public async Task<IActionResult> Edit([FromBody] AdmConfig model)
         {
             try
             {
